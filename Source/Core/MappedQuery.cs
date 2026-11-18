@@ -536,6 +536,111 @@ readonly struct MappedQueryCore<T>
 	}
 
 	#endregion
+
+	#region Buffer terminals
+
+	// The producer reads straight into a sink by the same internal path
+	// as ToArrayAsync (RowReader.FillAsync / Fill): the connection, the
+	// read mode, Skip, Take and the read-through are the same, and
+	// there is no per-row enumerator. The sink is a struct (so the loop
+	// specializes) that holds a reference to its state, so the copy the
+	// loop passes across awaits is harmless.
+	internal ValueTask<bool> FillAsync<TSink>(
+		TSink sink,
+		CancellationToken cancellationToken)
+		where TSink : struct, IRowSink<T>
+	{
+		CancellationToken token = Combine(
+			cancellationToken, out CancellationTokenSource? linked);
+		return RunAsync(
+			(_source, _skip, _take, _asyncReads, token, sink),
+			static async (reader, s) =>
+			{
+				if (reader is DbDataReader db)
+				{
+					await RowReader.FillAsync(
+						s._source, db, s._skip, s._take,
+						s._asyncReads, s.sink, s.token)
+						.ConfigureAwait(false);
+				}
+				else
+				{
+					TSink copy = s.sink;
+					RowReader.Fill(
+						s._source, reader, s._skip, s._take,
+						ref copy, s.token);
+				}
+
+				return true;
+			},
+			Behavior, linked, token);
+	}
+
+	// The buffer terminals of every view run the query through the
+	// sink path above (see ChunkProducer.cs). ToAsyncBuffer
+	// starts at the call; the two streams start at the first
+	// MoveNextAsync. A default struct is refused here, at the call,
+	// as everywhere else.
+	// The pool is checked once, here, for every public overload:
+	// null would silently mean "the shared pool", which is exactly the
+	// decision (clear or not) the shared-pool overload makes explicit.
+	static void RequirePool(MemoryPool<T>? pool)
+	{
+		if (pool is null) throw new ArgumentNullException(nameof(pool));
+	}
+
+	internal PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		bool clearOnDispose,
+		CancellationToken cancellationToken)
+	{
+		_ = Command;
+		RequirePool(pool);
+		return new(this, pool, clearOnDispose, cancellationToken);
+	}
+
+	internal IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken)
+	{
+		_ = Command;
+		RequirePool(pool);
+		return new ChunkStream<T>(this, pool, clearOnReturn, cancellationToken);
+	}
+
+	internal IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken)
+	{
+		_ = Command;
+		RequirePool(pool);
+		return Flatten(
+			new ChunkStream<T>(this, pool, clearOnReturn, cancellationToken));
+	}
+
+	// The chunk stream, element by element. Each element is copied into
+	// a local before it is yielded, so no span lives across a yield; the
+	// chunk's array goes back at the next chunk step, as for the chunk
+	// stream, and the one-shot guard is the chunk stream's.
+	static async IAsyncEnumerable<T> Flatten(
+		IAsyncEnumerable<ReadOnlyMemory<T>> chunks,
+		[EnumeratorCancellation] CancellationToken cancellationToken = default)
+	{
+		await foreach (ReadOnlyMemory<T> chunk in chunks
+			.WithCancellation(cancellationToken)
+			.ConfigureAwait(false))
+		{
+			for (int i = 0; i < chunk.Length; ++i)
+			{
+				T item = chunk.Span[i];
+				yield return item;
+			}
+		}
+	}
+
+	#endregion
 }
 
 /// <summary>A deferred, type-locked query over any <see cref="IExecuteReader"/>. Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.</summary>
@@ -1005,6 +1110,491 @@ public readonly record struct MappedQuery<T>
 			.Channel;
 
 	#endregion
+
+	#region Buffer terminals
+
+	/// <summary>
+	/// Reads every row into pooled arrays and keeps them until the
+	/// returned buffer is disposed.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// The call returns at once and starts the read on a background
+	/// producer, once, even if nobody reads the buffer yet
+	/// (it may finish before any read happens).
+	/// Await <see cref="PooledBuffer{T}.Items"/> for the complete
+	/// result. The buffer is not readable while it fills: to read
+	/// while the query is still running, use
+	/// <see cref="ToAsyncBufferStream(bool, CancellationToken)"/> or
+	/// <see cref="ToBufferedAsyncStream(bool, CancellationToken)"/>.
+	/// </para>
+	/// <para>
+	/// The rows stay valid until the buffer is disposed:
+	/// dispose it (<c>await using</c>) when you are done.
+	/// Disposing it while the read is still running cancels the
+	/// query; after the read finished it only releases the arrays.
+	/// A buffer that is never disposed holds its arrays until the
+	/// garbage collector takes it (there is no finalizer).
+	/// The connection ODX opened is closed when the read ends,
+	/// however slowly the buffer is read.
+	/// The producer is unbounded: it never waits for a reader, so a
+	/// slow reader lets rows pile up in memory (the read finishes at
+	/// full speed and frees the connection, while memory grows with
+	/// the backlog), as with an unbounded channel.
+	/// </para>
+	/// <para>
+	/// Use it for a reusable, potentially indexable list to work with
+	/// for a while.
+	/// <see cref="ToAsyncBufferStream(bool, CancellationToken)"/> reads
+	/// the elements once, through the buffers, without copying them
+	/// twice;
+	/// <see cref="ToBufferedAsyncStream(bool, CancellationToken)"/> is
+	/// the same without buffers.
+	/// </para>
+	/// <para>
+	/// Unlike the other terminals, the overload that uses the shared
+	/// pool has no default for <c>clearOnDispose</c>: you must decide.
+	/// The shared pool does not clear what it gets back, rows may be
+	/// sensitive, and whether to scrub them is the caller's decision
+	/// to make, not a default to be missed.
+	/// This is a deliberate exception.
+	/// With a pool of your own, <c>clearOnDispose</c> is optional (it defaults
+	/// to <see langword="false"/>).
+	/// </para>
+	/// </remarks>
+	/// <param name="clearOnDispose">
+	/// <see langword="true"/> clears the rows in each pooled buffer
+	/// before it is returned to the pool, when the buffer, or the <see cref="PooledArray{T}"/> view of it, is disposed (the buffer keeps its arrays until then).
+	/// What is cleared: the rows the buffer holds (the used part,
+	/// never the rest of a larger array), of every type, value types
+	/// included.
+	/// Cost: the clear is off the read path, handed to an internal
+	/// background queue, so the read and the consumer do not wait for
+	/// it; it costs the background worker the time to clear the rows
+	/// (and nothing at all when <see langword="false"/>, the default
+	/// path, which never touches the queue).
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
+	/// <see langword="false"/> returns the buffers as they are (the
+	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
+	/// Security note: ODX returns arrays that contain your rows.
+	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
+	/// other code in the process can rent the same array later.
+	/// Pass <c>clearOnDispose: true</c> if the rows are sensitive.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	/// <returns>The buffer, already reading.</returns>
+	public PooledBuffer<T> ToAsyncBuffer(
+		bool clearOnDispose,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(
+			MemoryPool<T>.Shared, clearOnDispose, cancellationToken);
+
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/returns"/>
+	/// <param name="pool">
+	/// The pool the buffers are rented from and returned to; not
+	/// <see langword="null"/> (that throws
+	/// <see cref="ArgumentNullException"/> at the call).
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToAsyncBuffer(bool, CancellationToken)" path="/returns"/>
+	/// <param name="pool">
+	/// The pool the buffers are rented from and returned to; not
+	/// <see langword="null"/> (that throws
+	/// <see cref="ArgumentNullException"/> at the call).
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
+	/// </param>
+	/// <param name="clearOnDispose">
+	/// <see langword="true"/> clears the rows in each pooled buffer
+	/// before it is returned to the pool, when the buffer, or the <see cref="PooledArray{T}"/> view of it, is disposed (the buffer keeps its arrays until then).
+	/// What is cleared: the rows the buffer holds (the used part,
+	/// never the rest of a larger array), of every type, value types
+	/// included.
+	/// Cost: the clear is off the read path, handed to an internal
+	/// background queue, so the read and the consumer do not wait for
+	/// it; it costs the background worker the time to clear the rows
+	/// (and nothing at all when <see langword="false"/>, the default
+	/// path, which never touches the queue).
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
+	/// <see langword="false"/> returns the buffers as they are (the
+	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
+	/// Security note: ODX returns arrays that contain your rows.
+	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
+	/// other code in the process can rent the same array later.
+	/// Pass <c>clearOnDispose: true</c> if the rows are sensitive.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		bool clearOnDispose,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, clearOnDispose, cancellationToken);
+
+	/// <summary>
+	/// Reads the query in a rolling stream of pooled arrays,
+	/// once, for one consumer.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// Lazy: nothing executes until the first
+	/// <c>MoveNextAsync</c>.
+	/// The stream can be enumerated once:
+	/// a second <c>GetAsyncEnumerator</c> throws
+	/// <see cref="InvalidOperationException"/>.
+	/// </para>
+	/// <para>
+	/// Each <see cref="ReadOnlyMemory{T}"/> holds exactly the rows of
+	/// one chunk and is valid until the next
+	/// <c>MoveNextAsync</c> or the end of the enumeration,
+	/// when its array goes back to the pool:
+	/// copy what you keep.
+	/// Nothing guards a memory held longer (it then reads rows
+	/// that were reused), so do not buffer the chunks themselves, for
+	/// example with <c>ToListAsync</c> or <c>Buffer</c>.
+	/// An enumerator that is never disposed never returns its arrays
+	/// (there is no finalizer): they go to the garbage collector.
+	/// A producer reads ahead without waiting for the consumer
+	/// (the queue is unbounded), so the connection ODX opened is
+	/// closed when the read ends, not when the consumer is done,
+	/// while memory grows with the backlog: a slow consumer lets
+	/// chunks pile up, as with an unbounded channel.
+	/// </para>
+	/// <para>
+	/// Disposing the enumerator, which a <c>break</c> out of
+	/// <c>await foreach</c> always does, cancels the query and
+	/// returns every array still queued.
+	/// </para>
+	/// <para>
+	/// Use it for sequential, read-only access to the elements through
+	/// the buffers, without copying them twice, for raw speed and the
+	/// shortest connection time.
+	/// <see cref="ToBufferedAsyncStream(bool, CancellationToken)"/> is
+	/// the same without buffers;
+	/// <see cref="ToAsyncBuffer(bool, CancellationToken)"/> keeps the
+	/// rows as a list.
+	/// </para>
+	/// <para>
+	/// Unlike the other terminals, the overload that uses the shared
+	/// pool has no default for <c>clearOnReturn</c>: you must decide.
+	/// The shared pool does not clear what it gets back, rows may be
+	/// sensitive, and whether to scrub them is the caller's decision
+	/// to make, not a default to be missed.
+	/// This is a deliberate exception.
+	/// With a pool of your own, <c>clearOnReturn</c> is optional (it defaults
+	/// to <see langword="false"/>).
+	/// </para>
+	/// </remarks>
+	/// <param name="clearOnReturn">
+	/// <see langword="true"/> clears the rows in each pooled buffer
+	/// before it is returned to the pool, as each chunk goes back, once the consumer is done with it (at the next <c>MoveNextAsync</c>, or when the enumeration ends or is disposed).
+	/// What is cleared: the rows the buffer holds (the used part,
+	/// never the rest of a larger array), of every type, value types
+	/// included.
+	/// Cost: the clear is off the read path, handed to an internal
+	/// background queue, so the read and the consumer do not wait for
+	/// it; it costs the background worker the time to clear the rows
+	/// (and nothing at all when <see langword="false"/>, the default
+	/// path, which never touches the queue).
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
+	/// <see langword="false"/> returns the buffers as they are (the
+	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
+	/// Security note: ODX returns arrays that contain your rows.
+	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
+	/// other code in the process can rent the same array later.
+	/// Pass <c>clearOnReturn: true</c> if the rows are sensitive.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	/// <returns>The lazy, single-use stream.</returns>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/returns"/>
+	/// <param name="pool">
+	/// The pool the buffers are rented from and returned to; not
+	/// <see langword="null"/> (that throws
+	/// <see cref="ArgumentNullException"/> at the call).
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToAsyncBufferStream(bool, CancellationToken)" path="/returns"/>
+	/// <param name="pool">
+	/// The pool the buffers are rented from and returned to; not
+	/// <see langword="null"/> (that throws
+	/// <see cref="ArgumentNullException"/> at the call).
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
+	/// </param>
+	/// <param name="clearOnReturn">
+	/// <see langword="true"/> clears the rows in each pooled buffer
+	/// before it is returned to the pool, as each chunk goes back, once the consumer is done with it (at the next <c>MoveNextAsync</c>, or when the enumeration ends or is disposed).
+	/// What is cleared: the rows the buffer holds (the used part,
+	/// never the rest of a larger array), of every type, value types
+	/// included.
+	/// Cost: the clear is off the read path, handed to an internal
+	/// background queue, so the read and the consumer do not wait for
+	/// it; it costs the background worker the time to clear the rows
+	/// (and nothing at all when <see langword="false"/>, the default
+	/// path, which never touches the queue).
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
+	/// <see langword="false"/> returns the buffers as they are (the
+	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
+	/// Security note: ODX returns arrays that contain your rows.
+	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
+	/// other code in the process can rent the same array later.
+	/// Pass <c>clearOnReturn: true</c> if the rows are sensitive.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, clearOnReturn, cancellationToken);
+
+	/// <summary>
+	/// Reads the query in a rolling stream of pooled arrays,
+	/// once, and yields the elements one by one.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// The same pipeline as
+	/// <see cref="ToAsyncBufferStream(bool, CancellationToken)"/>
+	/// (lazy, one consumer, a background producer, rolling pooled
+	/// chunks, a <c>break</c> or a dispose cancels the query),
+	/// but each chunk is flattened into its elements,
+	/// so there is no buffer to handle and the stream works with
+	/// <c>System.Linq.Async</c>.
+	/// Each element is copied out before it is yielded, so it has
+	/// no lifetime to mind.
+	/// The producer is unbounded, as for that stream: a slow consumer
+	/// lets chunks pile up in memory.
+	/// A second enumeration throws
+	/// <see cref="InvalidOperationException"/> at its first
+	/// <c>MoveNextAsync</c> (not at <c>GetAsyncEnumerator</c>).
+	/// </para>
+	/// <para>
+	/// Which one to use:
+	/// <see cref="ToAsyncBufferStream(bool, CancellationToken)"/> is
+	/// sequential, read-only access to the elements through the
+	/// buffers, without copying them twice, for raw speed and the
+	/// shortest connection time;
+	/// this method is the same, made easy, without buffers;
+	/// <see cref="ToAsyncBuffer(bool, CancellationToken)"/> is a
+	/// reusable, potentially indexable list to work with for a while.
+	/// </para>
+	/// <para>
+	/// Unlike the other terminals, the overload that uses the shared
+	/// pool has no default for <c>clearOnReturn</c>: you must decide.
+	/// The shared pool does not clear what it gets back, rows may be
+	/// sensitive, and whether to scrub them is the caller's decision
+	/// to make, not a default to be missed.
+	/// This is a deliberate exception.
+	/// With a pool of your own, <c>clearOnReturn</c> is optional (it defaults
+	/// to <see langword="false"/>).
+	/// </para>
+	/// </remarks>
+	/// <param name="clearOnReturn">
+	/// <see langword="true"/> clears the rows in each pooled buffer
+	/// before it is returned to the pool, as each chunk goes back, once the consumer is done with its elements (the chunk is released at the next chunk step, or when the enumeration ends or is disposed).
+	/// What is cleared: the rows the buffer holds (the used part,
+	/// never the rest of a larger array), of every type, value types
+	/// included.
+	/// Cost: the clear is off the read path, handed to an internal
+	/// background queue, so the read and the consumer do not wait for
+	/// it; it costs the background worker the time to clear the rows
+	/// (and nothing at all when <see langword="false"/>, the default
+	/// path, which never touches the queue).
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
+	/// <see langword="false"/> returns the buffers as they are (the
+	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
+	/// Security note: ODX returns arrays that contain your rows.
+	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
+	/// other code in the process can rent the same array later.
+	/// Pass <c>clearOnReturn: true</c> if the rows are sensitive.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	/// <returns>The lazy, single-use stream of elements.</returns>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/returns"/>
+	/// <param name="pool">
+	/// The pool the buffers are rented from and returned to; not
+	/// <see langword="null"/> (that throws
+	/// <see cref="ArgumentNullException"/> at the call).
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/summary"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="ToBufferedAsyncStream(bool, CancellationToken)" path="/returns"/>
+	/// <param name="pool">
+	/// The pool the buffers are rented from and returned to; not
+	/// <see langword="null"/> (that throws
+	/// <see cref="ArgumentNullException"/> at the call).
+	/// Each buffer is an <see cref="IMemoryOwner{T}"/> of that pool,
+	/// disposed when the rows are released. Array-backed memory is
+	/// filled directly; any other memory works through its span.
+	/// There is no finalizer: a forgotten owner of the shared pool is
+	/// just garbage-collected.
+	/// A custom pool must not throw from <c>Return</c>: if it does,
+	/// the exception propagates from the dispose, and the arrays not
+	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
+	/// </param>
+	/// <param name="clearOnReturn">
+	/// <see langword="true"/> clears the rows in each pooled buffer
+	/// before it is returned to the pool, as each chunk goes back, once the consumer is done with its elements (the chunk is released at the next chunk step, or when the enumeration ends or is disposed).
+	/// What is cleared: the rows the buffer holds (the used part,
+	/// never the rest of a larger array), of every type, value types
+	/// included.
+	/// Cost: the clear is off the read path, handed to an internal
+	/// background queue, so the read and the consumer do not wait for
+	/// it; it costs the background worker the time to clear the rows
+	/// (and nothing at all when <see langword="false"/>, the default
+	/// path, which never touches the queue).
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
+	/// <see langword="false"/> returns the buffers as they are (the
+	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
+	/// Security note: ODX returns arrays that contain your rows.
+	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
+	/// other code in the process can rent the same array later.
+	/// Pass <c>clearOnReturn: true</c> if the rows are sensitive.
+	/// </param>
+	/// <param name="cancellationToken">
+	/// Cancels the read: a consumer then sees the cancel after
+	/// what was already delivered.
+	/// </param>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, clearOnReturn, cancellationToken);
+
+	#endregion
 }
 
 /// <summary>A <see cref="MappedQuery{T}"/> with a pending skip; can still be limited with <see cref="Take(int)"/>.</summary>
@@ -1184,6 +1774,70 @@ public readonly record struct MappedQueryWithSkip<T>
 			.Channel;
 
 	#endregion
+
+	#region Buffer terminals
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(bool, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		bool clearOnDispose,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(
+			MemoryPool<T>.Shared, clearOnDispose, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, bool, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		bool clearOnDispose,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, clearOnDispose, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(bool, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, bool, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, bool, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, clearOnReturn, cancellationToken);
+
+	#endregion
 }
 
 /// <summary>A fully-configured <see cref="MappedQuery{T}"/> with a take (and any preceding skip); terminal-only.</summary>
@@ -1358,6 +2012,70 @@ public readonly record struct MappedQueryWithTake<T>
 		=> _core.Feed(
 			options, startImmediately, out readCount, cancellationToken)
 			.Channel;
+
+	#endregion
+
+	#region Buffer terminals
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(bool, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		bool clearOnDispose,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(
+			MemoryPool<T>.Shared, clearOnDispose, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, bool, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		bool clearOnDispose,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, clearOnDispose, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(bool, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, bool, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, bool, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, clearOnReturn, cancellationToken);
 
 	#endregion
 }

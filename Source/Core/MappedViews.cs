@@ -970,6 +970,70 @@ public readonly record struct MappedCommand<T>
 			.Channel;
 
 	#endregion
+
+	#region Buffer terminals
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(bool, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		bool clearOnDispose,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(
+			MemoryPool<T>.Shared, clearOnDispose, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, bool, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		bool clearOnDispose,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBuffer(pool, clearOnDispose, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(bool, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, bool, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToAsyncBufferStream(pool, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, false, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, bool, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
+		CancellationToken cancellationToken = default)
+		=> _core.ToBufferedAsyncStream(pool, clearOnReturn, cancellationToken);
+
+	#endregion
 }
 
 /// <summary>
