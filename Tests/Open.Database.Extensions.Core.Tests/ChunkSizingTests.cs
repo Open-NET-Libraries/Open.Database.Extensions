@@ -117,8 +117,7 @@ public static class ChunkSizingTests
 	[InlineData(2)]
 	public static async Task TheSmallestFirstSizes_KeepTheIndexerAndTheEnumeratorRight(
 		int first)
-	{
-		await WithSizes(first, 4096, async () =>
+		=> await WithSizes(first, 4096, async () =>
 		{
 			await using var buffer = Rows(100).ToAsyncBuffer(
 				clearOnDispose: false, Ct);
@@ -133,7 +132,6 @@ public static class ChunkSizingTests
 			Assert.Equal(Enumerable.Range(1, 100), viaForeach);
 			return 0;
 		});
-	}
 
 	[Fact]
 	public static async Task AStreamWithNoDoubling_HasEqualChunks()

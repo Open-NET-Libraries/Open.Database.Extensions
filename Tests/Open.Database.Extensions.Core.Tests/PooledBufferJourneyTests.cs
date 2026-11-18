@@ -631,8 +631,9 @@ public static class PooledBufferJourneyTests
 
 		Outcome o = await Drive(terminal, j, cts.Token).Within();
 
-		var cancel = Assert.IsAssignableFrom<OperationCanceledException>(
-			o.Error);
+		var cancel = Assert.IsType<OperationCanceledException>(
+			o.Error,
+			exactMatch: false);
 		Assert.Equal(cts.Token, cancel.CancellationToken);
 
 		// The rows read before the cancel come first, in order.
@@ -923,7 +924,9 @@ public static class PooledBufferJourneyTests
 
 		Outcome o = await Drive(terminal, j, cts.Token).Within();
 
-		Assert.IsAssignableFrom<OperationCanceledException>(o.Error);
+		Assert.IsType<OperationCanceledException>(
+			o.Error,
+			exactMatch: false);
 		Assert.Empty(o.Ids);
 		Assert.Empty(j.Connection.Log);
 		await j.AssertClean(executed: false);
@@ -1129,7 +1132,7 @@ public static class PooledBufferJourneyTests
 		using var j = Journey.Rows(3500);
 		var buffer = j.View.ToAsyncBuffer(j.Pool, Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
-		IEnumerator<ChannelRow> e = items.GetEnumerator();
+		var e = items.GetEnumerator();
 		for (int i = 0; i < 100; ++i) Assert.True(e.MoveNext());
 
 		// The owner disposes while the other layer is part-way.

@@ -379,7 +379,7 @@ public static class PooledBufferTests
 	public static async Task ReaderFault_IsThrown_AfterTheDeliveredChunks()
 	{
 		// The 30th read fails: 29 rows were read, in two chunks.
-		Run Faulty() => Run.Create(
+		static Run Faulty() => Run.Create(
 			() => new ChannelTestReader(40, failAtRow: 30));
 
 		var stream = Faulty().View.ToAsyncBufferStream(clearOnReturn: false, Ct);
@@ -390,8 +390,10 @@ public static class PooledBufferTests
 				async () =>
 				{
 					while (await e.MoveNextAsync().AsTask().Within())
+					{
 						chunks.Add(
 							[.. e.Current.ToArray().Select(r => r.Id)]);
+					}
 				});
 		}
 
@@ -457,7 +459,7 @@ public static class PooledBufferTests
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		// Created, and moved once, before the dispose.
-		IEnumerator<ChannelRow> e = items.GetEnumerator();
+		var e = items.GetEnumerator();
 		Assert.True(e.MoveNext());
 		ChannelRow[] copy = new ChannelRow[100];
 
@@ -832,7 +834,7 @@ public static class PooledBufferTests
 		var run = Run.Create(() => new ChannelTestReader(n));
 		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
-		IEnumerator<ChannelRow> e = items.GetEnumerator();
+		var e = items.GetEnumerator();
 		for (int i = 0; i < n; ++i) Assert.True(e.MoveNext());
 
 		// Nothing is left, and the buffer is disposed: not a quiet
@@ -1480,7 +1482,9 @@ public static class PooledBufferTests
 
 		readonly List<(int Start, int Length)> _given = [];
 		int _next;
+#pragma warning disable IDE0032 // an Interlocked counter needs a field
 		int _disposes;
+#pragma warning restore IDE0032
 
 		public int Rents => _given.Count;
 
@@ -1815,6 +1819,8 @@ public static class PooledBufferTests
 		await using var buffer = run.View.ToAsyncBuffer(
 			clearOnDispose: false, Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		// Deliberately the interface: Reset is an explicit member, and this
+		// is the boxed enumerator that foreach over IEnumerable<T> uses.
 		IEnumerator<ChannelRow> e = items.GetEnumerator();
 
 		// Before the first MoveNext and after the last, Current is the
@@ -1846,9 +1852,13 @@ public static class PooledBufferTests
 	sealed class FlakyMemoryPool : MemoryPool<ChannelRow>
 	{
 		readonly ArrayPool<ChannelRow> _inner = ArrayPool<ChannelRow>.Create();
+#pragma warning disable IDE0032 // an Interlocked counter needs a field
 		int _accesses;
+#pragma warning restore IDE0032
 		int _rents;
+#pragma warning disable IDE0032 // an Interlocked counter needs a field
 		int _disposes;
+#pragma warning restore IDE0032
 
 		public int ThrowAfter { get; set; } = int.MaxValue;
 
@@ -1971,7 +1981,9 @@ public static class PooledBufferTests
 	sealed class MixedPool : MemoryPool<ChannelRow>
 	{
 		int _rents;
+#pragma warning disable IDE0032 // an Interlocked counter needs a field
 		int _disposes;
+#pragma warning restore IDE0032
 
 		public int Rents => Volatile.Read(ref _rents);
 
@@ -2068,7 +2080,9 @@ public static class PooledBufferTests
 	{
 		readonly List<(int Start, int Length)> _given = [];
 		int _next = 5;
+#pragma warning disable IDE0032 // an Interlocked counter needs a field
 		int _disposes;
+#pragma warning restore IDE0032
 
 		public ChannelRow[] Backing { get; } = [.. Enumerable
 			.Range(0, 1 << 12)
@@ -2197,7 +2211,9 @@ public static class PooledBufferTests
 	sealed class FailingSpanPool : MemoryPool<ChannelRow>
 	{
 		int _rents;
+#pragma warning disable IDE0032 // an Interlocked counter needs a field
 		int _disposes;
+#pragma warning restore IDE0032
 
 		public int Rents => Volatile.Read(ref _rents);
 
