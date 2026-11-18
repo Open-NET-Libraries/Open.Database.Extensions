@@ -30,14 +30,17 @@ public static class ClearOnReturnTests
 	const BindingFlags Internal
 		= BindingFlags.Static | BindingFlags.NonPublic;
 
-	static int Posts
-		=> (int)Bin.GetProperty("Posts", Internal)!.GetValue(null)!;
+	static int _hookCalls;
+
+	internal static void CountPost()
+		=> Interlocked.Increment(ref _hookCalls);
 
 	static void Post(Action action)
 		=> Bin.GetMethod("Post", Internal)!.Invoke(null, [action]);
 
-	// Makes the bin answer every post with "Full" or "Closed", or back
-	// to normal with null.
+	// Makes the bin answer every post with "Full", or throw ("Throw"),
+	// or count the posts and answer "Full" ("Count"), or back to normal
+	// with null.
 	static void SetHook(string? result)
 	{
 		FieldInfo field = Bin.GetField("Hook", Internal)!;
@@ -52,13 +55,28 @@ public static class ClearOnReturnTests
 			BindingFlags.NonPublic)!;
 		Type hookType = typeof(Func<,>)
 			.MakeGenericType(typeof(Action), outcome);
-		Delegate hook = Expression
-			.Lambda(
-				hookType,
-				Expression.Constant(Enum.Parse(outcome, result), outcome),
-				Expression.Parameter(typeof(Action)))
-			.Compile();
-		field.SetValue(null, hook);
+		ParameterExpression action = Expression.Parameter(typeof(Action));
+		Expression full = Expression.Constant(
+			Enum.Parse(outcome, "Full"), outcome);
+		Expression body = result switch
+		{
+			"Throw" => Expression.Block(
+				outcome,
+				Expression.Throw(
+					Expression.New(typeof(InvalidOperationException))),
+				full),
+			"Count" => Expression.Block(
+				Expression.Call(
+					typeof(ClearOnReturnTests)
+						.GetMethod(
+							nameof(CountPost),
+							Internal)!),
+				full),
+			_ => full,
+		};
+		field.SetValue(
+			null,
+			Expression.Lambda(hookType, body, action).Compile());
 	}
 
 	// ---- rigs ---------------------------------------------------------------
@@ -138,19 +156,52 @@ public static class ClearOnReturnTests
 	[Theory, MemberData(nameof(Terminals))]
 	public static async Task TheDefaultPath_NeverPostsToTheBin(string terminal)
 	{
-		int before = Posts;
 		var pool = new CountingPool<ChannelRow>();
-
-		Assert.Equal(
-			100,
-			await ReadAll(terminal, Rows(100), pool, clear: false));
-		Assert.Equal(
-			100,
-			await ReadAll(
-				terminal, Rows(100), MemoryPool<ChannelRow>.Shared, false));
+		int before = Volatile.Read(ref _hookCalls);
+		SetHook("Count");
+		try
+		{
+			Assert.Equal(
+				100,
+				await ReadAll(terminal, Rows(100), pool, clear: false));
+			Assert.Equal(
+				100,
+				await ReadAll(
+					terminal,
+					Rows(100),
+					MemoryPool<ChannelRow>.Shared,
+					false));
+		}
+		finally
+		{
+			SetHook(null);
+		}
 
 		AssertBalanced(pool);
-		Assert.Equal(before, Posts);
+		Assert.Equal(before, Volatile.Read(ref _hookCalls));
+	}
+
+	// The counting hook does count: an opt-in read posts to the bin.
+	[Fact]
+	public static async Task TheCountingHook_SeesAnOptInRead()
+	{
+		var pool = RowPool();
+		int before = Volatile.Read(ref _hookCalls);
+		SetHook("Count");
+		try
+		{
+			await ReadAll("stream", Rows(100), pool, true);
+		}
+		finally
+		{
+			SetHook(null);
+		}
+
+		Assert.True(Volatile.Read(ref _hookCalls) > before);
+
+		// "Count" answers Full: the clears ran inline.
+		AssertBalanced(pool);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	// ---- opting in: every returned array is clean ---------------------------
@@ -261,26 +312,25 @@ public static class ClearOnReturnTests
 		}
 	}
 
+	// Whatever goes wrong posting, the caller clears inline.
 	[Theory, MemberData(nameof(Terminals))]
-	public static async Task AClosedBin_DropsTheArrays_NeverReturnsThemDirty(
-		string terminal)
+	public static async Task ABinThatThrows_ClearsInline(string terminal)
 	{
 		var pool = RowPool();
-		SetHook("Closed");
+		SetHook("Throw");
 		try
 		{
 			Assert.Equal(
 				100,
 				await ReadAll(terminal, Rows(100), pool, true));
-
-			Assert.Equal(0, pool.Returns);
-			Assert.Equal(0, pool.DirtyReturns);
-			Assert.Equal(pool.Rents, pool.Outstanding);
 		}
 		finally
 		{
 			SetHook(null);
 		}
+
+		AssertBalanced(pool);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	// ---- the bin survives bad actions ---------------------------------------
@@ -409,6 +459,42 @@ public static class ClearOnReturnTests
 		await Until(() => pool.Outstanding == 0, "the arrays back");
 		AssertBalanced(pool);
 		Assert.Equal(0, pool.DirtyReturns);
+	}
+
+	// ---- the loop does not keep the first poster's context -------------------
+
+	static WeakReference PostWithALocal(
+		AsyncLocal<object?> local,
+		TaskCompletionSource<object?> seen)
+	{
+		object marker = new();
+		local.Value = marker;
+		Post(() => seen.TrySetResult(local.Value));
+		return new WeakReference(marker);
+	}
+
+	[Fact]
+	public static async Task ABinAction_DoesNotSeeThePostersAsyncLocal()
+	{
+		var local = new AsyncLocal<object?>();
+		TaskCompletionSource<object?> seen = new(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+
+		WeakReference weak = PostWithALocal(local, seen);
+		local.Value = null;
+
+		// The loop runs without the context of whoever started it or
+		// posted: the action sees no value.
+		Assert.Null(await seen.Task.Within());
+
+		// And nothing keeps the value alive.
+		for (int i = 0; i < 3; ++i)
+		{
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+		}
+
+		Assert.False(weak.IsAlive);
 	}
 
 	// ---- the overloads bind -------------------------------------------------

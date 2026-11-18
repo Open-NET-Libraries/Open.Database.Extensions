@@ -1173,10 +1173,8 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full the clear runs inline instead, and if
-	/// the queue cannot take the work at all the array is dropped to
-	/// the garbage collector: a dirty array is never returned to the
-	/// pool.
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// Security note: ODX returns arrays that contain your rows.
@@ -1243,10 +1241,8 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full the clear runs inline instead, and if
-	/// the queue cannot take the work at all the array is dropped to
-	/// the garbage collector: a dirty array is never returned to the
-	/// pool.
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// Security note: ODX returns arrays that contain your rows.
@@ -1329,10 +1325,8 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full the clear runs inline instead, and if
-	/// the queue cannot take the work at all the array is dropped to
-	/// the garbage collector: a dirty array is never returned to the
-	/// pool.
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// Security note: ODX returns arrays that contain your rows.
@@ -1399,10 +1393,8 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full the clear runs inline instead, and if
-	/// the queue cannot take the work at all the array is dropped to
-	/// the garbage collector: a dirty array is never returned to the
-	/// pool.
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// Security note: ODX returns arrays that contain your rows.
@@ -1473,10 +1465,8 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full the clear runs inline instead, and if
-	/// the queue cannot take the work at all the array is dropped to
-	/// the garbage collector: a dirty array is never returned to the
-	/// pool.
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// Security note: ODX returns arrays that contain your rows.
@@ -1543,10 +1533,8 @@ public readonly record struct MappedQuery<T>
 	/// it; it costs the background worker the time to clear the rows
 	/// (and nothing at all when <see langword="false"/>, the default
 	/// path, which never touches the queue).
-	/// If the queue is full the clear runs inline instead, and if
-	/// the queue cannot take the work at all the array is dropped to
-	/// the garbage collector: a dirty array is never returned to the
-	/// pool.
+	/// If the queue is full, or cannot take the work, the clear runs
+	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
 	/// Security note: ODX returns arrays that contain your rows.

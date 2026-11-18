@@ -29,8 +29,8 @@ namespace Open.Database.Extensions.Core;
 // leftover on a cancel or a fault) is cleared too, because it holds rows.
 // The shared pool does not clear what it gets back and other code can
 // rent the array next, so a dirty array is NEVER returned to a pool:
-// the bin posts it; if the bin is saturated the clear runs inline; if the
-// bin cannot take it the array is dropped to the garbage collector.
+// the bin posts it, and if the bin cannot take it (saturated, or anything
+// went wrong) the clear runs inline.
 //
 // Ownership: an owner is released exactly once, by whoever holds it
 // last (the buffer's ReleaseAll, the stream's next step or drain, or
@@ -96,14 +96,12 @@ file sealed class DeferredClearOwner<T>(IMemoryOwner<T> inner)
 
 		switch (RecycleBin.Post(() => ClearAndDispose(owner)))
 		{
-			// The bin is saturated: clear here, never wait for it.
+			// The bin cannot take it: clear here, never wait for it.
 			case RecycleBin.PostResult.Full:
 				ClearAndDispose(owner);
 				break;
 
 			// Posted: the bin runs it.
-			// Closed: the array is dropped to the garbage collector,
-			// never returned dirty.
 		}
 	}
 
