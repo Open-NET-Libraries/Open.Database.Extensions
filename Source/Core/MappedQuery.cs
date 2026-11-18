@@ -1126,8 +1126,8 @@ public readonly record struct MappedQuery<T>
 	/// <c>MoveNextAsync</c> or the end of the enumeration,
 	/// when its array goes back to the pool:
 	/// copy what you keep.
-	/// Nothing guards a memory held longer (it then reads cleared or
-	/// reused rows), so do not buffer the chunks themselves, for
+	/// Nothing guards a memory held longer (it then reads rows
+	/// that were reused), so do not buffer the chunks themselves, for
 	/// example with <c>ToListAsync</c> or <c>Buffer</c>.
 	/// An enumerator that is never disposed never returns its arrays
 	/// (there is no finalizer): they go to the garbage collector.
@@ -1213,6 +1213,11 @@ public readonly record struct MappedQuery<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1236,6 +1241,11 @@ public readonly record struct MappedQuery<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1259,6 +1269,11 @@ public readonly record struct MappedQuery<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1480,6 +1495,11 @@ public readonly record struct MappedQueryWithSkip<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1503,6 +1523,11 @@ public readonly record struct MappedQueryWithSkip<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1526,6 +1551,11 @@ public readonly record struct MappedQueryWithSkip<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1744,6 +1774,11 @@ public readonly record struct MappedQueryWithTake<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1767,6 +1802,11 @@ public readonly record struct MappedQueryWithTake<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
@@ -1790,6 +1830,11 @@ public readonly record struct MappedQueryWithTake<T>
 	/// filled directly; any other memory works through its span.
 	/// There is no finalizer: a forgotten owner of the shared pool is
 	/// just garbage-collected.
+	/// Nothing is cleared when a buffer goes back (the BCL default):
+	/// with the default pool a row can stay reachable through a pooled
+	/// array until it is overwritten or the pool trims it.
+	/// To scrub the rows, pass a <see cref="MemoryPool{T}"/> whose
+	/// owners clear their memory in <c>Dispose</c>.
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.

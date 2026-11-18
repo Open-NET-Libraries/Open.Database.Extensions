@@ -1165,18 +1165,71 @@ public static class PooledBufferTests
 	}
 
 	[Fact]
-	public static async Task Release_ClearsTheRows_OfAReferenceType()
+	public static async Task Release_DoesNotClearByDefault()
 	{
 		var pool = new CountingPool<ChannelRow>();
 		var run = Rows100();
 		var buffer = run.View.ToAsyncBuffer(pool, Ct);
 		await buffer.Items.Within();
-
-		// Held, the arrays hold the rows; disposed, they are cleared.
-		Assert.All(pool.Captured, a => Assert.NotNull(a[0]));
 		await buffer.DisposeAsync();
 
-		Assert.All(pool.Captured, a => Assert.All(a, r => Assert.Null(r)));
+		// The BCL default: the arrays went back with the rows in them.
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(1, pool.Captured[0][0].Id);
+		Assert.All(pool.Captured, a => Assert.NotNull(a[0]));
+	}
+
+	// The recipe the pool parameter's docs give: a pool whose owners
+	// clear on Dispose scrubs the rows.
+	sealed class ClearingPool<T>(MemoryPool<T> inner) : MemoryPool<T>
+	{
+		public override int MaxBufferSize
+			=> inner.MaxBufferSize;
+
+		public override IMemoryOwner<T> Rent(int minBufferSize = -1)
+			=> new ClearingOwner(inner.Rent(minBufferSize));
+
+		protected override void Dispose(bool disposing) { }
+
+		sealed class ClearingOwner(IMemoryOwner<T> host)
+			: IMemoryOwner<T>
+		{
+			public Memory<T> Memory
+				=> host.Memory;
+
+			public void Dispose()
+			{
+				host.Memory.Span.Clear();
+				host.Dispose();
+			}
+		}
+	}
+
+	[Fact]
+	public static async Task AClearingPool_ScrubsTheRows_OnEveryPath()
+	{
+		var counting = new CountingPool<ChannelRow>();
+		var pool = new ClearingPool<ChannelRow>(counting);
+		var run = Rows100();
+
+		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+		await buffer.Items.Within();
+		Assert.All(counting.Captured, a => Assert.NotNull(a[0]));
+		await buffer.DisposeAsync();
+		Assert.All(
+			counting.Captured,
+			a => Assert.All(a, r => Assert.Null(r)));
+
+		var counting2 = new CountingPool<ChannelRow>();
+		var pool2 = new ClearingPool<ChannelRow>(counting2);
+		await foreach (var _ in Rows100().View
+			.ToAsyncBufferStream(pool2, Ct)) { }
+
+		Assert.True(counting2.Rents > 0);
+		Assert.Equal(counting2.Rents, counting2.Returns);
+		Assert.All(
+			counting2.Captured,
+			a => Assert.All(a, r => Assert.Null(r)));
 	}
 
 	[Fact]
@@ -1200,7 +1253,7 @@ public static class PooledBufferTests
 	}
 
 	[Fact]
-	public static void Release_ClearsOnlyReferenceTypes()
+	public static void Release_JustDisposesTheOwner()
 	{
 		var pool = new CountingPool<string>();
 		IMemoryOwner<string> owner = pool.Rent(4);
@@ -1208,7 +1261,7 @@ public static class PooledBufferTests
 
 		Release(owner);
 
-		Assert.Null(pool.Captured[0][0]);
+		Assert.Equal("a", pool.Captured[0][0]);
 		Assert.Equal(1, pool.Returns);
 	}
 

@@ -1,9 +1,8 @@
 namespace Open.Database.Extensions.Core;
 
 // The unit of every chunk is an IMemoryOwner<T> rented from the pool:
-// exactly the rows of one buffer. Releasing it clears the rows (for
-// types that hold references) and disposes it, which returns the
-// buffer to its pool (see MemoryOwnerExtensions).
+// exactly the rows of one buffer. Releasing it disposes it, which
+// returns the buffer to its pool (see MemoryOwnerExtensions).
 
 /// <summary>Where the producer hands its chunks.</summary>
 internal interface IChunkTarget<T>
