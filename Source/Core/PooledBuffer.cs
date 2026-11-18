@@ -96,10 +96,11 @@ namespace Open.Database.Extensions;
 /// from <see cref="Dispose"/> when the read had already finished;
 /// from <see cref="Dispose"/> while the read is still running it
 /// ends in the producer's task, which nobody observes.
-/// In every case the arrays not yet returned stay with the garbage
-/// collector.
+/// Without clearing, in every case the arrays not yet returned stay
+/// with the garbage collector.
 /// With clearing on, a <c>Return</c> that throws inside the
-/// background queue is swallowed there. When the queue is full the
+/// background queue is swallowed there and costs only that array. When
+/// the queue is full the
 /// buffer is discarded instead (never cleared, never returned), so a
 /// custom pool must tolerate an owner that is never disposed.
 /// While an array sits in the pool, or in a buffer that is not
@@ -118,7 +119,8 @@ namespace Open.Database.Extensions;
 /// are cleared as the arrays go back to the pool, and that happens
 /// when the buffer, or the <see cref="PooledArray{T}"/> view of it,
 /// is disposed (not when the read completes). The clear is off the
-/// caller's path, on an internal background queue.
+/// caller's path, on an internal background queue. (If that queue is
+/// ever full, the buffer is discarded instead.)
 /// </para>
 /// <para>
 /// Disposing the buffer while it is still reading cancels the query,

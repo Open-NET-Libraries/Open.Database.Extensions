@@ -55,7 +55,8 @@ namespace Open.Database.Extensions.Core;
 //   its rows through the recycle bin (see MemoryOwnerExtensions). It
 //   wraps before the Publish attempt, so a chunk the target refuses,
 //   and the partial chunk sealed on a cancel or a fault, are cleared
-//   too: they hold rows. Nothing on the consumer's side knows.
+//   too (when the bin takes them; a full bin discards them): they hold
+//   rows. Nothing on the consumer's side knows.
 // - The memory a pool returns must be at least the capacity asked for.
 //   Advance checks it once per chunk, and a pool that gives less breaks
 //   its contract: the rented owner is disposed and the read fails with
@@ -317,7 +318,8 @@ internal sealed class ChunkProducer<T>(
 
 		// The writer decides: with clearing on, every chunk it makes is
 		// wrapped here, before any Publish, so a refused or leftover chunk
-		// (released on a cancel, a fault or at Seal) is cleared too.
+		// (released on a cancel, a fault or at Seal) is cleared too, like any
+		// other (when the bin takes it).
 		if (clear) owner = owner.ClearOnDispose();
 		_owner = null;
 		_array = null;

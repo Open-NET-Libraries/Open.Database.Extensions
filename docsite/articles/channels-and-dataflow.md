@@ -12,7 +12,7 @@ The packages work on expressive commands, on `IDbCommand` and on readers, and ma
 
 ## Streaming from a mapped query
 
-The channel terminals on the typed views (`ToChannelReader()` and `ToChannel()`) left Core in 11.0.0-rc.8. They will come back in the Channel library. Until then, the buffer streams do the same job with a shorter connection time, and they are in the core package.
+The channel terminals on the typed views (`ToChannelReader()` and `ToChannel()`) left Core in 11.0.0-rc.8. They are planned to come back in the Channel library. Until then, the buffer streams do the same job with a shorter connection time, and they are in the core package.
 
 A stream earns its place when a producer and its consumer run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows at database speed on a background task, in chunks, and is finished with the connection as soon as the last row is read. The consumer does the slow work (a web call, a file write, a transform) while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`.
 
@@ -44,7 +44,7 @@ Iterating the query directly (the `ReadAsync` handler) holds the connection for 
 
 ### What it costs
 
-The producer is unbounded. It never waits for the consumer, so the read finishes at full speed and frees the connection, while memory grows with the backlog of a slow consumer. A bounded channel would cap the memory, but only by holding the connection at the consumer's pace, so the bounded forms will come back in the Channel library under their own names.
+The producer is unbounded. It never waits for the consumer, so the read finishes at full speed and frees the connection, while memory grows with the backlog of a slow consumer. A bounded channel would cap the memory, but only by holding the connection at the consumer's pace, so the bounded forms are planned for the Channel library, under their own names.
 
 ## Channels
 

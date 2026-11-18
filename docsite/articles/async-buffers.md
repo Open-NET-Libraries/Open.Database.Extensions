@@ -60,7 +60,7 @@ The connection was released when the read ended, however long the serialization 
 
 `Items` faults with the read's exception. It is cancelled when the read ended with an `OperationCanceledException` of any origin, or when the buffer was disposed first. See [Cancellation and disposal](#cancellation-and-disposal).
 
-The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool. After that every member of the view throws `ObjectDisposedException`, an enumeration in progress included. Disposing while the read is still running cancels the query.
+The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool. After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included. Disposing again does nothing. Disposing while the read is still running cancels the query.
 
 ## The streams
 
@@ -104,7 +104,7 @@ Pass the flag for sensitive rows:
 - For a buffer, the clear takes effect when the buffer, or its `PooledArray<T>` view, is disposed. For a stream, it takes effect as each chunk goes back: at the next step, or when the enumeration ends or is disposed.
 - The clear runs on one background loop, off the read path. Neither the read nor the consumer waits for it.
 - If 10,240 clears are ever waiting, something is wrong, and further buffers are discarded to the garbage collector: not cleared, and not returned to the pool. A dirty array never reaches a pool. It costs the pool one array, which it allocates again.
-- A custom pool must therefore tolerate an owner that is never disposed. It must not throw from `Return`, either. If it does, the arrays not yet returned stay with the garbage collector.
+- A custom pool must therefore tolerate an owner that is never disposed. It must not throw from `Return`, either. Without clearing, an exception stops the release and the arrays not yet returned stay with the garbage collector. With clearing, one that throws costs only that array.
 
 ## Cancellation and disposal
 
@@ -124,7 +124,7 @@ Chunks start at 16 rows and double: 16, 32, 64 and so on. A buffer keeps doublin
 
 ## What it costs
 
-The numbers come from a synthetic provider on net11, not from a real database, and they are one run each.
+The numbers come from a synthetic provider on net11, not from a real database, and they are one run each. The figure and the simulated-link numbers were measured with `AsyncReads()` on for every variant, so the refill waits are real awaits; with the default `Read()` the buffer and `ToArrayAsync` held the reader 5.26 and 5.23 ms at a 50 µs refill. The refill timer busy-waits on one of the four cores the run used, so the overlap ran on about three.
 
 - Reader-open time stays flat as the consumer slows. For the chunk stream at 10,000 rows it was 6.29, 6.27 and 6.21 ms for the three consumers in the figure above.
 - On a simulated link it is within a few percent of `ToArrayAsync`. At a 50 µs refill the buffer held the reader 6.27 ms and `ToArrayAsync` 6.29 ms.

@@ -27,14 +27,16 @@ namespace Open.Database.Extensions.Core;
 // calls Dispose; the wrapper posts "clear the rows, then dispose the
 // real owner" to the recycle bin. So the consumer side has no flag and
 // no extra code, and a chunk that never reaches a consumer (refused,
-// leftover on a cancel or a fault) is cleared too, because it holds rows.
+// leftover on a cancel or a fault) goes through the same wrapper,
+// because it holds rows.
 // The shared pool does not clear what it gets back and other code can
 // rent the array next, so a dirty array is NEVER returned to a pool:
 // the bin posts it, and if the bin cannot take it (saturated, or anything
 // went wrong) the owner is DISCARDED: neither cleared nor returned, it is
-// left to the GC. That costs the pool one array (it allocates another),
-// and holds only for owners that need no Dispose (the shared pool's are
-// array-backed); a custom pool must tolerate an owner never disposed.
+// left to the GC. For the shared pool (array-backed owners) that costs
+// one future allocation. An owner that holds unmanaged memory, or a slot
+// in a free list, would never be released, so a custom pool must
+// tolerate an owner that is never disposed.
 //
 // Ownership: an owner is released exactly once, by whoever holds it
 // last (the buffer's ReleaseAll, the stream's next step or drain, or

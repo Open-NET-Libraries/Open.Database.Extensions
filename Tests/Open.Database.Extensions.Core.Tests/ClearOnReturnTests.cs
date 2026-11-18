@@ -11,7 +11,7 @@ namespace Open.Database.Extensions.Tests;
 // the rows are cleared as each buffer goes back to the pool, off the
 // read path, through the internal recycle bin.
 // All the tests that opt in live in this one class: they share the bin
-// (a process-wide static), one of them blocks it, and one of them sets
+// (a process-wide static), one of them blocks it, and some of them set
 // its test hook, so they must not run beside each other. Everything else
 // in the suite passes false and never touches the bin.
 [ExcludeFromCodeCoverage]
@@ -310,6 +310,11 @@ public static class ClearOnReturnTests
 			Assert.Equal(0, pool.Returns);
 			Assert.Equal(0, pool.DirtyReturns);
 			Assert.True(Discarded() > before);
+
+			// Discarded, not cleared: the rows are still in the arrays.
+			Assert.Equal(
+				0,
+				pool.Captured.Sum(a => a.Count(r => r is null)));
 		}
 		finally
 		{
@@ -323,6 +328,7 @@ public static class ClearOnReturnTests
 		string terminal)
 	{
 		var pool = RowPool();
+		long before = Discarded();
 		SetHook("Throw");
 		try
 		{
@@ -338,6 +344,7 @@ public static class ClearOnReturnTests
 		Assert.True(pool.Rents > 0, "nothing was rented");
 		Assert.Equal(0, pool.Returns);
 		Assert.Equal(0, pool.DirtyReturns);
+		Assert.True(Discarded() > before);
 	}
 
 	// ---- the bin survives bad actions ---------------------------------------
