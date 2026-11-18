@@ -8,6 +8,7 @@ namespace Open.Database.Extensions.Core;
 internal readonly struct ChunkSink<T>(ChunkProducer<T> producer)
 	: IRowSink<T>
 {
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public void Add(T item)
 		=> producer.Add(item);
 }

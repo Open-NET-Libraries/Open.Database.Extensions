@@ -91,8 +91,19 @@ internal sealed class ChunkProducer<T>(
 		= CancellationTokenSource.CreateLinkedTokenSource(caller);
 
 	IMemoryOwner<T>? _owner;
+
+	// The hot path of Add: the buffer being filled, as a window over the
+	// array behind its memory. _next is the next free slot (an absolute
+	// index into _array) and _limit one past the last slot of this
+	// buffer: Add is one compare, one store and one increment, and the
+	// slow path (a full or a missing buffer, or memory that is not an
+	// array, for which _limit is 0) is a separate method.
 	T[]? _array;
 	int _offset;
+	int _next;
+	int _limit;
+
+	// Rows so far, when the buffer is NOT array-backed (see Filled).
 	int _count;
 	int _index;
 	int _capacity;
@@ -196,18 +207,36 @@ internal sealed class ChunkProducer<T>(
 
 	// One row, from the read loop (through ChunkSink): straight into the
 	// array behind the current buffer's memory (the shared pool's memory
-	// is an array); a memory that is not an array goes through its span.
-	// No enumerator, no allocation: the same loop ToArrayAsync uses.
+	// is an array). No enumerator, no allocation: the same loop
+	// ToArrayAsync uses, with the buffer's bounds held in two fields.
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	internal void Add(T row)
 	{
-		if (_owner is null || _count == _capacity) Advance();
+		int next = _next;
+		if (next < _limit)
+		{
+			_array![next] = row;
+			_next = next + 1;
+			return;
+		}
+
+		AddSlow(row);
+	}
+
+	// How many rows the buffer being filled holds.
+	int Filled
+		=> _array is not null ? _next - _offset : _count;
+
+	// A full buffer, no buffer yet, or memory that is not an array (it
+	// goes through its span).
+	void AddSlow(T row)
+	{
+		if (_owner is null || Filled == _capacity) Advance();
 
 		if (_array is not null)
-			_array[_offset + _count] = row;
+			_array[_next++] = row;
 		else
-			_owner!.Memory.Span[_count] = row;
-
-		++_count;
+			_owner!.Memory.Span[_count++] = row;
 	}
 
 	// Hands the full buffer on and rents the next one.
@@ -244,6 +273,7 @@ internal sealed class ChunkProducer<T>(
 
 		_owner = owner;
 
+		_count = 0;
 		if (MemoryMarshal.TryGetArray<T>(
 			owner.Memory,
 			out ArraySegment<T> segment)
@@ -251,11 +281,15 @@ internal sealed class ChunkProducer<T>(
 		{
 			_array = segment.Array;
 			_offset = segment.Offset;
+			_next = _offset;
+			_limit = _offset + _capacity;
 		}
 		else
 		{
 			_array = null;
 			_offset = 0;
+			_next = 0;
+			_limit = 0;
 		}
 	}
 
@@ -263,7 +297,7 @@ internal sealed class ChunkProducer<T>(
 	// (the same owner when the pool gave exactly that).
 	IMemoryOwner<T> Take()
 	{
-		IMemoryOwner<T> owner = _owner!.Slice(_count);
+		IMemoryOwner<T> owner = _owner!.Slice(Filled);
 
 		// The writer decides: with clearing on, every chunk it makes is
 		// wrapped here, before any Publish, so a refused or leftover chunk
@@ -272,6 +306,8 @@ internal sealed class ChunkProducer<T>(
 		_owner = null;
 		_array = null;
 		_offset = 0;
+		_next = 0;
+		_limit = 0;
 		_count = 0;
 		return owner;
 	}
@@ -283,7 +319,7 @@ internal sealed class ChunkProducer<T>(
 
 		// Advance runs just before a row is stored: an open buffer
 		// always holds at least one row.
-		Debug.Assert(_count > 0);
+		Debug.Assert(Filled > 0);
 		IMemoryOwner<T> last = Take();
 		if (!target.Publish(last)) last.Release();
 	}
