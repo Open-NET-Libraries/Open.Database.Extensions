@@ -13,9 +13,10 @@ namespace Open.Database.Extensions.Core;
 // and released.
 //
 // Why Release exists.
-// It is the one place an owner is let go, and it is only Dispose. NOTHING
-// is cleared on the consumer's side: a clear on the read path costs tens
-// of percent when the consumer does little.
+// It is the one place a buffer is let go, and it is only Dispose (it is
+// called Release so the sites read alike). NOTHING is cleared on the
+// consumer's side: a clear there would run on the read path, where the
+// consumer would wait for it.
 //
 // Why ClearOnDispose exists.
 // When the caller asked for clearing (clearOnReturn / clearOnDispose:

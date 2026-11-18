@@ -10,13 +10,15 @@ namespace Open.Database.Extensions;
 // not readable while it fills: the rows are reachable only through the
 // completed view (Items); overlapping reads are the stream terminals.
 //
-// There is no lock. Four fields are shared, each with one rule:
+// There is no lock. These fields are shared, each with one rule:
 // - _chunks and _total are written only by the producer (Publish), and
 //   read by others only after _done is set, which publishes them.
 // - _error is written once, before _done is set.
 // - _done is set by Finish with an Interlocked.Exchange (a full fence).
 // - _disposed is set by Dispose with an Interlocked.Exchange: the
 //   dispose-once guard.
+// - _items (the Items task source) is published with a CompareExchange:
+//   see Items, below.
 // Finish and Dispose each set their flag, THEN read the other's. With
 // full fences on both writes, at least one of them sees the other's
 // flag, so the arrays are always released by someone; both may see it,
@@ -45,8 +47,12 @@ namespace Open.Database.Extensions;
 // producer might still write) comes before promptness. So a dispose
 // waits for the provider call in progress (the execute, or a read) to
 // return; a provider that ignores the cancel token delays it by that
-// call. The producer checks the token after every row, so it stops at
-// the next row after that.
+// call. After that the producer stops at the next chunk boundary at the
+// latest: the read loop checks the token per row in the default Read
+// mode, the provider does in ReadAsync mode, and the producer itself
+// checks once per chunk. So with AsyncReads() and a provider that
+// ignores the token, a dispose or a cancel is seen at the next chunk
+// (a buffer's chunks double: up to the rows of the current chunk).
 // A caller's own cancel is the opposite: it is NOT swallowed. Finish
 // stores it, and Items is cancelled with the caller's token.
 //
@@ -92,6 +98,12 @@ namespace Open.Database.Extensions;
 /// ends in the producer's task, which nobody observes.
 /// In every case the arrays not yet returned stay with the garbage
 /// collector.
+/// With clearing on, a <c>Return</c> that throws inside the
+/// background queue is swallowed there, and one that runs inline
+/// (the queue was full) propagates as above: the load of the queue
+/// decides which.
+/// While an array sits in the pool, or in a buffer that is not
+/// disposed, every reference-type row in it stays reachable.
 /// They are returned to the pool when the buffer is disposed,
 /// and not before: every <see cref="PooledArray{T}"/> it hands out
 /// is valid until then.
@@ -162,6 +174,10 @@ public sealed class PooledBuffer<T>
 	/// or when the buffer was disposed first.
 	/// Disposing the <see cref="PooledArray{T}"/> it returns
 	/// disposes this buffer.
+	/// In a narrow race, when a dispose lands just as the read
+	/// completes, the task can still complete successfully; every
+	/// member of the view then throws
+	/// <see cref="ObjectDisposedException"/>.
 	/// </remarks>
 	/// <exception cref="ObjectDisposedException">
 	/// The buffer is disposed.
@@ -219,7 +235,8 @@ public sealed class PooledBuffer<T>
 	/// delays it by that call.
 	/// Does not throw for a well-behaved pool; for a pool whose
 	/// <c>Return</c> throws, see the remarks of the class.
-	/// Calling it again does nothing.
+	/// Calling it again does nothing (it throws again if a pool's
+	/// <c>Return</c> threw the first time).
 	/// After it, <see cref="Items"/> throws
 	/// <see cref="ObjectDisposedException"/>.
 	/// </remarks>

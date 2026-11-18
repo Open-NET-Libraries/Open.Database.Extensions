@@ -27,9 +27,11 @@ namespace Open.Database.Extensions.Core;
 // - Task.Factory.StartNew(..., TaskScheduler.Current).Unwrap(), not
 //   Task.Run: the producer runs on the AMBIENT scheduler (a design
 //   decision). RunAsync is async, so StartNew returns a Task<Task>,
-//   which is unwrapped. DenyChildAttach only stops tasks created by
-//   the read from attaching to this one; it is detached anyway,
-//   because AttachedToParent is not given.
+//   which is unwrapped. DenyChildAttach makes a child task that the
+//   read creates with AttachedToParent NOT attach to the producer's
+//   task (its completion would otherwise wait for the child). The
+//   producer's own task is detached because it is not created with
+//   AttachedToParent.
 //   Consequence: on a single-thread scheduler, the producer's first
 //   step (everything up to the first real await, which for a
 //   provider that completes synchronously can be the whole read)
@@ -111,12 +113,22 @@ internal sealed class ChunkProducer<T>(
 
 		// StartNew plus Unwrap, not Task.Run: it keeps
 		// TaskScheduler.Current (RunAsync is async: unwrap the Task<Task>).
-		return Task.Factory.StartNew(
-			RunAsync,
-			CancellationToken.None,
-			TaskCreationOptions.DenyChildAttach,
-			TaskScheduler.Current)
-			.Unwrap();
+		// A scheduler that throws when queueing leaves nothing started, so
+		// the source is disposed here and the exception goes to the caller.
+		try
+		{
+			return Task.Factory.StartNew(
+				RunAsync,
+				CancellationToken.None,
+				TaskCreationOptions.DenyChildAttach,
+				TaskScheduler.Current)
+				.Unwrap();
+		}
+		catch
+		{
+			_linked.Dispose();
+			throw;
+		}
 	}
 
 	/// <summary>Cancels the query. Never throws.</summary>

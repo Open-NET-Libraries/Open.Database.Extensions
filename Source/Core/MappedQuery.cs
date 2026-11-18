@@ -1177,6 +1177,8 @@ public readonly record struct MappedQuery<T>
 	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
 	/// Security note: ODX returns arrays that contain your rows.
 	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
 	/// other code in the process can rent the same array later.
@@ -1206,6 +1208,9 @@ public readonly record struct MappedQuery<T>
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read: a consumer then sees the cancel after
@@ -1229,6 +1234,9 @@ public readonly record struct MappedQuery<T>
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
 	/// </param>
 	/// <param name="clearOnDispose">
 	/// <see langword="true"/> clears the rows in each pooled buffer
@@ -1245,6 +1253,8 @@ public readonly record struct MappedQuery<T>
 	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
 	/// Security note: ODX returns arrays that contain your rows.
 	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
 	/// other code in the process can rent the same array later.
@@ -1329,6 +1339,8 @@ public readonly record struct MappedQuery<T>
 	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
 	/// Security note: ODX returns arrays that contain your rows.
 	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
 	/// other code in the process can rent the same array later.
@@ -1358,6 +1370,9 @@ public readonly record struct MappedQuery<T>
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read: a consumer then sees the cancel after
@@ -1381,6 +1396,9 @@ public readonly record struct MappedQuery<T>
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
 	/// </param>
 	/// <param name="clearOnReturn">
 	/// <see langword="true"/> clears the rows in each pooled buffer
@@ -1397,6 +1415,8 @@ public readonly record struct MappedQuery<T>
 	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
 	/// Security note: ODX returns arrays that contain your rows.
 	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
 	/// other code in the process can rent the same array later.
@@ -1469,6 +1489,8 @@ public readonly record struct MappedQuery<T>
 	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
 	/// Security note: ODX returns arrays that contain your rows.
 	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
 	/// other code in the process can rent the same array later.
@@ -1498,6 +1520,9 @@ public readonly record struct MappedQuery<T>
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
 	/// </param>
 	/// <param name="cancellationToken">
 	/// Cancels the read: a consumer then sees the cancel after
@@ -1521,6 +1546,9 @@ public readonly record struct MappedQuery<T>
 	/// A custom pool must not throw from <c>Return</c>: if it does,
 	/// the exception propagates from the dispose, and the arrays not
 	/// yet returned stay with the garbage collector.
+	/// (With clearing on, one that throws inside the background queue is
+	/// swallowed there, and one that runs inline, because the queue was
+	/// full, propagates: the load of the queue decides which.)
 	/// </param>
 	/// <param name="clearOnReturn">
 	/// <see langword="true"/> clears the rows in each pooled buffer
@@ -1537,6 +1565,8 @@ public readonly record struct MappedQuery<T>
 	/// inline instead: a dirty array is never returned to the pool.
 	/// <see langword="false"/> returns the buffers as they are (the
 	/// BCL behaviour).
+	/// While an array sits in the pool, or in a buffer that is not
+	/// disposed, every reference-type row in it stays reachable.
 	/// Security note: ODX returns arrays that contain your rows.
 	/// <see cref="MemoryPool{T}.Shared"/> does not clear them, and any
 	/// other code in the process can rent the same array later.

@@ -1631,6 +1631,112 @@ public static class PooledBufferTests
 		Assert.Equal(0, thrown);
 	}
 
+	// ---- the final review's missing tests ----------------------------------
+
+	// A provider that throws an OperationCanceledException of its own
+	// (nobody cancelled, nothing was disposed).
+	sealed class OwnCancelReader(int rows, int at)
+		: TypedReader(ReaderFixtures.Columns, ReaderFixtures.Rows(rows))
+	{
+		int _calls;
+
+		public override Task<bool> ReadAsync(
+			CancellationToken cancellationToken)
+			=> ++_calls == at
+				? throw new OperationCanceledException()
+				: base.ReadAsync(cancellationToken);
+	}
+
+	[Theory]
+	[InlineData("buffer")]
+	[InlineData("stream")]
+	public static async Task AProvidersOwnCancel_CancelsTheRead_AndReleasesEverything(
+		string terminal)
+	{
+		var pool = new CountingPool<ChannelRow>();
+		var run = Run.Create(
+			() => new OwnCancelReader(100, 30),
+			asyncReads: true);
+		Task<PooledArray<ChannelRow>>? items = null;
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () =>
+			{
+				if (terminal == "buffer")
+				{
+					await using var buffer = run.View.ToAsyncBuffer(
+						pool, clearOnDispose: false, Ct);
+					items = buffer.Items;
+					await items.Within();
+				}
+				else
+				{
+					await foreach (var _ in run.View.ToAsyncBufferStream(
+						pool, clearOnReturn: false, Ct)) { }
+				}
+			});
+
+		if (items is not null) Assert.True(items.IsCanceled);
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
+	}
+
+	[Fact]
+	public static async Task TwoConcurrentDisposes_ReleaseEveryArrayOnce()
+	{
+		var pool = new CountingPool<ChannelRow>();
+		var view = new FakeDbCommand(
+			new FakeDbConnection(),
+			() => new ChannelTestReader(40))
+			.Map<ChannelRow>();
+
+		for (int i = 0; i < 1_000; ++i)
+		{
+			var buffer = view.ToAsyncBuffer(
+				pool, clearOnDispose: false, Ct);
+
+			// Half the rounds dispose a finished buffer, half a filling one.
+			if (i % 2 == 0) await buffer.Items.Within();
+
+			Task a = Task.Run(buffer.Dispose, Ct);
+			Task b = Task.Run(buffer.Dispose, Ct);
+			await Task.WhenAll(a, b).Within();
+			await buffer.DisposeAsync();
+		}
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.True(pool.Rents > 0);
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
+	}
+
+	[Fact]
+	public static async Task AFaultedStream_EndsAfterItsFault_WithNoDoubleRelease()
+	{
+		var pool = new CountingPool<ChannelRow>();
+		var run = Run.Create(() => new ChannelTestReader(40, failAtRow: 30));
+
+		await using (var e = run.View
+			.ToAsyncBufferStream(pool, clearOnReturn: false, Ct)
+			.GetAsyncEnumerator(Ct))
+		{
+			await Assert.ThrowsAsync<InvalidOperationException>(
+				async () =>
+				{
+					while (await e.MoveNextAsync().AsTask().Within()) { }
+				});
+
+			// The stream is over: asking again is a plain "no more".
+			Assert.False(await e.MoveNextAsync().AsTask().Within());
+		}
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

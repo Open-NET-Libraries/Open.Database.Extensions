@@ -461,6 +461,57 @@ public static class ClearOnReturnTests
 		Assert.Equal(0, pool.DirtyReturns);
 	}
 
+	// ---- the boundaries: one post per chunk ---------------------------------
+
+	[Theory]
+	[InlineData("stream", 0, 0)]
+	[InlineData("stream", 1, 1)]
+	[InlineData("stream", 16, 1)]
+	[InlineData("stream", 17, 2)]
+	[InlineData("stream", 48, 2)]
+	[InlineData("buffered", 17, 2)]
+	[InlineData("buffer", 0, 0)]
+	[InlineData("buffer", 1, 1)]
+	[InlineData("buffer", 16, 1)]
+	[InlineData("buffer", 17, 2)]
+	[InlineData("buffer", 48, 2)]
+	public static async Task Clearing_PostsOncePerChunk_AtTheBoundaries(
+		string terminal,
+		int rows,
+		int chunks)
+	{
+		var pool = RowPool();
+		int before = Volatile.Read(ref _hookCalls);
+		SetHook("Count");
+		try
+		{
+			Assert.Equal(
+				rows,
+				await ReadAll(terminal, Rows(rows), pool, true));
+		}
+		finally
+		{
+			SetHook(null);
+		}
+
+		Assert.Equal(chunks, Volatile.Read(ref _hookCalls) - before);
+		Assert.Equal(chunks, pool.Rents);
+		Assert.Equal(0, pool.DirtyReturns);
+		Assert.Equal(pool.Rents, pool.Returns);
+	}
+
+	[Fact]
+	public static async Task ATakeOfZero_RentsNothing()
+	{
+		var pool = RowPool();
+
+		await using var buffer = Rows(100).Take(0).ToAsyncBuffer(
+			pool, clearOnDispose: true, Ct);
+		Assert.Empty(await buffer.Items.Within());
+
+		Assert.Equal(0, pool.Rents);
+	}
+
 	// ---- the loop does not keep the first poster's context -------------------
 
 	static WeakReference PostWithALocal(
