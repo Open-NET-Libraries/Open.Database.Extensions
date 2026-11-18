@@ -30,8 +30,8 @@ public static class ChunkSizingTests
 		int streamMax,
 		Func<Task<T>> body)
 	{
-		FieldInfo firstRows = Field("FirstRows");
-		FieldInfo streamMaxRows = Field("StreamMaxRows");
+		FieldInfo firstRows = Field("_firstRows");
+		FieldInfo streamMaxRows = Field("_streamMaxRows");
 		object? oldFirst = firstRows.GetValue(null);
 		object? oldMax = streamMaxRows.GetValue(null);
 		firstRows.SetValue(null, first);
@@ -68,8 +68,8 @@ public static class ChunkSizingTests
 	[Fact]
 	public static void TheDefaults_AreTheShippedSizes()
 	{
-		Assert.Equal(16, Field("FirstRows").GetValue(null));
-		Assert.Equal(4096, Field("StreamMaxRows").GetValue(null));
+		Assert.Equal(16, Field("_firstRows").GetValue(null));
+		Assert.Equal(4096, Field("_streamMaxRows").GetValue(null));
 	}
 
 	[Fact]
@@ -152,6 +152,6 @@ public static class ChunkSizingTests
 		Assert.Equal([16, 32, 52], sizes);
 
 		// And the knobs were put back.
-		Assert.Equal(16, Field("FirstRows").GetValue(null));
+		Assert.Equal(16, Field("_firstRows").GetValue(null));
 	}
 }

@@ -214,7 +214,6 @@ public sealed class PooledArray<T>
 		Memory<T> _memory; // the current chunk's memory, when it is not
 		int _index;        // the next element of the current chunk
 		int _end;          // one past its last element
-		T _current;
 
 		internal Enumerator(PooledArray<T> view)
 		{
@@ -224,15 +223,14 @@ public sealed class PooledArray<T>
 			_memory = default;
 			_index = 0;
 			_end = 0;
-			_current = default!;
+			Current = default!;
 		}
 
 		/// <summary>The row the last <c>MoveNext</c> moved to.</summary>
-		public readonly T Current
-			=> _current;
+		public T Current { get; private set; }
 
 		readonly object? IEnumerator.Current
-			=> _current;
+			=> Current;
 
 		/// <summary>Moves to the next row.</summary>
 		/// <returns>False when there is none.</returns>
@@ -251,7 +249,7 @@ public sealed class PooledArray<T>
 				// One check per row: the arrays go back to the pool on
 				// dispose, so no row of one is handed out after it.
 				_view._owner.ThrowIfDisposed();
-				_current = array[index];
+				Current = array[index];
 				_index = index + 1;
 				return true;
 			}
@@ -271,7 +269,7 @@ public sealed class PooledArray<T>
 			{
 				if (_segment >= _view._chunks.Length)
 				{
-					_current = default!;
+					Current = default!;
 					return false;
 				}
 
@@ -283,7 +281,7 @@ public sealed class PooledArray<T>
 				Debug.Assert(_end > _index);
 			}
 
-			_current = _array is not null
+			Current = _array is not null
 				? _array[_index]
 				: _memory.Span[_index];
 			++_index;
@@ -322,7 +320,7 @@ public sealed class PooledArray<T>
 			_memory = default;
 			_index = 0;
 			_end = 0;
-			_current = default!;
+			Current = default!;
 		}
 
 		/// <summary>Does nothing: there is nothing to release.</summary>

@@ -59,7 +59,7 @@ internal static class RecycleBin
 
 	// A test seam: when set, it answers every post (to simulate a full
 	// bin, or to count posts). Never set outside tests.
-	internal static Func<Action, PostResult>? Hook;
+	internal static Func<Action, PostResult>? _hook;
 
 	static long _discarded;
 
@@ -72,7 +72,7 @@ internal static class RecycleBin
 		PostResult result;
 		try
 		{
-			Func<Action, PostResult>? hook = Volatile.Read(ref Hook);
+			Func<Action, PostResult>? hook = Volatile.Read(ref _hook);
 			result = hook is null ? Bin.Post(action) : hook(action);
 		}
 		catch (Exception)
@@ -96,7 +96,7 @@ internal static class RecycleBin
 		// it means something is wrong, and the rest is discarded.
 		const int Capacity = 10_240;
 
-		static readonly Channel<Action> _channel
+		static readonly Channel<Action> Work
 			= Channel.CreateBounded<Action>(
 				new BoundedChannelOptions(Capacity)
 				{
@@ -106,10 +106,10 @@ internal static class RecycleBin
 				});
 
 		// Held so the one loop is never garbage; it never completes.
-		static readonly Task _loop = StartLoop();
+		static readonly Task Loop = StartLoop();
 
 		internal static PostResult Post(Action action)
-			=> _channel.Writer.TryWrite(action)
+			=> Work.Writer.TryWrite(action)
 				? PostResult.Posted
 				: PostResult.Full;
 
@@ -123,13 +123,13 @@ internal static class RecycleBin
 
 		static async Task DrainAsync()
 		{
-			ChannelReader<Action> reader = _channel.Reader;
+			ChannelReader<Action> reader = Work.Reader;
 
 			// The channel is never completed, so this never ends by
 			// itself. There is no outer guard: nothing here can throw (each
 			// action has its own catch), and if the loop ever did die,
-			// posts would be accepted up to Capacity and then cleared
-			// inline, and a dirty array still never reaches a pool.
+			// posts would be accepted up to Capacity and then discarded,
+			// and a dirty array still never reaches a pool.
 			while (await reader.WaitToReadAsync().ConfigureAwait(false))
 			{
 				while (reader.TryRead(out Action? action))

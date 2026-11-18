@@ -44,7 +44,7 @@ public static class ClearOnReturnTests
 	// with null.
 	static void SetHook(string? result)
 	{
-		FieldInfo field = Bin.GetField("Hook", Internal)!;
+		FieldInfo field = Bin.GetField("_hook", Internal)!;
 		if (result is null)
 		{
 			field.SetValue(null, null);

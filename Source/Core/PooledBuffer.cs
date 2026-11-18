@@ -253,7 +253,7 @@ public sealed class PooledBuffer<T>
 
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	static void ThrowDisposed()
-		=> throw new ObjectDisposedException(nameof(PooledBuffer<T>));
+		=> throw new ObjectDisposedException(nameof(PooledBuffer<>));
 
 	// The producer's task: it completes when the producer has exited.
 	Task DisposeCore()
@@ -289,9 +289,13 @@ public sealed class PooledBuffer<T>
 
 		List<IMemoryOwner<T>>? chunks = Volatile.Read(ref _chunks);
 		if (Volatile.Read(ref _disposed) != 0 || chunks is null)
+		{
 			items.TrySetCanceled();
+		}
 		else if (_error is OperationCanceledException cancelled)
+		{
 			items.TrySetCanceled(cancelled.CancellationToken);
+		}
 		else if (_error is { } error)
 		{
 			// Observed here: an Items nobody awaits must not raise

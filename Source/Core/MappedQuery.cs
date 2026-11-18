@@ -584,8 +584,11 @@ readonly struct MappedQueryCore<T>
 	{
 		_ = Command;
 		RequirePool(pool);
+		// The stream carries the caller's token; the token Flatten takes is
+		// the enumeration's own (WithCancellation), so none is passed here.
 		return Flatten(
-			new ChunkStream<T>(this, pool, clearOnReturn, cancellationToken));
+			new ChunkStream<T>(this, pool, clearOnReturn, cancellationToken),
+			CancellationToken.None);
 	}
 
 	// The chunk stream, element by element. Each element is copied into
