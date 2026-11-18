@@ -2173,6 +2173,25 @@ public static class PooledBufferTests
 		Assert.Equal(2, one.Current.Id);
 	}
 
+	// ---- the swarm's four fixes --------------------------------------------
+
+	[Fact]
+	public static void ADefaultEnumerator_IsEmpty_AndThrowsNothing()
+	{
+		var e = default(PooledArray<ChannelRow>.Enumerator);
+
+		Assert.False(e.MoveNext());
+		Assert.Null(e.Current);
+		((System.Collections.IEnumerator)e).Reset();
+		Assert.False(e.MoveNext());
+		e.Dispose();
+
+		IEnumerator<ChannelRow> boxed =
+			default(PooledArray<ChannelRow>.Enumerator);
+		Assert.False(boxed.MoveNext());
+		Assert.Null(boxed.Current);
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

@@ -241,14 +241,16 @@ public sealed class PooledArray<T>
 		/// </exception>
 		public bool MoveNext()
 		{
-			// One check per row: the arrays go back to the pool on
-			// dispose, so no row of one is handed out after it.
-			_view._owner.ThrowIfDisposed();
-
+			// The hot path is one test: in a chunk of an array. (A
+			// default enumerator has no array, so it takes the slow path,
+			// where it is empty.)
 			T[]? array = _array;
 			int index = _index;
 			if (array is not null && index < _end)
 			{
+				// One check per row: the arrays go back to the pool on
+				// dispose, so no row of one is handed out after it.
+				_view._owner.ThrowIfDisposed();
 				_current = array[index];
 				_index = index + 1;
 				return true;
@@ -260,6 +262,11 @@ public sealed class PooledArray<T>
 		// A chunk that is not array-backed, or the end of a chunk.
 		bool MoveNextSlow()
 		{
+			// default(Enumerator): no view, nothing to walk.
+			if (_view is null) return false;
+
+			_view._owner.ThrowIfDisposed();
+
 			if (_index >= _end)
 			{
 				if (_segment >= _view._chunks.Length)
@@ -307,6 +314,8 @@ public sealed class PooledArray<T>
 
 		void IEnumerator.Reset()
 		{
+			if (_view is null) return;
+
 			_view._owner.ThrowIfDisposed();
 			_segment = 0;
 			_array = null;
