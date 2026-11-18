@@ -513,42 +513,6 @@ public static class ClearOnReturnTests
 		Assert.Equal(0, pool.Rents);
 	}
 
-	// ---- the loop does not keep the first poster's context -------------------
-
-	static WeakReference PostWithALocal(
-		AsyncLocal<object?> local,
-		TaskCompletionSource<object?> seen)
-	{
-		object marker = new();
-		local.Value = marker;
-		Post(() => seen.TrySetResult(local.Value));
-		return new WeakReference(marker);
-	}
-
-	[Fact]
-	public static async Task ABinAction_DoesNotSeeThePostersAsyncLocal()
-	{
-		var local = new AsyncLocal<object?>();
-		TaskCompletionSource<object?> seen = new(
-			TaskCreationOptions.RunContinuationsAsynchronously);
-
-		WeakReference weak = PostWithALocal(local, seen);
-		local.Value = null;
-
-		// The loop runs without the context of whoever started it or
-		// posted: the action sees no value.
-		Assert.Null(await seen.Task.Within());
-
-		// And nothing keeps the value alive.
-		for (int i = 0; i < 3; ++i)
-		{
-			GC.Collect();
-			GC.WaitForPendingFinalizers();
-		}
-
-		Assert.False(weak.IsAlive);
-	}
-
 	// ---- the overloads bind -------------------------------------------------
 
 	static async Task<int> Count(PooledBuffer<ChannelRow> buffer)

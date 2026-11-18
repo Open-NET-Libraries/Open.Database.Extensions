@@ -1621,8 +1621,6 @@ public static class PooledBufferTests
 				await foreach (var _ in Rows100().View
 					.ToAsyncBufferStream(clearOnReturn: false, Ct)) { }
 			}
-
-			await Task.Delay(100, Ct);
 		}
 		finally
 		{
@@ -1964,6 +1962,215 @@ public static class PooledBufferTests
 		await buffer.DisposeAsync().AsTask().Within();
 		await Until(() => pool.Rents == pool.Disposes, "the owners released");
 		Assert.Equal(pool.Rents, pool.Disposes);
+	}
+
+	// ---- memory that is not what the fast path expects ---------------------
+
+	// A pool whose odd rents are NOT array-backed (a MemoryManager) and
+	// whose even rents are, so one read mixes both kinds of chunk.
+	sealed class MixedPool : MemoryPool<ChannelRow>
+	{
+		int _rents;
+		int _disposes;
+
+		public int Rents => Volatile.Read(ref _rents);
+
+		public int Disposes => Volatile.Read(ref _disposes);
+
+		public override int MaxBufferSize => int.MaxValue;
+
+		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
+		{
+			int size = Math.Max(minBufferSize, 1);
+			return Interlocked.Increment(ref _rents) % 2 == 1
+				? new ManagerOwner(this, size)
+				: new ArrayOwner(this, size);
+		}
+
+		protected override void Dispose(bool disposing) { }
+
+		sealed class ManagerOwner(MixedPool pool, int size)
+			: MemoryManager<ChannelRow>
+		{
+			readonly ChannelRow[] _array = new ChannelRow[size];
+
+			public override Span<ChannelRow> GetSpan() => _array;
+
+			public override MemoryHandle Pin(int elementIndex = 0)
+				=> throw new NotSupportedException();
+
+			public override void Unpin() { }
+
+			protected override void Dispose(bool disposing)
+			{
+				if (disposing) Interlocked.Increment(ref pool._disposes);
+			}
+		}
+
+		sealed class ArrayOwner(MixedPool pool, int size)
+			: IMemoryOwner<ChannelRow>
+		{
+			readonly ChannelRow[] _array = new ChannelRow[size];
+
+			public Memory<ChannelRow> Memory => _array;
+
+			public void Dispose()
+				=> Interlocked.Increment(ref pool._disposes);
+		}
+	}
+
+	[Fact]
+	public static async Task AMixedPool_ArrayBackedAndNot_GivesTheRightRows_OnEveryPath()
+	{
+		var pool = new MixedPool();
+		var run = Rows100();
+
+		await using (var buffer = run.View.ToAsyncBuffer(
+			pool, clearOnDispose: false, Ct))
+		{
+			PooledArray<ChannelRow> items = await buffer.Items.Within();
+			Assert.Equal(100, items.Count);
+			foreach (int i in new[] { 0, 15, 16, 47, 48, 99 })
+				Assert.Equal(i + 1, items[i].Id);
+
+			List<int> viaForeach = [];
+			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
+
+			Assert.Equal(Ids(100), viaForeach);
+			ChannelRow[] copy = new ChannelRow[100];
+			items.CopyTo(copy);
+			Assert.Equal(Ids(100), copy.Select(r => r.Id).ToList());
+			Assert.Equal(
+				Ids(100),
+				items.ToArray().Select(r => r.Id).ToList());
+		}
+
+		Assert.Equal(pool.Rents, pool.Disposes);
+
+		var pool2 = new MixedPool();
+		List<int> sizes = [];
+		List<int> ids = [];
+		await foreach (var chunk in run.View.ToAsyncBufferStream(
+			pool2, clearOnReturn: false, Ct))
+		{
+			sizes.Add(chunk.Length);
+			ids.AddRange(chunk.ToArray().Select(r => r.Id));
+		}
+
+		Assert.Equal([16, 32, 52], sizes);
+		Assert.Equal(Ids(100), ids);
+		Assert.Equal(pool2.Rents, pool2.Disposes);
+	}
+
+	// A slab pool: one backing array, every rent an array-backed slice of
+	// it at a NON-ZERO offset, with gaps between the slices.
+	sealed class SlabPool : MemoryPool<ChannelRow>
+	{
+		readonly List<(int Start, int Length)> _given = [];
+		int _next = 5;
+		int _disposes;
+
+		public ChannelRow[] Backing { get; } = [.. Enumerable
+			.Range(0, 1 << 12)
+			.Select(_ => new ChannelRow(-1))];
+
+		public int Rents => _given.Count;
+
+		public int Disposes => Volatile.Read(ref _disposes);
+
+		public override int MaxBufferSize => int.MaxValue;
+
+		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
+		{
+			int size = Math.Max(minBufferSize, 1);
+			int start = _next;
+			_next += size + 3;
+			_given.Add((start, size));
+			return new Owner(this, new Memory<ChannelRow>(Backing, start, size));
+		}
+
+		// Every cell that holds a row lies inside a slice that was given.
+		public bool GapsUntouched()
+		{
+			for (int i = 0; i < Backing.Length; ++i)
+			{
+				if (Backing[i].Id != -1
+					&& !_given.Any(g => i >= g.Start
+						&& i < g.Start + g.Length))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		protected override void Dispose(bool disposing) { }
+
+		sealed class Owner(SlabPool pool, Memory<ChannelRow> memory)
+			: IMemoryOwner<ChannelRow>
+		{
+			public Memory<ChannelRow> Memory => memory;
+
+			public void Dispose()
+				=> Interlocked.Increment(ref pool._disposes);
+		}
+	}
+
+	[Fact]
+	public static async Task ASlabPool_ArrayMemoryAtANonZeroOffset_GivesTheRightRows()
+	{
+		var pool = new SlabPool();
+		var run = Rows100();
+
+		await using (var buffer = run.View.ToAsyncBuffer(
+			pool, clearOnDispose: false, Ct))
+		{
+			PooledArray<ChannelRow> items = await buffer.Items.Within();
+			foreach (int i in new[] { 0, 15, 16, 47, 48, 99 })
+				Assert.Equal(i + 1, items[i].Id);
+
+			List<int> viaForeach = [];
+			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
+
+			Assert.Equal(Ids(100), viaForeach);
+		}
+
+		Assert.True(pool.GapsUntouched());
+		Assert.Equal(pool.Rents, pool.Disposes);
+
+		var pool2 = new SlabPool();
+		List<int> ids = [];
+		await foreach (var chunk in run.View.ToAsyncBufferStream(
+			pool2, clearOnReturn: false, Ct))
+		{
+			ids.AddRange(chunk.ToArray().Select(r => r.Id));
+		}
+
+		Assert.Equal(Ids(100), ids);
+		Assert.True(pool2.GapsUntouched());
+		Assert.Equal(pool2.Rents, pool2.Disposes);
+	}
+
+	[Fact]
+	public static async Task TheEnumeratorCopies_AreIndependent()
+	{
+		var run = Rows100();
+		await using var buffer = run.View.ToAsyncBuffer(
+			clearOnDispose: false, Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+
+		var one = items.GetEnumerator();
+		Assert.True(one.MoveNext());
+		var two = one;
+		Assert.True(two.MoveNext());
+		Assert.True(two.MoveNext());
+
+		// The copy moved on; the original did not.
+		Assert.Equal(1, one.Current.Id);
+		Assert.Equal(3, two.Current.Id);
+		Assert.True(one.MoveNext());
+		Assert.Equal(2, one.Current.Id);
 	}
 
 	// ---- ToBufferedAsyncStream ------------------------------------------

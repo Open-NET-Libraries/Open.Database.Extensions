@@ -112,6 +112,38 @@ public static class ChunkSizingTests
 		});
 	}
 
+	[Theory]
+	[InlineData(1)]
+	[InlineData(2)]
+	public static async Task TheSmallestFirstSizes_KeepTheIndexerAndTheEnumeratorRight(
+		int first)
+	{
+		await WithSizes(first, 4096, async () =>
+		{
+			await using var buffer = Rows(100).ToAsyncBuffer(
+				clearOnDispose: false, Ct);
+			PooledArray<ChannelRow> items = await buffer.Items.Within();
+			Assert.Equal(100, items.Count);
+			for (int i = 0; i < 100; ++i)
+				Assert.Equal(i + 1, items[i].Id);
+
+			List<int> viaForeach = [];
+			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
+
+			Assert.Equal(Enumerable.Range(1, 100), viaForeach);
+			return 0;
+		});
+	}
+
+	[Fact]
+	public static async Task AStreamWithNoDoubling_HasEqualChunks()
+	{
+		// StreamMaxRows equal to FirstRows: every chunk is the same size.
+		List<int> sizes = await WithSizes(2, 2, () => StreamSizes(10));
+
+		Assert.Equal([2, 2, 2, 2, 2], sizes);
+	}
+
 	[Fact]
 	public static async Task AKnobThatDoesNotFit_IsIgnored()
 	{

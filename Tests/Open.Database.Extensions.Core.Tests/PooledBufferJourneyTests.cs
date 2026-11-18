@@ -876,6 +876,41 @@ public static class PooledBufferJourneyTests
 		await j.AssertClean();
 	}
 
+	[Fact]
+	public static async Task ACallerCancel_OfAStream_WithAProviderThatIgnoresIt_DeliversTheSealedChunk_ThenThrows()
+	{
+		using var cts = CancellationTokenSource
+			.CreateLinkedTokenSource(Ct);
+		using var j = new Journey(
+			() => new DeafReader(100, 20, TimeSpan.FromMilliseconds(300)));
+		List<int> ids = [];
+
+		var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () =>
+			{
+				await foreach (var chunk in j.View.ToAsyncBufferStream(
+					j.Pool, clearOnReturn: false, cts.Token))
+				{
+					ids.AddRange(chunk.ToArray().Select(r => r.Id));
+					if (ids.Count != 16) continue;
+
+					await Until(
+						() => j.Reader is DeafReader { Stalled: true },
+						"the stall");
+					cts.Cancel();
+				}
+			});
+
+		Assert.Equal(cts.Token, ex.CancellationToken);
+
+		// The provider ignored the cancel: the read ended at the end of
+		// the chunk it was in (rows 17 to 48), which was sealed and
+		// delivered before the cancel was thrown.
+		Assert.Equal(Ids(48), ids);
+		Assert.True(((DeafReader)j.Reader!).Calls <= 50);
+		await j.AssertClean();
+	}
+
 	// ---- the arbiter's missing tests that fit the journeys ----------------
 
 	[Theory]
