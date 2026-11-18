@@ -13,8 +13,8 @@ namespace Open.Database.Extensions.Core;
 // and released.
 //
 // Why Release exists.
-// It is the one place a buffer is let go, and it is only Dispose (it is
-// called Release so the sites read alike). NOTHING is cleared on the
+// It is the one place a buffer is let go, and it is only Dispose.
+// NOTHING is cleared on the
 // consumer's side: a clear there would run on the read path, where the
 // consumer would wait for it.
 //
@@ -95,14 +95,12 @@ file sealed class DeferredClearOwner<T>(IMemoryOwner<T> inner)
 		IMemoryOwner<T>? owner = Interlocked.Exchange(ref _inner, null);
 		if (owner is null) return;
 
-		switch (RecycleBin.Post(() => ClearAndDispose(owner)))
+		// Posted: the bin runs it. Full: it cannot take it, so clear here,
+		// never wait for it.
+		if (RecycleBin.Post(() => ClearAndDispose(owner))
+			== RecycleBin.PostResult.Full)
 		{
-			// The bin cannot take it: clear here, never wait for it.
-			case RecycleBin.PostResult.Full:
-				ClearAndDispose(owner);
-				break;
-
-			// Posted: the bin runs it.
+			ClearAndDispose(owner);
 		}
 	}
 

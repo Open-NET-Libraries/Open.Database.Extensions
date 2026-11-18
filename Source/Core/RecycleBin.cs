@@ -23,9 +23,8 @@ namespace Open.Database.Extensions.Core;
 //   batch with TryRead, runs each action in its own try/catch (an action
 //   that throws, such as a pool whose Return throws, costs only that
 //   action), and yields ONCE per batch so it does not hog a pool
-//   thread. There is no idle exit: a parked await holds no thread. One
-//   outer try/catch swallows anything else and goes on, so the loop
-//   cannot die.
+//   thread. There is no idle exit: a parked await holds no thread.
+//   Nothing else can throw inside it, so there is no outer guard.
 // - The loop is started with the caller's ExecutionContext SUPPRESSED:
 //   it lives for the process, so a captured context (an AsyncLocal, a
 //   logging scope, an Activity) of whoever posted first would otherwise
@@ -107,30 +106,22 @@ internal static class RecycleBin
 		static async Task DrainAsync()
 		{
 			ChannelReader<Action> reader = _channel.Reader;
-			while (true)
+
+			// The channel is never completed, so this never ends by
+			// itself. There is no outer guard: nothing here can throw (each
+			// action has its own catch), and if the loop ever did die,
+			// posts would be accepted up to Capacity and then cleared
+			// inline, and a dirty array still never reaches a pool.
+			while (await reader.WaitToReadAsync().ConfigureAwait(false))
 			{
-				try
+				while (reader.TryRead(out Action? action))
 				{
-					while (await reader.WaitToReadAsync().ConfigureAwait(false))
-					{
-						while (reader.TryRead(out Action? action))
-						{
-							try { action(); }
-							catch (Exception) { }
-						}
-
-						// Once per batch, not per item.
-						await Task.Yield();
-					}
-
-					// The channel is never completed: not reached. (It
-					// would end the loop rather than spin.)
-					return;
+					try { action(); }
+					catch (Exception) { }
 				}
-				catch (Exception)
-				{
-					// Swallow and go on: the loop cannot die.
-				}
+
+				// Once per batch, not per item.
+				await Task.Yield();
 			}
 		}
 	}
