@@ -95,30 +95,30 @@ internal sealed class ChunkStream<T>(
 		try
 		{
 			ChannelReader<IMemoryOwner<T>> reader = target.Reader;
-			while (true)
+			do
 			{
-				// Stops this enumeration even when chunks are ready.
-				cancellationToken.ThrowIfCancellationRequested();
-
-				if (reader.TryRead(out IMemoryOwner<T>? chunk))
+				// Drain what is ready without awaiting. The token is
+				// checked AHEAD of TryRead: a throw after it would leak
+				// the chunk's array, and a cancelled token stops the
+				// enumeration even when chunks are ready.
+				while (
+					!cancellationToken.IsCancellationRequested
+					&& reader.TryRead(out IMemoryOwner<T>? chunk))
 				{
 					// The array goes back at the next step.
 					try { yield return chunk.Memory; }
 					finally { chunk.Release(); }
-
-					continue;
 				}
 
-				// False: the producer ended without a failure and every
-				// chunk was read. A failure or a cancel is thrown here,
-				// after the chunks that were delivered.
-				if (!await reader
-					.WaitToReadAsync(cancellationToken)
-					.ConfigureAwait(false))
-				{
-					yield break;
-				}
+				cancellationToken.ThrowIfCancellationRequested();
 			}
+
+			// False: the producer ended without a failure and every
+			// chunk was read. A failure or a cancel is thrown here,
+			// after the chunks that were delivered.
+			while (await reader
+				.WaitToReadAsync(cancellationToken)
+				.ConfigureAwait(false));
 		}
 		finally
 		{
