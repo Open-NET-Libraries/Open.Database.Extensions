@@ -1841,6 +1841,131 @@ public static class PooledBufferTests
 		Assert.Equal(20, e.Current!.Id);
 	}
 
+	// ---- the delta review: the view is built from owners that may fail -----
+
+	// A pool whose owners count every access to their Memory, and fail
+	// from a given access on (a pool that breaks its contract).
+	sealed class FlakyMemoryPool : MemoryPool<ChannelRow>
+	{
+		readonly ArrayPool<ChannelRow> _inner = ArrayPool<ChannelRow>.Create();
+		int _accesses;
+		int _rents;
+		int _disposes;
+
+		public int ThrowAfter { get; set; } = int.MaxValue;
+
+		public Func<Exception> Failure { get; set; }
+			= static () => new InvalidOperationException("memory failed");
+
+		public Action? OnFailure { get; set; }
+
+		public int Accesses => Volatile.Read(ref _accesses);
+
+		public int Rents => Volatile.Read(ref _rents);
+
+		public int Disposes => Volatile.Read(ref _disposes);
+
+		public override int MaxBufferSize => int.MaxValue;
+
+		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
+		{
+			Interlocked.Increment(ref _rents);
+			int size = Math.Max(minBufferSize, 1);
+			return new Owner(this, _inner.Rent(size), size);
+		}
+
+		protected override void Dispose(bool disposing) { }
+
+		sealed class Owner(FlakyMemoryPool pool, ChannelRow[] array, int size)
+			: IMemoryOwner<ChannelRow>
+		{
+			int _disposed;
+
+			public Memory<ChannelRow> Memory
+			{
+				get
+				{
+					if (Interlocked.Increment(ref pool._accesses)
+						> pool.ThrowAfter)
+					{
+						pool.OnFailure?.Invoke();
+						throw pool.Failure();
+					}
+
+					return new Memory<ChannelRow>(array, 0, size);
+				}
+			}
+
+			public void Dispose()
+			{
+				if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+
+				Interlocked.Increment(ref pool._disposes);
+				pool._inner.Return(array);
+			}
+		}
+	}
+
+	// How many times the producer asks the owners for their Memory when
+	// it reads 5 rows (the view is not built: Items is never asked).
+	static async Task<int> ProducerAccesses()
+	{
+		var pool = new FlakyMemoryPool();
+		var run = Run.Create(() => new ChannelTestReader(5));
+		await using var buffer = run.View.ToAsyncBuffer(
+			pool, clearOnDispose: false, Ct);
+		await Until(() => run.Closed, "the read ended");
+		await Task.Delay(150, Ct);
+
+		return pool.Accesses;
+	}
+
+	[Fact]
+	public static async Task AnOwnerThatFailsWhenTheViewIsBuilt_FailsItems_NotHangsIt()
+	{
+		int producer = await ProducerAccesses();
+		var pool = new FlakyMemoryPool { ThrowAfter = producer };
+		var run = Run.Create(() => new ChannelTestReader(5));
+		var buffer = run.View.ToAsyncBuffer(
+			pool, clearOnDispose: false, Ct);
+
+		// The producer stays within its accesses; building the view is
+		// the next one, and it fails with something other than a dispose.
+		Task<PooledArray<ChannelRow>> items = buffer.Items;
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			() => items.Within());
+
+		Assert.Equal("memory failed", ex.Message);
+		Assert.Same(items, buffer.Items);
+
+		await buffer.DisposeAsync().AsTask().Within();
+		Assert.Equal(pool.Rents, pool.Disposes);
+	}
+
+	[Fact]
+	public static async Task ADisposeWhileTheViewIsBuilt_CancelsItems()
+	{
+		int producer = await ProducerAccesses();
+		var pool = new FlakyMemoryPool { ThrowAfter = producer };
+		var run = Run.Create(() => new ChannelTestReader(5));
+		var buffer = run.View.ToAsyncBuffer(
+			pool, clearOnDispose: false, Ct);
+
+		// The owner is disposed under the builder's hands: its memory
+		// is refused, and the buffer disposed.
+		pool.Failure = static () => new ObjectDisposedException("owner");
+		pool.OnFailure = buffer.Dispose;
+
+		Task<PooledArray<ChannelRow>> items = buffer.Items;
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => items.Within());
+		Assert.True(items.IsCanceled);
+
+		await buffer.DisposeAsync().AsTask().Within();
+		await Until(() => pool.Rents == pool.Disposes, "the owners released");
+		Assert.Equal(pool.Rents, pool.Disposes);
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]

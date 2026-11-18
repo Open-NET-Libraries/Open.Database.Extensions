@@ -311,6 +311,13 @@ public sealed class PooledBuffer<T>
 				// each owner for its memory).
 				items.TrySetCanceled();
 			}
+			catch (Exception ex)
+			{
+				// An owner that fails when asked for its memory (a pool that
+				// breaks its contract): the view cannot be built, and Items
+				// fails with that, observed, instead of staying pending.
+				if (items.TrySetException(ex)) _ = items.Task.Exception;
+			}
 		}
 	}
 
