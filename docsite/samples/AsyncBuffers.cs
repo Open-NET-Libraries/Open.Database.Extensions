@@ -313,7 +313,7 @@ public static class AsyncBuffers
 				cancellationToken);
 
 		// Cancels the read if it is still running, waits for the
-		// producer to stop, and returns the arrays to the pool.
+		// producer to stop, and returns the arrays to the pool (with clearing on, it hands them to the cleanup queue).
 		await buffer.DisposeAsync();
 
 		// A disposed buffer has no Items.

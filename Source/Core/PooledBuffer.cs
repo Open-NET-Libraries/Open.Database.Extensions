@@ -243,7 +243,10 @@ public sealed class PooledBuffer<T>
 	/// After it, <see cref="Items"/> throws
 	/// <see cref="ObjectDisposedException"/>.
 	/// </remarks>
-	/// <returns>A task that completes when the arrays are back.</returns>
+	/// <returns>
+/// A task that completes when the producer has stopped and the arrays
+/// are returned (with clearing on, they are handed to the cleanup queue).
+/// </returns>
 	public async ValueTask DisposeAsync()
 		=> await DisposeCore().ConfigureAwait(false);
 

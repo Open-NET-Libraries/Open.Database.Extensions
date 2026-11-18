@@ -4,7 +4,7 @@ Query results can be read straight into a pipeline instead of a collection. The 
 
 | Package | Entry points | Pipeline type |
 |---|---|---|
-| `Open.Database.Extensions.Core` (the views behind `Map<T>()`) | `ToBufferedAsyncStream()`, `ToAsyncBufferStream()` | `IAsyncEnumerable<T>` |
+| `Open.Database.Extensions.Core` (the views behind `Map<T>()`) | `ToBufferedAsyncStream()`, `ToAsyncBufferStream()` | `IAsyncEnumerable<T>` (elements), `IAsyncEnumerable<ReadOnlyMemory<T>>` (chunks) |
 | `Open.Database.Extensions.Channel` | `ToChannel<T>()`, `ToChannelAsync<T>()` | `System.Threading.Channels` |
 | `Open.Database.Extensions.Dataflow` | `ToTargetBlock<T>()`, `ToTargetBlockAsync<T>()`, `AsSourceBlock<T>()` | `System.Threading.Tasks.Dataflow` |
 

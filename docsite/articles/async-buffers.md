@@ -17,7 +17,7 @@ The query is read with the same read as every other terminal: `Read()` by defaul
 
 <div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/async-buffers-reader-open.svg" alt="Three panels of paired bars: reader-open time in milliseconds for 10,000 rows. Consumer at 39 ns per row: chunk stream 6.29, no buffer 6.62. At 1 microsecond per row: 6.27 against 16.15. Waiting 20 microseconds per 100 rows: 6.21 against 8.54." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
 
-Three panels, each a pair of bars that start at zero, on one scale: how long the reader is held open for a result of 10,000 rows, as the consumer gets slower. The left bar of each pair is `ToAsyncBufferStream`; the right bar is no buffer, the consumer working inside the read. At 39 ns per row the pair is 6.29 and 6.62 ms. At 1 µs per row it is 6.27 and 16.15 ms. With a 20 µs wait per 100 rows it is 6.21 and 8.54 ms. The chunk stream holds the reader the same time however slow the consumer is; without a buffer the reader is held as long as the consumer takes. The source is the PooledBuffer final benchmark round (job J3a): a synthetic provider on net11 with a 50 µs refill every 100 rows, one run. It is not a real database.
+Three panels, each a pair of bars that start at zero, on one scale: how long the reader is held open for a result of 10,000 rows, as the consumer gets slower. The left bar of each pair is `ToAsyncBufferStream`; the right bar is no buffer, the consumer working inside the read. At 39 ns per row the pair is 6.29 and 6.62 ms. At 1 µs per row it is 6.27 and 16.15 ms. With a 20 µs wait per 100 rows it is 6.21 and 8.54 ms. The chunk stream holds the reader the same time however slow the consumer is; without a buffer the reader is held as long as the consumer takes. The source is the library's unpublished pooled-buffer benchmark round: a synthetic provider on net11 with a 50 µs refill every 100 rows, one run. It is not a real database.
 
 ## The three terminals
 
@@ -27,7 +27,7 @@ Three panels, each a pair of bars that start at zero, on one scale: how long the
 | `ToAsyncBufferStream` | `IAsyncEnumerable<ReadOnlyMemory<T>>`, one chunk per step | At the first `MoveNextAsync`. Single-use | Sequential, read-only access to the rows without copying them twice |
 | `ToBufferedAsyncStream` | `IAsyncEnumerable<T>`, one row per step | At the first `MoveNextAsync`. Single-use | The same, made easy: `await foreach` and `System.Linq.Async` work as they do on any stream |
 
-`ToAsyncBuffer` returns at once. The read may finish before anyone asks for the rows. The buffer is not readable while it fills: its rows are reached through [`Items`](#the-items-view), once the read is done. To read while the query is still running, use one of the streams.
+`ToAsyncBuffer` returns at once. (A cancellation token that is already cancelled starts nothing.) The read may finish before anyone asks for the rows. The buffer is not readable while it fills: its rows are reached through [`Items`](#the-items-view), once the read is done. To read while the query is still running, use one of the streams. If the command is on a connection you opened yourself, do not use that connection for anything else until the read has finished: the producer reads on it from the call (`ToAsyncBuffer`) or from the first step (the streams).
 
 The streams do nothing until the first `MoveNextAsync`, and they can be enumerated once. A second `GetAsyncEnumerator` on the chunk stream throws `InvalidOperationException`; on the element stream the same exception comes at the first `MoveNextAsync`.
 
@@ -58,9 +58,9 @@ The connection was released when the read ended, however long the serialization 
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_items_view)]
 
-`Items` faults with the read's exception. It is cancelled when the read ended with an `OperationCanceledException` of any origin, or when the buffer was disposed first. See [Cancellation and disposal](#cancellation-and-disposal).
+`Items` faults with the read's exception. It is cancelled when the read ended with an `OperationCanceledException` of any origin, or when the buffer was disposed first. Reading `Items` after the buffer is disposed throws `ObjectDisposedException`; a task you already hold that is still pending is cancelled. See [Cancellation and disposal](#cancellation-and-disposal).
 
-The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool. After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included. Disposing again does nothing. Disposing while the read is still running cancels the query.
+The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool (with clearing on, a full cleanup queue discards them instead: see [Clearing](#clearing)). After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included. Disposing again does nothing. Disposing the buffer while the read is still running cancels the query.
 
 ## The streams
 
@@ -103,15 +103,15 @@ Pass the flag for sensitive rows:
 - What is cleared is the rows the buffer holds, never the rest of a larger array, of every type.
 - For a buffer, the clear takes effect when the buffer, or its `PooledArray<T>` view, is disposed. For a stream, it takes effect as each chunk goes back: at the next step, or when the enumeration ends or is disposed.
 - The clear runs on one background loop, off the read path. Neither the read nor the consumer waits for it.
-- If 10,240 clears are ever waiting, something is wrong, and further buffers are discarded to the garbage collector: not cleared, and not returned to the pool. A dirty array never reaches a pool. It costs the pool one array, which it allocates again.
-- A custom pool must therefore tolerate an owner that is never disposed. It must not throw from `Return`, either. Without clearing, an exception stops the release and the arrays not yet returned stay with the garbage collector. With clearing, one that throws costs only that array.
+- If 10,240 clears are ever waiting (a stalled custom pool, or an extreme burst), the arrays of further chunks are discarded to the garbage collector: not cleared, and not returned to the pool. A dirty array never reaches a pool. For the shared pool a discard costs one array, which it allocates again. No public API reports a discard.
+- A custom pool must therefore tolerate an owner that is never disposed. It must not throw from `Return`, either. Without clearing, an exception stops the release and the arrays not yet returned stay with the garbage collector. With clearing, one that throws costs only that array. The clear and the owner's `Dispose` run on one loop shared by every pool, so a `Dispose` that blocks stalls them all and every later array is discarded. A pool whose owners hold native memory or a fixed number of slots would lose them for good when an owner is discarded.
 
 ## Cancellation and disposal
 
 - **Two sources, one token.** The caller's token and the dispose are combined, so either one cancels the database read itself, not only the loop around it.
-- **Our own cancel is swallowed.** A cancel caused by disposing the buffer, or the stream's enumerator, is not reported: you asked for it.
-- **Yours is delivered.** The caller's own cancel, or a fault in the read, is delivered after the rows that were already read. A stream's next step throws it after the chunks that were already delivered. `Items` is cancelled or faulted instead of producing a view.
-- **`DisposeAsync` waits for the producer, with no timeout.** It cancels a running read, waits until the producer has stopped, and returns the arrays. A provider that ignores cancellation delays it by the call in progress. After that, the producer stops at the next chunk boundary at the latest. The synchronous `Dispose` does not wait. It cancels and returns at once, and the producer returns the arrays when it exits.
+- **Our own cancel is swallowed.** A cancel caused by disposing the buffer, or the stream's enumerator, is not reported: you asked for it. The read ends quietly, and an `Items` task you were already awaiting is cancelled.
+- **Yours is delivered.** The caller's own cancel, or a fault in the read, is delivered: to a stream after the rows that were already read, and to a buffer through `Items`. A stream's next step throws it after the chunks that were already delivered. `Items` is cancelled or faulted instead of producing a view.
+- **`DisposeAsync` waits for the producer, with no timeout.** It cancels a running read, waits until the producer has stopped, and returns the arrays (with clearing on it hands them to the cleanup queue, so they are back in the pool shortly after `DisposeAsync` completes). A provider that ignores cancellation delays it by the call in progress. After that, the producer stops at the next chunk boundary at the latest. The synchronous `Dispose` does not wait. It cancels and returns at once. If the read is still running, the producer returns the arrays when it exits; if it had finished, `Dispose` returns them itself.
 - **No finalizer.** A buffer that is never disposed is not a leak: it holds its arrays until the garbage collector takes it, and the pool does not get them back.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_cancel)]
@@ -140,14 +140,14 @@ For a projection or a filter over a stream, use `System.Linq.Async` over `ToBuff
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
 
-The channel terminals (`ToChannelReader()` and `ToChannel()`) left the typed views of Core in 11.0.0-rc.8. The buffer streams do the same job with a shorter connection time. See [Channels and Dataflow](channels-and-dataflow.md).
+The channel terminals (`ToChannelReader()` and `ToChannel()`) left the typed views of Core in 11.0.0-rc.8. The buffer streams do the same job. At a million rows they held the connection for a shorter time than `ToChannelReader`; at 10,000 rows the two were about the same (the benchmark round is unpublished). See [Channels and Dataflow](channels-and-dataflow.md).
 
 ## Sources
 
 | Claim | Value | Run |
 |---|---|---|
-| Reader-open time, chunk stream, 10,000 rows | 6.29, 6.27 and 6.21 ms at 39 ns per row, 1 µs per row and a 20 µs wait per 100 rows | PooledBuffer final benchmark round, job J3a, synthetic provider, net11, a 50 µs refill every 100 rows; one run |
+| Reader-open time, chunk stream, 10,000 rows | 6.29, 6.27 and 6.21 ms at 39 ns per row, 1 µs per row and a 20 µs wait per 100 rows | the library's unpublished pooled-buffer benchmark round, synthetic provider, net11, a 50 µs refill every 100 rows; one run |
 | Reader-open time, no buffer (the figure) | 6.62, 16.15 and 8.54 ms for the same consumers | same |
-| Buffer against `ToArrayAsync`, simulated link | 6.27 and 6.29 ms, at a 50 µs refill every 100 rows | PooledBuffer final benchmark round, job J2a, same provider; one run |
-| Buffer against `ToArrayAsync`, zero latency | 225 and 185 µs at 10,000 rows (about 22% longer) | PooledBuffer final benchmark round, job J1a, same provider; one run |
+| Buffer against `ToArrayAsync`, simulated link | 6.27 and 6.29 ms, at a 50 µs refill every 100 rows | same round, same provider; one run |
+| Buffer against `ToArrayAsync`, zero latency | 225 and 185 µs at 10,000 rows (about 22% longer) | same round, same provider; one run |
 | Chunk sizes, the cleanup queue, the single-use rule | 16 doubling to 4,096 for a stream; 10,240 waiting clears | the library source (`ChunkSizing`, `RecycleBin`, `ChunkStream`); not a measurement |

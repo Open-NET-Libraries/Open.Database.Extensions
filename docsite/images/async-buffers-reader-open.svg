@@ -85,6 +85,6 @@
   <text x="16" y="358">Left bar: ToAsyncBufferStream. Right bar: no buffer, the consumer works inside the</text>
   <text x="16" y="376">read. Every bar starts at zero, on one scale. The slower the consumer, the</text>
   <text x="16" y="394">longer the unbuffered read holds the reader; the chunk stream does not change.</text>
-  <text class="muted" x="16" y="418">Source: the PooledBuffer final benchmark round (job J3a), synthetic provider, net11,</text>
+  <text class="muted" x="16" y="418">Source: the library's unpublished pooled-buffer benchmark round, synthetic provider, net11,</text>
   <text class="muted" x="16" y="434">10,000 rows, a 50 &#181;s refill every 100 rows, one run. Not a real database.</text>
 </svg>
