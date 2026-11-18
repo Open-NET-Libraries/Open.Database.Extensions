@@ -117,6 +117,8 @@ internal sealed class ChunkProducer<T>(
 	{
 		if (caller.IsCancellationRequested)
 		{
+			// Nothing starts, and the read is over: a Cancel can do nothing.
+			Volatile.Write(ref _ended, 1);
 			target.Finish(new OperationCanceledException(caller));
 			_linked.Dispose();
 			return Task.CompletedTask;

@@ -2275,6 +2275,47 @@ public static class PooledBufferTests
 		Assert.Equal(pool.Rents, pool.Disposes);
 	}
 
+	[Fact]
+	public static async Task AStreamWithAnAlreadyCancelledToken_ThrowsNoObjectDisposedException()
+	{
+		int thrown = 0;
+		void OnFirstChance(
+			object? sender,
+			System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+		{
+			if (e.Exception is ObjectDisposedException
+				&& new System.Diagnostics.StackTrace()
+					.ToString().Contains("ChunkProducer"))
+			{
+				Interlocked.Increment(ref thrown);
+			}
+		}
+
+		AppDomain.CurrentDomain.FirstChanceException += OnFirstChance;
+		try
+		{
+			for (int i = 0; i < 20; ++i)
+			{
+				using var cts = new CancellationTokenSource();
+				cts.Cancel();
+
+				await Assert.ThrowsAnyAsync<OperationCanceledException>(
+					async () =>
+					{
+						await foreach (var _ in Rows100().View
+							.ToAsyncBufferStream(
+								clearOnReturn: false, cts.Token)) { }
+					});
+			}
+		}
+		finally
+		{
+			AppDomain.CurrentDomain.FirstChanceException -= OnFirstChance;
+		}
+
+		Assert.Equal(0, thrown);
+	}
+
 	// ---- ToBufferedAsyncStream ------------------------------------------
 
 	[Fact]
