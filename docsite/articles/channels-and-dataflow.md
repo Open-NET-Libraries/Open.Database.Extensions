@@ -20,7 +20,7 @@ Which one to use:
 - `ToBufferedAsyncStream(clearOnReturn)` yields the elements one by one, as an `IAsyncEnumerable<T>` that works with `await foreach` and `System.Linq.Async`.
 - `ToAsyncBufferStream(clearOnReturn)` yields the chunks (`ReadOnlyMemory<T>`), for raw speed and the shortest connection time.
 
-Both are lazy and single-use: nothing runs until the first read, a second enumeration throws, and a `break` or a dispose cancels the query. `clearOnReturn` has no default on the shared pool, so you decide whether the pooled buffers are cleared. Pass the cancellation token last.
+Both are lazy and single-use: nothing runs until the first read, a second enumeration throws, and a `break` or a dispose cancels the query. `clearOnReturn` has no default on the shared pool, so you decide whether the pooled buffers are cleared. Pass the cancellation token last. The overloads, clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
 
 ### One producer, one consumer
 

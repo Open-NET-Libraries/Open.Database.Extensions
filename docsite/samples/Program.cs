@@ -192,6 +192,99 @@ Check(
 	bufferLines.SequenceEqual(expectedLines),
 	"buffering with ToListAsync returns the same rows as the stream");
 
+// Async buffers and streams.
+string rendered = await AsyncBuffers
+	.RenderPostsAsync(factory, CancellationToken.None);
+Check(
+	rendered.StartsWith("[{\"Id\":1,", StringComparison.Ordinal)
+		&& rendered.Contains("\"Title\":\"Post 5\"", StringComparison.Ordinal)
+		&& rendered.EndsWith("}]", StringComparison.Ordinal),
+	"a buffer made by a data layer is awaited and serialized by the layer above");
+
+AsyncBuffers.ItemsFacts facts = await AsyncBuffers
+	.ItemsViewAsync(factory, CancellationToken.None);
+Check(
+	facts is { Count: 5, ThirdId: 3, IdSum: 15, CopyLength: 5 },
+	"the Items view has a count, an indexer, an enumerator and a LINQ copy");
+
+Check(
+	(await AsyncBuffers.SkipTakeAsync(factory, CancellationToken.None))
+		.SequenceEqual([2, 3]),
+	"ToAsyncBuffer after Skip(1).Take(2) holds posts 2 and 3");
+
+Check(
+	(await AsyncBuffers.ChunkStreamAsync(factory, CancellationToken.None))
+		.SequenceEqual([1, 2, 3, 4, 5]),
+	"ToAsyncBufferStream yields every row in order");
+
+(List<int> elementIds, bool secondThrew) = await AsyncBuffers
+	.ElementStreamAsync(factory, CancellationToken.None);
+Check(
+	elementIds.SequenceEqual([1, 2, 3, 4, 5]) && secondThrew,
+	"ToBufferedAsyncStream yields every row in order and is single-use");
+
+Check(
+	(await AsyncBuffers.LinqAsyncAsync(factory, CancellationToken.None))
+		.SequenceEqual(["Post 1", "Post 2", "Post 3"]),
+	"System.Linq over ToBufferedAsyncStream projects the rows");
+
+Check(
+	(await AsyncBuffers.SmallResultAsync(factory, CancellationToken.None))
+		.Length == 5,
+	"ToArrayAsync returns the small result");
+
+CountingPool<Post> overloadPool = new();
+Check(
+	(await AsyncBuffers.OverloadsAsync(
+		factory,
+		overloadPool,
+		CancellationToken.None)).All(static n => n == 5),
+	"the three ToAsyncBuffer overloads each hold the five rows");
+await AsyncBuffers.SettleAsync(overloadPool);
+Check(
+	overloadPool.Rented == overloadPool.Returned && overloadPool.Rented > 0,
+	"disposing the buffers returns every array to the pool");
+
+CountingPool<Post> keepPool = new();
+await AsyncBuffers.KeepsRowsAsync(
+	factory,
+	keepPool,
+	CancellationToken.None);
+await AsyncBuffers.SettleAsync(keepPool);
+Check(
+	keepPool.Dirty == keepPool.Returned && keepPool.Returned > 0,
+	"nothing is cleared by default: the arrays go back with their rows");
+
+CountingPool<Post> clearPool = new();
+await AsyncBuffers.ClearingAsync(
+	factory,
+	clearPool,
+	CancellationToken.None);
+await AsyncBuffers.SettleAsync(clearPool);
+Check(
+	clearPool.Dirty == 0 && clearPool.Returned > 0,
+	"clearOnDispose: true clears the rows before the arrays go back");
+
+Check(
+	AsyncBuffers.NullPoolThrows(factory, CancellationToken.None),
+	"a null pool throws ArgumentNullException at the call");
+
+Check(
+	await AsyncBuffers.CallerCancelAsync(factory),
+	"the caller's own cancel reaches Items");
+Check(
+	await AsyncBuffers.StreamCancelAsync(factory),
+	"the caller's own cancel reaches a stream");
+
+CountingPool<Post> earlyPool = new();
+Check(
+	await AsyncBuffers.DisposeEarlyAsync(
+		factory,
+		earlyPool,
+		CancellationToken.None)
+		&& earlyPool.Rented == earlyPool.Returned,
+	"DisposeAsync returns the arrays and a disposed buffer has no Items");
+
 // Transactions.
 Check((await Transactions.ConditionalAsync(factory, true, CancellationToken.None)) is (true, 1), "returning true commits");
 Check((await Transactions.ConditionalAsync(factory, false, CancellationToken.None)) is (false, 0), "returning false rolls back");
