@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 		where TConnection : class, IDbConnection
@@ -58,6 +58,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		internal static Param Derived(string name, string expression, object? value, Type clrType)
 			=> new(name, value, expression, fromObject: false, clrType);
 
+		// A parameter named by the caller whose argument has a static type: a NULL value is then sent with that
+		// type (see NullDbType) instead of leaving the provider to guess one. An explicit database type still wins.
+		internal static Param Typed(string name, object? value, Type clrType, TDbType? type, ParameterDirection direction)
+			=> new(name, value, expression: null, fromObject: false, clrType, type, direction);
+
 		// A member of an object given to AddParams(object): its expression is the member's name, and when the procedure's real names are known a member
 		// that none of them matches is simply not sent.
 		internal static Param OfObject(string member, object? value, Type clrType)
@@ -90,7 +95,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		public object? Value { get; }
 
 		/// <summary>
-		/// Gets the database type of the parameter, or <see langword="null"/> if the provider is to infer it from the value.
+		/// Gets the database type the caller gave, or <see langword="null"/> if the provider is to infer it from the value. (A NULL made by a typed <c>AddParam</c> overload reports <see langword="null"/> here and is still sent with the database type of its argument.)
 		/// </summary>
 		public TDbType? Type { get; }
 

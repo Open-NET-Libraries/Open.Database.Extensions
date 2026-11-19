@@ -85,7 +85,7 @@ public static class SqlServer
 		var connectionFactory = new SqlConnectionFactory(@"Server=(localdb)\MSSQLLocalDB;Database=Blog;Integrated Security=true");
 
 		#region sql_server_null_by_name
-		// By name a NULL has no type to use, so pass one.
+		// A value of type object has no type to use, so pass one.
 		Post[] posts = await connectionFactory
 			.StoredProcedure("[dbo].[SearchPosts]")
 			.AddParam(
