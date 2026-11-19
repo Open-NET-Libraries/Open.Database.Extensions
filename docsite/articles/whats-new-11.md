@@ -1,9 +1,13 @@
 # What's new in 11
 
 > [!NOTE]
-> This is `11.0.0-rc.8`, a release candidate. The API is settled, apart from the removal listed first below under "Changes since rc.7". Please try it and report what you find.
+> This is `11.0.0-rc.9`, a release candidate. The API is settled, apart from the removal listed first below under "Changes since rc.7". Please try it and report what you find.
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
+
+## Changes since rc.8
+
+- **A NULL passed to a typed `AddParam` overload is now sent with that type.** `AddParam("@id", (long?)null)`, `AddParam("@x", default(int?))` and `AddParam("@s", (string?)null)` (and the same forms of `AddParamIf`) used to send the NULL with no database type, so the provider chose its own default. A consumer reported that as a different parameter type, an implicit conversion and a different query plan on SQL Server. The parameter now takes the database type of the overload's static type, the same mapping `AddParams` already used for a NULL member. A database type you pass always wins, and a value is left to the provider as before. Two things to know: a bare `AddParam("@a", null)` literal binds the `string?` overload, so it is now sent as a `String` NULL; and a value of type `object`, or a call that gives the direction by position (`AddParam(name, value, ParameterDirection.Input)`), has no type to use, so pass a database type or write `direction: ...`. No signatures change.
 
 ## Changes since rc.7
 

@@ -63,7 +63,7 @@ For example `AddParam(search.Author)` sends `@p_author` when the procedure decla
 
 When the real names are not available, as with a text command or another provider, the last member is used as written, without an `@`: `Author`. The names are read once and then remembered: see [Remembered names](#remembered-names).
 
-A `null` value is sent as a database NULL. `AddParam(note)` also sends the database type of the argument (`string?` as `String`, `int?` as `Int32`, `byte[]?` as `Binary`), which SQL Server needs to accept a NULL for a typed parameter such as `varbinary`. A `null` given with a name, `AddParam("note", null)`, has no type to use, so pass one:
+A `null` value is sent as a database NULL. A NULL also carries the database type of its argument (`string?` as `String`, `int?` as `Int32`, `byte[]?` as `Binary`), which SQL Server needs to accept a NULL for a typed parameter such as `varbinary`: `AddParam(note)` takes it from the argument, and `AddParam("note", (int?)null)` from the overload. A value of type `object`, or a call that gives the direction by position, has no type to use, so pass one:
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_null_by_name)]
 

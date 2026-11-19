@@ -6,7 +6,7 @@
 		<VersionPrefix>11.0.0</VersionPrefix>
 		<VersionSuffix Condition="'$(Configuration)' == 'Debug'">debug</VersionSuffix>
 		<!-- Release candidate line: delete this element (or pass -p:VersionSuffix=) to build the stable 11.0.0 packages. -->
-		<VersionSuffix Condition="'$(Configuration)' != 'Debug'">rc.8</VersionSuffix>
+		<VersionSuffix Condition="'$(Configuration)' != 'Debug'">rc.9</VersionSuffix>
 
 		<!-- A package built on a developer machine must not carry that machine's folder names. In a Release build the SDK maps the repository root to a neutral prefix
 		     in every path it embeds: the source files, the debug-symbol path inside each dll, and the Source Link mapping inside the symbols. -->
