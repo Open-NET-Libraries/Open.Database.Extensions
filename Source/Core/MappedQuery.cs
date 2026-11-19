@@ -277,22 +277,37 @@ readonly struct MappedQueryCore<T>
 		return found ? row! : throw RowReader.NoRows(nameof(Single));
 	}
 
-	internal ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
+	// ToListAsync and ToArrayAsync read into a chain of pooled arrays (see
+	// ChunkChain): nothing is copied while the connection is open. The one
+	// exact copy into the result happens after the read, once the
+	// connection is released, and the arrays go back to the pool however
+	// the call ends.
+	internal async ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
 	{
-		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return RunAsync((_source, _skip, _take, _asyncReads, token), static (reader, s)
-			=> reader is DbDataReader db
-				? RowReader.ToListAsync(s._source, db, s._skip, s._take, s._asyncReads, s.token)
-				: new ValueTask<List<T>>(RowReader.ToList(s._source, reader, s._skip, s._take, s.token)), Behavior, linked, token);
+		ChunkChain<T> chain = new();
+		try
+		{
+			await FillAsync(new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
+			return chain.ToList();
+		}
+		finally
+		{
+			chain.Dispose();
+		}
 	}
 
-	internal ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
+	internal async ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
 	{
-		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return RunAsync((_source, _skip, _take, _asyncReads, token), static (reader, s)
-			=> reader is DbDataReader db
-				? RowReader.ToArrayAsync(s._source, db, s._skip, s._take, s._asyncReads, s.token)
-				: new ValueTask<T[]>(RowReader.ToArray(s._source, reader, s._skip, s._take, s.token)), Behavior, linked, token);
+		ChunkChain<T> chain = new();
+		try
+		{
+			await FillAsync(new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
+			return chain.ToArray();
+		}
+		finally
+		{
+			chain.Dispose();
+		}
 	}
 
 	internal ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken)
