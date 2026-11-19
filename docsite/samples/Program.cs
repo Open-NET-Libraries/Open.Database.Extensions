@@ -208,6 +208,21 @@ Check(
 	"the Items view has a count, an indexer, an enumerator and a LINQ copy");
 
 Check(
+	(await AsyncBuffers.CopyOutAsync(factory, CancellationToken.None))
+		.Select(static post => post.Id)
+		.SequenceEqual([1, 2, 3, 4, 5]),
+	"a ToArray copy of the Items view is valid after the buffer is disposed");
+
+Check(
+	(await AsyncBuffers.FinishQueryAsync(factory, CancellationToken.None))
+		.SequenceEqual([1, 2, 3]),
+	"a LINQ query finished with ToList() before the dispose holds its rows");
+
+Check(
+	await AsyncBuffers.LazyAfterDisposeAsync(factory, CancellationToken.None),
+	"a lazy LINQ query enumerated after the dispose throws ObjectDisposedException");
+
+Check(
 	(await AsyncBuffers.SkipTakeAsync(factory, CancellationToken.None))
 		.SequenceEqual([2, 3]),
 	"ToAsyncBuffer after Skip(1).Take(2) holds posts 2 and 3");

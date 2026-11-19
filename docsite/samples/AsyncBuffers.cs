@@ -78,6 +78,68 @@ public static class AsyncBuffers
 		int IdSum,
 		int CopyLength);
 
+	#region buffers_copy_out
+	// The rows outlive the buffer only as a copy.
+	public static async Task<Post[]> CopyOutAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		await using PooledBuffer<Post> buffer
+			= LatestPosts(connectionFactory, cancellationToken);
+		PooledArray<Post> posts = await buffer.Items;
+
+		// ToArray copies the rows out; the array stays valid after
+		// the buffer is disposed.
+		return posts.ToArray();
+	}
+	#endregion
+
+	#region buffers_finish_query
+	// A LINQ query over the view is lazy: it runs when it is
+	// enumerated. Finish it before the buffer is disposed.
+	public static async Task<List<int>> FinishQueryAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		await using PooledBuffer<Post> buffer
+			= LatestPosts(connectionFactory, cancellationToken);
+		PooledArray<Post> posts = await buffer.Items;
+
+		// ToList() runs the query now, while the buffer is alive.
+		return posts
+			.Where(static post => post.Author == 42)
+			.Select(static post => post.Id)
+			.ToList();
+	}
+	#endregion
+
+	#region buffers_lazy_trap
+	// The mistake: the query has not run when the buffer is
+	// disposed, so it runs on arrays that are already back in the pool.
+	public static async Task<bool> LazyAfterDisposeAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		IEnumerable<int> ids;
+		await using (PooledBuffer<Post> buffer
+			= LatestPosts(connectionFactory, cancellationToken))
+		{
+			PooledArray<Post> posts = await buffer.Items;
+			ids = posts.Select(static post => post.Id);
+		}
+
+		try
+		{
+			_ = ids.ToList();
+			return false;
+		}
+		catch (ObjectDisposedException)
+		{
+			return true;
+		}
+	}
+	#endregion
+
 	#region buffers_skip_take
 	public static async Task<int[]> SkipTakeAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
