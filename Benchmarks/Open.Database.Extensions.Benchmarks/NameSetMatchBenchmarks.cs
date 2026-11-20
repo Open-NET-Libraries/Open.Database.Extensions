@@ -42,7 +42,7 @@ public class NameSetMatchBenchmarks
 
 	sealed class Frozen
 	{
-		readonly object _gate = new();
+		readonly Lock _gate = new();
 		FrozenDictionary<string, string?> _snapshot = FrozenDictionary<string, string?>.Empty;
 
 		public string? Match(string expression)
@@ -66,7 +66,7 @@ public class NameSetMatchBenchmarks
 
 	sealed class Snapshot
 	{
-		readonly object _gate = new();
+		readonly Lock _gate = new();
 		Dictionary<string, string?> _snapshot = new(StringComparer.Ordinal);
 
 		public string? Match(string expression)
