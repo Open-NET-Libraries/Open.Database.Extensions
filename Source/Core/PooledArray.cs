@@ -194,7 +194,7 @@ public sealed class PooledArray<T>
 #if NET
 		T[] result = GC.AllocateUninitializedArray<T>(count);
 #else
-		T[] result = new T[count];
+		var result = new T[count];
 #endif
 		CopyTo(result);
 		return result;

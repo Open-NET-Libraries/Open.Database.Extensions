@@ -772,7 +772,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		{
 			Param p = list[i];
 			if (p.Expression is not { } expression
-				|| (p.FromObject && real.Rechecked))
+			 || p.FromObject && real.Rechecked)
 			{
 				continue;
 			}

@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -307,7 +306,7 @@ public static class ChunkChainTests
 		PooledArray<PoolRow> items = await buffer.Items;
 
 		PoolRow[] array = items.ToArray();
-		List<PoolRow> list = items.ToList();
+		var list = items.ToList();
 
 		AssertIds(array, n);
 		AssertIds(list, n);
@@ -478,12 +477,12 @@ public static class ChunkChainTests
 	[InlineData(100)]
 	public static async Task ResultsBuffered_ReturnsEveryRow_InOrder(int n)
 	{
-		using var syncReader = new ChannelTestReader(n);
+		await using var syncReader = new ChannelTestReader(n);
 		IEnumerable<PoolRow> sync = syncReader
-			.ResultsBuffered<PoolRow>((RowMap<PoolRow>?)null);
+			.ResultsBuffered<PoolRow>(null);
 		AssertIds([.. sync], n);
 
-		using var asyncReader = new ChannelTestReader(n);
+		await using var asyncReader = new ChannelTestReader(n);
 		IEnumerable<PoolRow> buffered = await asyncReader
 			.ResultsBufferedAsync<PoolRow>(null, true, Ct);
 		AssertIds([.. buffered], n);
@@ -517,7 +516,7 @@ public static class ChunkChainTests
 				.. Enumerable.Range(0, 96).Select(i => Task.Run(async () =>
 				{
 					int n = sizes[i % sizes.Length];
-					int offset = ((r * 100) + i) * 10_000;
+					int offset = (r * 100 + i) * 10_000;
 					object?[][] data =
 					[
 						.. Enumerable.Range(1, n)

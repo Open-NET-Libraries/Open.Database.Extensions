@@ -1784,7 +1784,7 @@ public static class PooledBufferTests
 			asInterface.Select(r => r.Id).ToList());
 		Assert.Equal(
 			Ids(n),
-			((System.Collections.IEnumerable)items).Cast<ChannelRow>()
+			items.Cast<ChannelRow>()
 				.Select(r => r.Id).ToList());
 
 		// And the indexer agrees with it.

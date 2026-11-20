@@ -932,7 +932,7 @@ public static class MappedQueryFirstSingleTests
 	{
 		ListQuery<Person> three = new(Row(1), Row(2), Row(3));
 
-		Assert.Equal(1, ((IMappedQuery<Person>)three).First().Id);
+		Assert.Equal(1, three.First().Id);
 		Assert.Equal(1, three.Enumerated);
 	}
 

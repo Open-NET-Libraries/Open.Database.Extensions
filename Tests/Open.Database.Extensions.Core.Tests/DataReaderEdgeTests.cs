@@ -469,7 +469,7 @@ public static class DataReaderEdgeTests
 				true,
 				token),
 			"IterateWhileAsync(IDataReader)"
-				=> ((IDataReader)reader).IterateWhileAsync(
+				=> reader.IterateWhileAsync(
 					r => new ValueTask<bool>(Visit(each, r)),
 					token),
 			"ForEachAsync(Func, no ReadAsync)" => reader.ForEachAsync(
@@ -485,11 +485,11 @@ public static class DataReaderEdgeTests
 				false,
 				token),
 			"IterateWhileAsync(IDataReader, no ReadAsync)"
-				=> ((IDataReader)reader).IterateWhileAsync(
+				=> reader.IterateWhileAsync(
 					r => new ValueTask<bool>(Visit(each, r)),
 					false,
 					token),
-			_ => ((IDataReader)reader).IterateWhileAsync(
+			_ => reader.IterateWhileAsync(
 				r => new ValueTask<bool>(Visit(each, r)),
 				true,
 				token),

@@ -32,7 +32,7 @@ public static class TypedNullParameterTests
 		Command(probe)
 			.AddParam("@a", (long?)null)
 			.AddParam("@b", default(int?))
-			.AddParam("@c", (string?)null)
+			.AddParam("@c", null)
 			.ExecuteNonQuery();
 
 		Assert.Equal(
@@ -115,7 +115,7 @@ public static class TypedNullParameterTests
 
 		Command(probe)
 			.AddParam("@a", (long?)null, DbType.Int32)
-			.AddParam("@b", (string?)null, DbType.AnsiStringFixedLength)
+			.AddParam("@b", null, DbType.AnsiStringFixedLength)
 			.AddParam("@c", (long?)5, DbType.Int16)
 			.AddParam("@d", (object?)null, DbType.Int32)
 			.ExecuteNonQuery();
@@ -195,7 +195,7 @@ public static class TypedNullParameterTests
 		var probe = new ConnectionProbe(ConnectionState.Open);
 
 		Command(probe)
-			.AddParam("@a", (long?)null, ParameterDirection.Input)
+			.AddParam("@a", null, ParameterDirection.Input)
 			.ExecuteNonQuery();
 
 		AssertUntyped(probe.Parameters[0]);
@@ -209,7 +209,7 @@ public static class TypedNullParameterTests
 
 		Command(probe)
 			.AddParamIf(true, "@a", (long?)null)
-			.AddParamIf(true, "@b", (string?)null)
+			.AddParamIf(true, "@b", null)
 			.AddParamIf(false, "@c", (int?)null)
 			.ExecuteNonQuery();
 
@@ -226,8 +226,8 @@ public static class TypedNullParameterTests
 
 		Command(probe, "SELECT @a, @b, @c, @d, @e")
 			.AddParamIf(true, "@a", (long?)null, DbType.Int32)
-			.AddParamIf(true, "@b", (string?)null, DbType.AnsiStringFixedLength)
-			.AddParamIf(true, "@c", (long?)null, (DbType?)null)
+			.AddParamIf(true, "@b", null, DbType.AnsiStringFixedLength)
+			.AddParamIf(true, "@c", (long?)null, null)
 			.AddParamIf(true, "@d", (object?)null, DbType.Int16)
 			.AddParamIf(true, "@e", (object?)null)
 			.ExecuteNonQuery();

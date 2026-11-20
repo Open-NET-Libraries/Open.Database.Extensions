@@ -82,10 +82,10 @@ public static class CollectTerminalTests
 	public static async Task ANullKey_ThrowsArgumentNull_AfterTheRead()
 	{
 		Assert.Throws<ArgumentNullException>(
-			() => Distinct(2).Map<PoolRow>().ToDictionary(r => (string)null!));
+			() => Distinct(2).Map<PoolRow>().ToDictionary(_ => (string)null!));
 		await Assert.ThrowsAsync<ArgumentNullException>(
 			async () => await Distinct(2).Map<PoolRow>()
-				.ToDictionaryAsync(r => (string)null!, null, Ct));
+				.ToDictionaryAsync(_ => (string)null!, null, Ct));
 	}
 
 	[Fact]
@@ -136,7 +136,7 @@ public static class CollectTerminalTests
 		FakeExecuteReader command = new(
 			() => Reader([[1, "a", null], [2, "b", null], [11, "c", null]]));
 
-		HashSet<PoolRow> sync = command.Map<PoolRow>().ToHashSet(new LastDigit());
+		var sync = command.Map<PoolRow>().ToHashSet(new LastDigit());
 		Assert.Equal(2, sync.Count);
 		Assert.Contains(new PoolRow(1), sync);
 
