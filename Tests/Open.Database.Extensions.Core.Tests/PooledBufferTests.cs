@@ -1363,6 +1363,12 @@ public static class PooledBufferTests
 					catch (OperationCanceledException) { }
 				},
 				Ct);
+
+			// Every tenth round lets the read finish first, so the run is
+			// sure to rent arrays even when every racing dispose wins (a
+			// busy machine can schedule each producer after its dispose).
+			if (round % 10 == 0) await touch.Within();
+
 			var dispose = Task.Run(
 				async () =>
 				{
