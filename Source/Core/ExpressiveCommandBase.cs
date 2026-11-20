@@ -1033,7 +1033,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		try
 		{
-			if (before == ConnectionState.Closed) connection.Close();
+			if (ConnectionExtensions.NeedsOpen(before)) connection.Close();
 		}
 		finally
 		{
@@ -1122,7 +1122,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		return ExecuteCore((state, transform, behavior), static (cmd, prior, s) =>
 		{
-			CommandBehavior b = prior == ConnectionState.Closed ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
+			CommandBehavior b = ConnectionExtensions.NeedsOpen(prior) ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
 			using IDataReader reader = cmd.ExecuteReader(b);
 			return s.transform(reader, s.state);
 		});
@@ -1201,7 +1201,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	ValueTask<TResult> ExecuteReaderCoreAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
 		=> ExecuteCoreAsync((state, transform, behavior, cancellationToken), static async (cmd, prior, s) =>
 		{
-			CommandBehavior b = prior == ConnectionState.Closed ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
+			CommandBehavior b = ConnectionExtensions.NeedsOpen(prior) ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
 			if (cmd is DbCommand dbCommand)
 			{
 #if NETSTANDARD2_0

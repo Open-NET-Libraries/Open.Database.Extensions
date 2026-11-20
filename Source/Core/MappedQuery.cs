@@ -103,7 +103,7 @@ public static partial class CoreExtensions
 // pending skip/take. The execution itself is the command's own ExecuteReader/ExecuteReaderAsync.
 // Terminals run the read loops in RowReader directly against the live reader (real async when the reader
 // is a DbDataReader). Skipped rows are advanced without mapping; a take stops reading once satisfied.
-readonly struct MappedQueryCore<T>
+readonly struct MappedQueryCore<T> : IEquatable<MappedQueryCore<T>>
 {
 	// Generated mappings read each column once, in order, so the provider may stream the row.
 	// A caller-supplied selector may read in any order, so it runs with the default access mode.
@@ -116,13 +116,43 @@ readonly struct MappedQueryCore<T>
 	readonly bool _asyncReads; // AsyncReads() was called: the rows of an async terminal are read with ReadAsync (the default is Read).
 
 	internal MappedQueryCore(IExecuteReader command, IRowSource<T> source, int skip, int take, bool singleResult, bool asyncReads = false)
-	{ Command = command; _source = source; _skip = skip; _take = take; _singleResult = singleResult; _asyncReads = asyncReads; }
+	{ _command = command; _source = source; _skip = skip; _take = take; _singleResult = singleResult; _asyncReads = asyncReads; }
 
 	// A default struct has no command: any use of it says so,
 	// the same way for every type of the family.
-	IExecuteReader Command
-		=> field ?? throw new InvalidOperationException(
+	readonly IExecuteReader? _command;
+
+	public IExecuteReader Command
+		=> _command ?? throw new InvalidOperationException(
 			"This query was not created by Map<T>(); a default value cannot be used.");
+
+	// Equality is for a caller that keys on the whole query; it never runs on
+	// the path that executes one. Without it a record struct holding this
+	// would compare and hash its fields by reflection.
+	public bool Equals(MappedQueryCore<T> other)
+		=> Equals(_command, other._command)
+		&& Equals(_source, other._source)
+		&& _skip == other._skip
+		&& _take == other._take
+		&& _singleResult == other._singleResult
+		&& _asyncReads == other._asyncReads;
+
+	public override bool Equals(object? obj)
+		=> obj is MappedQueryCore<T> other && Equals(other);
+
+	public override int GetHashCode()
+	{
+		unchecked
+		{
+			int h = _command?.GetHashCode() ?? 0;
+			h = (h * 31) + (_source?.GetHashCode() ?? 0);
+			h = (h * 31) + _skip;
+			h = (h * 31) + _take;
+			return (h * 31)
+				+ (_singleResult ? 2 : 0)
+				+ (_asyncReads ? 1 : 0);
+		}
+	}
 
 	// Without .SingleResult() the reader is asked for every result set, because a terminal reads through the later ones to report their failures.
 	CommandBehavior Behavior => _singleResult
@@ -603,6 +633,13 @@ public readonly record struct MappedQuery<T>
 {
 	readonly MappedQueryCore<T> _core;
 	internal MappedQuery(MappedQueryCore<T> core) => _core = core;
+
+	/// <summary>
+	/// The command this query reads from, for a caller that keys on the query
+	/// (the memoize seam). Nothing runs by reading it.
+	/// </summary>
+	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
+	public IExecuteReader Command => _core.Command;
 
 	/// <summary>Skips the first <paramref name="count"/> mapped records.</summary>
 	public MappedQueryWithSkip<T> Skip(int count) => new(_core.WithSkip(count));
@@ -1201,6 +1238,13 @@ public readonly record struct MappedQueryWithSkip<T>
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithSkip(MappedQueryCore<T> core) => _core = core;
 
+	/// <summary>
+	/// The command this query reads from, for a caller that keys on the query
+	/// (the memoize seam). Nothing runs by reading it.
+	/// </summary>
+	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
+	public IExecuteReader Command => _core.Command;
+
 	/// <summary>Limits the result to at most <paramref name="count"/> mapped records.</summary>
 	public MappedQueryWithTake<T> Take(int count) => new(_core.WithTake(count));
 
@@ -1350,6 +1394,13 @@ public readonly record struct MappedQueryWithTake<T>
 {
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithTake(MappedQueryCore<T> core) => _core = core;
+
+	/// <summary>
+	/// The command this query reads from, for a caller that keys on the query
+	/// (the memoize seam). Nothing runs by reading it.
+	/// </summary>
+	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
+	public IExecuteReader Command => _core.Command;
 
 	/// <inheritdoc cref="MappedQuery{T}.SingleResult"/>
 	public MappedQueryWithTake<T> SingleResult() => new(_core.WithSingleResult());

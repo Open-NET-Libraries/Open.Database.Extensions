@@ -6,7 +6,7 @@
 		<OutputType>Exe</OutputType>
 		<IsPackable>false</IsPackable>
 		<ImplicitUsings>true</ImplicitUsings>
-		<NoWarn>$(NoWarn);IDE0079</NoWarn>
+		<NoWarn>$(NoWarn);IDE0079;CS8632</NoWarn>
 	</PropertyGroup>
 
   <ItemGroup>
@@ -32,6 +32,13 @@
     <ProjectReference Include="..\..\Source\Extensions\Open.Database.Extensions.csproj" />
     <ProjectReference Include="..\..\Source\SqlClient\Open.Database.Extensions.SqlClient.csproj" />
     <ProjectReference Include="..\..\Source\MSSqlClient\Open.Database.Extensions.MSSqlClient.csproj" Aliases="mssql" />
+  </ItemGroup>
+
+  <!-- The benchmark project's synthetic provider, linked so the allocation tests measure on the provider the design numbers were taken on. -->
+  <ItemGroup>
+    <Compile Include="..\..\Benchmarks\Open.Database.Extensions.Benchmarks\SyntheticProvider.cs" Link="TestHelpers\Synthetic\SyntheticProvider.cs" />
+    <Compile Include="..\..\Benchmarks\Open.Database.Extensions.Benchmarks\SyntheticRefill.cs" Link="TestHelpers\Synthetic\SyntheticRefill.cs" />
+    <Compile Include="..\..\Benchmarks\Open.Database.Extensions.Benchmarks\BenchProvider.cs" Link="TestHelpers\Synthetic\BenchProvider.cs" />
   </ItemGroup>
 
   <ItemGroup>

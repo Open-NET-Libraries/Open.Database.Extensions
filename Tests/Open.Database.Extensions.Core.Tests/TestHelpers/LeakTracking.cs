@@ -105,6 +105,9 @@ internal sealed class TrackedConnection(DbTally tally) : DbConnection
 
 	public int Disposes { get; private set; }
 
+	/// <summary>The connection is lost while open: it reports Broken until it is closed (as a provider does).</summary>
+	public void Break() => _state = ConnectionState.Broken;
+
 	public void ResetCounters()
 	{
 		Opens = 0;
@@ -131,7 +134,7 @@ internal sealed class TrackedConnection(DbTally tally) : DbConnection
 
 	public override void Close()
 	{
-		if (_state != ConnectionState.Open) return;
+		if ((_state & (ConnectionState.Open | ConnectionState.Broken)) == 0) return;
 
 		Closes++;
 		_state = ConnectionState.Closed;
@@ -168,14 +171,26 @@ internal sealed class TrackedTransaction(TrackedConnection connection, Isolation
 {
 	public int Commits { get; private set; }
 	public int Rollbacks { get; private set; }
+	bool _completed;
+
 	public int Disposes { get; private set; }
 
 	public override IsolationLevel IsolationLevel => isolationLevel;
-	protected override DbConnection? DbConnection => connection;
 
-	public override void Commit() => Commits++;
+	// As a provider's: null once the transaction has completed.
+	protected override DbConnection? DbConnection => _completed ? null : connection;
 
-	public override void Rollback() => Rollbacks++;
+	public override void Commit()
+	{
+		Commits++;
+		_completed = true;
+	}
+
+	public override void Rollback()
+	{
+		Rollbacks++;
+		_completed = true;
+	}
 
 	protected override void Dispose(bool disposing)
 	{
@@ -255,6 +270,9 @@ internal sealed class TrackedReader(DbTally tally, TrackedConnection connection,
 
 	public int Reads { get; private set; }
 	public int Disposes { get; private set; }
+
+	/// <summary>What the command asked of the provider.</summary>
+	public CommandBehavior Behavior => behavior;
 
 	public override bool IsClosed => _closed;
 

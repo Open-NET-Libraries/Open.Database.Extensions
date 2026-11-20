@@ -37,6 +37,40 @@ A command is not safe to share across threads: one built from a single connectio
 
 Choose by what you need: only the last two rows have `Async` terminals, so a service that awaits starts from a `DbConnection` or an `IDbConnectionFactory<TConnection>` (for example `IDbConnectionFactory<DbConnection>`). Pass a `CommandType` as the second argument of `Command` if you need `TableDirect`.
 
+## Defining a query once
+
+When the same query runs from several places, define it once, with no connection, and bind it where it runs. A `DbQuery` is immutable, so it is safe in a `static readonly` field and shared by every caller. `Using(source)` binds it to a connection, a transaction, a pool or a factory; each `AddParam` returns a new immutable call and leaves the one before it as it was, so a held call can branch.
+
+```csharp
+static readonly DbQuery PostsByAuthor
+    = DbQuery.Procedure("dbo.PostsByAuthor");
+
+// The names come from the variables, as AddParam(author) does on a command.
+List<Post> posts = await PostsByAuthor.Using(db)
+    .AddParam(authorId)
+    .AddParam(day)
+    .Map<Post>()
+    .ToListAsync(cancellationToken);
+```
+
+To have the values checked at compile time, declare their type once. It is a `struct` that implements `IEquatable<TParams>` (a `readonly record struct` is the intended shape, and does) whose public properties and fields are the parameters, given in one call that the compiler checks:
+
+```csharp
+readonly record struct AuthorDayParams(int AuthorId, DateTime Day);
+
+static readonly DbQuery<AuthorDayParams> PostsByAuthorTyped
+    = DbQuery.Procedure("dbo.PostsByAuthor").Params<AuthorDayParams>();
+
+List<Post> posts = await PostsByAuthorTyped.Using(db)
+    .AddParams(new(AuthorId: authorId, Day: day))
+    .Map<Post>()
+    .ToListAsync(cancellationToken);
+```
+
+Everything after `Using` is what a command does: `Map<T>()` is the same extension, every terminal and `SingleResult()` apply, the connection is opened late and closed again only if the call opened it, a factory's connection is disposed and a pool's is given back. `SetTimeout(seconds)` on a definition returns a new definition. A `DbQuery` takes the same sources as `Using` does for a command, but only the typed ones: a connection (`DbConnection`), a transaction, an `IDbConnectionPool<TConnection>` or an `IDbConnectionFactory<TConnection>`; a bare `Func<TConnection>` is not one (wrap it in `new DbConnectionFactory<TConnection>(func)`).
+
+A call is cheaper than the command builder and no dearer than ADO.NET written by hand, apart from one small node (at most 48 bytes) at a single value: it is a few small immutable objects, and the typed form is one. Names are resolved as a command resolves them (see [Name a parameter from its argument](#name-a-parameter-from-its-argument)): `AddParam(authorId)` finds `@author_id`, and the typed form matches each member of the values type the same way and, when the names are known, does not send a member the query does not declare. A text definition finds its `@name` markers once, when it is made; a procedure's names are remembered for five minutes per connection source (the factory, the pool or the connection, also for a transaction) and per server and database, and read again only when they do not fit.
+
 ## Parameters
 
 Name a parameter in the way that fits what you have:

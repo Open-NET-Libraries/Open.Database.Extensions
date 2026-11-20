@@ -13,6 +13,14 @@ internal interface IRowSource<T>
 /// <summary>A caller-supplied projection (no reflection involved).</summary>
 internal sealed class SelectorSource<T>(Func<IDataRecord, T> selector) : IRowSource<T>
 {
+	// Equal when the delegates are: a static lambda or a method group is, a capturing lambda is not (each call makes a new one).
+	// For a caller that keys on a query (the memoize seam); it never runs on the path that reads rows.
+	public override bool Equals(object? obj) => obj is SelectorSource<T> other && selector.Equals(other.Selector);
+
+	public override int GetHashCode() => selector.GetHashCode();
+
+	Func<IDataRecord, T> Selector => selector;
+
 	// A Func<IDataRecord,T> is a Func<DbDataReader,T> by contravariance: no wrapper delegate needed.
 	public Func<DbDataReader, T> Mapper(DbDataReader reader) => selector;
 	public Func<IDataRecord, T> Mapper(IDataRecord reader) => selector;
