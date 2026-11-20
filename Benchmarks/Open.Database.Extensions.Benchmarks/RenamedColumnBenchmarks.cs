@@ -67,7 +67,7 @@ public static class RenamedColumns
 }
 
 // With every column named differently from its property, a read through a declared RowMap<T> should cost what Map<T>() costs
-// on matching names (the baseline), and no more than Dapper with an equivalent type map set once. The pairs overload of Map<T> is the
+// on matching names (the baseline), and no more than Dapper with an equivalent type map set once. A new RowMap<T> built from the pairs inside each call is the
 // one-off path: it builds a new map and compiles the row reader on every call, so it is here to show what declaring a map saves.
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
@@ -93,7 +93,7 @@ public class RenamedColumnBenchmarks
 		List<Post> expected = List_ShortNames();
 		if (!List_SameNames().Zip(expected, RenamedColumns.Same).All(x => x))
 			throw new InvalidOperationException("The same-name read mapped the rows differently.");
-		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_PairsOverload(), List_DapperTypeMap() })
+		foreach (List<RenamedPost> actual in new[] { List_RowMap(), List_NewRowMap(), List_DapperTypeMap() })
 		{
 			if (expected.Count != actual.Count || !expected.Zip(actual, RenamedColumns.Same).All(x => x))
 				throw new InvalidOperationException("A renamed-column read mapped the rows differently from the matching-name read.");
@@ -113,7 +113,7 @@ public class RenamedColumnBenchmarks
 
 	// The one-off path: builds a new map and compiles the row reader on every call.
 	[BenchmarkCategory("List"), Benchmark]
-	public List<RenamedPost> List_PairsOverload() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).ToList();
+	public List<RenamedPost> List_NewRowMap() => _renamed.Command(Sql).Map(new RowMap<RenamedPost>(RenamedColumns.Pairs)).ToList();
 
 	[BenchmarkCategory("List"), Benchmark]
 	public List<RenamedPost> List_DapperTypeMap() => _renamed.Query<RenamedPost>(Sql).AsList();
@@ -128,7 +128,7 @@ public class RenamedColumnBenchmarks
 	public RenamedPost? First_RowMap() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Map).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
-	public RenamedPost? First_PairsOverload() => _renamed.Command(Sql).Map<RenamedPost>(RenamedColumns.Pairs.AsSpan()).FirstOrDefault();
+	public RenamedPost? First_NewRowMap() => _renamed.Command(Sql).Map(new RowMap<RenamedPost>(RenamedColumns.Pairs)).FirstOrDefault();
 
 	[BenchmarkCategory("First"), Benchmark]
 	public RenamedPost? First_DapperTypeMap() => _renamed.QueryFirstOrDefault<RenamedPost>(Sql);

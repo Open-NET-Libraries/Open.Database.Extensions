@@ -3,6 +3,7 @@ name: Tests
 # Runs the Core test suite on every pull request and every push to master, and checks the packages for known vulnerabilities.
 # The suite runs on net10.0 and net11.0 in Release, and on net11.0 in Debug (Debug.Assert is live there).
 # A separate job runs the LegacyCompiler tests, which compile the public call shapes with older C# language versions.
+# Another job builds the Benchmarks project (it is not in the solution), so a change to the public API cannot leave its call sites behind.
 # SQL Server LocalDB is part of the runner image. ODX_REQUIRE_SQL=1 makes the tests that need it fail, instead of skip, when it is missing.
 
 on:
@@ -112,6 +113,27 @@ jobs:
         with:
           name: trx-legacy-compiler
           path: TestResults/legacy-compiler/*.trx
+
+  benchmarks-build:
+    name: Build the Benchmarks project
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+
+      # The Benchmarks project is not in the solution, so no other job compiles it. Only the build runs here: no benchmark is run.
+      # No -f: both target frameworks of the project build.
+      - name: Build the Benchmarks project (Release)
+        run: dotnet build Benchmarks/Open.Database.Extensions.Benchmarks -c Release
 
   vulnerable-packages:
     name: Vulnerable packages
