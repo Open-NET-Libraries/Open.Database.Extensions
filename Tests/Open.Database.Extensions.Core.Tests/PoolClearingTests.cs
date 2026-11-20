@@ -16,15 +16,11 @@ namespace Open.Database.Extensions.Tests;
 //   the switch;
 // - the pool a caller passes must hand out WHOLE arrays: anything else is
 //   refused with a NotSupportedException, after disposing that rent.
-// The tests change statics (the shared pool seam of the chunk chain, the
-// cached switch), so they run in the ChunkSizing collection, one at a time,
-// and put every one back.
 /// <summary>A row with no references, a type of its own (so its pool is its own).</summary>
 [ExcludeFromCodeCoverage]
 internal readonly record struct PoolValue(int Id);
 
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
 public static class PoolClearingTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -38,64 +34,6 @@ public static class PoolClearingTests
 
 	static Type Clearing
 		=> Core.GetType("Open.Database.Extensions.Core.PoolClearing")!;
-
-	static FieldInfo ChainPool<T>()
-		=> Core.GetType("Open.Database.Extensions.Core.ChunkChain`1")!
-			.MakeGenericType(typeof(T))
-			.GetField("_pool", Internal)!;
-
-	// The cached switch is put in and taken out again, whatever happens.
-	static async Task WithSwitch(bool on, Func<Task> body)
-	{
-		FieldInfo field = Clearing.GetField("_all", Internal)!;
-		object? before = field.GetValue(null);
-		field.SetValue(null, on);
-		try { await body(); }
-		finally { field.SetValue(null, before); }
-	}
-
-	// An ArrayPool that gives out fresh arrays and sees whether any row is
-	// left in one that comes back.
-	sealed class DirtyArrayPool<T> : ArrayPool<T>
-	{
-		int _rents;
-		int _returns;
-		int _dirty;
-
-		public int Rents => Volatile.Read(ref _rents);
-		public int Returns => Volatile.Read(ref _returns);
-		public int Dirty => Volatile.Read(ref _dirty);
-
-		public override T[] Rent(int minimumLength)
-		{
-			Interlocked.Increment(ref _rents);
-			int size = 16;
-			while (size < minimumLength) size <<= 1;
-			return new T[size];
-		}
-
-		public override void Return(T[] array, bool clearArray = false)
-		{
-			Interlocked.Increment(ref _returns);
-			if (array.Any(static row
-				=> !EqualityComparer<T>.Default.Equals(row, default!)))
-			{
-				Interlocked.Increment(ref _dirty);
-			}
-		}
-	}
-
-	// The shared array pool of the chain, swapped for a counting one.
-	static async Task WithSharedPool<T>(
-		DirtyArrayPool<T> pool,
-		Func<Task> body)
-	{
-		FieldInfo field = ChainPool<T>();
-		object? before = field.GetValue(null);
-		field.SetValue(null, pool);
-		try { await body(); }
-		finally { field.SetValue(null, before); }
-	}
 
 	// ---- rigs ---------------------------------------------------------------
 
@@ -155,18 +93,6 @@ public static class PoolClearingTests
 		}
 	}
 
-	// The terminals that collect through the chunk chain (the shared array
-	// pool seam reaches these; ToArray uses its own buffer).
-	public static TheoryData<string> ChainTerminals
-		=> [
-			"ToListAsync",
-			"ToArrayAsync",
-			"ToImmutableArrayAsync",
-			"ToHashSetAsync",
-			"ToHashSet",
-			"ToDictionaryAsync",
-		];
-
 	// Every terminal that rents pooled arrays.
 	public static TheoryData<string> AllTerminals
 		=> [
@@ -184,141 +110,41 @@ public static class PoolClearingTests
 
 	const int N = 100;
 
-	// ---- the shared pool: the default path ----------------------------------
+	// ---- the decision, with the switch given --------------------------------
 
-	[Theory, MemberData(nameof(ChainTerminals))]
-	public static async Task ValueRows_AreNotClearedByDefault(string terminal)
-	{
-		var pool = new DirtyArrayPool<PoolValue>();
-		await WithSwitch(false, () => WithSharedPool(pool, async () =>
-			Assert.Equal(
-				N,
-				await Run(terminal, Rows<PoolValue>(N), static r => r.Id))));
+	// The switch is read once, so a test does not set it: the decision is a
+	// pure method that takes the switch as an argument, and it is checked
+	// here for every combination. A caller's own pool (below) shows what the
+	// decision does to the arrays.
+	static bool Resolve<T>(bool? clear, bool all)
+		=> (bool)Clearing
+			.GetMethods(BindingFlags.Public | BindingFlags.Static)
+			.Single(static m => m.Name == "Resolve" && m.GetParameters().Length == 2)
+			.MakeGenericMethod(typeof(T))
+			.Invoke(null, [clear, all])!;
 
-		Assert.True(pool.Rents > 0);
-		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.True(pool.Dirty > 0, "the rows were cleared");
-	}
+	[Theory]
+	[InlineData(null, false, false)]
+	[InlineData(null, true, true)]
+	[InlineData(false, false, false)]
+	[InlineData(false, true, false)]
+	[InlineData(true, false, true)]
+	[InlineData(true, true, true)]
+	public static void ValueRows_AreClearedWhenAsked_ElseByTheSwitch(
+		bool? clear,
+		bool all,
+		bool expected)
+		=> Assert.Equal(expected, Resolve<PoolValue>(clear, all));
 
-	[Theory, MemberData(nameof(ChainTerminals))]
-	public static async Task ReferenceRows_AreAlwaysCleared_ByDefault(
-		string terminal)
-	{
-		var pool = new DirtyArrayPool<PoolRow>();
-		await WithSwitch(false, () => WithSharedPool(pool, async () =>
-			Assert.Equal(
-				N,
-				await Run(terminal, Rows<PoolRow>(N), static r => r.Id))));
-
-		Assert.True(pool.Rents > 0);
-		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(0, pool.Dirty);
-	}
-
-	[Theory, MemberData(nameof(ChainTerminals))]
-	public static async Task ReferenceRows_AreAlwaysCleared_EvenWithClearFalse(
-		string terminal)
-	{
-		var pool = new DirtyArrayPool<PoolRow>();
-		await WithSwitch(false, () => WithSharedPool(pool, async () =>
-			Assert.Equal(
-				N,
-				await Run(
-					terminal,
-					Rows<PoolRow>(N).UsePool(
-						MemoryPool<PoolRow>.Shared, clearOnReturn: false),
-					static r => r.Id))));
-
-		Assert.True(pool.Rents > 0);
-		Assert.Equal(0, pool.Dirty);
-	}
-
-	[Theory, MemberData(nameof(ChainTerminals))]
-	public static async Task UsePoolClearTrue_ClearsValueRows(string terminal)
-	{
-		var pool = new DirtyArrayPool<PoolValue>();
-		await WithSwitch(false, () => WithSharedPool(pool, async () =>
-			Assert.Equal(
-				N,
-				await Run(
-					terminal,
-					Rows<PoolValue>(N).UsePool(
-						MemoryPool<PoolValue>.Shared, clearOnReturn: true),
-					static r => r.Id))));
-
-		Assert.True(pool.Rents > 0);
-		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(0, pool.Dirty);
-	}
-
-	[Theory, MemberData(nameof(ChainTerminals))]
-	public static async Task TheSwitch_ClearsValueRows_OfAQueryWithoutUsePool(
-		string terminal)
-	{
-		var pool = new DirtyArrayPool<PoolValue>();
-		await WithSwitch(true, () => WithSharedPool(pool, async () =>
-			Assert.Equal(
-				N,
-				await Run(terminal, Rows<PoolValue>(N), static r => r.Id))));
-
-		Assert.True(pool.Rents > 0);
-		Assert.Equal(0, pool.Dirty);
-	}
-
-	// The explicit choice wins over the switch, in both directions.
-	[Theory, MemberData(nameof(ChainTerminals))]
-	public static async Task ClearFalse_WinsOverTheSwitch_ForValueRows(
-		string terminal)
-	{
-		var pool = new DirtyArrayPool<PoolValue>();
-		await WithSwitch(true, () => WithSharedPool(pool, async () =>
-			Assert.Equal(
-				N,
-				await Run(
-					terminal,
-					Rows<PoolValue>(N).UsePool(
-						MemoryPool<PoolValue>.Shared, clearOnReturn: false),
-					static r => r.Id))));
-
-		Assert.True(pool.Rents > 0);
-		Assert.True(pool.Dirty > 0, "the switch overrode clearOnReturn: false");
-	}
-
-	[Theory, MemberData(nameof(ChainTerminals))]
-	public static async Task ClearTrue_WinsOverTheSwitchBeingOff(
-		string terminal)
-	{
-		var pool = new DirtyArrayPool<PoolValue>();
-		await WithSwitch(false, () => WithSharedPool(pool, async () =>
-			Assert.Equal(
-				N,
-				await Run(
-					terminal,
-					Rows<PoolValue>(N).UsePool(
-						MemoryPool<PoolValue>.Shared, clearOnReturn: true),
-					static r => r.Id))));
-
-		Assert.Equal(0, pool.Dirty);
-	}
-
-	// MemoryPool<T>.Shared is recognised by reference: the chunks come from
-	// the shared ArrayPool<T> (the seam sees every rent), no owner is made.
-	[Fact]
-	public static async Task MemoryPoolShared_RentsFromTheSharedArrayPool()
-	{
-		var pool = new DirtyArrayPool<PoolValue>();
-		await WithSwitch(false, () => WithSharedPool(pool, async () =>
-		{
-			List<PoolValue> rows = await Rows<PoolValue>(N)
-				.UsePool(MemoryPool<PoolValue>.Shared, clearOnReturn: false)
-				.ToListAsync(Ct);
-			Assert.Equal(N, rows.Count);
-		}));
-
-		Assert.True(pool.Rents > 0);
-		Assert.Equal(pool.Rents, pool.Returns);
-	}
-
+	[Theory]
+	[InlineData(null, false)]
+	[InlineData(null, true)]
+	[InlineData(false, false)]
+	[InlineData(false, true)]
+	[InlineData(true, false)]
+	[InlineData(true, true)]
+	public static void ReferenceRows_AreAlwaysCleared(bool? clear, bool all)
+		=> Assert.True(Resolve<PoolRow>(clear, all));
 	// ---- a caller's own pool -------------------------------------------------
 
 	static CountingPool<int> IntPool()
@@ -377,25 +203,6 @@ public static class PoolClearingTests
 
 		await AssertBack(pool);
 		Assert.Equal(0, pool.DirtyReturns);
-	}
-
-	[Theory, MemberData(nameof(AllTerminals))]
-	public static async Task UsePoolClearFalse_WinsOverTheSwitch_OnACallerPool(
-		string terminal)
-	{
-		// UsePool always states the choice, so the switch is not asked.
-		CountingPool<int> pool = IntPool();
-
-		await WithSwitch(true, async () =>
-			Assert.Equal(
-				N,
-				await Run(
-					terminal,
-					Rows<int>(N).UsePool(pool, clearOnReturn: false),
-					static r => r)));
-
-		await AssertBack(pool);
-		Assert.True(pool.DirtyReturns > 0, "the switch overrode clearOnReturn: false");
 	}
 
 	[Theory, MemberData(nameof(AllTerminals))]

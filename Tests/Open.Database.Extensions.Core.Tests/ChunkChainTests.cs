@@ -33,55 +33,18 @@ public static class ChunkChainTests
 		=> Core.GetType("Open.Database.Extensions.Core.ChunkSizing")!
 			.GetField(name, Internal)!;
 
-	static FieldInfo Pool()
-		=> Core.GetType("Open.Database.Extensions.Core.ChunkChain`1")!
-			.MakeGenericType(typeof(PoolRow))
-			.GetField("_pool", Internal)!;
-
-	sealed class CountingArrayPool : ArrayPool<PoolRow>
-	{
-		readonly List<int> _sizes = [];
-		int _rents;
-		int _returns;
-		int _dirty;
-
-		public int Rents => Volatile.Read(ref _rents);
-		public int Returns => Volatile.Read(ref _returns);
-		public int Dirty => Volatile.Read(ref _dirty);
-		public int[] Sizes
+	// A caller's pool that counts what goes out and what comes back, and
+	// sees whether a row is left in an array when it does. A fresh array
+	// holds -1 rows, so a row with an Id above 0 is one that was written
+	// and not cleared.
+	static CountingPool<PoolRow> NewPool(bool exact = false)
+		=> new()
 		{
-			get { lock (_sizes) return [.. _sizes]; }
-		}
-
-		public override PoolRow[] Rent(int minimumLength)
-		{
-			Interlocked.Increment(ref _rents);
-			int size = 16;
-			while (size < minimumLength) size <<= 1;
-			lock (_sizes) _sizes.Add(size);
-			return new PoolRow[size];
-		}
-
-		// A freshly rented array is all null: a row left in one that comes
-		// back is a row the pool would keep alive.
-		public override void Return(PoolRow[] array, bool clearArray = false)
-		{
-			Interlocked.Increment(ref _returns);
-			if (array.Any(static row => row is not null))
-				Interlocked.Increment(ref _dirty);
-		}
-	}
-
-	static async Task WithPool(
-		CountingArrayPool pool,
-		Func<Task> body)
-	{
-		FieldInfo field = Pool();
-		object? before = field.GetValue(null);
-		field.SetValue(null, pool);
-		try { await body(); }
-		finally { field.SetValue(null, before); }
-	}
+			RoundUp = true,
+			Exact = exact,
+			Sentinel = static () => new PoolRow(-1),
+			IsDirty = static a => a.Any(static r => r is { Id: > 0 }),
+		};
 
 	static async Task WithSizing(
 		int first,
@@ -107,12 +70,21 @@ public static class ChunkChainTests
 		}
 	}
 
-	static MappedCommand<PoolRow> Rows(int n, int? failAtRow = null)
-		=> new FakeDbCommand(
+	static MappedCommand<PoolRow> Rows(
+		int n,
+		int? failAtRow = null,
+		MemoryPool<PoolRow>? pool = null)
+	{
+		MappedCommand<PoolRow> view = new FakeDbCommand(
 			new FakeDbConnection(),
 			() => new ChannelTestReader(n, failAtRow: failAtRow))
 			.Map<PoolRow>()
 			.AsyncReads();
+
+		return pool is null
+			? view
+			: view.UsePool(pool, clearOnReturn: false);
+	}
 
 	static void AssertIds(IReadOnlyList<PoolRow> rows, int n, int first = 1)
 	{
@@ -159,12 +131,9 @@ public static class ChunkChainTests
 	[Fact]
 	public static async Task ATakeOfZero_RentsNothingAndReturnsEmpty()
 	{
-		var pool = new CountingArrayPool();
-		await WithPool(pool, async () =>
-		{
-			Assert.Empty(await Rows(50).Take(0).ToArrayAsync(Ct));
-			Assert.Empty(await Rows(50).Take(0).ToListAsync(Ct));
-		});
+		CountingPool<PoolRow> pool = NewPool();
+		Assert.Empty(await Rows(50, pool: pool).Take(0).ToArrayAsync(Ct));
+		Assert.Empty(await Rows(50, pool: pool).Take(0).ToListAsync(Ct));
 
 		Assert.Equal(0, pool.Rents);
 	}
@@ -174,48 +143,42 @@ public static class ChunkChainTests
 	[Theory, MemberData(nameof(Sizes))]
 	public static async Task EveryArray_GoesBack_AndIsCleanWhenItDoes(int n)
 	{
-		var pool = new CountingArrayPool();
-		await WithPool(pool, async () =>
-		{
-			await Rows(n).ToArrayAsync(Ct);
-			await Rows(n).ToListAsync(Ct);
-		});
+		CountingPool<PoolRow> pool = NewPool();
+		await Rows(n, pool: pool).ToArrayAsync(Ct);
+		await Rows(n, pool: pool).ToListAsync(Ct);
 
 		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(0, pool.Dirty);
+		Assert.Equal(0, pool.DirtyReturns);
 		Assert.Equal(n == 0, pool.Rents == 0);
 	}
 
 	[Fact]
 	public static async Task AFailureMidRead_ReturnsEveryArray_AndThrows()
 	{
-		var pool = new CountingArrayPool();
-		await WithPool(pool, async () =>
-		{
-			await Assert.ThrowsAsync<InvalidOperationException>(
-				async () => await Rows(100, failAtRow: 40).ToArrayAsync(Ct));
-			await Assert.ThrowsAsync<InvalidOperationException>(
-				async () => await Rows(100, failAtRow: 40).ToListAsync(Ct));
-		});
+		CountingPool<PoolRow> pool = NewPool();
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Rows(100, failAtRow: 40, pool: pool)
+				.ToArrayAsync(Ct));
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Rows(100, failAtRow: 40, pool: pool)
+				.ToListAsync(Ct));
 
 		Assert.True(pool.Rents > 0);
 		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(0, pool.Dirty);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	[Fact]
 	public static async Task ACancelledToken_ThrowsAndLeavesNothingRented()
 	{
-		var pool = new CountingArrayPool();
+		CountingPool<PoolRow> pool = NewPool();
 		using var cts = new CancellationTokenSource();
 		cts.Cancel();
-		await WithPool(
-			pool,
-			async () => await Assert.ThrowsAnyAsync<OperationCanceledException>(
-				async () => await Rows(100).ToArrayAsync(cts.Token)));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () => await Rows(100, pool: pool).ToArrayAsync(cts.Token));
 
 		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(0, pool.Dirty);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	// ---- the sizing schedule (a test seam, not an option) --------------------
@@ -223,32 +186,32 @@ public static class ChunkChainTests
 	[Fact]
 	public static async Task TheChunkSizes_FollowTheSchedule()
 	{
-		var pool = new CountingArrayPool();
-		await WithSizing(1024, 2, 16_384, () => WithPool(pool, async () =>
+		CountingPool<PoolRow> pool = NewPool(exact: true);
+		await WithSizing(1024, 2, 16_384, async () =>
 		{
-			PoolRow[] rows = await Rows(50_000).ToArrayAsync(Ct);
+			PoolRow[] rows = await Rows(50_000, pool: pool).ToArrayAsync(Ct);
 			AssertIds(rows, 50_000);
-		}));
+		});
 
 		// 1,024 then x4 up to the cap, then the cap: 1,024 + 4,096 +
 		// 16,384 + 16,384 = 37,888, and one more to hold 50,000.
 		Assert.Equal(
 			[1024, 4096, 16_384, 16_384, 16_384],
-			pool.Sizes);
+			pool.Requests);
 	}
 
 	[Fact]
 	public static async Task AValueThatDoesNotFit_FallsBackToTheDefaults()
 	{
-		var pool = new CountingArrayPool();
-		await WithSizing(100, 9, 1000, () => WithPool(pool, async () =>
+		CountingPool<PoolRow> pool = NewPool(exact: true);
+		await WithSizing(100, 9, 1000, async () =>
 		{
-			PoolRow[] rows = await Rows(100).ToArrayAsync(Ct);
+			PoolRow[] rows = await Rows(100, pool: pool).ToArrayAsync(Ct);
 			AssertIds(rows, 100);
-		}));
+		});
 
 		// Defaults: 16, 32, 64 holds 100 rows (16 + 32 + 64 = 112).
-		Assert.Equal([16, 32, 64], pool.Sizes);
+		Assert.Equal([16, 32, 64], pool.Requests);
 	}
 
 	// ---- the contract: a fresh array nobody else holds -----------------------

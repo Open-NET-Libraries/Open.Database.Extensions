@@ -22,6 +22,8 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 
 	readonly ConcurrentQueue<T[]> _captured = new();
 
+	readonly ConcurrentQueue<int> _requests = new();
+
 	int _rents;
 	int _returns;
 	int _unmatched;
@@ -33,6 +35,12 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 	/// False: exactly the size asked for.
 	/// </summary>
 	public bool RoundUp { get; init; }
+
+	/// <summary>
+	/// True: every buffer is a new array of exactly the size asked for (so
+	/// a whole array of that size, whatever the inner pool would round to).
+	/// </summary>
+	public bool Exact { get; init; }
 
 	/// <summary>
 	/// A disposal fails (after it is counted), as a broken pool
@@ -79,6 +87,9 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 	/// <summary>Every array this pool ever rented, in order.</summary>
 	public T[][] Captured => [.. _captured];
 
+	/// <summary>The size asked for by every rent, in order.</summary>
+	public int[] Requests => [.. _requests];
+
 	public override int MaxBufferSize
 		=> int.MaxValue;
 
@@ -88,7 +99,8 @@ internal sealed class CountingPool<T> : MemoryPool<T>
 			throw new InvalidOperationException("the pool failed");
 
 		int size = Math.Max(minBufferSize, 1);
-		T[] array = _inner.Rent(RoundUp ? size + 5 : size);
+		_requests.Enqueue(size);
+		T[] array = Exact ? new T[size] : _inner.Rent(RoundUp ? size + 5 : size);
 		if (Sentinel is not null) Array.Fill(array, Sentinel());
 
 		Interlocked.Increment(ref _rents);

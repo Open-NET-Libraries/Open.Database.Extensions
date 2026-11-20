@@ -50,10 +50,6 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	// The one spare chain of this T.
 	static ChunkChain<T>? _spare;
 
-	// A test seam (like ChunkSizing): set by reflection to count rents and
-	// returns, then put back. Per T.
-	public static ArrayPool<T> _pool = ArrayPool<T>.Shared;
-
 	T[][] _chunks = new T[4][];
 
 	// The owners of the chunks, in step with _chunks, only for a caller's
@@ -131,7 +127,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		T[] next;
 		if (_custom is null)
 		{
-			next = _pool.Rent(size);
+			next = ArrayPool<T>.Shared.Rent(size);
 		}
 		else
 		{
@@ -335,7 +331,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 			}
 			else
 			{
-				_pool.Return(chunk, clearArray: false);
+				ArrayPool<T>.Shared.Return(chunk, clearArray: false);
 			}
 		}
 

@@ -13,17 +13,17 @@ namespace Open.Database.Extensions.Core;
 // 3. Otherwise the app-wide switch decides (default: off).
 //
 // The switch is the AppContext setting named below. It is read ONCE, into
-// a static, so a query that never asks pays nothing for it. The field is
-// not readonly only so that a test can put a value in and take it out
-// again (like the pool seam of ChunkChain); nothing else writes it.
+// a static readonly field, so a query that never asks pays nothing for it.
+// Tests do not change it: the decision is a pure method (Resolve with the
+// switch as an argument), and the reading is a method of its own.
 internal static class PoolClearing
 {
 	/// <summary>The name of the AppContext switch.</summary>
 	public const string SwitchName
 		= "Open.Database.Extensions.ClearPooledArrays";
 
-	// The cached value of the switch (test seam).
-	public static bool _all = ReadSwitch();
+	// The cached value of the switch.
+	public static readonly bool All = ReadSwitch();
 
 	/// <summary>
 	/// Reads the switch from the AppContext (the one place it is read).
@@ -37,7 +37,15 @@ internal static class PoolClearing
 	/// nothing, so the switch decides).
 	/// </summary>
 	public static bool Resolve<T>(bool? clear)
-		=> (clear ?? _all) || Holds<T>.References;
+		=> Resolve<T>(clear, All);
+
+	/// <summary>
+	/// The same decision with the switch given: what the query said wins
+	/// over the switch, and a row type that holds references is always
+	/// cleared.
+	/// </summary>
+	public static bool Resolve<T>(bool? clear, bool all)
+		=> (clear ?? all) || Holds<T>.References;
 
 	// The floor: a row type that is, or contains, a reference. The
 	// per-type value is a JIT constant on the shipped runtimes; where
