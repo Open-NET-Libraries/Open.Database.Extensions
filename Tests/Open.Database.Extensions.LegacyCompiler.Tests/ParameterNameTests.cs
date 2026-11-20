@@ -39,7 +39,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", "ann")));
 			Assert.Equal("author=ann", Sent(NewCommand().AddParam("author", s)));
 			Assert.Equal("author=<null>", Sent(NewCommand().AddParam("author", maybe)));
-			Assert.Equal("author=<null>", Sent(NewCommand().AddParam("author", (string)null)));
+			Assert.Equal("author=<null>", Sent(NewCommand().AddParam("author", null)));
 			Assert.Equal("author=ann", Sent(NewCommand().AddParam(name, s)));
 			Assert.Equal("author=ann", Sent(NewCommand().AddParam(name: "author", value: s)));
 		}
@@ -53,7 +53,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", "ann")));
 			Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(true, "author", s)));
 			Assert.Equal("author=<null>", Sent(NewCommand().AddParamIf(true, "author", maybe)));
-			Assert.Equal("author=<null>", Sent(NewCommand().AddParamIf(true, "author", (string)null)));
+			Assert.Equal("author=<null>", Sent(NewCommand().AddParamIf(true, "author", null)));
 			Assert.Equal("author=ann", Sent(NewCommand().AddParamIf(condition: true, name: "author", value: s)));
 			Assert.Equal("", Sent(NewCommand().AddParamIf(false, "author", "ann")));
 			Assert.Equal("", Sent(NewCommand().AddParamIf(false, "author", s)));

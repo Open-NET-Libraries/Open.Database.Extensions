@@ -53,7 +53,7 @@ public sealed class ToListArraySqlServerAllocationProbe(ITestOutputHelper output
 		LocalDbFixture.Execute(
 			$"insert into dbo.[{table}] select top (100) row_number() over (order by (select 1)), 'name', 2 * row_number() over (order by (select 1)) from sys.all_objects a cross join sys.all_columns b");
 
-		using SqlConnection connection = LocalDbFixture.Create();
+		await using SqlConnection connection = LocalDbFixture.Create();
 		await connection.OpenAsync(TestContext.Current.CancellationToken);
 
 		var lines = new List<string>();

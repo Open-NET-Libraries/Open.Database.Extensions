@@ -1,6 +1,3 @@
-using System.Buffers;
-using System.Collections;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Open.Database.Extensions.Core;
@@ -40,7 +37,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	internal static ArrayPool<T> _pool = ArrayPool<T>.Shared;
 
 #if NETSTANDARD2_0
-	static readonly bool MustClear = true;
+	const bool MustClear = true;
 #else
 	static readonly bool MustClear
 		= RuntimeHelpers.IsReferenceOrContainsReferences<T>();
@@ -122,7 +119,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 #if NET
 		T[] result = GC.AllocateUninitializedArray<T>(count);
 #else
-		T[] result = new T[count];
+		var result = new T[count];
 #endif
 		CopyTo(result);
 		return result;

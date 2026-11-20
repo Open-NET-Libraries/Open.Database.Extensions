@@ -181,7 +181,7 @@ public static class FactoryMapTests
 
 		// A NULL into a nullable parameter is null: the function can tell it from a value.
 		WeightEntry nulls = Assert.Single(Read(route, columns, [Stamp, null, null], FromHistory));
-		Assert.Equal((Stamp, (decimal?)null, (decimal?)null), (nulls.WeighedAt, nulls.TareWeight, nulls.GrossWeight));
+		Assert.Equal((Stamp, null, null), (nulls.WeighedAt, nulls.TareWeight, nulls.GrossWeight));
 	}
 
 	[Fact]
@@ -214,7 +214,7 @@ public static class FactoryMapTests
 		// Spreading the pairs gives a member map (documented on From): the pair names the constructor parameter, the function is gone.
 		RowMap<Post> spread = [.. factoryMap];
 		Post member = Assert.Single(Read(Route.Typed, columns, [1, 7], spread));
-		Assert.Equal((7, (string?)null), (member.Id, member.Title));
+		Assert.Equal((7, null), (member.Id, member.Title));
 
 		// A map of the model's own members still rebuilds equivalent.
 		var members = new RowMap<Post>([new("Id", "N")]);
@@ -336,7 +336,7 @@ public static class FactoryMapTests
 
 		var map = RowMap<TwoConstructors>.From(static (int id) => new TwoConstructors(id));
 		TwoConstructors item = Assert.Single(Read(route, [("Id", typeof(int)), ("Name", typeof(string))], [7, "ignored"], map));
-		Assert.Equal((7, (string?)null), (item.Id, item.Name));
+		Assert.Equal((7, null), (item.Id, item.Name));
 	}
 
 	[Theory]
@@ -388,6 +388,6 @@ public static class FactoryMapTests
 		var map = RowMap<Labeled>.From(static (int id, string code = "d1", string? other = "d2") => new Labeled(id, code, other));
 
 		Labeled item = Assert.Single(Read(route, [("id", typeof(int)), ("code", typeof(string)), ("other", typeof(string))], [1, null, null], map));
-		Assert.Equal(("d1", (string?)null), (item.Code, item.Other));
+		Assert.Equal(("d1", null), (item.Code, item.Other));
 	}
 }

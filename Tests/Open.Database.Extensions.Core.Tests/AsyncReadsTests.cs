@@ -192,7 +192,7 @@ public static class AsyncReadsTests
 		MappedQuery<int> b = fluent.Map<int>().AsyncReads();
 		MappedQueryWithSkip<int> c = fluent.Map<int>().Skip(1).AsyncReads();
 		MappedQueryWithTake<int> d = fluent.Map<int>().Take(1).AsyncReads();
-		MappedCommand<int> e = ((IDbCommand)new FakeDbCommand(connection, () => new CountingReader(1))).Map<int>().AsyncReads();
+		MappedCommand<int> e = new FakeDbCommand(connection, () => new CountingReader(1)).Map<int>().AsyncReads();
 
 		Assert.Same(fluent, a);
 		Assert.NotNull(e.ToString());

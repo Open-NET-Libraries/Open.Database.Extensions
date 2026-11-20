@@ -89,7 +89,7 @@ internal sealed class TrackedPool(DbTally tally) : IDbConnectionPool<TrackedConn
 
 	IDbConnection IDbConnectionPool.Take() => Take();
 
-	public void Give(IDbConnection connection) => Gives++;
+	public void Give(IDbConnection _) => Gives++;
 }
 
 [ExcludeFromCodeCoverage]

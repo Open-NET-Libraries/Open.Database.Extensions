@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using Xunit.Sdk;
 
 #nullable enable
 
@@ -171,6 +170,7 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	const long ImmutableExtra = 24;
 
 	[Fact]
+	[SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly")]
 	public void ToImmutableArrayAsync_AllocatesTheArrayPlusAConstant()
 	{
 #if !DEBUG

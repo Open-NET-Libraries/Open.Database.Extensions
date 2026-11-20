@@ -92,7 +92,7 @@ internal static class RowReader
 		TBuild build, CancellationToken token = default)
 		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		using ChunkChain<T> chain = ChunkChain<T>.Rent();
+		using var chain = ChunkChain<T>.Rent();
 		var sink = new ChainSink<T>(chain);
 		Fill(source, reader, skip, take, ref sink, token);
 		return build.Build(chain);
@@ -297,7 +297,7 @@ internal static class RowReader
 		TBuild build, CancellationToken cancellationToken)
 		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		using ChunkChain<T> chain = ChunkChain<T>.Rent();
+		using var chain = ChunkChain<T>.Rent();
 		if (take != 0
 			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 			&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))

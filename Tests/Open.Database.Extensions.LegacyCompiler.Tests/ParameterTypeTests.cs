@@ -53,7 +53,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.Equal("x=DBNull NVarChar Input", Sent(New().AddParam("x", n, SqlDbType.NVarChar)));
 			Assert.Equal("x=a NVarChar Input", Sent(New().AddParam("x", "a", SqlDbType.NVarChar)));
 			Assert.Equal("x=DBNull NVarChar Input", Sent(New().AddParam("x", null, SqlDbType.NVarChar)));
-			Assert.Equal("x=DBNull NVarChar Input", Sent(New().AddParam("x", (string)null, SqlDbType.NVarChar)));
+			Assert.Equal("x=DBNull NVarChar Input", Sent(New().AddParam("x", null, SqlDbType.NVarChar)));
 			Assert.Equal("x=a NVarChar Output", Sent(New().AddParam("x", s, SqlDbType.NVarChar, ParameterDirection.Output)));
 			Assert.Equal("x=a NVarChar Input", Sent(New().AddParam(name: "x", value: s, type: SqlDbType.NVarChar)));
 		}
