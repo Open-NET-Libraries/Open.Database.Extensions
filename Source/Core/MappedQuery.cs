@@ -277,39 +277,48 @@ readonly struct MappedQueryCore<T>
 		return found ? row! : throw RowReader.NoRows(nameof(Single));
 	}
 
-	// ToListAsync and ToArrayAsync read into a chain of pooled arrays (see
-	// ChunkChain): nothing is copied while the connection is open. The one
-	// exact copy into the result happens after the read, once the
-	// connection is released, and the arrays go back to the pool however
-	// the call ends.
-	internal async ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
+	// The collecting terminals (ToList, ToArray, Queue, HashSet and
+	// Dictionary, async) read into a chain of pooled arrays (see
+	// ChunkChain) and build the result from it in the same read method,
+	// right after the last row (one memcpy for a list or an array; the
+	// connection is released when the call returns). The read and the
+	// build are ONE async state machine (RowReader.CollectAsync); the
+	// lambdas are static, so a call allocates no closure or delegate.
+	internal ValueTask<TResult> CollectAsync<TState, TResult>(
+		TState state,
+		Func<ChunkChain<T>, TState, TResult> build,
+		CancellationToken cancellationToken)
 	{
-		ChunkChain<T> chain = ChunkChain<T>.Rent();
-		try
-		{
-			await FillAsync(new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
-			return chain.ToList();
-		}
-		finally
-		{
-			chain.Dispose();
-		}
+		CancellationToken token = Combine(
+			cancellationToken, out CancellationTokenSource? linked);
+		return RunAsync(
+			(_source, _skip, _take, _asyncReads, token, state, build),
+			static (reader, s) => reader is DbDataReader db
+				? RowReader.CollectAsync(
+					s._source, db, s._skip, s._take, s._asyncReads,
+					s.state, s.build, s.token)
+				: new ValueTask<TResult>(RowReader.Collect(
+					s._source, reader, s._skip, s._take,
+					s.state, s.build, s.token)),
+			Behavior, linked, token);
 	}
 
-	internal async ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
-	{
-		ChunkChain<T> chain = ChunkChain<T>.Rent();
-		try
-		{
-			await FillAsync(new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
-			return chain.ToArray();
-		}
-		finally
-		{
-			chain.Dispose();
-		}
-	}
+	internal TResult Collect<TState, TResult>(
+		TState state,
+		Func<ChunkChain<T>, TState, TResult> build)
+		=> Run(
+			(_source, _skip, _take, state, build),
+			static (reader, s) => RowReader.Collect(
+				s._source, reader, s._skip, s._take, s.state, s.build),
+			Behavior);
 
+	internal ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
+		=> CollectAsync<object?, List<T>>(
+			null, static (chain, _) => chain.ToList(), cancellationToken);
+
+	internal ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
+		=> CollectAsync<object?, T[]>(
+			null, static (chain, _) => chain.ToArray(), cancellationToken);
 	internal ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
@@ -410,36 +419,35 @@ readonly struct MappedQueryCore<T>
 #endif
 	}
 
-	internal Dictionary<TKey, T> ToDictionary<TKey>(Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer)
+	// The dictionary and hash set terminals read the rows into the chain,
+	// then add them (the exact capacity known): a duplicate key throws after
+	// every row has been read, and the selectors run after the read.
+	internal Dictionary<TKey, T> ToDictionary<TKey>(
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer)
 		where TKey : notnull
 	{
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
 
-		return Run((_source, _skip, _take, keySelector, comparer), static (reader, s) =>
-		{
-			var sink = new DictionarySink<T, TKey>([with(s.comparer)], s.keySelector);
-			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
-			return sink.Dictionary;
-		}, Behavior);
+		return Collect(
+			new KeyedCollect<T, TKey>(keySelector, comparer),
+			static (chain, s) => chain.ToDictionary(s.KeySelector, s.Comparer));
 	}
 
-	internal ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer, CancellationToken cancellationToken)
+	internal ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer,
+		CancellationToken cancellationToken)
 		where TKey : notnull
 	{
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
 
-		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return RunAsync((_source, _skip, _take, keySelector, comparer, _asyncReads, token), static async (reader, s) =>
-		{
-			var sink = new DictionarySink<T, TKey>([with(s.comparer)], s.keySelector);
-			if (reader is DbDataReader db)
-				return (await RowReader.FillAsync(s._source, db, s._skip, s._take, s._asyncReads, sink, s.token).ConfigureAwait(false)).Dictionary;
-
-			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink, s.token);
-			return sink.Dictionary;
-		}, Behavior, linked, token);
+		return CollectAsync(
+			new KeyedCollect<T, TKey>(keySelector, comparer),
+			static (chain, s) => chain.ToDictionary(s.KeySelector, s.Comparer),
+			cancellationToken);
 	}
 
 	internal Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
@@ -452,16 +460,11 @@ readonly struct MappedQueryCore<T>
 		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
 		Contract.EndContractBlock();
 
-		return Run(
-			(_source, _skip, _take, keySelector, valueSelector, comparer),
-			static (reader, s) =>
-			{
-				var sink = new DictionarySink<T, TKey, TValue>(
-					[with(s.comparer)], s.keySelector, s.valueSelector);
-				RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
-				return sink.Dictionary;
-			},
-			Behavior);
+		return Collect(
+			new KeyedValueCollect<T, TKey, TValue>(
+				keySelector, valueSelector, comparer),
+			static (chain, s) => chain.ToDictionary(
+				s.KeySelector, s.ValueSelector, s.Comparer));
 	}
 
 	internal ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
@@ -475,49 +478,26 @@ readonly struct MappedQueryCore<T>
 		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
 		Contract.EndContractBlock();
 
-		CancellationToken token = Combine(
-			cancellationToken, out CancellationTokenSource? linked);
-		return RunAsync(
-			(_source, _skip, _take, keySelector, valueSelector, comparer, _asyncReads, token),
-			static async (reader, s) =>
-			{
-				var sink = new DictionarySink<T, TKey, TValue>(
-					[with(s.comparer)], s.keySelector, s.valueSelector);
-				if (reader is DbDataReader db)
-				{
-					return (await RowReader.FillAsync(
-						s._source, db, s._skip, s._take,
-						s._asyncReads, sink, s.token).ConfigureAwait(false)).Dictionary;
-				}
-
-				RowReader.Fill(s._source, reader, s._skip, s._take, ref sink, s.token);
-				return sink.Dictionary;
-			},
-			Behavior, linked, token);
+		return CollectAsync(
+			new KeyedValueCollect<T, TKey, TValue>(
+				keySelector, valueSelector, comparer),
+			static (chain, s) => chain.ToDictionary(
+				s.KeySelector, s.ValueSelector, s.Comparer),
+			cancellationToken);
 	}
 
 	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
-		=> Run((_source, _skip, _take, comparer), static (reader, s) =>
-		{
-			var sink = new HashSetSink<T>([with(s.comparer)]);
-			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink);
-			return sink.Set;
-		}, Behavior);
+		=> Collect(
+			comparer,
+			static (chain, c) => chain.ToHashSet(c));
 
-	internal ValueTask<HashSet<T>> ToHashSetAsync(IEqualityComparer<T>? comparer, CancellationToken cancellationToken)
-	{
-		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
-		return RunAsync((_source, _skip, _take, comparer, _asyncReads, token), static async (reader, s) =>
-		{
-			var sink = new HashSetSink<T>([with(s.comparer)]);
-			if (reader is DbDataReader db)
-				return (await RowReader.FillAsync(s._source, db, s._skip, s._take, s._asyncReads, sink, s.token).ConfigureAwait(false)).Set;
-
-			RowReader.Fill(s._source, reader, s._skip, s._take, ref sink, s.token);
-			return sink.Set;
-		}, Behavior, linked, token);
-	}
-
+	internal ValueTask<HashSet<T>> ToHashSetAsync(
+		IEqualityComparer<T>? comparer,
+		CancellationToken cancellationToken)
+		=> CollectAsync(
+			comparer,
+			static (chain, c) => chain.ToHashSet(c),
+			cancellationToken);
 	#endregion
 
 	#region Buffer terminals

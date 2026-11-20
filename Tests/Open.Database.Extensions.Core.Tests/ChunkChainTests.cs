@@ -381,7 +381,7 @@ public static class ChunkChainTests
 			.Invoke(chain, null)!;
 		Assert.Equal(rows, list.Count);
 		Assert.Equal(rows, CountOf(type, chain));
-		type.GetMethod("Dispose", Instance)!.Invoke(chain, null);
+		type.GetMethod("Dispose", Instance | BindingFlags.Public)!.Invoke(chain, null);
 		return (chain, weak);
 	}
 
@@ -414,7 +414,7 @@ public static class ChunkChainTests
 		Assert.Equal(0, CountOf(type, second));
 
 		UseAgain(type, second, 40);
-		type.GetMethod("Dispose", Instance)!.Invoke(second, null);
+		type.GetMethod("Dispose", Instance | BindingFlags.Public)!.Invoke(second, null);
 
 		GC.Collect();
 		GC.WaitForPendingFinalizers();
@@ -458,7 +458,7 @@ public static class ChunkChainTests
 		}
 		finally
 		{
-			type.GetMethod("Dispose", Instance)!.Invoke(chain, null);
+			type.GetMethod("Dispose", Instance | BindingFlags.Public)!.Invoke(chain, null);
 		}
 	}
 

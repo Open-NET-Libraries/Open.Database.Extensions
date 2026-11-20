@@ -23,14 +23,14 @@ namespace Open.Database.Extensions.Core;
 // The chain object is reused: one spare is kept per T, taken by Rent and
 // parked again by Dispose, so a small result allocates nothing for it
 // (as the sink struct of the earlier path allocated nothing). A chain is
-// rented by one call, used by that call alone, and disposed once, in its
-// finally: after that it belongs to the spare slot, and no reference to
-// it is used again.
+// rented by one call, used by that call alone, and disposed once, by a
+// using declaration (the chain is IDisposable): after that it belongs to
+// the spare slot, and no reference to it is used again.
 //
 // Clearing: a chunk that may hold references is cleared before it goes
 // back (the used part only), so a pooled array never keeps a row alive.
 // A chunk of plain values is returned as it is.
-internal sealed class ChunkChain<T> : ICollection<T>
+internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 {
 	// The one spare chain of this T.
 	static ChunkChain<T>? _spare;
@@ -169,6 +169,85 @@ internal sealed class ChunkChain<T> : ICollection<T>
 	internal Queue<T> ToQueue()
 		=> Count == 0 ? new Queue<T>() : new Queue<T>(this);
 
+	/// <summary>
+	/// The rows in a hash set sized for exactly that many (duplicates are
+	/// dropped, as a hash set does).
+	/// </summary>
+	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
+	{
+#if NETSTANDARD2_0
+		// No HashSet constructor takes a capacity here.
+		HashSet<T> set = new(comparer);
+#else
+		HashSet<T> set = new(Count, comparer);
+#endif
+		T[][] chunks = _chunks;
+		int last = _chunkCount - 1;
+		for (int i = 0; i <= last; ++i)
+		{
+			T[] chunk = chunks[i];
+			int length = i == last ? _index : chunk.Length;
+			for (int j = 0; j < length; ++j)
+				set.Add(chunk[j]);
+		}
+
+		return set;
+	}
+
+	/// <summary>
+	/// The rows in a dictionary sized for exactly that many, keyed by
+	/// <paramref name="keySelector"/>. A duplicate key throws the
+	/// dictionary's own exception.
+	/// </summary>
+	internal Dictionary<TKey, T> ToDictionary<TKey>(
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer)
+		where TKey : notnull
+	{
+		Dictionary<TKey, T> dictionary = new(Count, comparer);
+		T[][] chunks = _chunks;
+		int last = _chunkCount - 1;
+		for (int i = 0; i <= last; ++i)
+		{
+			T[] chunk = chunks[i];
+			int length = i == last ? _index : chunk.Length;
+			for (int j = 0; j < length; ++j)
+			{
+				T item = chunk[j];
+				dictionary.Add(keySelector(item), item);
+			}
+		}
+
+		return dictionary;
+	}
+
+	/// <summary>
+	/// As <see cref="ToDictionary{TKey}"/>, with the value chosen by
+	/// <paramref name="valueSelector"/>.
+	/// </summary>
+	internal Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer)
+		where TKey : notnull
+	{
+		Dictionary<TKey, TValue> dictionary = new(Count, comparer);
+		T[][] chunks = _chunks;
+		int last = _chunkCount - 1;
+		for (int i = 0; i <= last; ++i)
+		{
+			T[] chunk = chunks[i];
+			int length = i == last ? _index : chunk.Length;
+			for (int j = 0; j < length; ++j)
+			{
+				T item = chunk[j];
+				dictionary.Add(keySelector(item), valueSelector(item));
+			}
+		}
+
+		return dictionary;
+	}
+
 	void CopyTo(Span<T> destination)
 	{
 		T[][] chunks = _chunks;
@@ -186,10 +265,12 @@ internal sealed class ChunkChain<T> : ICollection<T>
 	/// <summary>
 	/// Clears what may hold references, returns every array to the pool
 	/// and parks the chain as the spare. Call it once, from the finally of
-	/// the call that rented the chain (a second call, before the chain is
-	/// rented again, does nothing).
+	/// the call that rented the chain, which a using declaration on the
+	/// rented chain does (a second call, before the chain is rented again,
+	/// does nothing). Public only because the interface requires it: the
+	/// class is internal.
 	/// </summary>
-	internal void Dispose()
+	public void Dispose()
 	{
 		if (_parked) return;
 
