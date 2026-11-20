@@ -459,6 +459,65 @@ Check(
 	+ "OperationCanceledException, "
 	+ "and the rows before the cancel were seen");
 
+// Shaping rows: the recipes of the article.
+Db.Seed();
+await ShapingRows.SeedAsync(connection, CancellationToken.None);
+(Plant[] plantsInitializer, Plant[] plantsFactory) = await ShapingRows.NullToEmptyAsync(connection, CancellationToken.None);
+Check(
+	plantsInitializer is [{ Id: 1, Code: "PRESS", SortDescr: "Stamping" }, { Id: 2, Code: "", SortDescr: "" }],
+	"a NULL keeps the initializer of a non-nullable member and the converter is not called for it");
+Check(
+	plantsFactory is [{ Id: 1, Code: "PRESS", SortDescr: "Stamping" }, { Id: 2, Code: "", SortDescr: "" }],
+	"a factory parameter declared string? receives null for a NULL, so the function can write ?? \"\"");
+(PostStamp[] stampsAfterClose, PostStampInit[] stampsInQuery) = await ShapingRows.ValueFromOutsideAsync(connection, CancellationToken.None);
+Check(
+	stampsAfterClose.Length == 5 && stampsAfterClose.All(static stamp => stamp.Serial == "S-100"),
+	"a value from outside the row is set on the rows after the close");
+Check(
+	stampsInQuery.Length == 5 && stampsInQuery.All(static stamp => stamp.Serial == "S-100") && stampsInQuery[2] is { Id: 3, Title: "Post 3" },
+	"a value from outside the row can come back from the query as a column");
+(Employee[] employeesIgnored, Employee[] employeesListed, Employee[] employeesNoManagerColumn) = await ShapingRows.ChooseWhatIsReadAsync(connection, CancellationToken.None);
+Check(
+	employeesIgnored is [{ Badge: "E-1", Desk: "", Manager: "Kim" }, { Badge: "E-2", Desk: "", Manager: "Lee" }],
+	"a null column in the map leaves the member unmapped although a column of its name exists");
+Check(
+	employeesListed is [{ Badge: "E-1", Desk: "", Manager: "Kim" }, { Badge: "E-2", Desk: "", Manager: "Lee" }],
+	"a factory map fills only what its function takes: the desk column is read by nobody");
+Check(
+	employeesNoManagerColumn is [{ Badge: "E-1", Manager: "unknown" }, { Badge: "E-2", Manager: "unknown" }],
+	"a factory parameter no column feeds is null (its default) and nothing throws");
+(StrictEmployee[] strictFound, ValueMappingException? strictMissing) = await ShapingRows.StrictAsync(connection, CancellationToken.None);
+Check(
+	strictFound is [{ Badge: "E-1", Manager: "Kim" }, { Badge: "E-2", Manager: "Lee" }],
+	"a required member is mapped when a column feeds it");
+Check(
+	strictMissing is { PropertyName: "Badge" },
+	"a result with no column for a required member throws ValueMappingException at its first row");
+(WideReading wide, WideEnds wideEnds) = await ShapingRows.WideAsync(connection, CancellationToken.None);
+Check(
+	wide.Channel01 == 1 && wide.Channel09 == 9 && wide.Channel17 == 17,
+	"a record with 17 constructor parameters maps through Map<T>()");
+Check(
+	wideEnds == new WideEnds(1, 17),
+	"a factory with 17 parameters maps too");
+(Post[] filterInSql, Post[] filterAfterClose, Post[] filterBusy, Post[] filterWithNulls) = await ShapingRows.FilterAsync(connection, CancellationToken.None);
+Check(
+	filterInSql.Select(static post => post.Id).SequenceEqual([3, 4, 5]),
+	"a filter in the query's WHERE returns only the wanted rows");
+Check(
+	filterAfterClose.Select(static post => post.Id).SequenceEqual([3, 4, 5]),
+	"a filter over the array after the close returns the wanted rows");
+Check(
+	filterWithNulls.Length == 5 && filterWithNulls.Count(static post => post is null) == 2 && filterBusy.Select(static post => post.Id).SequenceEqual([3, 4, 5]),
+	"a factory that returns null leaves a null in the result for each skipped row, and the list is filtered after the close");
+(long? lastNone, long? lastSome) = await ShapingRows.OneNamedColumnAsync(connection, CancellationToken.None);
+Check(
+	lastNone is null && lastSome == 3,
+	"Map<long?>() over one selected column gives null for a NULL and the value otherwise");
+Check(
+	ShapingRows.SingleValueFactoryIsRejected(),
+	"a factory map for a single value is rejected: a single value is not a row model");
+
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 
