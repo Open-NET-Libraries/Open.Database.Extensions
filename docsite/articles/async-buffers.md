@@ -103,13 +103,12 @@ public class PostsController(
 	[HttpGet]
 	public async Task<IReadOnlyList<Post>> GetAsync()
 	{
-		// The data layer method above: the read starts here.
+		// LatestPosts is the data-layer method shown above (call it as you have named it): the read starts here.
 		PooledBuffer<Post> buffer = LatestPosts(
 			connectionFactory,
 			HttpContext.RequestAborted);
 
-		// The framework disposes it when the request is over,
-		// after the response body is written.
+		// The framework disposes it when the request is over.
 		Response.RegisterForDispose(buffer);
 
 		// A PooledArray<Post> is an IReadOnlyList<Post>:
@@ -124,7 +123,7 @@ What was observed, on ASP.NET Core 11.0.0 against SQLite:
 - The response is `200` with a JSON array of the rows, equal to the array the same query gives with `ToListAsync`. The declared return type can be `IReadOnlyList<Post>` or `PooledArray<Post>`.
 - Every array went back to the pool once the request was over.
 - `HttpResponse.RegisterForDispose` and `HttpResponse.RegisterForDisposeAsync` both exist. A `PooledBuffer<T>` is both `IDisposable` and `IAsyncDisposable`, and the framework disposed it with `DisposeAsync` whichever of the two was used, so `RegisterForDispose` is enough.
-- Register the buffer before you await `Items`. When the action threw, or the client aborted while the read ran, Kestrel still disposed it and the arrays went back. A client abort cancels `HttpContext.RequestAborted`, which cancels the query: on a 1,000,000-row query aborted after 30 ms the read stopped early, having rented 12 arrays (at most 65,520 rows) where a full read rents 16.
+- Register the buffer before you await `Items`. When the client aborted while the read ran, Kestrel still disposed the buffer and the arrays went back. When the action threw, Kestrel disposed an object registered the same way (a spy that was both `IDisposable` and `IAsyncDisposable`). A client abort cancels `HttpContext.RequestAborted`, which cancels the query: on a 1,000,000-row query aborted after 30 ms the read stopped early, having rented 12 arrays (at most 65,520 rows, worked out from the chunk sizes, not measured) where a full read rents 16.
 
 > [!NOTE]
 > TestServer did not dispose what the request had registered when the action threw or the client aborted before the response started. Kestrel did. If a test of your own controller counts the arrays that come back, it sees them only on a successful request, or on a real server.
@@ -169,10 +168,10 @@ public IAsyncEnumerable<Post> StreamAsync()
 There is nothing to register: the framework enumerates the stream and disposes the enumerator, which returns every array still queued. What was observed:
 
 - System.Text.Json wrote it as a JSON array, equal to the list the same query gives, with status `200`.
-- The response was streamed. It had already started when the 4,000th of 5,000 rows was reached, so nothing waited for the whole result.
-- Every array went back to the pool, including when the client aborted in the middle of the body or before reading any of it. An abort stopped the query early: it had rented 9 or 13 arrays (at most about 8,000 or 24,000 rows) where a full 1,000,000-row read rents 252.
+- The response was streamed. With the same stream wrapped in an `async IAsyncEnumerable` method, it had already started when the 4,000th of 5,000 rows was reached, so nothing waited for the whole result.
+- Every array went back to the pool, including when the client aborted in the middle of the body or before reading any of it. An abort stopped the query early: it had rented 9 or 13 arrays (at most about 8,000 or 24,000 rows, worked out from the chunk sizes, not measured) where a full 1,000,000-row read rents 252.
 
-A stream still reads ahead without waiting for the client, as [described above](#why-the-connection-is-the-scarce-thing). A slow client does not hold the connection, and it does not slow the read; the rows it has not taken yet wait in memory.
+A stream still reads ahead without waiting for the client, as [described above](#why-the-connection-is-the-scarce-thing). The read does not wait for a slow client: it is not held up by one, and the rows the client has not taken yet wait in memory. That follows from the read-ahead above; it was not measured with a slow client.
 
 ## The streams
 
@@ -262,5 +261,5 @@ The channel terminals (`ToChannelReader()` and `ToChannel()`) left the typed vie
 | Reader-open time, no buffer (the figure) | 6.62, 16.15 and 8.54 ms for the same consumers | same |
 | Buffer against `ToArrayAsync`, simulated link | 6.27 and 6.29 ms, at a 50 µs refill every 100 rows | same round, same provider; one run |
 | Buffer against `ToArrayAsync`, zero latency | 225 and 185 µs at 10,000 rows (about 22% longer) | same round, same provider; one run |
-| The controller checks: status, body, pool balance, abort | RegisterForDispose, a dispose before serialization, a returned stream, a client abort: 5,000 rows, and 1,000,000 rows for the aborts | ASP.NET Core 11.0.0 with TestServer and with Kestrel on loopback, Microsoft.Data.Sqlite on a file database, a counting `MemoryPool<T>`; one run each. A scratch project, not part of the docs build |
+| The controller checks: status, body, pool balance, abort | RegisterForDispose, a dispose before serialization, a returned stream, a client abort: 5,000 rows, and 1,000,000 rows for the aborts | ASP.NET Core 11.0.0 with TestServer and with Kestrel on loopback, Microsoft.Data.Sqlite on a file database, a counting `MemoryPool<T>`; one run or a few. A scratch project, not part of the docs build |
 | Chunk sizes, the cleanup queue, the single-use rule | 16 doubling to 4,096 for a stream; 10,240 waiting clears | the library source (`ChunkSizing`, `RecycleBin`, `ChunkStream`); not a measurement |
