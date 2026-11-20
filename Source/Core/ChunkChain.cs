@@ -23,14 +23,14 @@ namespace Open.Database.Extensions.Core;
 // The chain object is reused: one spare is kept per T, taken by Rent and
 // parked again by Dispose, so a small result allocates nothing for it
 // (as the sink struct of the earlier path allocated nothing). A chain is
-// rented by one call, used by that call alone, and disposed once, in its
-// finally: after that it belongs to the spare slot, and no reference to
-// it is used again.
+// rented by one call, used by that call alone, and disposed once, by a
+// using declaration (the chain is IDisposable): after that it belongs to
+// the spare slot, and no reference to it is used again.
 //
 // Clearing: a chunk that may hold references is cleared before it goes
 // back (the used part only), so a pooled array never keeps a row alive.
 // A chunk of plain values is returned as it is.
-internal sealed class ChunkChain<T> : ICollection<T>
+internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 {
 	// The one spare chain of this T.
 	static ChunkChain<T>? _spare;
@@ -185,11 +185,11 @@ internal sealed class ChunkChain<T> : ICollection<T>
 
 	/// <summary>
 	/// Clears what may hold references, returns every array to the pool
-	/// and parks the chain as the spare. Call it once, from the finally of
-	/// the call that rented the chain (a second call, before the chain is
-	/// rented again, does nothing).
+	/// and parks the chain as the spare. Call it once, through the using
+	/// declaration of the call that rented the chain (a second call,
+	/// before the chain is rented again, does nothing).
 	/// </summary>
-	internal void Dispose()
+	public void Dispose()
 	{
 		if (_parked) return;
 

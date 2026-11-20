@@ -284,30 +284,16 @@ readonly struct MappedQueryCore<T>
 	// the call ends.
 	internal async ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
 	{
-		ChunkChain<T> chain = ChunkChain<T>.Rent();
-		try
-		{
-			await FillAsync(new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
-			return chain.ToList();
-		}
-		finally
-		{
-			chain.Dispose();
-		}
+		using ChunkChain<T> chain = ChunkChain<T>.Rent();
+		await FillAsync(new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
+		return chain.ToList();
 	}
 
 	internal async ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
 	{
-		ChunkChain<T> chain = ChunkChain<T>.Rent();
-		try
-		{
-			await FillAsync(new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
-			return chain.ToArray();
-		}
-		finally
-		{
-			chain.Dispose();
-		}
+		using ChunkChain<T> chain = ChunkChain<T>.Rent();
+		await FillAsync(new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
+		return chain.ToArray();
 	}
 
 	internal ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken)
