@@ -1,4 +1,7 @@
+using System.Collections;
 using System.Data.Common;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace Open.Database.Extensions.Tests;
 
@@ -12,7 +15,11 @@ public static class ParameterNameMemoryTests
 	// One procedure on one connection: every Run is a new command whose provider reports `declared` right now, so a test can change what the procedure declares between two runs.
 	sealed class Procedure(string name)
 	{
-		public ConnectionProbe Probe { get; } = new(ConnectionState.Open);
+		public Procedure(string name, ConnectionProbe probe) : this(name) => Probe = probe;
+
+		public ConnectionProbe Probe { get; private init; } = new(ConnectionState.Open);
+
+		public void Age(TimeSpan by) => NameCacheAging.Age(Probe.Connection, by);
 
 		public int Lookups { get; private set; }
 
@@ -67,6 +74,8 @@ public static class ParameterNameMemoryTests
 		public int Lookups { get; private set; }
 
 		public int SyncLookups { get; private set; }
+
+		public void Age(TimeSpan by) => NameCacheAging.Age(_connection, by);
 
 		public async Task<string[]> RunAsync(string[] declared, Action<ExpressiveDbCommand> add)
 		{
@@ -207,7 +216,7 @@ public static class ParameterNameMemoryTests
 	}
 
 	[Fact]
-	public static void AStaleList_WhenTheSecondReadFindsNothing_TheArgumentIsSentAsWritten_AndTheOldEntryStays()
+	public static void AStaleList_WhenTheSecondReadFindsNothing_TheArgumentIsSentAsWritten_AndTheOldEntryGoes()
 	{
 		var procedure = new Procedure("dbo.stale_empty");
 
@@ -215,15 +224,145 @@ public static class ParameterNameMemoryTests
 		Assert.Equal(1, procedure.Lookups);
 
 		// filter.Company matches none of the remembered names, so the names are read once more. The provider now answers "not known" (the procedure is not visible
-		// to the login, say): the argument is sent as written, and an empty answer is never remembered, so the old entry is left where it was.
+		// to the login, or it takes no parameters any more): the argument is sent as written, and the old entry, which the answer has outdated, is replaced
+		// by the short "not known" entry.
 		Assert.Equal(["Company"], procedure.Run([], Company));
 		Assert.Equal(2, procedure.Lookups);
 
 		Assert.Equal(["Company"], procedure.Run([], Company));
-		Assert.Equal(3, procedure.Lookups); // read again, because the stale entry is still there and still does not fit
+		Assert.Equal(2, procedure.Lookups); // not read again: "not known" is remembered for a short while
 
+		// The old {@region} is gone: it would have sent @region to a procedure that declares nothing.
+		Assert.Equal(["Region"], procedure.Run([], Region));
+		Assert.Equal(2, procedure.Lookups);
+	}
+
+	// The second read of an AddParams member that the remembered names lack can also find nothing (the procedure is not visible to the login any more, or it
+	// declares nothing): the answer is "not known", it replaces the old entry and is remembered for a short while, so the runs after it do not read again, and
+	// the members are sent as written.
+	[Fact]
+	public static void AStaleList_ForAnAddParamsMember_WhenTheSecondReadFindsNothing_IsRemembered_SoLaterRunsDoNotReadAgain()
+	{
+		var procedure = new Procedure("dbo.stale_empty_object");
+		var args = new { A = 1, B = 2 };
+
+		Assert.Equal(["@a"], procedure.Run(["@a"], c => c.AddParams(args)));
+		Assert.Equal(1, procedure.Lookups);
+
+		// B is not among the remembered names, so the names are read once more; the provider now answers "not known".
+		Assert.Equal(["A", "B"], procedure.Run([], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
+
+		// Not one read per run: "not known" is remembered, and the old {@a} entry is gone.
+		for (int i = 0; i < 5; i++)
+			Assert.Equal(["A", "B"], procedure.Run([], c => c.AddParams(args)));
+
+		Assert.Equal(2, procedure.Lookups);
+	}
+
+	// ---- an answer of "not known" (an unreadable procedure, or one that declares nothing) ----
+
+	[Fact]
+	public static void AnUnknownAnswer_IsRemembered_SoARepeatRunDoesNotReadAgain_UntilTheShortLifetimeEnds()
+	{
+		var procedure = new Procedure("dbo.unreadable");
+
+		for (int i = 0; i < 3; i++)
+			Assert.Equal(["Region"], procedure.Run([], Region));
+
+		Assert.Equal(1, procedure.Lookups); // one read, not one per run
+
+		procedure.Age(NameCacheAging.UnknownLifetime - TimeSpan.FromSeconds(1));
+		Assert.Equal(["Region"], procedure.Run([], Region));
+		Assert.Equal(1, procedure.Lookups); // just before the end: still remembered
+
+		procedure.Age(TimeSpan.FromSeconds(2));
+		Assert.Equal(["@region"], procedure.Run(["@region"], Region));
+		Assert.Equal(2, procedure.Lookups); // past the end: read again, and now the procedure answers
+	}
+
+	[Fact]
+	public static void AnUnknownAnswer_LastsAFractionOfTheLifetimeOfKnownNames()
+		=> Assert.InRange(
+			NameCacheAging.UnknownLifetime,
+			TimeSpan.FromSeconds(1),
+			NameCacheAging.KnownLifetime / 4);
+
+	[Fact]
+	public static void AnUnknownAnswer_ForOneProcedure_DoesNotTouchAnother()
+	{
+		var procedure = new Procedure("dbo.known_beside_unknown");
+
+		Assert.Equal(["@region"], procedure.Run(["@region"], Region));
+		Assert.Equal(1, procedure.Lookups);
+
+		var other = new Procedure("dbo.unknown_beside_known", procedure.Probe);
+		Assert.Equal(["Region"], other.Run([], Region));
 		Assert.Equal(["@region"], procedure.Run([], Region));
-		Assert.Equal(3, procedure.Lookups); // and it still answers what it does fit
+
+		Assert.Equal(1, procedure.Lookups);
+		Assert.Equal(1, other.Lookups);
+	}
+
+	[Fact]
+	public static async Task AnUnknownAnswer_OnTheAsyncPath_IsRememberedToo()
+	{
+		var procedure = new AsyncProcedure("dbo.async_unreadable");
+
+		for (int i = 0; i < 3; i++)
+			Assert.Equal(["Region"], await procedure.RunAsync([], c => c.AddParam(value: 1, expression: "filter.Region")));
+
+		Assert.Equal(1, procedure.Lookups);
+
+		procedure.Age(NameCacheAging.UnknownLifetime + TimeSpan.FromSeconds(1));
+		Assert.Equal(["@region"], await procedure.RunAsync(["@region"], c => c.AddParam(value: 1, expression: "filter.Region")));
+		Assert.Equal(2, procedure.Lookups);
+	}
+
+	[Fact]
+	public static async Task AStaleList_OnTheAsyncPath_WhenTheSecondReadFindsNothing_TheOldEntryGoes()
+	{
+		var procedure = new AsyncProcedure("dbo.async_stale_empty");
+
+		Assert.Equal(["@region"], await procedure.RunAsync(["@region"], c => c.AddParam(value: 1, expression: "filter.Region")));
+		Assert.Equal(["Company"], await procedure.RunAsync([], c => c.AddParam(value: 1, expression: "filter.Company")));
+		Assert.Equal(2, procedure.Lookups);
+
+		Assert.Equal(["Region"], await procedure.RunAsync([], c => c.AddParam(value: 1, expression: "filter.Region")));
+		Assert.Equal(2, procedure.Lookups);
+	}
+
+	// Moves the clock the cache reads forward, for one source only, by shortening what its entries have left: the assembly has no InternalsVisibleTo for tests, so this
+	// reaches the cache by reflection (by private names: a rename breaks it with a null reference, not a named failure). Only the entries of the source given are touched, so the tests
+	// that run beside this one are not aged.
+	static class NameCacheAging
+	{
+		const BindingFlags Any = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+		static readonly Type Cache = typeof(ExpressiveCommand).Assembly.GetType("Open.Database.Extensions.ProcedureNameCache")!;
+
+		public static TimeSpan KnownLifetime => Lifetime("LifetimeTicks");
+
+		public static TimeSpan UnknownLifetime => Lifetime("UnknownLifetimeTicks");
+
+		static TimeSpan Lifetime(string field)
+			=> TimeSpan.FromSeconds((long)Cache.GetField(field, Any)!.GetValue(null)! / (double)Stopwatch.Frequency);
+
+		public static void Age(object source, TimeSpan by)
+		{
+			object sources = Cache.GetField("Sources", Any)!.GetValue(null)!;
+			object?[] args = [source, null];
+			if (!(bool)sources.GetType().GetMethod("TryGetValue")!.Invoke(sources, args)!) return;
+
+			object entries = args[1]!;
+			var byProcedure = (IDictionary)entries.GetType().GetField("ByProcedure", Any)!.GetValue(entries)!;
+			long ticks = (long)(by.TotalSeconds * Stopwatch.Frequency);
+			foreach (object? entry in byProcedure.Values)
+			{
+				FieldInfo expires = entry!.GetType().GetField("Expires", Any)!;
+				expires.SetValue(entry, (long)expires.GetValue(entry)! - ticks);
+			}
+		}
 	}
 
 	[Fact]
