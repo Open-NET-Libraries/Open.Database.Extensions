@@ -62,6 +62,120 @@ The connection was released when the read ended, however long the serialization 
 
 The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool (with clearing on, a full cleanup queue discards them instead: see [Clearing](#clearing)). After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included. Disposing again does nothing. Disposing the buffer while the read is still running cancels the query.
 
+## Lifetime and ownership
+
+A buffer is a loan of pooled arrays, and a loan has rules. These are the risks the design accepts, said plainly, so that you can accept them with your eyes open.
+
+- **One owner disposes.** Whoever ends the use of the rows disposes the buffer, once. The `PooledArray<T>` from `Items` is the same loan, so disposing the view disposes the buffer. Do not hand the view to a second owner that also disposes it, and do not dispose while something else still reads it.
+- **A lazy query runs when it is enumerated.** `Where`, `Select` and the rest of LINQ run nothing when you call them. If the query is enumerated after the buffer is disposed, it reads arrays that are back in the pool, and the view throws `ObjectDisposedException`. Finish the query (`ToList()`, `ToArray()`) before the buffer goes.
+- **Copy out to keep the rows longer.** `ToArray()` or `ToList()` on the view copies the rows. The copy belongs to you and outlives the buffer.
+- **One thread at a time.** Do not use the view from another thread while something may dispose it. The view checks that it is alive before each read, but a check is not a lock: a dispose on another thread can land just after it, with the arrays on their way back to the pool.
+- **A buffer that is never disposed is not a leak, but it costs the pool.** There is no finalizer. The arrays stay with the buffer until the garbage collector takes it, and the pool never gets them back. The cost is the allocations the pool would have saved. This includes `await LatestPosts(...).Items` when `Items` faults or is cancelled: you never receive the view, so nothing disposes the buffer, and its arrays wait for the garbage collector.
+
+To shape the rows as they arrive, use async LINQ over the stream and return it: no `async`, no `await`, no `using`. Filter in the SQL; shape in C#. The work overlaps the read, only what you keep is held, and there is nothing to dispose. It is in the box on net10 and later; net472 and netstandard need the `System.Linq.Async` package.
+
+[!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
+
+To keep every row, call `ToArrayAsync` or `ToListAsync` on the query directly: they collect the rows for you, and there is no buffer to dispose.
+
+Take the buffer, or its `Items` view, when you need the whole set at once: `Count`, the indexer, several passes, or handing it to a serializer. Finish any LINQ query over the view before the view is disposed:
+
+[!code-csharp[](../samples/AsyncBuffers.cs#buffers_finish_query)]
+
+The mistake to avoid is a query that has not run when the buffer is disposed. This one throws:
+
+[!code-csharp[](../samples/AsyncBuffers.cs#buffers_lazy_trap)]
+
+## Returning it from a controller
+
+The controller above serializes the rows itself, inside the method, so it can dispose the buffer in the same method. The other way is to hand the rows to the framework and let the framework serialize them after the action has returned. The buffer must then outlive the action, and the framework has to dispose it, not your method.
+
+The pattern is to register the buffer with the response, and then return the rows:
+
+```csharp
+// Not compiled by the docs build: the samples project has no ASP.NET
+// reference. Checked against ASP.NET Core 11.0.0, with TestServer and
+// with Kestrel.
+[ApiController]
+[Route("posts")]
+public class PostsController(
+	IDbConnectionFactory<SqliteConnection> connectionFactory)
+	: ControllerBase
+{
+	[HttpGet]
+	public async Task<IReadOnlyList<Post>> GetAsync()
+	{
+		// LatestPosts is the data-layer method shown above (call it as you
+		// have named it): the read starts here.
+		PooledBuffer<Post> buffer = LatestPosts(
+			connectionFactory,
+			HttpContext.RequestAborted);
+
+		// The framework disposes it when the request is over.
+		Response.RegisterForDispose(buffer);
+
+		// A PooledArray<Post> is an IReadOnlyList<Post>:
+		// System.Text.Json writes it as a JSON array.
+		return await buffer.Items;
+	}
+}
+```
+
+What was observed, on ASP.NET Core 11.0.0 against SQLite:
+
+- The response is `200` with a JSON array of the rows, equal to the array the same query gives with `ToListAsync`. The declared return type can be `IReadOnlyList<Post>` or `PooledArray<Post>`.
+- Every array went back to the pool once the request was over.
+- `HttpResponse.RegisterForDispose` and `HttpResponse.RegisterForDisposeAsync` both exist. A `PooledBuffer<T>` is both `IDisposable` and `IAsyncDisposable`, and the framework disposed it with `DisposeAsync` whichever of the two was used, so `RegisterForDispose` is enough.
+- Register the buffer before you await `Items`. When the client aborted while the read ran, Kestrel still disposed the buffer and the arrays went back. When the action threw, Kestrel disposed an object registered the same way (a spy that was both `IDisposable` and `IAsyncDisposable`). A client abort cancels `HttpContext.RequestAborted`, which cancels the query: on a 1,000,000-row query aborted after 30 ms the read stopped early, having rented 12 arrays (at most 65,520 rows, worked out from the chunk sizes, not measured) where a full read rents 16.
+
+> [!NOTE]
+> TestServer did not dispose what the request had registered when the action threw or the client aborted before the response started. Kestrel did. If a test of your own controller counts the arrays that come back, it sees them only on a successful request, or on a real server.
+
+### The trap: dispose before the framework serializes
+
+The tempting version disposes the buffer in the action, the way the earlier controller does:
+
+```csharp
+// Not compiled by the docs build. Do not do this.
+[HttpGet]
+public async Task<IReadOnlyList<Post>> GetAsync()
+{
+	await using PooledBuffer<Post> buffer = LatestPosts(
+		connectionFactory,
+		HttpContext.RequestAborted);
+
+	// The buffer is disposed as this method returns,
+	// before the framework has serialized anything.
+	return await buffer.Items;
+}
+```
+
+The framework serializes the rows after the action has returned, and by then the buffer is disposed. System.Text.Json calls the view's enumerator and gets `ObjectDisposedException`. The response had not started, so on Kestrel it is a `500` with an empty body and the exception in the log; on TestServer the exception reaches the caller. The body is empty, not partial. Nothing in the compiler stops it, so it is the first thing to look for in a code review.
+
+### A very large result: return the stream
+
+A buffer holds the whole result until the request is over. For a very large result, return the stream and let the framework walk it:
+
+```csharp
+// Not compiled by the docs build. Checked against ASP.NET Core 11.0.0.
+[HttpGet("stream")]
+public IAsyncEnumerable<Post> StreamAsync()
+	=> connectionFactory
+		.Command("select * from posts order by id")
+		.Map<Post>()
+		.ToBufferedAsyncStream(
+			clearOnReturn: false,
+			HttpContext.RequestAborted);
+```
+
+There is nothing to register: the framework enumerates the stream and disposes the enumerator, which returns every array still queued. What was observed:
+
+- System.Text.Json wrote it as a JSON array, equal to the list the same query gives, with status `200`.
+- The response was streamed. With the same stream wrapped in an `async IAsyncEnumerable` method, it had already started when the 4,000th of 5,000 rows was reached, so nothing waited for the whole result.
+- Every array went back to the pool, including when the client aborted in the middle of the body or before reading any of it. An abort stopped the query early: it had rented 9 or 13 arrays (at most about 8,000 or 24,000 rows, worked out from the chunk sizes, not measured) where a full 1,000,000-row read rents 252.
+
+A stream still reads ahead without waiting for the client, as [described above](#why-the-connection-is-the-scarce-thing). The read does not wait for a slow client: it is not held up by one, and the rows the client has not taken yet wait in memory. That follows from the read-ahead above; it was not measured with a slow client.
+
 ## The streams
 
 `ToAsyncBufferStream` yields one chunk at a time as a `ReadOnlyMemory<T>`. A chunk holds exactly the rows of one chunk and is valid until the next step of the loop, when its array goes back to the pool. Copy what you keep, and do not collect the chunks themselves (with `ToListAsync` or `Buffer`, say): nothing guards a memory held longer.
@@ -136,7 +250,7 @@ For a small result, or one that nobody else needs, `ToArrayAsync` or `ToListAsyn
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_small_result)]
 
-For a projection or a filter over a stream, use `System.Linq.Async` over `ToBufferedAsyncStream`. It is in the box on net10 and later.
+To shape a stream's rows, use `System.Linq.Async` over `ToBufferedAsyncStream`, and leave the filtering to the SQL. It is in the box on net10 and later.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
 
@@ -150,4 +264,5 @@ The channel terminals (`ToChannelReader()` and `ToChannel()`) left the typed vie
 | Reader-open time, no buffer (the figure) | 6.62, 16.15 and 8.54 ms for the same consumers | same |
 | Buffer against `ToArrayAsync`, simulated link | 6.27 and 6.29 ms, at a 50 µs refill every 100 rows | same round, same provider; one run |
 | Buffer against `ToArrayAsync`, zero latency | 225 and 185 µs at 10,000 rows (about 22% longer) | same round, same provider; one run |
+| The controller checks: status, body, pool balance, abort | RegisterForDispose, a dispose before serialization, a returned stream, a client abort: 5,000 rows, and 1,000,000 rows for the aborts | ASP.NET Core 11.0.0 with TestServer and with Kestrel on loopback, Microsoft.Data.Sqlite on a file database, a counting `MemoryPool<T>`; one run or a few. A scratch project, not part of the docs build |
 | Chunk sizes, the cleanup queue, the single-use rule | 16 doubling to 4,096 for a stream; 10,240 waiting clears | the library source (`ChunkSizing`, `RecycleBin`, `ChunkStream`); not a measurement |

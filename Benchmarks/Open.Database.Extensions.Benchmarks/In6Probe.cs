@@ -2,6 +2,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Open.Database.Extensions.Core;
@@ -84,7 +85,7 @@ sealed class In6Settings
 	public int K => Pressure.Trim().Equals("auto", StringComparison.OrdinalIgnoreCase) ? Processors * 2 : ThreadPoolPressure.Parse(Pressure);
 }
 
-public static class In6Probe
+public static partial class In6Probe
 {
 	const string Usage = """
 		--in6: sync Read against ReadAsync on real providers (SqlClient on LocalDB, Microsoft.Data.Sqlite on a file). Not a BenchmarkDotNet run.
@@ -616,8 +617,11 @@ public static class In6Probe
 			if (secret.Length > 0) text = text.Replace(secret, "***", StringComparison.Ordinal);
 		}
 
-		return System.Text.RegularExpressions.Regex.Replace(text, @"(?i)\b(password|pwd)\s*=\s*[^;]*", "$1=***");
+		return PasswordSetting().Replace(text, "$1=***");
 	}
+
+	[GeneratedRegex(@"\b(password|pwd)\s*=\s*[^;]*", RegexOptions.IgnoreCase)]
+	private static partial Regex PasswordSetting();
 
 	static string Connection(In6Settings s, string database)
 	{

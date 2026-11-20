@@ -492,15 +492,54 @@ public static partial class CommandExtensions
 		=> IterateReader(command, behavior, transform, selector);
 
 	/// <summary>
-	/// Executes a reader on a command with a transform function.
+	/// Executes a reader on a command with a transform function;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <remarks>
+	/// <note type="caution">
+	/// <b>This is not the recommended way to read rows: it holds the
+	/// connection while your code runs for each row.</b>
+	/// The reader, and the connection under it, stay open for as long as
+	/// your code takes per row, added up over all the rows.
+	/// <br/>
+	/// <br/>
+	/// In async code that time has no bound: every <c>await</c> in the
+	/// loop body can yield, and nothing says when the loop resumes.
+	/// Until it does, the connection is on hold: a pooled connection is
+	/// not returned to the pool, and the server may keep its locks and the
+	/// open result set.
+	/// <br/>
+	/// <br/>
+	/// These members suit work that must happen while the connection is
+	/// open, for example a result too large to buffer or a row-by-row
+	/// pipeline.
+	/// Otherwise use a call that lets go of the connection first:
+	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// and
+	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// buffer the rows and release the connection
+	/// (call <c>.Map&lt;T&gt;()</c> first), and
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// streams them to a consumer without holding it
+	/// (the producer is unbounded: it reads without waiting for the
+	/// consumer and frees the connection while the consumer takes its
+	/// time, and the rows wait in memory until the consumer takes them;
+	/// dispose the enumerator, as <c>await foreach</c> does).
+	/// </note>
+	/// <para>
+	/// The default behavior will open a connection, execute the reader
+	/// and close the connection if it was not already open.
+	/// </para>
+	/// </remarks>
 	/// <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
 	/// <typeparam name="TResult">The type returned by the selector.</typeparam>
 	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="transform">The transform function for each <see cref="IDataRecord"/>.</param>
 	/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
-	/// <inheritdoc cref="ExecuteReader{T}(IDbCommand, Func{IDataReader, T}, CommandBehavior)" path="/*[not(self::param)]"/>
+	/// <inheritdoc
+	/// cref="ExecuteReader{T}(IDbCommand, Func{IDataReader, T}, CommandBehavior)"
+	/// path="/*[not(self::param) and not(self::remarks)]"/>
 	public static TResult IterateReader<TEntity, TResult>(
 		this IDbCommand command,
 		CommandBehavior behavior,
@@ -517,8 +556,13 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> on a command with a handler function.
+	/// Iterates an <see cref="IDataReader"/> on a command
+	/// with a handler function;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
+	/// path="/remarks"/>
 	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
@@ -559,8 +603,13 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> on a command while the predicate returns true.
+	/// Iterates an <see cref="IDataReader"/> on a command
+	/// while the predicate returns true;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
+	/// path="/remarks"/>
 	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
@@ -577,8 +626,12 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously iterates all records from an <see cref="IDataReader"/>.
+	/// Asynchronously iterates all records from an <see cref="IDataReader"/>;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
+	/// path="/remarks"/>
 	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
@@ -641,8 +694,13 @@ public static partial class CommandExtensions
 		=> ForEachAsync(command, handler, CommandBehavior.Default, useReadAsync, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an <see cref="IDataReader"/> on a command while the predicate returns true.
+	/// Asynchronously iterates an <see cref="IDataReader"/> on a command
+	/// while the predicate returns true;
+	/// the connection is held while each row is processed.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
+	/// path="/remarks"/>
 	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>

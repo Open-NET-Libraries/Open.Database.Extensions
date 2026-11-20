@@ -102,3 +102,4 @@ What is different:
 - [The foundation](foundation.md) explains the extensions underneath, and who owns a connection.
 - [Expressive commands](expressive-commands.md) covers parameters and every terminal.
 - [Mapping rows to objects](mapping.md) lists exactly what `Map<T>()` does and does not do.
+- [How little code](how-little-code.md) writes four tasks with ODX, Dapper, EF Core and plain ADO.NET and counts the lines.

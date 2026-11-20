@@ -3,6 +3,7 @@
 - href: foundation.md
 - href: expressive-commands.md
 - href: mapping.md
+- href: shaping-rows.md
 - href: async-reads.md
 - href: channels-and-dataflow.md
 - href: async-buffers.md
@@ -11,6 +12,7 @@
   - href: performance-data.md
   - name: Interactive ranking (snapshot)
     href: ../benchmarks/ranking.html
+- href: how-little-code.md
 - href: coming-from-dapper.md
 - href: whats-new-11.md
 - href: release-notes.md

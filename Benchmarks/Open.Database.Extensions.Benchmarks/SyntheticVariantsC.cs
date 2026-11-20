@@ -426,20 +426,20 @@ public static partial class SyntheticVariantsC
 		When = ((DateTime[])t.Columns[2])[i],
 	};
 
-	// ---- the one-off overloads (item 11): width 3, one row ----------------------------------------------------------------
-	// Map<T>(params ReadOnlySpan<KeyValuePair<string,string?>>), MappedQuery.cs line 70: builds a RowMap<T> from the pairs on every call (RowMap<T>.From, which validates and builds the map),
+	// The Map<T>(params KeyValuePair...) one-off overloads are gone from Core: the same one-off path is a new RowMap<T> built from the pairs inside each call (the map is built and validated every time),
+	// then Map(command, map). The plan is compiled and cached per T and layout, so the cost per call is the map, not the plan.
 	// then Map(command, map). The single-pair overload (line 81) goes the same way (new RowMap<T>(mapping)). The plan is compiled and cached per T and layout, so the cost per call is the map, not the plan.
 	public static List<SynRow> OneOffList(SyntheticConnection connection)
-		=> connection.Command(Sql).Map<SynRow>(
+		=> connection.Command(Sql).Map(new RowMap<SynRow>(
 			new KeyValuePair<string, string?>(nameof(SynRow.Id), "Id"),
 			new KeyValuePair<string, string?>(nameof(SynRow.Created), "Created"),
-			new KeyValuePair<string, string?>(nameof(SynRow.Title), "Title")).ToList();
+			new KeyValuePair<string, string?>(nameof(SynRow.Title), "Title"))).ToList();
 
 	public static SynRow OneOffFirst(SyntheticConnection connection)
-		=> connection.Command(Sql).Map<SynRow>(
+		=> connection.Command(Sql).Map(new RowMap<SynRow>(
 			new KeyValuePair<string, string?>(nameof(SynRow.Id), "Id"),
 			new KeyValuePair<string, string?>(nameof(SynRow.Created), "Created"),
-			new KeyValuePair<string, string?>(nameof(SynRow.Title), "Title")).First();
+			new KeyValuePair<string, string?>(nameof(SynRow.Title), "Title"))).First();
 
 	/// <summary>The same three pairs, declared once: the way the docs say to hold a map.</summary>
 	static readonly RowMap<SynRow> Declared = new(

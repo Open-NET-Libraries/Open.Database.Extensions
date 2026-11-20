@@ -3,6 +3,8 @@ name: Tests
 # Runs the Core test suite on every pull request and every push to master, and checks the packages for known vulnerabilities.
 # The suite runs on net10.0 and net11.0 in Release, and on net11.0 in Debug (Debug.Assert is live there).
 # A separate job runs the LegacyCompiler tests, which compile the public call shapes with older C# language versions.
+# Another job builds the Benchmarks project (it is not in the solution), so a change to the public API cannot leave its call sites behind.
+# Another runs `dotnet format` style and analyzers at info severity on every project, which is what the IDE shows.
 # SQL Server LocalDB is part of the runner image. ODX_REQUIRE_SQL=1 makes the tests that need it fail, instead of skip, when it is missing.
 
 on:
@@ -112,6 +114,76 @@ jobs:
         with:
           name: trx-legacy-compiler
           path: TestResults/legacy-compiler/*.trx
+
+  benchmarks-build:
+    name: Build the Benchmarks project
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+
+      # The Benchmarks project is not in the solution, so no other job compiles it. Only the build runs here: no benchmark is run.
+      # No -f: both target frameworks of the project build.
+      - name: Build the Benchmarks project (Release)
+        run: dotnet build Benchmarks/Open.Database.Extensions.Benchmarks -c Release
+
+  format:
+    name: Style and analyzers (info)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+
+      # dotnet format checks every target framework of each project, at info severity, and changes nothing.
+      # It exits non-zero when it finds something. When it cannot load a project or a framework it can print nothing and exit 0,
+      # so that output is a failure too: a zero that proves nothing must not pass.
+      - name: dotnet format style and analyzers (any finding fails the run)
+        run: |
+          $projects = @(
+            'Source\Core', 'Source\SqlClient', 'Source\MSSqlClient', 'Source\Channel', 'Source\Dataflow', 'Source\Extensions',
+            'Tests\Open.Database.Extensions.Core.Tests', 'Tests\Open.Database.Extensions.LegacyCompiler.Tests', 'docsite\samples', 'Benchmarks\Open.Database.Extensions.Benchmarks')
+          $failures = @()
+          foreach ($project in $projects) {
+            # A full Windows path: with forward slashes the formatter loads nothing and reports a false zero.
+            $path = (Resolve-Path $project).Path
+            dotnet restore $path --nologo --verbosity quiet
+            if ($LASTEXITCODE -ne 0) { $failures += "${project}: restore failed"; continue }
+            foreach ($check in 'style', 'analyzers') {
+              $output = (dotnet format $check $path --severity info --verify-no-changes --no-restore --verbosity minimal 2>&1 | Out-String -Width 4096)
+              $exitCode = $LASTEXITCODE
+              Write-Host "== $project $check (exit code $exitCode)"
+              Write-Host $output
+              if ($output -match 'did not load|Msbuild failed|not recognized') {
+                $failures += "$project ${check}: the formatter could not load a project or framework, so the check proved nothing"
+              }
+              elseif ($exitCode -ne 0) {
+                $failures += "$project ${check}: findings at info severity (listed above)"
+              }
+            }
+          }
+          if ($failures.Count -gt 0) {
+            foreach ($failure in $failures) { Write-Host "::error title=dotnet format::$failure" }
+            exit 1
+          }
+          "No style or analyzer findings in $($projects.Count) project(s)."
 
   vulnerable-packages:
     name: Vulnerable packages

@@ -17,9 +17,43 @@ public static class DataReaderExtensions
 	const string ReaderToListAsyncObsolete = "Use await reader.Map(transform).ToListAsync(cancellationToken) instead. It reads the current result set, as this method does, but with Read() where this method used ReadAsync. Removed in 12.";
 
 	/// <summary>
-	/// Iterates all records from an <see cref="IDataReader"/>.
+	/// Iterates all records from an <see cref="IDataReader"/>;
+	/// the reader's connection is held while each row is processed.
 	/// </summary>
 	/// <remarks>
+	/// <note type="caution">
+	/// <b>This is not the recommended way to read rows: it holds the
+	/// connection while your code runs for each row.</b>
+	/// The reader, and the connection under it, stay open for as long as
+	/// your code takes per row, added up over all the rows.
+	/// The same holds when you pass in a reader you opened yourself:
+	/// the connection under it is held.
+	/// <br/>
+	/// <br/>
+	/// In async code that time has no bound: every <c>await</c> in the
+	/// loop body can yield, and nothing says when the loop resumes.
+	/// Until it does, the connection is on hold: a pooled connection is
+	/// not returned to the pool, and the server may keep its locks and the
+	/// open result set.
+	/// <br/>
+	/// <br/>
+	/// These members suit work that must happen while the connection is
+	/// open, for example a result too large to buffer or a row-by-row
+	/// pipeline.
+	/// Otherwise use a call that lets go of the connection first:
+	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// and
+	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// buffer the rows and release the connection
+	/// (call <c>.Map&lt;T&gt;()</c> first), and
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// streams them to a consumer without holding it
+	/// (the producer is unbounded: it reads without waiting for the
+	/// consumer and frees the connection while the consumer takes its
+	/// time, and the rows wait in memory until the consumer takes them;
+	/// dispose the enumerator, as <c>await foreach</c> does).
+	/// </note>
+	/// <para>
 	/// The token is checked before each read:
 	/// a cancel throws, and the read is not made.
 	/// A cancel during the handler of a row lets that row finish,
@@ -29,6 +63,7 @@ public static class DataReaderExtensions
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception,
 	/// use <c>IterateWhile</c> and return <see langword="false"/>.
+	/// </para>
 	/// </remarks>
 	/// <param name="reader">The IDataReader to iterate.</param>
 	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
@@ -70,9 +105,43 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates all records from an <see cref="DbDataReader"/>.
+	/// Iterates all records from an <see cref="DbDataReader"/>;
+	/// the reader's connection is held while each row is processed.
 	/// </summary>
 	/// <remarks>
+	/// <note type="caution">
+	/// <b>This is not the recommended way to read rows: it holds the
+	/// connection while your code runs for each row.</b>
+	/// The reader, and the connection under it, stay open for as long as
+	/// your code takes per row, added up over all the rows.
+	/// The same holds when you pass in a reader you opened yourself:
+	/// the connection under it is held.
+	/// <br/>
+	/// <br/>
+	/// In async code that time has no bound: every <c>await</c> in the
+	/// loop body can yield, and nothing says when the loop resumes.
+	/// Until it does, the connection is on hold: a pooled connection is
+	/// not returned to the pool, and the server may keep its locks and the
+	/// open result set.
+	/// <br/>
+	/// <br/>
+	/// These members suit work that must happen while the connection is
+	/// open, for example a result too large to buffer or a row-by-row
+	/// pipeline.
+	/// Otherwise use a call that lets go of the connection first:
+	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// and
+	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// buffer the rows and release the connection
+	/// (call <c>.Map&lt;T&gt;()</c> first), and
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// streams them to a consumer without holding it
+	/// (the producer is unbounded: it reads without waiting for the
+	/// consumer and frees the connection while the consumer takes its
+	/// time, and the rows wait in memory until the consumer takes them;
+	/// dispose the enumerator, as <c>await foreach</c> does).
+	/// </note>
+	/// <para>
 	/// The token is passed to <c>ReadAsync</c>, so the provider
 	/// cancels the read itself. Without <paramref name="useReadAsync"/>
 	/// it is checked before each <c>Read</c> instead.
@@ -81,6 +150,7 @@ public static class DataReaderExtensions
 	/// even if that row was the last.
 	/// Once a read has returned no row the result is complete,
 	/// and a cancel after that is not an error.
+	/// </para>
 	/// </remarks>
 	/// <exception cref="OperationCanceledException">
 	/// The token was canceled and cut the read short.
@@ -290,9 +360,47 @@ public static class DataReaderExtensions
 		=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
 
 	/// <summary>
-	/// Provides an enumerable for iterating all the remaining values of the current result set of a data reader.
+	/// Provides an enumerable for iterating all the remaining values
+	/// of the current result set of a data reader;
+	/// the reader's connection is held while each row is processed.
 	/// </summary>
-	/// <remarks><see cref="DBNull"/> values are retained.</remarks>
+	/// <remarks>
+	/// <note type="caution">
+	/// <b>This is not the recommended way to read rows: it holds the
+	/// connection while your code runs for each row.</b>
+	/// The reader, and the connection under it, stay open for as long as
+	/// your code takes per row, added up over all the rows.
+	/// The same holds when you pass in a reader you opened yourself:
+	/// the connection under it is held.
+	/// <br/>
+	/// <br/>
+	/// In async code that time has no bound: every <c>await</c> in the
+	/// loop body can yield, and nothing says when the loop resumes.
+	/// Until it does, the connection is on hold: a pooled connection is
+	/// not returned to the pool, and the server may keep its locks and the
+	/// open result set.
+	/// <br/>
+	/// <br/>
+	/// These members suit work that must happen while the connection is
+	/// open, for example a result too large to buffer or a row-by-row
+	/// pipeline.
+	/// Otherwise use a call that lets go of the connection first:
+	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// and
+	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// buffer the rows and release the connection
+	/// (call <c>.Map&lt;T&gt;()</c> first), and
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// streams them to a consumer without holding it
+	/// (the producer is unbounded: it reads without waiting for the
+	/// consumer and frees the connection while the consumer takes its
+	/// time, and the rows wait in memory until the consumer takes them;
+	/// dispose the enumerator, as <c>await foreach</c> does).
+	/// </note>
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// </remarks>
 	/// <param name="reader">The reader to enumerate.</param>
 	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
@@ -809,9 +917,43 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> while the predicate returns true.
+	/// Iterates an <see cref="IDataReader"/> while the predicate returns true;
+	/// the reader's connection is held while each row is processed.
 	/// </summary>
 	/// <remarks>
+	/// <note type="caution">
+	/// <b>This is not the recommended way to read rows: it holds the
+	/// connection while your code runs for each row.</b>
+	/// The reader, and the connection under it, stay open for as long as
+	/// your code takes per row, added up over all the rows.
+	/// The same holds when you pass in a reader you opened yourself:
+	/// the connection under it is held.
+	/// <br/>
+	/// <br/>
+	/// In async code that time has no bound: every <c>await</c> in the
+	/// loop body can yield, and nothing says when the loop resumes.
+	/// Until it does, the connection is on hold: a pooled connection is
+	/// not returned to the pool, and the server may keep its locks and the
+	/// open result set.
+	/// <br/>
+	/// <br/>
+	/// These members suit work that must happen while the connection is
+	/// open, for example a result too large to buffer or a row-by-row
+	/// pipeline.
+	/// Otherwise use a call that lets go of the connection first:
+	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// and
+	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// buffer the rows and release the connection
+	/// (call <c>.Map&lt;T&gt;()</c> first), and
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// streams them to a consumer without holding it
+	/// (the producer is unbounded: it reads without waiting for the
+	/// consumer and frees the connection while the consumer takes its
+	/// time, and the rows wait in memory until the consumer takes them;
+	/// dispose the enumerator, as <c>await foreach</c> does).
+	/// </note>
+	/// <para>
 	/// The token is checked before each read:
 	/// a cancel throws, and the read is not made.
 	/// A cancel during the predicate of a row lets that row finish,
@@ -821,6 +963,7 @@ public static class DataReaderExtensions
 	/// Rows already handed out stay handed out.
 	/// To stop early, return <see langword="false"/> from the predicate:
 	/// that ends the iteration without an exception.
+	/// </para>
 	/// </remarks>
 	/// <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
 	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>

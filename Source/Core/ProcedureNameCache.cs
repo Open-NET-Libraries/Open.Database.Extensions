@@ -109,11 +109,19 @@ static class ProcedureNameCache
 	}
 
 	/// <summary>Remembers the names and returns the set made from them.</summary>
-	internal static NameSet Set(object source, ProcedureKey key, ImmutableArray<string> names)
+	/// <param name="source">The object commands take their connections from.</param>
+	/// <param name="key">The server, database and procedure the names belong to.</param>
+	/// <param name="names">The names as the provider reported them; never empty.</param>
+	/// <param name="rechecked">Whether the names were read again because the set they replace did not fit.</param>
+	internal static NameSet Set(
+		object source,
+		ProcedureKey key,
+		ImmutableArray<string> names,
+		bool rechecked = false)
 	{
 		Debug.Assert(!names.IsDefaultOrEmpty, "An empty answer is remembered with SetUnknown.");
 
-		var set = new NameSet(names);
+		var set = new NameSet(names, rechecked);
 		Store(source, key, set, LifetimeTicks);
 		return set;
 	}
