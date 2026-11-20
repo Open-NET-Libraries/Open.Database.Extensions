@@ -36,7 +36,7 @@ internal static class PoolClearing
 	/// nothing, so the switch decides).
 	/// </summary>
 	public static bool Resolve<T>(bool? clear)
-		=> Holds<T>.References || (clear ?? _all);
+		=> (clear ?? _all) || Holds<T>.References;
 
 	// The floor: a row type that is, or contains, a reference. The
 	// per-type value is a JIT constant on the shipped runtimes; where

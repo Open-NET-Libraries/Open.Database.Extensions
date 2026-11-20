@@ -533,7 +533,7 @@ internal struct ArraySink<T>(MemoryPool<T>? pool, bool clear) : IRowSink<T>
 
 	// A rent that fails (or is refused) leaves the sink as it was: the
 	// array and its owner are kept only once the rent has succeeded.
-	T[] Rent(int size, out IMemoryOwner<T>? owner)
+	readonly T[] Rent(int size, out IMemoryOwner<T>? owner)
 	{
 		if (_custom is null)
 		{
