@@ -85,8 +85,7 @@ internal sealed class ChunkChain<T>
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	void AddSlow(T item)
 	{
-		if (_parked)
-			throw new ObjectDisposedException(nameof(ChunkChain<>));
+		if (_parked) ThrowDisposed();
 
 		T[][] chunks = _chunks;
 		if (_chunkCount == chunks.Length)
@@ -198,4 +197,8 @@ internal sealed class ChunkChain<T>
 		_chunkCount = 0;
 		Interlocked.CompareExchange(ref _spare, this, null);
 	}
+
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static void ThrowDisposed()
+		=> throw new ObjectDisposedException(nameof(ChunkChain<>));
 }
