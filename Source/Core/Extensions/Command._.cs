@@ -37,7 +37,7 @@ public static partial class CommandExtensions
 	internal static TReader OpenAndExecuteReader<TCommand, TReader>(TCommand command, CommandBehavior behavior, Func<TCommand, CommandBehavior, TReader> execute)
 		where TCommand : IDbCommand
 	{
-		if (command.EnsureOpen() != ConnectionState.Closed)
+		if (!ConnectionExtensions.NeedsOpen(command.EnsureOpen()))
 			return execute(command, behavior);
 
 		try
@@ -55,7 +55,8 @@ public static partial class CommandExtensions
 	internal static async ValueTask<TReader> OpenAndExecuteReaderAsync<TCommand, TReader>(TCommand command, CommandBehavior behavior, Func<TCommand, CommandBehavior, CancellationToken, Task<TReader>> execute, CancellationToken cancellationToken)
 		where TCommand : IDbCommand
 	{
-		if (await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false) != ConnectionState.Closed)
+		ConnectionState prior = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
+		if (!ConnectionExtensions.NeedsOpen(prior))
 			return await execute(command, behavior, cancellationToken).ConfigureAwait(false);
 
 		try
