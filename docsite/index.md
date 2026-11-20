@@ -17,12 +17,32 @@ Here `author` is an `int` variable: the parameter name `author` comes from the a
 3. **Row mapping on top of that.** `Map<T>()` reads rows into your classes. See [Mapping rows to objects](articles/mapping.md).
 4. **All of it rests on performance.** The goal is to keep a connection open for as short a time as possible and to allocate as little as possible. See [Performance](articles/performance.md) for what is measured and what is not.
 
+## How little code
+
+The same four tasks written with ODX, Dapper, EF Core and plain ADO.NET are on [How little code](articles/how-little-code.md): every snippet is compiled and run, and this table counts the lines of each method, from the signature to the closing brace, without blank lines or comments.
+
+| Task | ODX | Dapper | EF Core | plain ADO.NET |
+|---|---:|---:|---:|---:|
+| 1. Rows to a list | 7 | 9 | 6 | 22 |
+| 2. Filter in SQL, project in C#, as an async stream | 10 | 14 | 8 | 22 |
+| 3. The rows of one author in memory, then LINQ | 15 | 15 | 13 | 26 |
+| 4. A stored procedure with two parameters | 11 | 14 | 12 | 29 |
+
+ODX is not the smallest in every row: EF Core is shorter in all four. The connection factory (ODX) and the context (EF Core) are set up once and are not counted: see the page for what each count includes. The ODX versions of the first two tasks:
+
+[!code-csharp[](samples/HowLittleCode.cs#little_list_odx)]
+
+[!code-csharp[](samples/HowLittleCode.cs#little_stream_odx)]
+
+The stream method has no `async`, `await` or `using`: the stream opens the connection when it is first enumerated, and it can be enumerated once.
+
 ## Start here
 
 | I want to... | Read |
 |---|---|
 | Install it and run a first query | [Getting started](articles/getting-started.md) |
 | Stream rows into a channel or a dataflow block | [Channels and Dataflow](articles/channels-and-dataflow.md) |
+| See how little code it takes, against Dapper, EF Core and ADO.NET | [How little code](articles/how-little-code.md) |
 | See how it differs from Dapper | [Coming from Dapper](articles/coming-from-dapper.md) |
 | See what changed in 11 | [What's new in 11](articles/whats-new-11.md) |
 | Look up a type or a method | [API reference](api/index.md) |
