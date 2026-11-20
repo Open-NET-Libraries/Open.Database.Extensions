@@ -14,12 +14,21 @@ sealed class NameSet
 
 	/// <summary>Makes the set from the names as the provider reported them (a leading <c>@</c> is fine); never the default array, but may be empty (a text without markers).</summary>
 	/// <param name="names">The names.</param>
-	internal NameSet(ImmutableArray<string> names)
+	/// <param name="rechecked">Whether the names were read again because an earlier set did not fit (see <see cref="Rechecked"/>).</param>
+	internal NameSet(ImmutableArray<string> names, bool rechecked = false)
 	{
 		Debug.Assert(!names.IsDefault, "A set is made from names, not from 'not known'.");
 		Names = names;
 		BareNames = ParameterNames.BareNames(names);
+		Rechecked = rechecked;
 	}
+
+	/// <summary>
+	/// Whether this set is the answer of a second look: the names were read again because the set before did not fit.
+	/// A member of an <c>AddParams</c> object that such a set does not declare is dropped without another read (the procedure was just asked about it),
+	/// so a member that the procedure never takes costs one extra read when the names are read, not one in every run.
+	/// </summary>
+	internal bool Rechecked { get; }
 
 	/// <summary>The names as the provider reported them.</summary>
 	internal ImmutableArray<string> Names { get; }

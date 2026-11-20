@@ -79,9 +79,9 @@ An argument that is not a plain member chain (a call, an index, an operator, a l
 
 The names are read once and remembered for five minutes, per server, database and procedure name, on the connection factory (or on the connection itself when you start from a connection). Register the factory once: a connection or a factory you create for each call starts with nothing remembered, so its names are read for every command. Names read inside a transaction are remembered too, even if the transaction rolls back.
 
-A procedure that changes can show its old names for up to five minutes. Only one case reads again before it fails: an argument from `AddParam(value)` that matches none of the remembered names makes the library read the names once more. Everything else uses the remembered names as they are until they expire:
+A procedure that changes can show its old names for up to five minutes. Two cases read again before they fail or drop anything: an argument from `AddParam(value)` that matches none of the remembered names, and a member of an `AddParams` object that the remembered names do not declare. Either makes the library read the names once more. A read that follows a miss is itself remembered together with the fact that it was a second look, so a member the procedure never declares costs one extra read per five minutes, not one per run. Everything else uses the remembered names as they are until they expire:
 
-- a member of an `AddParams` object that the remembered names do not declare is skipped, so a new optional parameter is not sent;
+- a member of an `AddParams` object that the second read still does not find is skipped, so a parameter added to the procedure after that read is not sent until the names expire;
 - a less specific match is kept while a more specific new parameter exists (`@id` for `order.Customer.Id` although `@customer_id` now exists);
 - an ambiguity, or two arguments that resolve to the same parameter, is reported from the remembered names;
 - when the second read finds nothing (the procedure is no longer visible to the login), the argument is sent as written and the old names stay until they expire.
