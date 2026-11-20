@@ -35,11 +35,19 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 	// (see ExpressiveCommandBase.Fits).
 	internal abstract bool Fits(NameSet names, string command);
 
+	// Whether a node of the whole call claims the name with a name of its own
+	// (one written or derived, not a member of an AddParams object): such a
+	// parameter wins over a member that resolves to the same name, whichever was
+	// added first, as on a command.
+	internal abstract bool Claims(string name, NameSet? names, DbQuery definition);
+
 	// Binds this node's parameters after its parent's, in the order added.
+	// `whole` is the call that runs: the node last added.
 	internal abstract void BindAll(
 		DbCommand command,
 		DbQuery definition,
-		NameSet? names);
+		NameSet? names,
+		DbQueryCall whole);
 
 	/// <summary>
 	/// The connection, transaction, pool or factory the query is bound to.
@@ -110,6 +118,30 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 					$"Cannot derive a parameter name from the argument '{expression}'. Pass a variable or a chain of members such as filter.AuthorId, or name the parameter: AddParam(\"name\", value).",
 					"value"));
 
+	// The real name an argument of AddParam(value) stands for.
+	static string ResolveDerived(
+		string expression,
+		NameSet? names,
+		DbQuery definition)
+		=> Known(names)
+			? names!.Match(expression, definition.CommandText)
+				?? throw NoMatch(expression, names!, definition)
+			: ParameterNames.Describe(expression)!.LastMember;
+
+	static bool ClaimsValue(
+		NameKind kind,
+		string? own,
+		string name,
+		NameSet? names,
+		DbQuery definition)
+		=> kind switch
+		{
+			NameKind.Explicit => SameName(own!, name),
+			NameKind.Derived
+				=> SameName(ResolveDerived(own!, names, definition), name),
+			_ => false,
+		};
+
 	static bool Known(NameSet? names)
 		=> names is { Names.Length: > 0 };
 
@@ -152,7 +184,8 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		string? name,
 		T value,
 		DbQuery definition,
-		NameSet? names)
+		NameSet? names,
+		DbQueryCall whole)
 	{
 		switch (kind)
 		{
@@ -162,29 +195,28 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 			case NameKind.Derived:
 				Add(
 					command,
-					Known(names)
-						? names!.Match(name!, definition.CommandText)
-							?? throw NoMatch(name!, names, definition)
-						: ParameterNames.Describe(name)!.LastMember,
+					ResolveDerived(name!, names, definition),
 					value,
 					typeof(T),
 					definition,
 					names);
 				return;
 			default:
-				BindMembers(command, value, definition, names);
+				BindMembers(command, value, definition, names, whole);
 				return;
 		}
 	}
 
 	// The members of the values, found once per type. When the real names are
-	// known a member the command does not take is not sent, and a member whose
-	// name a parameter added before it already has is left to that parameter.
+	// known a member the command does not take is not sent, and a member
+	// whose name another parameter claims (one written or derived, added before
+	// or after) is left to that parameter. Two members of one name collide.
 	static void BindMembers<T>(
 		DbCommand command,
 		T value,
 		DbQuery definition,
-		NameSet? names)
+		NameSet? names,
+		DbQueryCall whole)
 	{
 		bool known = Known(names);
 		if (typeof(T) == typeof(object))
@@ -197,13 +229,15 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 				string? name = known
 					? names!.Match(members.Names[i], definition.CommandText)
 					: members.Names[i];
-				if (name is null || Has(command, name)) continue;
+				if (name is null || whole.Claims(name, names, definition)) continue;
 
-				Append(
+				Add(
 					command,
 					name,
 					members.Getters[i](source),
-					members.Types[i]);
+					members.Types[i],
+					definition,
+					names);
 			}
 
 			return;
@@ -218,9 +252,9 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		for (int i = 0; i < memberNames.Length; i++)
 		{
 			string? name = known ? resolved![i] : memberNames[i];
-			if (name is null || Has(command, name)) continue;
+			if (name is null || whole.Claims(name, names, definition)) continue;
 
-			Append(command, name, getters[i](value), types[i]);
+			Add(command, name, getters[i](value), types[i], definition, names);
 		}
 	}
 
@@ -231,19 +265,25 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		NameSet names,
 		string[] members)
 	{
-		DbQuery.MemberMatch? last = definition.Members;
-		if (last is not null
-			&& ReferenceEquals(last.Names, names)
-			&& last.Type == typeof(T))
+		DbQuery.MemberMatch[]? known = definition.Matches;
+		int kept = known?.Length ?? 0;
+		for (int i = 0; i < kept; i++)
 		{
-			return last.Resolved;
+			DbQuery.MemberMatch m = known![i];
+			if (ReferenceEquals(m.Names, names) && m.Type == typeof(T))
+				return m.Resolved;
 		}
 
 		var resolved = new string?[members.Length];
 		for (int i = 0; i < members.Length; i++)
 			resolved[i] = names.Match(members[i], definition.CommandText);
 
-		definition.Members = new(typeof(T), names, resolved);
+		// Newest first; the oldest of four goes.
+		kept = Math.Min(kept, DbQuery.MaxMatches - 1);
+		var next = new DbQuery.MemberMatch[kept + 1];
+		next[0] = new(typeof(T), names, resolved);
+		if (kept > 0) Array.Copy(known!, 0, next, 1, kept);
+		definition.Matches = next;
 		return resolved;
 	}
 
@@ -349,11 +389,18 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		internal override bool Fits(NameSet names, string command)
 			=> FitsValue(Kind, _name, _value, names, command);
 
+		internal override bool Claims(
+			string name,
+			NameSet? names,
+			DbQuery definition)
+			=> ClaimsValue(Kind, _name, name, names, definition);
+
 		internal override void BindAll(
 			DbCommand command,
 			DbQuery definition,
-			NameSet? names)
-			=> BindValue(command, Kind, _name, _value, definition, names);
+			NameSet? names,
+			DbQueryCall whole)
+			=> BindValue(command, Kind, _name, _value, definition, names, whole);
 
 		public override bool Equals(object? obj)
 			=> obj is Root<T> other
@@ -410,13 +457,21 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 			=> _parent.Fits(names, command)
 			&& FitsValue(Kind, _name, _value, names, command);
 
+		internal override bool Claims(
+			string name,
+			NameSet? names,
+			DbQuery definition)
+			=> _parent.Claims(name, names, definition)
+			|| ClaimsValue(Kind, _name, name, names, definition);
+
 		internal override void BindAll(
 			DbCommand command,
 			DbQuery definition,
-			NameSet? names)
+			NameSet? names,
+			DbQueryCall whole)
 		{
-			_parent.BindAll(command, definition, names);
-			BindValue(command, Kind, _name, _value, definition, names);
+			_parent.BindAll(command, definition, names, whole);
+			BindValue(command, Kind, _name, _value, definition, names, whole);
 		}
 
 		public override bool Equals(object? obj)

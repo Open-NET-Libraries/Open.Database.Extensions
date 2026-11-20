@@ -50,8 +50,11 @@ public sealed class DbQuery : IEquatable<DbQuery>
 
 	// What the members of a values type matched, once per definition, values type
 	// and set of names: the real name of each member in member order (null: the
-	// command does not take it). One slot; a definition used with another values
-	// type, or on another set of names, replaces it.
+	// command does not take it). Up to four are kept, newest first (a definition used with
+	// more values types, or on more sets of names, drops the oldest), so values
+	// types used in turn cost nothing once matched.
+	internal const int MaxMatches = 4;
+
 	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved)
 	{
 		internal Type Type { get; } = type;
@@ -61,7 +64,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 		internal string?[] Resolved { get; } = resolved;
 	}
 
-	internal MemberMatch? Members
+	internal MemberMatch[]? Matches
 	{
 		get => Volatile.Read(ref field);
 		set => Volatile.Write(ref field, value);

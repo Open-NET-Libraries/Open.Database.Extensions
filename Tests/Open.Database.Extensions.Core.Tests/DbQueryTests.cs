@@ -429,6 +429,85 @@ public static class DbQueryTests
 		Assert.Equal(["number"], SentNames(c));
 	}
 
+	// ---- a name you give wins over a member of an AddParams object ----
+	// As on a command: whichever was added first, and no throw. Two members of
+	// one name, or two written or derived names of one name, collide.
+
+	[Fact]
+	public static async Task AWrittenName_WinsOverAMember_AddedBeforeIt()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+
+		List<Post> posts = await DbQuery.Text(PostsTypedSql)
+			.Using(c)
+			.AddParam("Views", 90)
+			.AddParams(new AuthorViews(7, 1))
+			.Map<Post>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+
+		Assert.Equal([4], Ids(posts));
+		Assert.Equal(["Views", "@AuthorId"], SentNames(c));
+	}
+
+	[Fact]
+	public static async Task AWrittenName_WinsOverAMember_AddedAfterIt()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+
+		List<Post> posts = await DbQuery.Text(PostsTypedSql)
+			.Using(c)
+			.AddParams(new AuthorViews(7, 1))
+			.AddParam("Views", 90)
+			.Map<Post>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+
+		Assert.Equal([4], Ids(posts));
+		Assert.Equal(["@AuthorId", "Views"], SentNames(c));
+	}
+
+	[Fact]
+	public static async Task ADerivedName_WinsOverAMember_InEitherOrder()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+		int views = 90;
+
+		List<Post> after = await PostsTyped
+			.Using(c)
+			.AddParams(new(7, 1))
+			.AddParam(views)
+			.Map<Post>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+		List<Post> before = await DbQuery.Text(PostsTypedSql)
+			.Using(c)
+			.AddParam(views)
+			.AddParams(new AuthorViews(7, 1))
+			.Map<Post>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+
+		Assert.Equal([4], Ids(after));
+		Assert.Equal([4], Ids(before));
+	}
+
+	[Fact]
+	public static async Task TwoMembersOfOneName_Collide()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await PostsTyped
+				.Using(c)
+				.AddParams(new(7, 1))
+				.AddParams(new AuthorViews(8, 2))
+				.Map<Post>()
+				.ToListAsync(TestContext.Current.CancellationToken));
+
+		Assert.Contains("Two parameters resolve to", ex.Message);
+	}
+
 	// ---- immutable ----
 
 	[Fact]

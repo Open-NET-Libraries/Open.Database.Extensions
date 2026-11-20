@@ -82,7 +82,7 @@ static class DbQueryRunner
 			command.CommandType = definition.Kind;
 			if (definition.Timeout >= 0)
 				command.CommandTimeout = definition.Timeout;
-			call?.BindAll(command, definition, names);
+			call?.BindAll(command, definition, names, call);
 			return command;
 		}
 		catch

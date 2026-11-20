@@ -263,6 +263,29 @@ public static class DbQueryAllocationTests
 		Assert.True(derived <= named, $"K={k}: derived {derived} B, named {named} B.");
 	}
 
+	readonly record struct OtherArgs2(int P0, long P1);
+
+	// Two values types on one definition, in turn: the members of each are matched
+	// once, so alternating costs nothing more than either alone.
+	[Fact]
+	public static void TwoValuesTypesOnOneDefinition_AlternateWithoutAllocatingMore()
+	{
+		using DbConnection c = NewConnection();
+		DbQuery<Args2> a = Q2.Params<Args2>();
+		DbQuery<OtherArgs2> b = Q2.Params<OtherArgs2>();
+
+		long aloneA = BytesPerCall(() => a.Using(c).AddParams(new(VA, VB)).Map<Row>().ToListAsync().AsTask().GetAwaiter().GetResult());
+		long aloneB = BytesPerCall(() => b.Using(c).AddParams(new(VA, VB)).Map<Row>().ToListAsync().AsTask().GetAwaiter().GetResult());
+		long alternating = BytesPerCall(() =>
+		{
+			a.Using(c).AddParams(new(VA, VB)).Map<Row>().ToListAsync().AsTask().GetAwaiter().GetResult();
+			b.Using(c).AddParams(new(VA, VB)).Map<Row>().ToListAsync().AsTask().GetAwaiter().GetResult();
+		});
+
+		Report($"alternating two values types: {alternating} B per pair, alone {aloneA} B and {aloneB} B");
+		Assert.True(alternating <= aloneA + aloneB, $"alternating {alternating} B per pair, alone {aloneA} + {aloneB} B.");
+	}
+
 	// ---- the pieces, and the seam ----
 
 	// The memoize seam adds no state to a node: the first node holds the
