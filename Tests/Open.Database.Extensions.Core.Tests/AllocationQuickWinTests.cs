@@ -331,7 +331,7 @@ public static class AllocationQuickWinTests
 	}
 
 	[Fact]
-	public static void ArraySink_Dispose_ClearsTheRowsItHeld_AndNothingElse()
+	public static void MemorySink_Dispose_ClearsTheRowsItHeld_AndNothingElse()
 	{
 		var marker = new Probe();
 		Probe[] seeded = Seed(16, marker);
@@ -346,7 +346,7 @@ public static class AllocationQuickWinTests
 	}
 
 	[Fact]
-	public static void ArraySink_Grow_ClearsTheFullArrayItOutgrows_AndDisposeTheUsedPartOfTheLast()
+	public static void MemorySink_Grow_ClearsTheFullArrayItOutgrows_AndDisposeTheUsedPartOfTheLast()
 	{
 		var marker = new Probe();
 		Probe[] a16 = Seed(16, marker);

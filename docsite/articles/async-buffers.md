@@ -224,8 +224,8 @@ An explicit `clearOnReturn: true` clears value rows whatever the switch says. An
 The rules of a pool of your own:
 
 - **It is yours.** ODX rents from it and gives back to it, and never disposes it. A null pool throws `ArgumentNullException` at the call.
-- **It hands out whole arrays.** `MemoryPool<T>.Shared` and any ArrayPool-based pool do. Memory that is not backed by an array, or that is only the first part of a larger array, makes the collecting terminals (`ToListAsync`, `ToArrayAsync` and the like) throw `NotSupportedException` naming the pool: a collector sizes its chunks by the array's length, and writing through a shorter view of a shared array would overrun the memory it was given. The rent that failed, and every rent before it, is given back.
-- **It may round up.** A pool that returns a larger array than asked for is fine; the extra length is used, and only the rows are copied.
+- **It decides what the memory is.** ODX takes what the pool gives: a normal array, a view of part of a larger array, or memory that is not an array at all. It uses all of that memory, writes only inside it, and clears only the rows it wrote, not the rest. A pool that gives less memory than was asked for makes the read throw `InvalidOperationException`; that rent, and every rent before it, is given back.
+- **It may round up.** A pool that returns more than asked for is fine; the extra room is used, and only the rows are copied.
 - **Disposing a rented owner must not throw.** Without clearing, an exception stops the release, and the arrays not yet returned stay with the garbage collector.
 
 This pool counts what it hands out and what comes back, and the samples use it to check the claims on this page:

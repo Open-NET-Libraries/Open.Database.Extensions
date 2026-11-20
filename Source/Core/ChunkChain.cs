@@ -3,11 +3,11 @@ using System.Runtime.InteropServices;
 namespace Open.Database.Extensions.Core;
 
 // The collector behind ToArrayAsync and ToListAsync: rows are written
-// into a chain of pooled arrays that are never moved once written, so
-// absorbing the read costs one store per row and no growth copy. When
-// the read is over (and the connection is released) the chain is copied
-// ONCE into a result of exactly the right size, then its arrays go back
-// to the pool.
+// into a chain of pooled chunks of memory that are never moved once
+// written, so absorbing the read costs one store per row and no growth
+// copy. When the read is over (and the connection is released) the chain
+// is copied ONCE into a result of exactly the right size, then its chunks
+// go back to the pool.
 //
 // The chain is read on the caller's own flow: there is no producer task
 // (that is ToAsyncBuffer's job, and it is for a different purpose: a
@@ -15,7 +15,10 @@ namespace Open.Database.Extensions.Core;
 //
 // Chunk sizes start at ChunkSizing's collect-first value and grow by
 // ChunkSizing's collect-shift per chunk up to its collect-max; they are
-// always powers of two, so a pool hands back exactly that size.
+// what the chain ASKS for. A pool decides what it gives: it may give more
+// (the shared array pool rounds up to a power of two), and the chain uses
+// all of what it was given, so the last chunk is the only one that is not
+// full and the only one whose tail is never written, read or cleared.
 //
 // The chain object is reused: one spare is kept per T, taken by Rent and
 // parked again by Dispose, so a small result allocates nothing for it
@@ -24,7 +27,18 @@ namespace Open.Database.Extensions.Core;
 // using declaration (the chain is IDisposable): after that it belongs to
 // the spare slot, and no reference to it is used again.
 //
-// Where the arrays come from.
+// What a chunk is.
+// A chunk is a Memory<T>, whatever it is backed by: the chain does not
+// need to know. Reading it back (the copy, the set, the dictionary) goes
+// through a span of the used part. Writing is one row at a time as the
+// read produces them, so when the memory happens to be backed by an array
+// (the shared array pool always is; so is almost every pool) the chain
+// keeps that array, the offset of the memory in it and the length, and
+// stores a row with a plain array write; memory that is not backed by an
+// array is written through its span. Either way the chain writes only
+// inside the memory it was given.
+//
+// Where the memory comes from (PoolRent).
 // By default (and for MemoryPool<T>.Shared, which is recognised by
 // reference) the chunks are rented from ArrayPool<T>.Shared directly: no
 // owner object is made, so a rent costs what it always did. A caller's own
@@ -32,25 +46,20 @@ namespace Open.Database.Extensions.Core;
 // each, measured: PoolSpikeProbe); the chain keeps it beside the chunk and
 // disposes it when the chunk is released, AFTER the clearing rule. The
 // chain never disposes the pool itself: it is the caller's.
-// The chain sizes its chunks by their real Length, so a pool may round a
-// request up; but a chunk MUST be the whole array behind the memory it
-// handed out (TryGetArray, Offset 0, Count equal to the array's Length).
-// A shorter view over a larger shared array would let the chain write past
-// the memory it was given, into another renter's data, so anything else
-// is refused (NotSupportedException) at the rent, and that rent is
-// disposed.
 //
 // Clearing: whether the used part of every chunk is cleared before it
 // goes back is decided once per call (PoolClearing: the floor for row
 // types that hold references, then the query's explicit choice, then the
 // app-wide switch). Plain value rows are returned as they are when it is
-// not asked for.
+// not asked for. Only the rows that were written are cleared: a chunk the
+// read only started on is cleared up to where it stopped, and nothing is
+// cleared of what was never written.
 internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 {
 	// The one spare chain of this T.
 	static ChunkChain<T>? _spare;
 
-	T[][] _chunks = new T[4][];
+	Memory<T>[] _chunks = new Memory<T>[4];
 
 	// The owners of the chunks, in step with _chunks, only for a caller's
 	// own pool (null otherwise). Kept by the spare chain between uses.
@@ -61,7 +70,14 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	bool _clear;
 	bool _parked;
 	int _chunkCount;
-	T[] _current = [];
+
+	// The chunk being written: its memory; the array behind it and the
+	// memory's offset in that array (null when the memory is not backed by
+	// an array); how many rows it holds; how many are written.
+	Memory<T> _current;
+	T[]? _array;
+	int _offset;
+	int _capacity;
 	int _index;
 	int _filled; // rows in the chunks before the current one
 	int _nextSize;
@@ -93,11 +109,10 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public void Add(T item)
 	{
-		T[] current = _current;
 		int index = _index;
-		if ((uint)index < (uint)current.Length)
+		if ((uint)index < (uint)_capacity && _array is { } array)
 		{
-			current[index] = item;
+			array[_offset + index] = item;
 			_index = index + 1;
 			return;
 		}
@@ -110,7 +125,14 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	{
 		if (_parked) ThrowDisposed();
 
-		T[][] chunks = _chunks;
+		// Memory that is not backed by an array: written through its span.
+		if ((uint)_index < (uint)_capacity)
+		{
+			_current.Span[_index++] = item;
+			return;
+		}
+
+		Memory<T>[] chunks = _chunks;
 		if (_chunkCount == chunks.Length)
 		{
 			Array.Resize(ref chunks, chunks.Length * 2);
@@ -124,14 +146,9 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 		// Counted only once the rent has succeeded, so a failed rent leaves
 		// the chain as it was.
-		T[] next;
-		if (_custom is null)
+		Memory<T> next = PoolRent.Rent(_custom, size, out IMemoryOwner<T>? owner);
+		if (owner is not null)
 		{
-			next = ArrayPool<T>.Shared.Rent(size);
-		}
-		else
-		{
-			next = PoolRent.Rent(_custom, size, out IMemoryOwner<T> owner);
 			(_owners ??= new IMemoryOwner<T>?[chunks.Length])
 				[_chunkCount] = owner;
 		}
@@ -140,13 +157,31 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		chunks[_chunkCount++] = next;
 		_filled += _index;
 		_current = next;
-		next[0] = item;
+		_capacity = next.Length;
+		if (MemoryMarshal.TryGetArray<T>(next, out ArraySegment<T> segment)
+			&& segment.Array is { } array)
+		{
+			_array = array;
+			_offset = segment.Offset;
+			array[_offset] = item;
+		}
+		else
+		{
+			_array = null;
+			_offset = 0;
+			next.Span[0] = item;
+		}
+
 		_index = 1;
 	}
 
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	static void ThrowDisposed()
 		=> throw new ObjectDisposedException(nameof(ChunkChain<>));
+
+	// How many rows of chunk i are written: all of them, except in the last.
+	int Used(int i)
+		=> i == _chunkCount - 1 ? _index : _chunks[i].Length;
 
 	/// <summary>The rows, in order, in an array of exactly that length.</summary>
 	public T[] ToArray()
@@ -179,12 +214,11 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		List<T> list = new(count);
 		if (count == 0) return list;
 
-		T[][] chunks = _chunks;
 		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == _chunkCount - 1 ? _index : chunk.Length;
-			list.AddRange(new ArraySegment<T>(chunk, 0, length));
+			ReadOnlySpan<T> rows = _chunks[i].Span[..Used(i)];
+			for (int j = 0; j < rows.Length; ++j)
+				list.Add(rows[j]);
 		}
 
 		return list;
@@ -216,14 +250,11 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 #else
 		HashSet<T> set = new(Count, comparer);
 #endif
-		T[][] chunks = _chunks;
-		int last = _chunkCount - 1;
-		for (int i = 0; i <= last; ++i)
+		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == last ? _index : chunk.Length;
-			for (int j = 0; j < length; ++j)
-				set.Add(chunk[j]);
+			ReadOnlySpan<T> rows = _chunks[i].Span[..Used(i)];
+			for (int j = 0; j < rows.Length; ++j)
+				set.Add(rows[j]);
 		}
 
 		return set;
@@ -240,15 +271,12 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		where TKey : notnull
 	{
 		Dictionary<TKey, T> dictionary = new(Count, comparer);
-		T[][] chunks = _chunks;
-		int last = _chunkCount - 1;
-		for (int i = 0; i <= last; ++i)
+		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == last ? _index : chunk.Length;
-			for (int j = 0; j < length; ++j)
+			ReadOnlySpan<T> rows = _chunks[i].Span[..Used(i)];
+			for (int j = 0; j < rows.Length; ++j)
 			{
-				T item = chunk[j];
+				T item = rows[j];
 				dictionary.Add(keySelector(item), item);
 			}
 		}
@@ -267,15 +295,12 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		where TKey : notnull
 	{
 		Dictionary<TKey, TValue> dictionary = new(Count, comparer);
-		T[][] chunks = _chunks;
-		int last = _chunkCount - 1;
-		for (int i = 0; i <= last; ++i)
+		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == last ? _index : chunk.Length;
-			for (int j = 0; j < length; ++j)
+			ReadOnlySpan<T> rows = _chunks[i].Span[..Used(i)];
+			for (int j = 0; j < rows.Length; ++j)
 			{
-				T item = chunk[j];
+				T item = rows[j];
 				dictionary.Add(keySelector(item), valueSelector(item));
 			}
 		}
@@ -285,21 +310,17 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 	void CopyTo(Span<T> destination)
 	{
-		T[][] chunks = _chunks;
-		int last = _chunkCount - 1;
-		for (int i = 0; i < last; ++i)
+		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			chunk.CopyTo(destination);
-			destination = destination[chunk.Length..];
+			ReadOnlySpan<T> rows = _chunks[i].Span[..Used(i)];
+			rows.CopyTo(destination);
+			destination = destination[rows.Length..];
 		}
-
-		chunks[last].AsSpan(0, _index).CopyTo(destination);
 	}
 
 	/// <summary>
 	/// Clears what is to be cleared (see the notes at the top), gives every
-	/// array back to its pool and parks the chain as the spare. Call it
+	/// chunk back to its pool and parks the chain as the spare. Call it
 	/// once, from the finally of the call that rented the chain, which a
 	/// using declaration on the rented chain does (a second call, before
 	/// the chain is rented again, does nothing). Public only because the
@@ -310,33 +331,31 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		if (_parked) return;
 
 		_parked = true;
-		T[][] chunks = _chunks;
+		Memory<T>[] chunks = _chunks;
 		IMemoryOwner<T>?[]? owners = _owners;
 		bool clear = _clear;
-		_current = [];
+		int count = _chunkCount;
+		int last = count - 1;
+		int lastUsed = _index;
+		_current = default;
+		_array = null;
 		_custom = null;
-		int last = _chunkCount - 1;
 		for (int i = 0; i <= last; ++i)
 		{
-			T[] chunk = chunks[i];
-			if (clear)
-			{
-				Array.Clear(chunk, 0, i == last ? _index : chunk.Length);
-			}
+			IMemoryOwner<T>? owner = owners?[i];
+			if (owner is not null) owners![i] = null;
 
-			if (owners is not null && owners[i] is { } owner)
-			{
-				owners[i] = null;
-				owner.Dispose();
-			}
-			else
-			{
-				ArrayPool<T>.Shared.Return(chunk, clearArray: false);
-			}
+			PoolRent.Return(
+				chunks[i],
+				owner,
+				i == last ? lastUsed : chunks[i].Length,
+				clear);
 		}
 
-		Array.Clear(chunks, 0, _chunkCount);
+		Array.Clear(chunks, 0, count);
 		_index = 0;
+		_offset = 0;
+		_capacity = 0;
 		_filled = 0;
 		_nextSize = 0;
 		_chunkCount = 0;
@@ -354,13 +373,14 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 	IEnumerator<T> IEnumerable<T>.GetEnumerator()
 	{
-		T[][] chunks = _chunks;
 		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == _chunkCount - 1 ? _index : chunk.Length;
-			for (int j = 0; j < length; ++j)
-				yield return chunk[j];
+			// A span cannot live across a yield: the memory is kept, and
+			// each row is read through it.
+			Memory<T> chunk = _chunks[i];
+			int used = Used(i);
+			for (int j = 0; j < used; ++j)
+				yield return chunk.Span[j];
 		}
 	}
 

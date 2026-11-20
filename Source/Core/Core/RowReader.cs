@@ -133,7 +133,7 @@ internal static class RowReader
 		if (take == 0 || !SkipRows(db, skip) || !db.Read()) return [];
 
 		Func<DbDataReader, T> map = source.Mapper(db);
-		var buffer = new ArraySink<T>(pool, clearOnReturn);
+		var buffer = new MemorySink<T>(pool, clearOnReturn);
 		try
 		{
 			int n = 0;
@@ -513,10 +513,10 @@ internal readonly struct DictionaryValueBuild<T, TKey, TValue>(
 /// A pooled, growable buffer so an exact-size array can be produced without the garbage a growing list leaves behind.
 /// </summary>
 /// <remarks>
-/// The arrays come from the shared array pool, or from a caller's own <see cref="MemoryPool{T}"/> (see <see cref="PoolRent"/>); <c>clear</c> is what <see cref="PoolClearing"/> decided: the used rows are cleared before the array goes back.
+/// The memory comes from the shared array pool, or from a caller's own <see cref="MemoryPool{T}"/> (see <see cref="PoolRent"/>), and is whatever the pool gives: the sink uses all of it and writes only inside it. When the memory is backed by an array (the shared pool's always is) a row is stored with a plain array write; otherwise it is written through the memory's span. <c>clearOnReturn</c> is what <see cref="PoolClearing"/> decided: the rows that were written are cleared before the memory goes back, and nothing else.
 /// The default value of the struct uses the shared array pool and clears nothing.
 /// </remarks>
-internal struct ArraySink<T>(MemoryPool<T>? pool, bool clearOnReturn) : IRowSink<T>
+internal struct MemorySink<T>(MemoryPool<T>? pool, bool clearOnReturn) : IRowSink<T>
 {
 	// The caller's own pool, or null for ArrayPool<T>.Shared.
 	readonly MemoryPool<T>? _custom = pool is null
@@ -525,73 +525,78 @@ internal struct ArraySink<T>(MemoryPool<T>? pool, bool clearOnReturn) : IRowSink
 		: pool;
 	readonly bool _clear = clearOnReturn;
 	IMemoryOwner<T>? _owner;
-	T[]? _items;
+
+	// The memory being written; the array behind it and the memory's offset
+	// in that array (null when it is not backed by an array); its length;
+	// how many rows are written.
+	Memory<T> _memory;
+	T[]? _array;
+	int _offset;
+	int _capacity;
 	int _count;
 
 	public void Add(T item)
 	{
-		T[]? items = _items;
-		if (items is null)
+		int count = _count;
+		if ((uint)count < (uint)_capacity)
 		{
-			items = Rent(16, out IMemoryOwner<T>? first);
-			_items = items;
-			_owner = first;
-		}
-		else if (_count == items.Length)
-		{
-			items = Grow(items);
+			if (_array is { } array) array[_offset + count] = item;
+			else _memory.Span[count] = item;
+
+			_count = count + 1;
+			return;
 		}
 
-		items[_count++] = item;
+		Grow();
+		Add(item);
 	}
 
 	// A rent that fails (or is refused) leaves the sink as it was: the
-	// array and its owner are kept only once the rent has succeeded.
-	readonly T[] Rent(int size, out IMemoryOwner<T>? owner)
+	// memory and its owner are kept only once the rent has succeeded.
+	void Grow()
 	{
-		if (_custom is null)
-		{
-			owner = null;
-			return ArrayPool<T>.Shared.Rent(size);
-		}
+		int size = _capacity == 0 ? 16 : _capacity * 2;
+		Memory<T> bigger = PoolRent.Rent(_custom, size, out IMemoryOwner<T>? owner);
+		if (_capacity != 0)
+			_memory.Span[.._count].CopyTo(bigger.Span);
 
-		T[] array = PoolRent.Rent(_custom, size, out IMemoryOwner<T> rented);
-		owner = rented;
-		return array;
-	}
+		// The rows were copied: the old memory goes back, and the rows it
+		// still holds are cleared first when the rule says so (they are
+		// alive in the new memory, so the old must not keep them).
+		if (_capacity != 0)
+			PoolRent.Return(_memory, _owner, _count, _clear);
 
-	T[] Grow(T[] items)
-	{
-		T[] bigger = Rent(items.Length * 2, out IMemoryOwner<T>? owner);
-		Array.Copy(items, bigger, _count);
-		Release(items, _owner);
-		_items = bigger;
+		_memory = bigger;
 		_owner = owner;
-		return bigger;
+		_capacity = bigger.Length;
+		if (System.Runtime.InteropServices.MemoryMarshal.TryGetArray<T>(bigger, out ArraySegment<T> segment)
+			&& segment.Array is { } array)
+		{
+			_array = array;
+			_offset = segment.Offset;
+		}
+		else
+		{
+			_array = null;
+			_offset = 0;
+		}
 	}
 
 	public readonly T[] ToArray()
-	{
-		if (_count == 0) return [];
-		var result = new T[_count];
-		Array.Copy(_items!, result, _count);
-		return result;
-	}
+		=> _count == 0 ? [] : _memory.Span[.._count].ToArray();
 
 	public void Dispose()
 	{
-		T[]? items = _items;
-		if (items is null) return;
-		_items = null;
-		IMemoryOwner<T>? owner = _owner;
-		_owner = null;
-		Release(items, owner);
-	}
+		if (_capacity == 0) return;
 
-	readonly void Release(T[] items, IMemoryOwner<T>? owner)
-	{
-		if (_clear) Array.Clear(items, 0, _count);
-		if (owner is null) ArrayPool<T>.Shared.Return(items, clearArray: false);
-		else owner.Dispose();
+		Memory<T> memory = _memory;
+		IMemoryOwner<T>? owner = _owner;
+		int count = _count;
+		_memory = default;
+		_owner = null;
+		_array = null;
+		_capacity = 0;
+		_count = 0;
+		PoolRent.Return(memory, owner, count, _clear);
 	}
 }

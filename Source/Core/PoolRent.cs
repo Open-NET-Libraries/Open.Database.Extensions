@@ -2,55 +2,83 @@ using System.Runtime.InteropServices;
 
 namespace Open.Database.Extensions.Core;
 
-// A rent from a caller's own MemoryPool<T>, for the collectors that work
-// on arrays (ChunkChain, ArraySink): the whole array behind the memory
-// the pool handed out, and the owner that gives it back.
-//
-// The array must be WHOLE: TryGetArray succeeds, the offset is 0 and the
-// count is the array's Length. The collectors size their chunks by the
-// array's Length, so a pool that hands out the first N elements of a
-// larger shared array would let them write past the memory they were
-// given, into another renter's data. Anything else is refused with a
-// NotSupportedException naming the pool type, after disposing THAT rent
-// (every earlier rent belongs to the caller of this method, which
-// disposes it). A pool may give a LARGER array than asked for; the
-// caller uses the array's real Length.
+/// <summary>
+/// Where a collector's chunk of memory comes from and where it goes back
+/// to: the shared array pool, or a caller's own <see cref="MemoryPool{T}"/>.
+/// </summary>
+/// <remarks>
+/// <para>
+/// A chunk is a <see cref="Memory{T}"/>, whatever it is backed by. The pool
+/// decides how much it gives (it may give more than was asked for) and what
+/// it is backed by; the collectors write into it and read it back through a
+/// span, and never need to know. The shared array pool is the default and
+/// costs no owner object: the memory is the whole array, and the array goes
+/// back to <see cref="ArrayPool{T}.Shared"/>.
+/// </para>
+/// <para>
+/// Only the used part of a chunk is cleared when a clear is asked for: the
+/// rows that were written, not the whole of what the pool gave.
+/// </para>
+/// </remarks>
 internal static class PoolRent
 {
-	public static T[] Rent<T>(
-		MemoryPool<T> pool,
+	/// <summary>
+	/// Rents memory of at least <paramref name="size"/> from
+	/// <paramref name="custom"/>, or, when that is null, from
+	/// <see cref="ArrayPool{T}.Shared"/> (then
+	/// <paramref name="owner"/> is null).
+	/// </summary>
+	/// <exception cref="InvalidOperationException">
+	/// A pool gave less memory than asked for (the rent is disposed first).
+	/// </exception>
+	public static Memory<T> Rent<T>(
+		MemoryPool<T>? custom,
 		int size,
-		out IMemoryOwner<T> owner)
+		out IMemoryOwner<T>? owner)
 	{
-		owner = pool.Rent(size);
-		try
+		if (custom is null)
 		{
-			if (!MemoryMarshal.TryGetArray<T>(
-					owner.Memory,
-					out ArraySegment<T> segment)
-				|| segment.Array is not { } array
-				|| segment.Offset != 0
-				|| segment.Count != array.Length)
-			{
-				throw new NotSupportedException(
-					$"The pool ({pool.GetType()}) must hand out whole"
-					+ " arrays: memory that is not backed by an array, or"
-					+ " that is a part of a larger array, cannot be used."
-					+ " MemoryPool<T>.Shared and ArrayPool-based pools do.");
-			}
-
-			if (array.Length < size)
-			{
-				throw new InvalidOperationException(
-					"The pool returned less memory than asked for.");
-			}
-
-			return array;
+			owner = null;
+			return ArrayPool<T>.Shared.Rent(size);
 		}
-		catch
+
+		owner = custom.Rent(size);
+		Memory<T> memory = owner.Memory;
+		if (memory.Length < size)
 		{
 			owner.Dispose();
-			throw;
+			throw new InvalidOperationException(
+				"The pool returned less memory than asked for.");
+		}
+
+		return memory;
+	}
+
+	/// <summary>
+	/// Clears the first <paramref name="used"/> items when
+	/// <paramref name="clear"/> is true, then gives the memory back: the
+	/// owner is disposed, or (no owner) the array goes back to the shared
+	/// array pool.
+	/// </summary>
+	public static void Return<T>(
+		Memory<T> memory,
+		IMemoryOwner<T>? owner,
+		int used,
+		bool clear)
+	{
+		if (clear && used > 0)
+			memory.Span[..used].Clear();
+
+		if (owner is not null)
+		{
+			owner.Dispose();
+			return;
+		}
+
+		if (MemoryMarshal.TryGetArray<T>(memory, out ArraySegment<T> segment)
+			&& segment.Array is { } array)
+		{
+			ArrayPool<T>.Shared.Return(array, clearArray: false);
 		}
 	}
 }

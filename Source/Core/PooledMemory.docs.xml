@@ -15,13 +15,12 @@
       To use your own, call <c>.UsePool(pool, clearOnReturn: ...)</c> after
       <c>Map</c>: the pool is yours, ODX rents from it and gives back to it,
       and never disposes it.
-      The pool must hand out whole arrays (<c>MemoryPool&lt;T&gt;.Shared</c>
-      and ArrayPool-based pools do); the collecting terminals (<c>ToList</c>,
-      <c>ToArray</c>, and the like) throw
-      <see cref="System.NotSupportedException"/> naming the pool type when it
-      does not.
-      It may hand out a larger array than asked for, and disposing a rented
-      owner must not throw.
+      The pool decides what its memory is backed by and how much it gives:
+      ODX uses all of what it was given, writes only inside it, and clears
+      only the rows it wrote.
+      It may hand out more than was asked for; a pool that hands out less
+      makes the read throw <see cref="System.InvalidOperationException"/>.
+      Disposing a rented owner must not throw.
     </para>
     <para>
       Clearing: rows that hold references (a class, a string, a struct that

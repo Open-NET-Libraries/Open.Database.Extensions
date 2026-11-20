@@ -14,8 +14,9 @@ namespace Open.Database.Extensions.Tests;
 //   UsePool(pool, clearOnReturn: true), or, for a query that does not call
 //   UsePool, by the app-wide switch; UsePool(pool, clearOnReturn: false) wins over
 //   the switch;
-// - the pool a caller passes must hand out WHOLE arrays: anything else is
-//   refused with a NotSupportedException, after disposing that rent.
+// - the pool a caller passes decides what the memory is backed by and how
+//   much it gives; the collectors use what they were given and write only
+//   inside it (a pool that gives less than asked is refused).
 /// <summary>A row with no references, a type of its own (so its pool is its own).</summary>
 [ExcludeFromCodeCoverage]
 internal readonly record struct PoolValue(int Id);
@@ -297,7 +298,7 @@ public static class PoolClearingTests
 		}
 	}
 
-	// ---- a pool must hand out whole arrays -----------------------------------
+	// ---- a pool decides what it hands out ------------------------------------
 
 	enum Shape
 	{
@@ -315,6 +316,9 @@ public static class PoolClearingTests
 
 		// A view of the first elements of a longer array.
 		Partial,
+
+		// Less memory than was asked for.
+		Short,
 	}
 
 	// A pool: the first `good` rents are whole arrays, every later one has
@@ -357,6 +361,7 @@ public static class PoolClearingTests
 					new int[size + 7],
 					0,
 					size + 7),
+				Shape.Short => new ArrayOwner(this, new int[size], 0, size - 1),
 				_ => new ArrayOwner(this, new int[size], 0, size),
 			};
 		}
@@ -416,10 +421,7 @@ public static class PoolClearingTests
 		}
 	}
 
-	public static TheoryData<string> Collectors
-		=> ["ToListAsync", "ToArrayAsync", "ToArray", "ToHashSetAsync"];
-
-	public static TheoryData<string, string> RefusedShapes
+	public static TheoryData<string, string> AnyShape
 	{
 		get
 		{
@@ -432,14 +434,16 @@ public static class PoolClearingTests
 				"ToHashSetAsync",
 			})
 			{
-				foreach (string shape in new[]
+				foreach (Shape shape in new[]
 				{
-					nameof(Shape.Opaque),
-					nameof(Shape.Offset),
-					nameof(Shape.Partial),
+					Shape.Whole,
+					Shape.WholeAndLarger,
+					Shape.Opaque,
+					Shape.Offset,
+					Shape.Partial,
 				})
 				{
-					data.Add(collector, shape);
+					data.Add(collector, shape.ToString());
 				}
 			}
 
@@ -447,49 +451,79 @@ public static class PoolClearingTests
 		}
 	}
 
-	// The first chunk (and so the first rent) already fails.
-	[Theory, MemberData(nameof(RefusedShapes))]
-	public static async Task AnUnusableRent_ThrowsNotSupported_NamingThePool_AndIsDisposed(
+	// The pool decides what the memory is backed by and how much it gives:
+	// the collectors use what they were given, and write only inside it.
+	// Every rent is disposed exactly once.
+	[Theory, MemberData(nameof(AnyShape))]
+	public static async Task AnyKindOfMemory_GivesTheRightRows_AndEveryRentIsDisposedOnce(
 		string collector,
 		string shape)
 	{
 		var pool = new ShapedPool(0, Enum.Parse<Shape>(shape));
 
-		var ex = await Assert.ThrowsAsync<NotSupportedException>(
-			() => Run(
+		Assert.Equal(
+			10_000,
+			await Run(
 				collector,
-				Rows<int>(1_000).UsePool(pool, clearOnReturn: false),
+				Rows<int>(10_000).UsePool(pool, clearOnReturn: true),
 				static r => r));
 
-		Assert.Contains(typeof(ShapedPool).FullName!, ex.Message);
-		Assert.Equal(1, pool.Rents);
-		Assert.Equal(1, pool.Disposed);
+		Assert.True(pool.Rents > 1);
+		Assert.Equal(pool.Rents, pool.Disposed);
 		Assert.Equal(0, pool.DisposedTwice);
 		Assert.Equal(0, pool.Outstanding);
 	}
 
-	// Two good chunks, then one that cannot be used: the chain's own
-	// disposal gives the two back, the refused rent was disposed at the rent.
-	[Theory, MemberData(nameof(RefusedShapes))]
-	public static async Task AnUnusableRentLater_DisposesEveryEarlierRentToo(
-		string collector,
+	[Theory]
+	[InlineData(nameof(Shape.Opaque))]
+	[InlineData(nameof(Shape.Offset))]
+	[InlineData(nameof(Shape.Partial))]
+	public static async Task AViewOrMemoryThatIsNotAnArray_KeepsTheRowsInOrder(
 		string shape)
 	{
-		var pool = new ShapedPool(2, Enum.Parse<Shape>(shape));
+		var pool = new ShapedPool(0, Enum.Parse<Shape>(shape));
 
-		var ex = await Assert.ThrowsAsync<NotSupportedException>(
+		int[] array = await Rows<int>(10_000)
+			.UsePool(pool, clearOnReturn: false)
+			.ToArrayAsync(Ct);
+		List<int> list = await Rows<int>(10_000)
+			.UsePool(pool, clearOnReturn: false)
+			.ToListAsync(Ct);
+		int[] sync = Rows<int>(10_000)
+			.UsePool(pool, clearOnReturn: false)
+			.ToArray();
+
+		Assert.Equal(Enumerable.Range(1, 10_000), array);
+		Assert.Equal(Enumerable.Range(1, 10_000), list);
+		Assert.Equal(Enumerable.Range(1, 10_000), sync);
+		Assert.Equal(0, pool.Outstanding);
+		Assert.Equal(0, pool.DisposedTwice);
+	}
+
+	public static TheoryData<string> Collectors
+		=> ["ToListAsync", "ToArrayAsync", "ToArray", "ToHashSetAsync"];
+
+	// A pool that gives less than was asked for cannot be written to
+	// safely: the read fails, that rent is disposed at once, and the chain's
+	// own disposal gives back every rent before it.
+	[Theory, MemberData(nameof(Collectors))]
+	public static async Task AShortRent_Throws_AndEveryRentIsDisposed(
+		string collector)
+	{
+		var pool = new ShapedPool(2, Shape.Short);
+
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			() => Run(
 				collector,
 				Rows<int>(10_000).UsePool(pool, clearOnReturn: true),
 				static r => r));
 
-		Assert.Contains(typeof(ShapedPool).FullName!, ex.Message);
+		Assert.Contains("less memory", ex.Message);
 		Assert.Equal(3, pool.Rents);
 		Assert.Equal(3, pool.Disposed);
 		Assert.Equal(0, pool.DisposedTwice);
 		Assert.Equal(0, pool.Outstanding);
 	}
-
 	// A pool may round up: the chain uses the array's real length, and only
 	// the used part of the last chunk is copied.
 	[Theory, MemberData(nameof(Collectors))]
@@ -535,8 +569,8 @@ public static class PoolClearingTests
 	[Fact]
 	public static async Task AfterARefusedRent_TheNextCallWorks()
 	{
-		var bad = new ShapedPool(1, Shape.Partial);
-		await Assert.ThrowsAsync<NotSupportedException>(
+		var bad = new ShapedPool(1, Shape.Short);
+		await Assert.ThrowsAsync<InvalidOperationException>(
 			() => Rows<int>(1_000)
 				.UsePool(bad, clearOnReturn: true)
 				.ToListAsync(Ct)
