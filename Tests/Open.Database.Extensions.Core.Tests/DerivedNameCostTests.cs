@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Open.Database.Extensions.Tests;
@@ -222,7 +223,7 @@ public static class DerivedNameCostTests
 	}
 
 	// Many different texts (a query with a changing filter list, or with values written into it) are each resolved correctly,
-	// however many there are: what is remembered by content is bounded, and a text that was forgotten is simply parsed again.
+	// however many there are: nothing is remembered about a short text.
 	[Fact]
 	public static void Text_ManyDistinctTexts_EachResolvesItsOwnNames()
 	{
@@ -233,6 +234,182 @@ public static class DerivedNameCostTests
 			ExpressiveDbCommand command = rig.Command($"select * from t{i} where order_id = @order_id").AddParam(orderId);
 			Assert.Equal(["@order_id"], rig.RunAndRead(command));
 		}
+	}
+
+	// ---- the scan of a text built at run time and the remembered set of an interned one answer the same ----
+
+	// Each row: the text, an object whose members are the arguments, and the names that must be sent in order (null: the arguments are ambiguous and must throw).
+	readonly record struct ParityRow(string Sql, object Args, string[]? Expected);
+
+	static readonly ParityRow[] ParityRows =
+	[
+		new("select @id, @idx", new { id = 1, idx = 2 }, ["@id", "@idx"]),
+		new("select @idx", new { id = 1 }, []),
+		new("select @idx", new { id = 1, idx = 2 }, ["@idx"]),
+		new("where a = @Id", new { id = 1 }, ["@Id"]),
+		new("where a = @ID and b = @id and c = @Id", new { id = 1 }, ["@ID"]),
+		new("where a = '@zz' and b = @b", new { zz = 1, b = 2 }, ["@b"]),
+		new("where a = \"@zz\" and b = [@zz] and c = @b", new { zz = 1, b = 2 }, ["@b"]),
+		new("-- @zz\nwhere b = @b", new { zz = 1, b = 2 }, ["@b"]),
+		new("/* @zz */ where b = @b", new { zz = 1, b = 2 }, ["@b"]),
+		new("select @@rowcount, @b", new { rowcount = 1, b = 2 }, ["@b"]),
+		new("@a = 1 and 2 = @b", new { a = 1, b = 2 }, ["@a", "@b"]),
+		new("where x = @company_serial_num", new { CompanySerialNum = 1 }, ["@company_serial_num"]),
+		new("where x = @p_author and y = @pTitle", new { Author = 1, Title = 2 }, ["@p_author", "@pTitle"]),
+		new("where x = @ab and y = @a_b", new { _ab = 1 }, null),
+		new("where x = @ab and y = @AB and z = @c", new { ab = 1, c = 2 }, ["@ab", "@c"]),
+		new("where x = 5", new { id = 1 }, ["id"]),
+	];
+
+	static (string[]? Sent, string? Error) Send(string sql, object args)
+	{
+		var rig = new Rig(CommandType.Text);
+		try
+		{
+			return (rig.RunAndRead(rig.Command(sql).AddParams(args)), null);
+		}
+		catch (InvalidOperationException e)
+		{
+			return (null, e.Message);
+		}
+	}
+
+	[Fact]
+	public static void ScanAndRememberedSet_ResolveTheSameNames()
+	{
+		foreach (ParityRow row in ParityRows)
+		{
+			try
+			{
+				CheckParity(row.Sql, row.Args, row.Expected);
+			}
+			catch (Xunit.Sdk.XunitException e)
+			{
+				throw new InvalidOperationException($"Row '{row.Sql}': {e.Message}", e);
+			}
+		}
+	}
+
+	static void CheckParity(string sql, object args, string[]? expected)
+	{
+		// A new string is not interned, so it is scanned; the interned copy is parsed once and remembered.
+		string built = new(sql.AsSpan());
+		string interned = string.Intern(sql);
+		Assert.False(ReferenceEquals(string.IsInterned(built), built));
+		Assert.True(ReferenceEquals(string.IsInterned(interned), interned));
+
+		(string[]? scanned, string? scanError) = Send(built, args);
+		(string[]? remembered, string? rememberedError) = Send(interned, args);
+
+		Assert.Equal(remembered, scanned);
+		Assert.Equal(expected is null, scanError is not null);
+		if (expected is null)
+		{
+			Assert.Equal(rememberedError, scanError);
+			return;
+		}
+
+		Assert.Equal(expected, scanned);
+	}
+
+	// ---- interning: what decides between the two ----
+
+	// The compiler marks its assemblies NoStringInterning, so that a literal is an interned object is checked here, not assumed.
+	const string ConstSql = "select * from orders where order_id = @order_id";
+	static readonly string StaticLiteralSql = "select * from orders where order_id = @order_id and x = @x";
+	static readonly string StaticBuiltSql = new("select * from orders where order_id = @order_id and y = @y".AsSpan());
+
+	[Fact]
+	public static void ALiteralAConstAndAStaticFieldOfOne_AreInternedObjects_AtRunTime()
+	{
+		string literal = "select * from orders where order_id = @order_id and z = @z";
+		Assert.Same(literal, string.IsInterned(literal));
+		Assert.Same(ConstSql, string.IsInterned(ConstSql));
+		Assert.Same(StaticLiteralSql, string.IsInterned(StaticLiteralSql));
+		Assert.Same(Sql, string.IsInterned(Sql));
+		Assert.Same(literal, string.IsInterned(Pass(literal)));
+
+		// The same characters in another object are found by IsInterned, but are not the interned object.
+		string copy = new(literal.AsSpan());
+		Assert.NotSame(literal, copy);
+		Assert.Same(literal, string.IsInterned(copy));
+		Assert.False(ReferenceEquals(string.IsInterned(copy), copy));
+	}
+
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static string Pass(string value) => value;
+
+	[Fact]
+	public static void AStaticReadonlyTextThatIsNotInterned_StillResolvesItsNames_ByTheScan()
+	{
+		var rig = new Rig(CommandType.Text);
+		const int orderId = 5, y = 6;
+		Assert.False(ReferenceEquals(string.IsInterned(StaticBuiltSql), StaticBuiltSql));
+		int before = Remembered();
+
+		for (int i = 0; i < 3; i++)
+			Assert.Equal(["@order_id", "@y"], rig.RunAndRead(rig.Command(StaticBuiltSql).AddParam(orderId).AddParam(y)));
+
+		Assert.Equal(before, Remembered());
+	}
+
+	// ---- what is remembered ----
+
+	static int Remembered()
+	{
+		Type cache = typeof(DataRecordExtensions).Assembly.GetType("Open.Database.Extensions.TextNameCache", throwOnError: true)!;
+		object table = cache.GetField("ByReference", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+		int count = 0;
+		foreach (object _ in (System.Collections.IEnumerable)table) count++;
+		return count;
+	}
+
+	[Fact]
+	public static void ATextBuiltAtRunTime_AddsNoEntryToWhatIsRemembered_NoMatterHowOftenItRuns()
+	{
+		var rig = new Rig(CommandType.Text);
+		const int orderId = 5;
+		int before = Remembered();
+
+		// A new string every time, with the characters of a literal.
+		for (int i = 0; i < 200; i++) rig.Run(rig.Command(new string(Sql.AsSpan())).AddParam(orderId));
+
+		Assert.Equal(before, Remembered());
+	}
+
+	[Fact]
+	public static void AnInternedText_IsRememberedOnce_ByItsObject()
+	{
+		var rig = new Rig(CommandType.Text);
+		const int orderId = 5;
+		const string unique = "select * from orders where order_id = @order_id and remembered_once = 1";
+		int before = Remembered();
+
+		for (int i = 0; i < 5; i++) rig.Run(rig.Command(unique).AddParam(orderId));
+
+		Assert.Equal(before + 1, Remembered());
+	}
+
+	// The lookup and the scan allocate nothing: reached through delegates, so the call itself is not what is measured.
+	[Fact]
+	public static void TheScanPath_AllocatesNothing()
+	{
+		Type cache = typeof(DataRecordExtensions).Assembly.GetType("Open.Database.Extensions.TextNameCache", throwOnError: true)!;
+		var get = cache.GetMethod("Get", BindingFlags.Static | BindingFlags.NonPublic)!.CreateDelegate<Func<string, object?>>();
+		var scan = cache.GetMethod("Scan", BindingFlags.Static | BindingFlags.NonPublic)!.CreateDelegate<Func<string, string, string?>>();
+		string built = new("select * from orders where order_id = @order_id and customer_id = @customer_id and start_date >= @start_date".AsSpan());
+		const string expression = "customerId";
+
+		Assert.Null(get(built));
+		Assert.Equal("@customer_id", scan(built, expression));
+
+		long lookup = DerivedNameCostTests.BytesPerCall(() => get(built));
+		long scanned = DerivedNameCostTests.BytesPerCall(() => scan(built, expression));
+		long scannedWithPrefixes = DerivedNameCostTests.BytesPerCall(() => scan(built, "startDate"));
+
+		Assert.Equal(0, lookup);
+		Assert.Equal(0, scanned);
+		Assert.Equal(0, scannedWithPrefixes);
 	}
 
 	// ---- the asynchronous twins (the fake completes synchronously, so the per-thread counter sees all of it) ----
@@ -520,15 +697,14 @@ public static class DerivedNameCostTests
 	{
 		var db = new DerivedParameterNameTests.RecordingDbCommand();
 		var connection = new DerivedParameterNameTests.OpenDbConnection(db);
-		// Longer than what is remembered by content (see TextNameCache), which keeps the texts it holds.
-		string sql = new(("select * from t where order_id = @order_id and x = @leak_check_marker" + new string(' ', 5000)).AsSpan());
+		string sql = new("select * from t where order_id = @order_id and x = @leak_check_marker".AsSpan());
 		const int orderId = 1;
 		new ExpressiveDbCommand(connection, CommandType.Text, sql).AddParam(orderId).ExecuteNonQuery();
 		Assert.Equal(["@order_id"], db.Sent.Select(p => p.ParameterName));
 		return new WeakReference(sql);
 	}
 
-	// What is remembered about a long text command does not keep its text alive (a short one is remembered by content, bounded in count and length).
+	// What is remembered about a text command does not keep its text alive.
 	[Fact]
 	public static void ATextCommandsSql_IsNotKeptAliveByWhatIsRemembered()
 	{

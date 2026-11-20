@@ -799,7 +799,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		NameSet? real,
 		List<Param> send)
 	{
-		bool known = real is { Names.Length: > 0 };
+		// A text command without a remembered set (one that is not an interned string) has its markers scanned for each argument (see TextNameCache).
+		bool scan = real is null && Type == CommandType.Text;
+		bool known = scan ? TextNameCache.HasMarkers(Command) : real is { Names.Length: > 0 };
 
 		// Resolve each name. Without the real names the last member is used as written.
 		for (int i = 0; i < count; i++)
@@ -811,13 +813,17 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 				continue;
 			}
 
-			string? name = known ? real!.Match(expression, Command) : p.Name;
+			string? name = !known
+				? p.Name
+				: scan
+					? TextNameCache.Scan(Command, expression)
+					: real!.Match(expression, Command);
 			if (name is null)
 			{
 				// A member of an object that the procedure does not take is simply not sent; an argument named by the caller must match.
 				if (p.FromObject) { names[i] = null; continue; } // the pooled slot holds whatever an earlier renter left: write it before it is read
 
-				throw NoMatch(expression, real!.Names);
+				throw NoMatch(expression, scan ? TextNameCache.Names(Command) : real!.Names);
 			}
 
 			names[i] = name;
@@ -845,7 +851,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			for (int j = i + 1; j < count; j++)
 			{
 				if (names[j] is { } second && SameName(first, second))
-					throw Collision(first, list[i], list[j], real?.Names ?? default);
+					throw Collision(first, list[i], list[j], scan ? TextNameCache.Names(Command) : real?.Names ?? default);
 			}
 		}
 
