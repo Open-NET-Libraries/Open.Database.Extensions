@@ -5,11 +5,11 @@ using Xunit.Sdk;
 
 namespace Open.Database.Extensions.Tests;
 
-// Bytes allocated per call by ToListAsync and ToArrayAsync on a typed view
-// (Command(sql).Map<T>()) over SQLite in memory, for 1, 10, 100 and 10,000
-// rows, with a class row and a struct row. The same source runs on master
-// and on the branch: the numbers are compared, and the branch must not
-// allocate more than master does for a small result.
+// Bytes allocated per call by ToListAsync, ToArrayAsync, the buffered queue
+// (ResultsBufferedAsync) and ToHashSetAsync on SQLite in memory, for 1, 10,
+// 100 and 10,000 rows, with a class row and a struct row. The same source
+// runs on master and on the branch: the numbers are compared, and the
+// branch must not allocate more than master does for a small result.
 //
 // Method: the calls complete on the test thread (SQLite answers
 // synchronously, the library never hops), so GC.GetAllocatedBytesForCurrent
@@ -34,6 +34,12 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	}
 
 	static readonly int[] Sizes = [1, 10, 100, 10_000];
+
+	static readonly string[] Names =
+	[
+		"class ToList", "class ToArray", "struct ToList", "struct ToArray",
+		"class Queue", "struct Queue", "class HashSet", "struct HashSet",
+	];
 
 	static string ClassSql(int n)
 		=> $"WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c WHERE x < {n}) SELECT x AS Id, 'name' || x AS Name, x * 2 AS Score FROM c";
@@ -63,17 +69,31 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	static long ArrayBytes<T>(SqliteConnection connection, string sql)
 		=> BytesPerCall(() => connection.Command(sql).Map<T>().ToArrayAsync().AsTask().GetAwaiter().GetResult());
 
-	// The recorded results of master (f6942a7) on these probes, per target
-	// framework, in the order ClassList, ClassArray, StructList, StructArray
-	// for N = 1, 10, 100. The branch must stay at or under them plus Slack.
+	static long HashSetBytes<T>(SqliteConnection connection, string sql)
+		=> BytesPerCall(() => connection.Command(sql).Map<T>().ToHashSetAsync().AsTask().GetAwaiter().GetResult());
+
+	// The queue is built when the call returns; the enumerable it hands
+	// back is not enumerated.
+	static long QueueBytes<T>(SqliteConnection connection, string sql)
+		=> BytesPerCall(() =>
+		{
+			using SqliteCommand command = connection.CreateCommand();
+			command.CommandText = sql;
+			using SqliteDataReader reader = command.ExecuteReader();
+			return reader.ResultsBufferedAsync<T>(null, true, default).AsTask().GetAwaiter().GetResult();
+		});
+
 #if !DEBUG
+	// The recorded results of master (f6942a7) on these probes, per target
+	// framework, in the order of Names (the first six; the hash sets are
+	// only printed) for N = 1, 10, 100. The branch must stay at or under
+	// them plus Slack.
 	const long Slack = 64;
 
-	// bytes per call, [N index][ClassList, ClassArray, StructList, StructArray]
 #if NET11_0_OR_GREATER
-	static readonly long[][] Master = [[1424, 1368, 1416, 1312], [2320, 2096, 2040, 1528], [11392, 10024, 7488, 3688]];
+	static readonly long[][] Master = [[1424, 1368, 1416, 1312, 1272, 1280], [2320, 2096, 2040, 1528, 2168, 1904], [11392, 10024, 7488, 3688, 11240, 7352]];
 #else
-	static readonly long[][] Master = [[1480, 1424, 1472, 1368], [2376, 2152, 2096, 1584], [11448, 10080, 7544, 3744]];
+	static readonly long[][] Master = [[1480, 1424, 1472, 1368, 1328, 1336], [2376, 2152, 2096, 1584, 2224, 1960], [11448, 10080, 7544, 3744, 11296, 7408]];
 #endif
 #endif
 
@@ -85,24 +105,30 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 
 		var lines = new List<string>
 		{
-			"N      | class ToListAsync | class ToArrayAsync | struct ToListAsync | struct ToArrayAsync",
+			"N      | " + string.Join(" | ", Names),
 		};
 		long[][] got = new long[Sizes.Length][];
 		for (int i = 0; i < Sizes.Length; ++i)
 		{
 			int n = Sizes[i];
+			string cls = ClassSql(n);
+			string str = StructSql(n);
 			got[i] =
 			[
-				ListBytes<ClassRow>(connection, ClassSql(n)),
-				ArrayBytes<ClassRow>(connection, ClassSql(n)),
-				ListBytes<StructRow>(connection, StructSql(n)),
-				ArrayBytes<StructRow>(connection, StructSql(n)),
+				ListBytes<ClassRow>(connection, cls),
+				ArrayBytes<ClassRow>(connection, cls),
+				ListBytes<StructRow>(connection, str),
+				ArrayBytes<StructRow>(connection, str),
+				QueueBytes<ClassRow>(connection, cls),
+				QueueBytes<StructRow>(connection, str),
+				HashSetBytes<ClassRow>(connection, cls),
+				HashSetBytes<StructRow>(connection, str),
 			];
-			lines.Add($"{n,-6} | {got[i][0],17} | {got[i][1],18} | {got[i][2],18} | {got[i][3],19}");
+			lines.Add($"{n,-6} | " + string.Join(" | ", got[i]));
 		}
 
 		lines.Add("per row (N=10000 vs N=100): "
-			+ string.Join(", ", Enumerable.Range(0, 4).Select(k => ((got[3][k] - got[2][k]) / 9900.0).ToString("F1"))));
+			+ string.Join(", ", Enumerable.Range(0, Names.Length).Select(k => ((got[3][k] - got[2][k]) / 9900.0).ToString("F1"))));
 		foreach (string line in lines) output.WriteLine(line);
 
 		// The branch must not allocate more than master for a small result.
@@ -111,11 +137,11 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 #if !DEBUG
 		for (int i = 0; i < 3; ++i)
 		{
-			for (int k = 0; k < 4; ++k)
+			for (int k = 0; k < 6; ++k)
 			{
 				Assert.True(
 					got[i][k] <= Master[i][k] + Slack,
-					$"N={Sizes[i]} column {k}: {got[i][k]} bytes, master {Master[i][k]} (+{Slack})");
+					$"N={Sizes[i]} {Names[k]}: {got[i][k]} bytes, master {Master[i][k]} (+{Slack})");
 			}
 		}
 #endif

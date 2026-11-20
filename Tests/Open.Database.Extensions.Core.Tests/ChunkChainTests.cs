@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 #nullable enable
@@ -341,5 +342,191 @@ public static class ChunkChainTests
 
 		Assert.Throws<ObjectDisposedException>(() => items.ToArray());
 		Assert.Throws<ObjectDisposedException>(() => items.ToList());
+	}
+
+	// ---- the chain is reused, and never shared -------------------------------
+
+	const BindingFlags Instance
+		= BindingFlags.Instance | BindingFlags.NonPublic;
+
+	static Type ChainOf<T>()
+		=> Core.GetType("Open.Database.Extensions.Core.ChunkChain`1")!
+			.MakeGenericType(typeof(T));
+
+	static object RentChain(Type chain)
+		=> chain.GetMethod("Rent", Internal)!.Invoke(null, null)!;
+
+	static int CountOf(Type chain, object instance)
+		=> (int)chain.GetProperty("Count", Instance)!.GetValue(instance)!;
+
+	// Fills a rented chain past its first chunk, copies it out and gives it
+	// back. Returns the chain and weak references to the rows. Kept out of
+	// line, and the rows kept out of the caller's locals, so a collection
+	// in the caller can tell whether the chain let go of them.
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static (object Chain, WeakReference[] Rows) UseOnce(int rows)
+	{
+		Type type = ChainOf<object>();
+		object chain = RentChain(type);
+		MethodInfo add = type.GetMethod("Add", Instance)!;
+		var weak = new WeakReference[rows];
+		for (int i = 0; i < rows; ++i)
+		{
+			object row = new();
+			weak[i] = new WeakReference(row);
+			add.Invoke(chain, [row]);
+		}
+
+		var list = (List<object>)type.GetMethod("ToList", Instance)!
+			.Invoke(chain, null)!;
+		Assert.Equal(rows, list.Count);
+		Assert.Equal(rows, CountOf(type, chain));
+		type.GetMethod("Dispose", Instance)!.Invoke(chain, null);
+		return (chain, weak);
+	}
+
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static void UseAgain(Type type, object chain, int rows)
+	{
+		MethodInfo add = type.GetMethod("Add", Instance)!;
+		for (int i = 0; i < rows; ++i)
+			add.Invoke(chain, [(object)(i * 7)]);
+
+		var array = (object[])type.GetMethod("ToArray", Instance)!
+			.Invoke(chain, null)!;
+		Assert.Equal(rows, array.Length);
+		for (int i = 0; i < rows; ++i)
+			Assert.Equal(i * 7, array[i]);
+
+		var list = (List<object>)type.GetMethod("ToList", Instance)!
+			.Invoke(chain, null)!;
+		Assert.Equal(array, list);
+	}
+
+	[Fact]
+	public static void ADisposedChain_IsTheNextOneRented_EmptyAndCorrectAgain_AndKeepsNoRows()
+	{
+		Type type = ChainOf<object>();
+		(object first, WeakReference[] rows) = UseOnce(40);
+
+		object second = RentChain(type);
+		Assert.Same(first, second);
+		Assert.Equal(0, CountOf(type, second));
+
+		UseAgain(type, second, 40);
+		type.GetMethod("Dispose", Instance)!.Invoke(second, null);
+
+		GC.Collect();
+		GC.WaitForPendingFinalizers();
+		GC.Collect();
+		Assert.DoesNotContain(rows, static w => w.IsAlive);
+	}
+
+	// ---- the queue is made from the exact count ------------------------------
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	[InlineData(15)]
+	[InlineData(16)]
+	[InlineData(17)]
+	[InlineData(100)]
+	[InlineData(5000)]
+	public static void TheQueue_IsOneArrayOfExactlyTheRows_InOrder(int n)
+	{
+		Type type = ChainOf<object>();
+		object chain = RentChain(type);
+		try
+		{
+			MethodInfo add = type.GetMethod("Add", Instance)!;
+			for (int i = 0; i < n; ++i) add.Invoke(chain, [(object)i]);
+
+			var queue = (Queue<object>)type.GetMethod("ToQueue", Instance)!
+				.Invoke(chain, null)!;
+
+			// Queue's constructor over an ICollection keeps the exact array:
+			// this is what proves the runtime does it (and fails if one
+			// ever stops).
+			var items = (object?[])typeof(Queue<object>)
+				.GetField("_array", Instance)!.GetValue(queue)!;
+			Assert.Equal(n, items.Length);
+			Assert.Equal(n, queue.Count);
+
+			for (int i = 0; i < n; ++i)
+				Assert.Equal(i, queue.Dequeue());
+			Assert.Empty(queue);
+		}
+		finally
+		{
+			type.GetMethod("Dispose", Instance)!.Invoke(chain, null);
+		}
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	[InlineData(17)]
+	[InlineData(100)]
+	public static async Task ResultsBuffered_ReturnsEveryRow_InOrder(int n)
+	{
+		using var syncReader = new ChannelTestReader(n);
+		IEnumerable<PoolRow> sync = syncReader
+			.ResultsBuffered<PoolRow>((RowMap<PoolRow>?)null);
+		AssertIds([.. sync], n);
+
+		using var asyncReader = new ChannelTestReader(n);
+		IEnumerable<PoolRow> buffered = await asyncReader
+			.ResultsBufferedAsync<PoolRow>(null, true, Ct);
+		AssertIds([.. buffered], n);
+	}
+
+	// ---- calls that really suspend never share a chain -----------------------
+
+	// A reader whose every ReadAsync gives up the thread first, so the
+	// continuations run elsewhere and the calls overlap.
+	[ExcludeFromCodeCoverage]
+	sealed class YieldingReader(object?[][] rows)
+		: TypedReader(ReaderFixtures.Columns, rows)
+	{
+		public override async Task<bool> ReadAsync(
+			CancellationToken cancellationToken)
+		{
+			await Task.Yield();
+			return await base.ReadAsync(cancellationToken);
+		}
+	}
+
+	[Fact]
+	public static async Task ParallelCalls_ThatSuspend_EachGetTheirOwnRows()
+	{
+		int[] sizes = [1, 5, 1000];
+		for (int round = 0; round < 4; ++round)
+		{
+			int r = round;
+			Task[] calls =
+			[
+				.. Enumerable.Range(0, 96).Select(i => Task.Run(async () =>
+				{
+					int n = sizes[i % sizes.Length];
+					int offset = ((r * 100) + i) * 10_000;
+					object?[][] data =
+					[
+						.. Enumerable.Range(1, n)
+							.Select(k => (object?[])[offset + k, "n", null]),
+					];
+					MappedCommand<PoolRow> query = new FakeDbCommand(
+						new FakeDbConnection(),
+						() => new YieldingReader(data))
+						.Map<PoolRow>()
+						.AsyncReads();
+
+					if (i % 2 == 0)
+						AssertIds(await query.ToListAsync(Ct), n, offset + 1);
+					else
+						AssertIds(await query.ToArrayAsync(Ct), n, offset + 1);
+				}, Ct)),
+			];
+			await Task.WhenAll(calls);
+		}
 	}
 }

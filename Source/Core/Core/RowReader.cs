@@ -78,11 +78,20 @@ internal static class RowReader
 	}
 
 	// Buffers mapped rows in a queue so a caller can drain it: each item is released to the GC as it is dequeued.
+	// The rows are collected in a chain of pooled arrays and the queue is made from the exact count in one block copy (no growth copies, no slack).
 	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
 	{
-		var sink = new QueueSink<T>(new Queue<T>());
-		Fill(source, reader, skip, take, ref sink);
-		return sink.Queue;
+		ChunkChain<T> chain = ChunkChain<T>.Rent();
+		try
+		{
+			var sink = new ChainSink<T>(chain);
+			Fill(source, reader, skip, take, ref sink);
+			return chain.ToQueue();
+		}
+		finally
+		{
+			chain.Dispose();
+		}
 	}
 
 	public static T[] ToArray<T>(IRowSource<T> source, IDataReader reader, int skip, int take, CancellationToken token = default)
@@ -268,7 +277,18 @@ internal static class RowReader
 
 	public static async ValueTask<Queue<T>> ToQueueAsync<T>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
-		=> (await FillAsync(source, reader, skip, take, useReadAsync, new QueueSink<T>(new Queue<T>()), cancellationToken).ConfigureAwait(false)).Queue;
+	{
+		ChunkChain<T> chain = ChunkChain<T>.Rent();
+		try
+		{
+			await FillAsync(source, reader, skip, take, useReadAsync, new ChainSink<T>(chain), cancellationToken).ConfigureAwait(false);
+			return chain.ToQueue();
+		}
+		finally
+		{
+			chain.Dispose();
+		}
+	}
 
 	public static async ValueTask<(bool Found, T? Item)> TryFirstAsync<T>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
@@ -358,12 +378,6 @@ internal static class RowReader
 	}
 
 	#endregion
-}
-
-internal readonly struct QueueSink<T>(Queue<T> queue) : IRowSink<T>
-{
-	public Queue<T> Queue { get; } = queue;
-	public void Add(T item) => Queue.Enqueue(item);
 }
 
 internal readonly struct ListSink<T>(List<T> list) : IRowSink<T>

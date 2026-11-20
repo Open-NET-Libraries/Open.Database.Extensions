@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -29,7 +30,7 @@ namespace Open.Database.Extensions.Core;
 // Clearing: a chunk that may hold references is cleared before it goes
 // back (the used part only), so a pooled array never keeps a row alive.
 // A chunk of plain values is returned as it is.
-internal sealed class ChunkChain<T>
+internal sealed class ChunkChain<T> : ICollection<T>
 {
 	// The one spare chain of this T.
 	static ChunkChain<T>? _spare;
@@ -85,8 +86,7 @@ internal sealed class ChunkChain<T>
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	void AddSlow(T item)
 	{
-		if (_parked)
-			throw new ObjectDisposedException(nameof(ChunkChain<>));
+		if (_parked) ThrowDisposed();
 
 		T[][] chunks = _chunks;
 		if (_chunkCount == chunks.Length)
@@ -108,6 +108,10 @@ internal sealed class ChunkChain<T>
 		next[0] = item;
 		_index = 1;
 	}
+
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static void ThrowDisposed()
+		=> throw new ObjectDisposedException(nameof(ChunkChain<>));
 
 	/// <summary>The rows, in order, in an array of exactly that length.</summary>
 	internal T[] ToArray()
@@ -151,6 +155,19 @@ internal sealed class ChunkChain<T>
 		return list;
 #endif
 	}
+
+	/// <summary>
+	/// The rows, in order, in a queue made from exactly that many rows.
+	/// </summary>
+	/// <remarks>
+	/// Queue has no way in but its constructors; the one that takes an
+	/// ICollection (this chain is one) makes ONE array of exactly Count and
+	/// block-copies into it, and keeps that array (the constructor path is
+	/// checked by a test on the shipped runtimes; older runtimes enqueue
+	/// one by one, which is the same result).
+	/// </remarks>
+	internal Queue<T> ToQueue()
+		=> Count == 0 ? new Queue<T>() : new Queue<T>(this);
 
 	void CopyTo(Span<T> destination)
 	{
@@ -198,4 +215,40 @@ internal sealed class ChunkChain<T>
 		_chunkCount = 0;
 		Interlocked.CompareExchange(ref _spare, this, null);
 	}
+
+	// The chain is an ICollection only so that a Queue can be made from it
+	// in one exact copy (see ToQueue); nothing else about it is a collection.
+	int ICollection<T>.Count => Count;
+
+	bool ICollection<T>.IsReadOnly => true;
+
+	void ICollection<T>.CopyTo(T[] array, int arrayIndex)
+		=> CopyTo(array.AsSpan(arrayIndex));
+
+	IEnumerator<T> IEnumerable<T>.GetEnumerator()
+	{
+		T[][] chunks = _chunks;
+		for (int i = 0; i < _chunkCount; ++i)
+		{
+			T[] chunk = chunks[i];
+			int length = i == _chunkCount - 1 ? _index : chunk.Length;
+			for (int j = 0; j < length; ++j)
+				yield return chunk[j];
+		}
+	}
+
+	IEnumerator IEnumerable.GetEnumerator()
+		=> ((IEnumerable<T>)this).GetEnumerator();
+
+	void ICollection<T>.Add(T item)
+		=> throw new NotSupportedException();
+
+	void ICollection<T>.Clear()
+		=> throw new NotSupportedException();
+
+	bool ICollection<T>.Contains(T item)
+		=> throw new NotSupportedException();
+
+	bool ICollection<T>.Remove(T item)
+		=> throw new NotSupportedException();
 }
