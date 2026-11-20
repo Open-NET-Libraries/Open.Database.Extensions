@@ -615,10 +615,6 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	protected virtual ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(TConnection connection, string procedure, CancellationToken cancellationToken)
 		=> new(GetProcedureParameterNames(connection, procedure));
 
-	// The names of a text command, by the command text itself (by reference): a literal or a kept string stays remembered, and the entry goes when the string is released.
-	// A text with no @name marker has a set with no names, which means "not known".
-	static readonly ConditionalWeakTable<string, NameSet> TextNames = new();
-
 	// Runs in every run of a command that has derived names,
 	// after the connection is open and before the command is built.
 	// It finds the names the connection's procedure declares
@@ -645,9 +641,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		// The @name markers found in the text.
 		return Type == CommandType.Text
-			? TextNames.GetValue(
-				Command,
-				static text => new NameSet(SqlTextParameters.Parse(text)))
+			? TextNameCache.Get(Command)
 			: null;
 	}
 
@@ -671,9 +665,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		// The @name markers found in the text.
 		return new(
 			Type == CommandType.Text
-				? TextNames.GetValue(
-					Command,
-					static text => new NameSet(SqlTextParameters.Parse(text)))
+				? TextNameCache.Get(Command)
 				: null);
 	}
 
