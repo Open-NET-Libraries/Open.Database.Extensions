@@ -211,6 +211,29 @@ public static class ParameterNameMemoryTests
 		Assert.Equal(2, procedure.Lookups);
 	}
 
+	// The second read of an AddParams member that the remembered names lack can also find nothing (the procedure is not visible to the login any more, or it
+	// declares nothing): the answer is "not known", it replaces the old entry and is remembered for a short while, so the runs after it do not read again, and
+	// the members are sent as written.
+	[Fact]
+	public static void AStaleList_ForAnAddParamsMember_WhenTheSecondReadFindsNothing_IsRemembered_SoLaterRunsDoNotReadAgain()
+	{
+		var procedure = new Procedure("dbo.stale_empty_object");
+		var args = new { A = 1, B = 2 };
+
+		Assert.Equal(["@a"], procedure.Run(["@a"], c => c.AddParams(args)));
+		Assert.Equal(1, procedure.Lookups);
+
+		// B is not among the remembered names, so the names are read once more; the provider now answers "not known".
+		Assert.Equal(["A", "B"], procedure.Run([], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
+
+		// Not one read per run: "not known" is remembered, and the old {@a} entry is gone.
+		for (int i = 0; i < 5; i++)
+			Assert.Equal(["A", "B"], procedure.Run([], c => c.AddParams(args)));
+
+		Assert.Equal(2, procedure.Lookups);
+	}
+
 	// ---- an answer of "not known" (an unreadable procedure, or one that declares nothing) ----
 
 	[Fact]
