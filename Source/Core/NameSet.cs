@@ -9,7 +9,7 @@ namespace Open.Database.Extensions;
 sealed class NameSet
 {
 	// The real name each expression matched (null: it matches nothing), by the expression as the caller wrote it.
-	// Bounded by the call sites and member names that run against this set; the set is replaced when its procedure's names expire (5 minutes) or are read again, so no limit is needed.
+	// Bounded by the call sites and member names that run against this set; the set is replaced when its procedure's names expire (5 minutes; 15 seconds for a "not known" answer) or are read again, so no limit is needed. The shared "not known" set (no names) is never asked to match: callers check that a set has names first.
 	readonly Dictionary<string, string?> _matches = new(StringComparer.Ordinal);
 
 	/// <summary>Makes the set from the names as the provider reported them (a leading <c>@</c> is fine); never the default array, but may be empty (a text without markers).</summary>
