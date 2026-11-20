@@ -24,11 +24,11 @@ The same four tasks written with ODX, Dapper, EF Core and plain ADO.NET are on [
 | Task | ODX | Dapper | EF Core | plain ADO.NET |
 |---|---:|---:|---:|---:|
 | 1. Rows to a list | 7 | 9 | 6 | 22 |
-| 2. Filter and project, as an async stream | 9 | 14 | 7 (closest equivalent) | 15 (closest equivalent) |
-| 3. The whole set, then LINQ over it | 14 | 12 | 12 | 25 |
+| 2. Filter in SQL, project in C#, as an async stream | 10 | 14 | 8 | 22 |
+| 3. The rows of one author in memory, then LINQ | 15 | 15 | 13 | 26 |
 | 4. A stored procedure with two parameters | 11 | 14 | 12 | 29 |
 
-ODX is not the smallest in every row. The connection factory (ODX) and the context (EF Core) are set up once and are not counted: see the page for what each count includes. The ODX versions of the first two tasks:
+ODX is not the smallest in every row: EF Core is shorter in all four. The connection factory (ODX) and the context (EF Core) are set up once and are not counted: see the page for what each count includes. The ODX versions of the first two tasks:
 
 [!code-csharp[](samples/HowLittleCode.cs#little_list_odx)]
 

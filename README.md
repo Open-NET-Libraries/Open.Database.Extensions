@@ -75,11 +75,11 @@ The same four tasks, written with Open.Database.Extensions (ODX), Dapper, EF Cor
 | Task | ODX | Dapper | EF Core | plain ADO.NET |
 |---|---:|---:|---:|---:|
 | 1. Rows to a list | 7 | 9 | 6 | 22 |
-| 2. Filter and project, as an async stream | 9 | 14 | 7 (closest equivalent) | 15 (closest equivalent) |
-| 3. The whole set, then LINQ over it | 14 | 12 | 12 | 25 |
+| 2. Filter in SQL, project in C#, as an async stream | 10 | 14 | 8 | 22 |
+| 3. The rows of one author in memory, then LINQ | 15 | 15 | 13 | 26 |
 | 4. A stored procedure with two parameters | 11 | 14 | 12 | 29 |
 
-Outside the count: ODX takes a connection factory created once per application (one to three lines), and EF Core takes a `DbContext` that maps the model (five lines). Dapper and plain ADO.NET create their own connection inside the method, and that line is counted. ODX is not the smallest in every row: EF Core is shorter in tasks 1 and 2 once its context exists. Where ODX needs less is the plumbing, the connection and the column copying. The ODX versions (`AllPostsSql` is `"select * from posts order by id"`):
+Outside the count: ODX takes a connection factory created once per application (one to three lines), and EF Core takes a `DbContext` that maps the model (five lines). Dapper and plain ADO.NET create their own connection inside the method, and that line is counted. ODX is not the smallest in every row: EF Core is shorter than ODX in every row once its context exists. Where ODX needs less is the plumbing, the connection and the column copying. The ODX versions (`AllPostsSql` is `"select * from posts order by id"`, `AuthorPostsSql` adds `where author = @author`, and `Headline` formats a post in C#):
 
 **1. Rows to a list**
 
@@ -93,36 +93,38 @@ public static ValueTask<List<Post>> ListPostsOdxAsync(
         .ToListAsync(ct);
 ```
 
-**2. Filter and project, returned as an async stream (no `async`, `await` or `using`)**
+**2. Filter in SQL, project in C#, returned as an async stream (no `async`, `await` or `using`)**
 
 ```cs
-public static IAsyncEnumerable<string> AuthorTitlesOdxAsync(
+public static IAsyncEnumerable<string> AuthorHeadlinesOdxAsync(
     IDbConnectionFactory<SqliteConnection> db,
+    int author,
     CancellationToken ct)
     => db
-        .Command(AllPostsSql)
+        .Command(AuthorPostsSql)
+        .AddParam(author)
         .Map<Post>()
         .ToBufferedAsyncStream(clearOnReturn: false, ct)
-        .Where(static p => p.Author == 42)
-        .Select(static p => p.Title);
+        .Select(static p => Headline(p));
 ```
 
-**3. The whole set, then LINQ over it**
+**3. The rows of one author in memory, then LINQ over them**
 
 ```cs
-public static async Task<List<string>> AuthorTitlesBufferOdxAsync(
+public static async Task<List<string>> AuthorHeadlinesBufferOdxAsync(
     IDbConnectionFactory<SqliteConnection> db,
+    int author,
     CancellationToken ct)
 {
     using PooledArray<Post> posts = await db
-        .Command(AllPostsSql)
+        .Command(AuthorPostsSql)
+        .AddParam(author)
         .Map<Post>()
         .ToAsyncBuffer(clearOnDispose: false, ct)
         .Items;
 
     return posts
-        .Where(static p => p.Author == 42)
-        .Select(static p => p.Title)
+        .Select(static p => Headline(p))
         .ToList();
 }
 ```
@@ -143,7 +145,7 @@ public static ValueTask<List<Post>> SearchPostsOdxAsync(
         .ToListAsync(ct);
 ```
 
-The four-way code for every task, and what each "closest equivalent" leaves out, is on the [How little code](https://open-net-libraries.github.io/Open.Database.Extensions/articles/how-little-code.html) page.
+The four-way code for every task, with the notes on what each count includes, is on the [How little code](https://open-net-libraries.github.io/Open.Database.Extensions/articles/how-little-code.html) page.
 
 ## Install
 

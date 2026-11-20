@@ -2,7 +2,7 @@
 
 The same four tasks, written with Open.Database.Extensions (ODX), Dapper, EF Core and plain ADO.NET. This page is about the size of the code and nothing else: it makes no claim about speed or safety. Every snippet is compiled in the samples project, and the samples run all four versions of a task and check that they return the same rows.
 
-Everything here is async, and the SQL is the same string for all four libraries in tasks 1 to 3. The tasks read the `posts` table of the [sample database](getting-started.md#your-first-query) into the `Post` class.
+Everything here is async, and the SQL is the same string for all four libraries in each of tasks 1 to 3 (tasks 2 and 3 add `where author = @author`). The tasks read the `posts` table of the [sample database](getting-started.md#your-first-query) into the `Post` class.
 
 ## How the lines are counted
 
@@ -11,8 +11,8 @@ Each cell counts the lines of one method as it would appear in a data-access cla
 | Task | Open.Database.Extensions | Dapper | EF Core | plain ADO.NET |
 |---|---:|---:|---:|---:|
 | 1. Rows to a list | 7 | 9 | 6 | 22 |
-| 2. Filter and project, as an async stream | 9 | 14 | 7 (closest equivalent) | 15 (closest equivalent) |
-| 3. The whole set, then LINQ over it | 14 | 12 | 12 | 25 |
+| 2. Filter in SQL, project in C#, as an async stream | 10 | 14 | 8 | 22 |
+| 3. The rows of one author in memory, then LINQ | 15 | 15 | 13 | 26 |
 | 4. A stored procedure with two parameters | 11 | 14 | 12 | 29 |
 
 What is outside the count, and what each cell includes:
@@ -26,8 +26,6 @@ What is outside the count, and what each cell includes:
 The setup that EF Core needs:
 
 [!code-csharp[](../samples/HowLittleCode.cs#little_setup_ef)]
-
-A cell marked "closest equivalent" cannot do the task the same way. The two cases are under task 2.
 
 ## Task 1: rows to a list
 
@@ -51,9 +49,11 @@ All of the rows of the table, in order, as a `List<Post>`.
 
 Dapper opens a closed connection for the call, so it has no `OpenAsync`. ADO.NET does everything by hand: the connection, the command, the reader, and copying each column into a property.
 
-## Task 2: filter and project with async LINQ
+## Task 2: filter in SQL, project in C#, as an async stream
 
-The titles of one author's posts, returned as an `IAsyncEnumerable<string>` that the caller enumerates.
+One author's posts, each turned into a headline string by a small C# method (`Headline`, below), returned as an `IAsyncEnumerable<string>` that the caller enumerates. The filter is in the SQL (`where author = @author`) for all four. The headline is built in C# because SQL does not build it, and it is shared by all four, so it is not counted:
+
+[!code-csharp[](../samples/HowLittleCode.cs#little_headline)]
 
 **Open.Database.Extensions**
 
@@ -67,23 +67,21 @@ The method has no `async`, no `await` and no `using`. The stream opens the conne
 
 `QueryUnbufferedAsync` streams the rows, but the connection must stay open while they are read, so the method has to be an async iterator that owns and disposes the connection.
 
-**EF Core (closest equivalent)**
+**EF Core**
 
 [!code-csharp[](../samples/HowLittleCode.cs#little_stream_ef)]
 
-`AsAsyncEnumerable()` streams the entities, and the filter and the projection run over them in memory, as in the other three. The context must stay alive until the enumeration ends, and the token is passed by whoever enumerates (`WithCancellation`), so the method has no token argument. EF Core usually does this differently: it puts the filter and the projection into the SQL, so the database sends only the titles. That is not the same work, so it is not in the table. It is also compiled and checked in the samples (`little_stream_ef_sql`, 7 lines):
+The `Where` is translated to SQL, so the database does the same filtering as in the other three. `AsAsyncEnumerable()` streams the entities, and `Headline` runs over them in C#. Two differences are not in the line count: the context must stay alive until the enumeration ends, and the token is passed by whoever enumerates (`WithCancellation`), so the method has no token argument.
 
-[!code-csharp[](../samples/HowLittleCode.cs#little_stream_ef_sql)]
-
-**Plain ADO.NET (closest equivalent)**
+**Plain ADO.NET**
 
 [!code-csharp[](../samples/HowLittleCode.cs#little_stream_ado)]
 
-This is an async iterator too. It reads the two columns it needs straight from the reader and never builds a `Post`, which is shorter than building one and is why this is the closest equivalent and not the same work.
+This is an async iterator too, and it builds a `Post` from each row before calling `Headline`.
 
-## Task 3: the whole set, then LINQ over it
+## Task 3: one author's rows in memory, then LINQ over them
 
-Read every row, then filter and project the rows already in memory with ordinary LINQ. This is the one place the page uses a synchronous call, and it runs over a collection that was already read.
+Read one author's rows (the filter is in the SQL again), then build the headlines from the rows already in memory with ordinary LINQ. This is the one place the page uses a synchronous call, and it runs over a collection that was already read.
 
 **Open.Database.Extensions**
 
@@ -127,7 +125,7 @@ The parameter names come from the arguments (`author` and `titleContains` find `
 
 ## What the numbers say
 
-ODX is not the smallest in every cell. EF Core is shorter in tasks 1 and 2 once its context, which the table does not count, is in place. Dapper and EF Core are two lines shorter in task 3, where ODX spends lines on the buffer and on disposing it. ODX is the smallest in task 4, and it is shorter than Dapper and plain ADO.NET in tasks 1 and 2. Where ODX needs less is the plumbing: no connection to create, open or dispose in the method, and none of the column copying that ADO.NET needs.
+ODX is not the smallest in every cell. EF Core is shorter than ODX in tasks 1, 2, 3 and 4 (by 1, 2, 2 and 1 lines) once its context, which the table does not count, is in place. ODX is shorter than Dapper in tasks 1, 2 and 4, equal to it in task 3 (15 lines each), and shorter than plain ADO.NET in all four. Where ODX needs less is the plumbing: no connection to create, open or dispose in the method, and none of the column copying that ADO.NET needs.
 
 The table is a table of task by library, and each cell names a region of [`HowLittleCode.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/HowLittleCode.cs), so a cell can be replaced by another snippet and the script run again.
 

@@ -33,8 +33,8 @@ $libraries = 'odx', 'dapper', 'ef', 'ado'
 $headings = 'Open.Database.Extensions', 'Dapper', 'EF Core', 'plain ADO.NET'
 $tasks = [ordered]@{
 	'1. Rows to a list'                           = 'little_list'
-	'2. Filter and project, as an async stream'   = 'little_stream'
-	'3. The whole set, then LINQ over it'         = 'little_buffer'
+	'2. Filter in SQL, project in C#, as an async stream'   = 'little_stream'
+	'3. The rows of one author in memory, then LINQ'   = 'little_buffer'
 	'4. A stored procedure with two parameters'   = 'little_proc'
 }
 
@@ -46,4 +46,3 @@ foreach ($task in $tasks.GetEnumerator()) {
 }
 ''
 'Setup counted apart: ' + (Get-RegionLineCount $lines 'little_setup_ef') + ' lines (the EF Core context).'
-'Also compiled, not in the table: ' + (Get-RegionLineCount $lines 'little_stream_ef_sql') + ' lines (EF Core task 2 with the filter and the projection in the SQL).'

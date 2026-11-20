@@ -471,7 +471,6 @@ await using HowLittleCode.BlogContext ef = new(
 		.UseSqlite(littleCodeConnectionString)
 		.Options);
 
-string[] expectedTitles = ["Post 1", "Post 2", "Post 3"];
 string expectedRows = HowLittleCode.Fingerprint(
 	await HowLittleCode.ListPostsAdoAsync(littleCodeConnectionString, littleCodeToken));
 Check(
@@ -486,26 +485,27 @@ Check(
 	ef.ChangeTracker.Entries<Post>().Count() == 5,
 	"how little code: EF Core tracks the entities it returns by default (the snippets do not call AsNoTracking)");
 
-IAsyncEnumerable<string> odxStream = HowLittleCode.AuthorTitlesOdxAsync(factory, littleCodeToken);
+const int littleCodeAuthor = 42;
+string[] expectedHeadlines = ["POST 1: Body 1", "POST 2: (no body)", "POST 3: Body 3"];
+IAsyncEnumerable<string> odxStream = HowLittleCode.AuthorHeadlinesOdxAsync(factory, littleCodeAuthor, littleCodeToken);
 Check(
-	(await HowLittleCode.CollectAsync(odxStream, littleCodeToken)).SequenceEqual(expectedTitles),
-	"how little code, task 2: the ODX stream filters and projects without async, await or using in the method");
+	(await HowLittleCode.CollectAsync(odxStream, littleCodeToken)).SequenceEqual(expectedHeadlines),
+	"how little code, task 2: the ODX stream filters in SQL and projects without async, await or using in the method");
 Check(
 	await ThrowsAsync<InvalidOperationException>(async () => await HowLittleCode.CollectAsync(odxStream, littleCodeToken)),
 	"how little code, task 2: the ODX stream is single-use, a second enumeration throws");
 Check(
-	(await HowLittleCode.CollectAsync(HowLittleCode.AuthorTitlesDapperAsync(littleCodeConnectionString, littleCodeToken), littleCodeToken)).SequenceEqual(expectedTitles)
-	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorTitlesEfAsync(ef), littleCodeToken)).SequenceEqual(expectedTitles)
-	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorTitlesEfSqlAsync(ef), littleCodeToken)).SequenceEqual(expectedTitles)
-	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorTitlesAdoAsync(littleCodeConnectionString, littleCodeToken), littleCodeToken)).SequenceEqual(expectedTitles),
-	"how little code, task 2: Dapper, EF Core (in memory and translated to SQL) and plain ADO.NET stream the same titles");
+	(await HowLittleCode.CollectAsync(HowLittleCode.AuthorHeadlinesDapperAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken), littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorHeadlinesEfAsync(ef, littleCodeAuthor), littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorHeadlinesAdoAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken), littleCodeToken)).SequenceEqual(expectedHeadlines),
+	"how little code, task 2: Dapper, EF Core and plain ADO.NET stream the same headlines");
 
 Check(
-	(await HowLittleCode.AuthorTitlesBufferOdxAsync(factory, littleCodeToken)).SequenceEqual(expectedTitles)
-	&& (await HowLittleCode.AuthorTitlesBufferDapperAsync(littleCodeConnectionString, littleCodeToken)).SequenceEqual(expectedTitles)
-	&& (await HowLittleCode.AuthorTitlesBufferEfAsync(ef, littleCodeToken)).SequenceEqual(expectedTitles)
-	&& (await HowLittleCode.AuthorTitlesBufferAdoAsync(littleCodeConnectionString, littleCodeToken)).SequenceEqual(expectedTitles),
-	"how little code, task 3: the whole set read, then sync LINQ over it, gives the same titles in all four");
+	(await HowLittleCode.AuthorHeadlinesBufferOdxAsync(factory, littleCodeAuthor, littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.AuthorHeadlinesBufferDapperAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.AuthorHeadlinesBufferEfAsync(ef, littleCodeAuthor, littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.AuthorHeadlinesBufferAdoAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken)).SequenceEqual(expectedHeadlines),
+	"how little code, task 3: one author's rows read, then sync LINQ over them, give the same headlines in all four");
 
 // Task 4 needs SQL Server: it runs when LocalDB can be reached and is reported as skipped when it cannot.
 await using (LittleCodeSqlServer? sqlServer = await LittleCodeSqlServer.TryStartAsync(littleCodeToken))
