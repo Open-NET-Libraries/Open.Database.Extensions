@@ -70,15 +70,17 @@ A buffer is a loan of pooled arrays, and a loan has rules. These are the risks t
 - **A lazy query runs when it is enumerated.** `Where`, `Select` and the rest of LINQ run nothing when you call them. If the query is enumerated after the buffer is disposed, it reads arrays that are back in the pool, and the view throws `ObjectDisposedException`. Finish the query (`ToList()`, `ToArray()`) before the buffer goes.
 - **Copy out to keep the rows longer.** `ToArray()` or `ToList()` on the view copies the rows. The copy belongs to you and outlives the buffer.
 - **One thread at a time.** Do not use the view from another thread while something may dispose it. The view checks that it is alive before each read, but a check is not a lock: a dispose on another thread can land just after it, with the arrays on their way back to the pool.
-- **A buffer that is never disposed is not a leak, but it costs the pool.** There is no finalizer. The arrays stay with the buffer until the garbage collector takes it, and the pool never gets them back. The cost is the allocations the pool would have saved.
+- **A buffer that is never disposed is not a leak, but it costs the pool.** There is no finalizer. The arrays stay with the buffer until the garbage collector takes it, and the pool never gets them back. The cost is the allocations the pool would have saved. This includes `await LatestPosts(...).Items` when `Items` faults or is cancelled: you never receive the view, so nothing disposes the buffer, and its arrays wait for the garbage collector.
 
-Finish the query before the dispose:
+To filter or project and keep only some of the rows, use async LINQ over the stream. The work overlaps the read, only the rows you keep are held, and there is nothing to dispose. In the library's own (unpublished) benchmark the stream beat reading into a buffer first and then processing, in every consumer-work cell. It is in the box on net10 and later; net472 and netstandard need the `System.Linq.Async` package.
+
+[!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
+
+To keep every row, call `ToArrayAsync` or `ToListAsync` on the query directly: they collect the rows for you, and there is no buffer to dispose.
+
+Take the buffer, or its `Items` view, when you need the whole set at once: `Count`, the indexer, several passes, or handing it to a serializer. Finish any LINQ query over the view before the view is disposed:
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_finish_query)]
-
-Copy out what must outlive the buffer:
-
-[!code-csharp[](../samples/AsyncBuffers.cs#buffers_copy_out)]
 
 The mistake to avoid is a query that has not run when the buffer is disposed. This one throws:
 
