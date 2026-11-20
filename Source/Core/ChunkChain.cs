@@ -52,7 +52,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 	// A test seam (like ChunkSizing): set by reflection to count rents and
 	// returns, then put back. Per T.
-	internal static ArrayPool<T> _pool = ArrayPool<T>.Shared;
+	public static ArrayPool<T> _pool = ArrayPool<T>.Shared;
 
 	T[][] _chunks = new T[4][];
 
@@ -76,7 +76,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	/// null or <see cref="MemoryPool{T}.Shared"/>; <paramref name="clear"/>
 	/// is what <c>PoolClearing.Resolve</c> decided.
 	/// </summary>
-	internal static ChunkChain<T> Rent(MemoryPool<T>? pool, bool clear)
+	public static ChunkChain<T> Rent(MemoryPool<T>? pool, bool clear)
 	{
 		ChunkChain<T>? chain = Interlocked.Exchange(ref _spare, null);
 		chain ??= new ChunkChain<T>();
@@ -91,11 +91,11 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>How many rows were added.</summary>
-	internal int Count
+	public int Count
 		=> _filled + _index;
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal void Add(T item)
+	public void Add(T item)
 	{
 		T[] current = _current;
 		int index = _index;
@@ -153,7 +153,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		=> throw new ObjectDisposedException(nameof(ChunkChain<>));
 
 	/// <summary>The rows, in order, in an array of exactly that length.</summary>
-	internal T[] ToArray()
+	public T[] ToArray()
 	{
 		int count = Count;
 		if (count == 0) return [];
@@ -168,7 +168,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>The rows, in order, in a list of exactly that capacity.</summary>
-	internal List<T> ToList()
+	public List<T> ToList()
 	{
 		int count = Count;
 
@@ -205,14 +205,14 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	/// checked by a test on the shipped runtimes; older runtimes enqueue
 	/// one by one, which is the same result).
 	/// </remarks>
-	internal Queue<T> ToQueue()
+	public Queue<T> ToQueue()
 		=> Count == 0 ? new Queue<T>() : new Queue<T>(this);
 
 	/// <summary>
 	/// The rows in a hash set that never regrows (duplicates are
 	/// dropped, as a hash set does).
 	/// </summary>
-	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
+	public HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
 	{
 #if NETSTANDARD2_0
 		// No HashSet constructor takes a capacity here.
@@ -238,7 +238,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	/// <paramref name="keySelector"/>. A duplicate key throws the
 	/// dictionary's own exception.
 	/// </summary>
-	internal Dictionary<TKey, T> ToDictionary<TKey>(
+	public Dictionary<TKey, T> ToDictionary<TKey>(
 		Func<T, TKey> keySelector,
 		IEqualityComparer<TKey>? comparer)
 		where TKey : notnull
@@ -264,7 +264,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	/// As <see cref="ToDictionary{TKey}"/>, with the value chosen by
 	/// <paramref name="valueSelector"/>.
 	/// </summary>
-	internal Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+	public Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
 		Func<T, TKey> keySelector,
 		Func<T, TValue> valueSelector,
 		IEqualityComparer<TKey>? comparer)

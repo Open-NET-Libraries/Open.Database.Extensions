@@ -27,7 +27,7 @@ public static class ChunkChainTests
 	static readonly Assembly Core = typeof(PooledBuffer<>).Assembly;
 
 	const BindingFlags Internal
-		= BindingFlags.Static | BindingFlags.NonPublic;
+		= BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
 	static FieldInfo Sizing(string name)
 		=> Core.GetType("Open.Database.Extensions.Core.ChunkSizing")!
@@ -343,7 +343,7 @@ public static class ChunkChainTests
 	// ---- the chain is reused, and never shared -------------------------------
 
 	const BindingFlags Instance
-		= BindingFlags.Instance | BindingFlags.NonPublic;
+		= BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
 	static Type ChainOf<T>()
 		=> Core.GetType("Open.Database.Extensions.Core.ChunkChain`1")!

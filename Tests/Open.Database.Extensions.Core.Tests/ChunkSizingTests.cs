@@ -20,7 +20,7 @@ public static class ChunkSizingTests
 		.GetType("Open.Database.Extensions.Core.ChunkSizing")!;
 
 	const BindingFlags Internal
-		= BindingFlags.Static | BindingFlags.NonPublic;
+		= BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
 	static FieldInfo Field(string name)
 		=> Sizing.GetField(name, Internal)!;

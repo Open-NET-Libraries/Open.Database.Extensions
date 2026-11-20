@@ -22,7 +22,7 @@ internal static class PoolClearing
 		= "Open.Database.Extensions.ClearPooledArrays";
 
 	// The cached value of the switch (test seam).
-	internal static bool _all = ReadSwitch();
+	public static bool _all = ReadSwitch();
 
 	/// <summary>
 	/// Reads the switch from the AppContext (the one place it is read).

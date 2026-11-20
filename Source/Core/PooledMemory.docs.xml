@@ -15,11 +15,13 @@
       To use your own, call <c>.UsePool(pool, clear: ...)</c> after
       <c>Map</c>: the pool is yours, ODX rents from it and gives back to it,
       and never disposes it.
-      It must hand out whole arrays (<c>MemoryPool&lt;T&gt;.Shared</c> and
-      ArrayPool-based pools do), or the read throws
-      <see cref="System.NotSupportedException"/>;
-      it may hand out a larger array than asked for; and its
-      <c>Return</c> must not throw.
+      The pool must hand out whole arrays (<c>MemoryPool&lt;T&gt;.Shared</c>
+      and ArrayPool-based pools do); the collecting terminals (<c>ToList</c>,
+      <c>ToArray</c>, and the like) throw
+      <see cref="System.NotSupportedException"/> naming the pool type when it
+      does not.
+      It may hand out a larger array than asked for, and disposing a rented
+      owner must not throw.
     </para>
     <para>
       Clearing: rows that hold references (a class, a string, a struct that
@@ -33,7 +35,7 @@
       The app-wide setting is the AppContext switch
       <c>Open.Database.Extensions.ClearPooledArrays</c> (off by default; read
       once, so set it before the first query).
-      Set it in the project file with
+      Set it in the application's project file with
       <c>&lt;RuntimeHostConfigurationOption
       Include="Open.Database.Extensions.ClearPooledArrays" Value="true"
       /&gt;</c>, which puts it in <c>runtimeconfig.json</c>, or call

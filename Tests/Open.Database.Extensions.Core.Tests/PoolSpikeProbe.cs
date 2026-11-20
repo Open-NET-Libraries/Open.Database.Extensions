@@ -360,7 +360,7 @@ internal sealed class SpikeArrayPool<T> : MemoryPool<T>
 internal static class SpikeSizing
 {
 	const BindingFlags Internal
-		= BindingFlags.Static | BindingFlags.NonPublic;
+		= BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
 	static readonly Type Sizing
 		= typeof(PooledBuffer<>).Assembly

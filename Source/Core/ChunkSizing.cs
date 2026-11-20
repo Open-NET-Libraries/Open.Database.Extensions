@@ -27,13 +27,13 @@ internal static class ChunkSizing
 
 	// Rows in the first chunk of a buffer or a stream (set by reflection
 	// as "_firstRows").
-	internal static int _firstRows = DefaultFirstRows;
+	public static int _firstRows = DefaultFirstRows;
 
 	// Rows at which a stream stops doubling (set by reflection as
 	// "_streamMaxRows").
-	internal static int _streamMaxRows = DefaultStreamMaxRows;
+	public static int _streamMaxRows = DefaultStreamMaxRows;
 
-	internal static int ResolveFirstRows()
+	public static int ResolveFirstRows()
 	{
 		int first = Volatile.Read(ref _firstRows);
 		return IsPowerOfTwo(first) && first <= 1 << 20
@@ -41,7 +41,7 @@ internal static class ChunkSizing
 			: DefaultFirstRows;
 	}
 
-	internal static int ResolveStreamMaxRows(int first)
+	public static int ResolveStreamMaxRows(int first)
 	{
 		int max = Volatile.Read(ref _streamMaxRows);
 		return IsPowerOfTwo(max) && max >= first && max <= 1 << 26
@@ -58,11 +58,11 @@ internal static class ChunkSizing
 	const int DefaultCollectShift = 1;
 	const int DefaultCollectMaxRows = 8192;
 
-	internal static int _collectFirstRows = DefaultCollectFirstRows;
-	internal static int _collectShift = DefaultCollectShift;
-	internal static int _collectMaxRows = DefaultCollectMaxRows;
+	public static int _collectFirstRows = DefaultCollectFirstRows;
+	public static int _collectShift = DefaultCollectShift;
+	public static int _collectMaxRows = DefaultCollectMaxRows;
 
-	internal static int ResolveCollectFirstRows()
+	public static int ResolveCollectFirstRows()
 	{
 		int first = Volatile.Read(ref _collectFirstRows);
 		return IsPowerOfTwo(first) && first <= 1 << 20
@@ -71,7 +71,7 @@ internal static class ChunkSizing
 	}
 
 	// The size of the chunk after one of this size.
-	internal static int NextCollectRows(int size)
+	public static int NextCollectRows(int size)
 	{
 		int max = Volatile.Read(ref _collectMaxRows);
 		if (!IsPowerOfTwo(max) || max > 1 << 26) max = DefaultCollectMaxRows;
@@ -87,7 +87,7 @@ internal static class ChunkSizing
 		=> value > 0 && (value & (value - 1)) == 0;
 
 	// floor(log2(value)) for a positive int.
-	internal static int Log2(int value)
+	public static int Log2(int value)
 	{
 #if NET
 		return BitOperations.Log2((uint)value);

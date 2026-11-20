@@ -199,7 +199,7 @@ A pooled array that goes back with rows in it keeps them reachable while it sits
 
 Two settings raise that default for rows with no references, and the more specific one wins.
 
-**The app-wide switch** `Open.Database.Extensions.ClearPooledArrays` clears every array ODX rents, value rows included, for every query that does not say otherwise. It is off by default and is read once, so set it before the first query. The way to set it is in the project file, which puts it in `runtimeconfig.json`, where an operator can also change it:
+**The app-wide switch** `Open.Database.Extensions.ClearPooledArrays` clears every array ODX rents, value rows included, for every query that does not say otherwise. It is off by default and is read once, so set it before the first query. The way to set it is in the application's project file, which puts it in `runtimeconfig.json`, where an operator can also change it:
 
 ```xml
 <ItemGroup>
@@ -224,9 +224,9 @@ An explicit `clear: true` clears value rows whatever the switch says. An explici
 The rules of a pool of your own:
 
 - **It is yours.** ODX rents from it and gives back to it, and never disposes it. A null pool throws `ArgumentNullException` at the call.
-- **It hands out whole arrays.** `MemoryPool<T>.Shared` and any ArrayPool-based pool do. Memory that is not backed by an array, or that is only the first part of a larger array, makes the read throw `NotSupportedException` naming the pool: a collector sizes its chunks by the array's length, and writing through a shorter view of a shared array would overrun the memory it was given. The rent that failed, and every rent before it, is given back.
+- **It hands out whole arrays.** `MemoryPool<T>.Shared` and any ArrayPool-based pool do. Memory that is not backed by an array, or that is only the first part of a larger array, makes the collecting terminals (`ToListAsync`, `ToArrayAsync` and the like) throw `NotSupportedException` naming the pool: a collector sizes its chunks by the array's length, and writing through a shorter view of a shared array would overrun the memory it was given. The rent that failed, and every rent before it, is given back.
 - **It may round up.** A pool that returns a larger array than asked for is fine; the extra length is used, and only the rows are copied.
-- **Its `Return` must not throw.** Without clearing, an exception stops the release, and the arrays not yet returned stay with the garbage collector.
+- **Disposing a rented owner must not throw.** Without clearing, an exception stops the release, and the arrays not yet returned stay with the garbage collector.
 
 This pool counts what it hands out and what comes back, and the samples use it to check the claims on this page:
 

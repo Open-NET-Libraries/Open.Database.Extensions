@@ -91,14 +91,14 @@ namespace Open.Database.Extensions;
 /// each an <see cref="IMemoryOwner{T}"/> of that pool.
 /// There is no finalizer: a forgotten owner of the shared pool is
 /// just garbage-collected.
-/// A custom pool must not throw from <c>Return</c>. If it does,
+/// Disposing an owner rented from a custom pool must not throw. If it does,
 /// the exception propagates from <see cref="DisposeAsync"/>, and
 /// from <see cref="Dispose"/> when the read had already finished;
 /// from <see cref="Dispose"/> while the read is still running it
 /// ends in the producer's task, which nobody observes.
 /// Without clearing, in every case the arrays not yet returned stay
 /// with the garbage collector.
-/// With clearing on, a <c>Return</c> that throws inside the
+/// With clearing on, a disposal that throws inside the
 /// background queue is swallowed there and costs only that array. When
 /// the queue is full the
 /// buffer is discarded instead (never cleared, never returned), so a
@@ -218,7 +218,7 @@ public sealed class PooledBuffer<T>
 	/// <remarks>
 	/// Does not throw and does not wait: the producer returns the
 	/// arrays to the pool when it exits.
-	/// For a pool whose <c>Return</c> throws, see the remarks of the
+	/// For a pool whose owners throw when disposed, see the remarks of the
 	/// class.
 	/// Use <see cref="DisposeAsync"/> to wait for that.
 	/// Calling it again does nothing.
@@ -237,9 +237,9 @@ public sealed class PooledBuffer<T>
 	/// progress returns, so a provider that ignores cancellation
 	/// delays it by that call.
 	/// Does not throw for a well-behaved pool; for a pool whose
-	/// <c>Return</c> throws, see the remarks of the class.
+	/// owners throw when disposed, see the remarks of the class.
 	/// Calling it again does nothing (it throws again if a pool's
-	/// <c>Return</c> threw the first time).
+	/// disposal threw the first time).
 	/// After it, <see cref="Items"/> throws
 	/// <see cref="ObjectDisposedException"/>.
 	/// </remarks>

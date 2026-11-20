@@ -32,7 +32,7 @@ public static class PoolClearingTests
 	static readonly Assembly Core = typeof(PooledBuffer<>).Assembly;
 
 	const BindingFlags Internal
-		= BindingFlags.Static | BindingFlags.NonPublic;
+		= BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
 	// ---- the seams, reached by reflection (no InternalsVisibleTo) ----------
 
