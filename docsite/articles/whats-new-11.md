@@ -8,6 +8,7 @@ Version 11 is a performance release and a tidy-up release. Result mapping is rew
 ## Changes since rc.9
 
 - **A parameter added to a stored procedure is no longer silently left out of an `AddParams` call.** `AddParams(new { Id, Title })` against a procedure that declared only `@Id` remembered those names, and when the procedure later gained `@Title` (inside the five minutes the names are remembered), the run dropped `Title` with no error and the procedure used its default. A member that the remembered names do not declare now makes the library read the names once more before it drops the member, as an unmatched `AddParam(value)` argument already did. If the second read still lacks the member it is dropped as before, and that read is remembered, so a member the procedure never takes costs one extra read per five minutes, not one per run. No signatures change. See [Remembered names](expressive-commands.md#remembered-names).
+- **A mapped read no longer boxes a date, a decimal or a bool that the provider hands over as another type.** SQLite stores a date and a decimal as text and a bool as an integer, so the column type differs from the member type, and each such cell cost a box on top of the value: 24 bytes for a `DateTime`, 32 for a `decimal`, 48 for a `bool`, per row (the nullable members too). The map now reads them through a typed conversion with the same culture, the same failures and the same NULL rules as before, and allocates what the hand-written read does. No signatures change.
 
 ## Changes since rc.8
 
