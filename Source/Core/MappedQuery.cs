@@ -282,43 +282,42 @@ readonly struct MappedQueryCore<T>
 	// ChunkChain) and build the result from it in the same read method,
 	// right after the last row (one memcpy for a list or an array; the
 	// connection is released when the call returns). The read and the
-	// build are ONE async state machine (RowReader.CollectAsync); the
-	// lambdas are static, so a call allocates no closure or delegate.
-	internal ValueTask<TResult> CollectAsync<TState, TResult>(
-		TState state,
-		Func<ChunkChain<T>, TState, TResult> build,
+	// build are ONE async state machine (RowReader.CollectAsync). The build
+	// is a struct (IChainBuild), so it rides in the state tuple at no more
+	// than its own fields, and the lambdas are static: a call allocates no
+	// closure or delegate.
+	internal ValueTask<TResult> CollectAsync<TBuild, TResult>(
+		TBuild build,
 		CancellationToken cancellationToken)
+		where TBuild : struct, IChainBuild<T, TResult>
 	{
 		CancellationToken token = Combine(
 			cancellationToken, out CancellationTokenSource? linked);
 		return RunAsync(
-			(_source, _skip, _take, _asyncReads, token, state, build),
+			(_source, _skip, _take, _asyncReads, token, build),
 			static (reader, s) => reader is DbDataReader db
-				? RowReader.CollectAsync(
+				? RowReader.CollectAsync<T, TBuild, TResult>(
 					s._source, db, s._skip, s._take, s._asyncReads,
-					s.state, s.build, s.token)
-				: new ValueTask<TResult>(RowReader.Collect(
-					s._source, reader, s._skip, s._take,
-					s.state, s.build, s.token)),
+					s.build, s.token)
+				: new ValueTask<TResult>(RowReader.Collect<T, TBuild, TResult>(
+					s._source, reader, s._skip, s._take, s.build, s.token)),
 			Behavior, linked, token);
 	}
 
-	internal TResult Collect<TState, TResult>(
-		TState state,
-		Func<ChunkChain<T>, TState, TResult> build)
+	internal TResult Collect<TBuild, TResult>(TBuild build)
+		where TBuild : struct, IChainBuild<T, TResult>
 		=> Run(
-			(_source, _skip, _take, state, build),
-			static (reader, s) => RowReader.Collect(
-				s._source, reader, s._skip, s._take, s.state, s.build),
+			(_source, _skip, _take, build),
+			static (reader, s) => RowReader.Collect<T, TBuild, TResult>(
+				s._source, reader, s._skip, s._take, s.build),
 			Behavior);
 
 	internal ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
-		=> CollectAsync<object?, List<T>>(
-			null, static (chain, _) => chain.ToList(), cancellationToken);
+		=> CollectAsync<ListBuild<T>, List<T>>(default, cancellationToken);
 
 	internal ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken)
-		=> CollectAsync<object?, T[]>(
-			null, static (chain, _) => chain.ToArray(), cancellationToken);
+		=> CollectAsync<ArrayBuild<T>, T[]>(default, cancellationToken);
+
 	internal ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
@@ -409,15 +408,12 @@ readonly struct MappedQueryCore<T>
 #endif
 	}
 
-	internal async ValueTask<ImmutableArray<T>> ToImmutableArrayAsync(CancellationToken cancellationToken)
-	{
-		T[] array = await ToArrayAsync(cancellationToken).ConfigureAwait(false);
-#if NET8_0_OR_GREATER
-		return System.Runtime.InteropServices.ImmutableCollectionsMarshal.AsImmutableArray(array);
-#else
-		return ImmutableArray.Create(array);
-#endif
-	}
+	// The same read as ToArrayAsync, with the array wrapped in the build
+	// (no async method of its own around it, which a read that really
+	// suspends would box).
+	internal ValueTask<ImmutableArray<T>> ToImmutableArrayAsync(CancellationToken cancellationToken)
+		=> CollectAsync<ImmutableArrayBuild<T>, ImmutableArray<T>>(
+			default, cancellationToken);
 
 	// The dictionary and hash set terminals read the rows into the chain,
 	// then add them (the exact capacity known): a duplicate key throws after
@@ -430,9 +426,8 @@ readonly struct MappedQueryCore<T>
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
 
-		return Collect(
-			new KeyedCollect<T, TKey>(keySelector, comparer),
-			static (chain, s) => chain.ToDictionary(s.KeySelector, s.Comparer));
+		return Collect<DictionaryBuild<T, TKey>, Dictionary<TKey, T>>(
+			new(keySelector, comparer));
 	}
 
 	internal ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
@@ -444,10 +439,8 @@ readonly struct MappedQueryCore<T>
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
 
-		return CollectAsync(
-			new KeyedCollect<T, TKey>(keySelector, comparer),
-			static (chain, s) => chain.ToDictionary(s.KeySelector, s.Comparer),
-			cancellationToken);
+		return CollectAsync<DictionaryBuild<T, TKey>, Dictionary<TKey, T>>(
+			new(keySelector, comparer), cancellationToken);
 	}
 
 	internal Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
@@ -460,11 +453,10 @@ readonly struct MappedQueryCore<T>
 		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
 		Contract.EndContractBlock();
 
-		return Collect(
-			new KeyedValueCollect<T, TKey, TValue>(
-				keySelector, valueSelector, comparer),
-			static (chain, s) => chain.ToDictionary(
-				s.KeySelector, s.ValueSelector, s.Comparer));
+		return Collect<
+			DictionaryValueBuild<T, TKey, TValue>,
+			Dictionary<TKey, TValue>>(
+			new(keySelector, valueSelector, comparer));
 	}
 
 	internal ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
@@ -478,26 +470,21 @@ readonly struct MappedQueryCore<T>
 		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
 		Contract.EndContractBlock();
 
-		return CollectAsync(
-			new KeyedValueCollect<T, TKey, TValue>(
-				keySelector, valueSelector, comparer),
-			static (chain, s) => chain.ToDictionary(
-				s.KeySelector, s.ValueSelector, s.Comparer),
-			cancellationToken);
+		return CollectAsync<
+			DictionaryValueBuild<T, TKey, TValue>,
+			Dictionary<TKey, TValue>>(
+			new(keySelector, valueSelector, comparer), cancellationToken);
 	}
 
 	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
-		=> Collect(
-			comparer,
-			static (chain, c) => chain.ToHashSet(c));
+		=> Collect<HashSetBuild<T>, HashSet<T>>(new(comparer));
 
 	internal ValueTask<HashSet<T>> ToHashSetAsync(
 		IEqualityComparer<T>? comparer,
 		CancellationToken cancellationToken)
-		=> CollectAsync(
-			comparer,
-			static (chain, c) => chain.ToHashSet(c),
-			cancellationToken);
+		=> CollectAsync<HashSetBuild<T>, HashSet<T>>(
+			new(comparer), cancellationToken);
+
 	#endregion
 
 	#region Buffer terminals

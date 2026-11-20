@@ -39,7 +39,7 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	[
 		"class ToList", "class ToArray", "struct ToList", "struct ToArray",
 		"class Queue", "struct Queue", "class HashSet", "struct HashSet",
-		"class Dict", "struct Dict", "class DictKV", "struct DictKV",
+		"class Dict", "struct Dict", "class DictKV", "struct DictKV", "class ImmArray", "struct ImmArray",
 	];
 
 	static string ClassSql(int n)
@@ -70,6 +70,9 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	static long ArrayBytes<T>(SqliteConnection connection, string sql)
 		=> BytesPerCall(() => connection.Command(sql).Map<T>().ToArrayAsync().AsTask().GetAwaiter().GetResult());
 
+	static long ImmutableArrayBytes<T>(SqliteConnection connection, string sql)
+		=> BytesPerCall(() => connection.Command(sql).Map<T>().ToImmutableArrayAsync().AsTask().GetAwaiter().GetResult());
+
 	static long HashSetBytes<T>(SqliteConnection connection, string sql)
 		=> BytesPerCall(() => connection.Command(sql).Map<T>().ToHashSetAsync().AsTask().GetAwaiter().GetResult());
 
@@ -97,9 +100,9 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	const long Slack = 64;
 
 #if NET11_0_OR_GREATER
-	static readonly long[][] Master = [[1424, 1368, 1416, 1312, 1272, 1280, 1512, 1528, 1552, 1528, 1552, 1480], [2320, 2096, 2040, 1528, 2168, 1904, 2752, 2856, 2984, 2688, 2984, 2256], [11392, 10024, 7488, 3688, 11240, 7352, 16576, 18240, 19392, 17056, 19392, 11456]];
+	static readonly long[][] Master = [[1424, 1368, 1416, 1312, 1272, 1280, 1512, 1528, 1552, 1528, 1552, 1480, 1392, 1336], [2320, 2096, 2040, 1528, 2168, 1904, 2752, 2856, 2984, 2688, 2984, 2256, 2120, 1552], [11392, 10024, 7488, 3688, 11240, 7352, 16576, 18240, 19392, 17056, 19392, 11456, 10048, 3712]];
 #else
-	static readonly long[][] Master = [[1480, 1424, 1472, 1368, 1328, 1336, 1568, 1584, 1608, 1584, 1608, 1536], [2376, 2152, 2096, 1584, 2224, 1960, 2808, 2912, 3040, 2744, 3040, 2312], [11448, 10080, 7544, 3744, 11296, 7408, 16632, 18296, 19448, 17112, 19448, 11512]];
+	static readonly long[][] Master = [[1480, 1424, 1472, 1368, 1328, 1336, 1568, 1584, 1608, 1584, 1608, 1536, 1448, 1392], [2376, 2152, 2096, 1584, 2224, 1960, 2808, 2912, 3040, 2744, 3040, 2312, 2176, 1608], [11448, 10080, 7544, 3744, 11296, 7408, 16632, 18296, 19448, 17112, 19448, 11512, 10104, 3768]];
 #endif
 #endif
 
@@ -133,6 +136,8 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 				DictBytes<StructRow>(connection, str, static r => r.Id),
 				DictValueBytes<ClassRow>(connection, cls, static r => r.Id, static r => r.Score),
 				DictValueBytes<StructRow>(connection, str, static r => r.Id, static r => r.Score),
+				ImmutableArrayBytes<ClassRow>(connection, cls),
+				ImmutableArrayBytes<StructRow>(connection, str),
 			];
 			lines.Add($"{n,-6} | " + string.Join(" | ", got[i]));
 		}
@@ -153,6 +158,36 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 					got[i][k] <= Master[i][k] + Slack,
 					$"N={Sizes[i]} {Names[k]}: {got[i][k]} bytes, master {Master[i][k]} (+{Slack})");
 			}
+		}
+#endif
+	}
+
+	// The immutable array is the same read as ToArrayAsync (one state
+	// machine, no wrapper around it) with the exact array wrapped: the same
+	// bytes, plus a constant 24 bytes per call that master has as well (it
+	// had an async wrapper; this has none, so the wrapper is not the cause,
+	// and the cause is not isolated). Both are measured by awaiting the
+	// ValueTask directly (the call completes synchronously).
+	const long ImmutableExtra = 24;
+
+	[Fact]
+	public void ToImmutableArrayAsync_AllocatesTheArrayPlusAConstant()
+	{
+#if !DEBUG
+		using var connection = new SqliteConnection("Data Source=:memory:");
+		connection.Open();
+
+		foreach (int n in new[] { 1, 10, 100 })
+		{
+			string sql = ClassSql(n);
+			long array = BytesPerCall(() => connection.Command(sql)
+				.Map<ClassRow>().ToArrayAsync().GetAwaiter().GetResult());
+			long immutable = BytesPerCall(() => connection.Command(sql)
+				.Map<ClassRow>().ToImmutableArrayAsync().GetAwaiter().GetResult());
+			output.WriteLine($"N={n}: ToArrayAsync {array} B, ToImmutableArrayAsync {immutable} B");
+			Assert.True(
+				immutable <= array + ImmutableExtra,
+				$"N={n}: ToImmutableArrayAsync {immutable} bytes, ToArrayAsync {array}");
 		}
 #endif
 	}

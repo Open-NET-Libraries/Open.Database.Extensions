@@ -359,6 +359,15 @@ public static class ChunkChainTests
 	static int CountOf(Type chain, object instance)
 		=> (int)chain.GetProperty("Count", Instance)!.GetValue(instance)!;
 
+	// The reflective tests below use a row type no other test uses: the
+	// spare chain is one static slot per row type, so a test elsewhere that
+	// collects rows (in parallel, in another collection) cannot take or
+	// leave the chain these tests are counting on.
+	sealed class Cell(int value)
+	{
+		public int Value { get; } = value;
+	}
+
 	// Fills a rented chain past its first chunk, copies it out and gives it
 	// back. Returns the chain and weak references to the rows. Kept out of
 	// line, and the rows kept out of the caller's locals, so a collection
@@ -366,18 +375,18 @@ public static class ChunkChainTests
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	static (object Chain, WeakReference[] Rows) UseOnce(int rows)
 	{
-		Type type = ChainOf<object>();
+		Type type = ChainOf<Cell>();
 		object chain = RentChain(type);
 		MethodInfo add = type.GetMethod("Add", Instance)!;
 		var weak = new WeakReference[rows];
 		for (int i = 0; i < rows; ++i)
 		{
-			object row = new();
+			Cell row = new(i);
 			weak[i] = new WeakReference(row);
 			add.Invoke(chain, [row]);
 		}
 
-		var list = (List<object>)type.GetMethod("ToList", Instance)!
+		var list = (List<Cell>)type.GetMethod("ToList", Instance)!
 			.Invoke(chain, null)!;
 		Assert.Equal(rows, list.Count);
 		Assert.Equal(rows, CountOf(type, chain));
@@ -390,15 +399,15 @@ public static class ChunkChainTests
 	{
 		MethodInfo add = type.GetMethod("Add", Instance)!;
 		for (int i = 0; i < rows; ++i)
-			add.Invoke(chain, [(object)(i * 7)]);
+			add.Invoke(chain, [new Cell(i * 7)]);
 
-		var array = (object[])type.GetMethod("ToArray", Instance)!
+		var array = (Cell[])type.GetMethod("ToArray", Instance)!
 			.Invoke(chain, null)!;
 		Assert.Equal(rows, array.Length);
 		for (int i = 0; i < rows; ++i)
-			Assert.Equal(i * 7, array[i]);
+			Assert.Equal(i * 7, array[i].Value);
 
-		var list = (List<object>)type.GetMethod("ToList", Instance)!
+		var list = (List<Cell>)type.GetMethod("ToList", Instance)!
 			.Invoke(chain, null)!;
 		Assert.Equal(array, list);
 	}
@@ -406,7 +415,7 @@ public static class ChunkChainTests
 	[Fact]
 	public static void ADisposedChain_IsTheNextOneRented_EmptyAndCorrectAgain_AndKeepsNoRows()
 	{
-		Type type = ChainOf<object>();
+		Type type = ChainOf<Cell>();
 		(object first, WeakReference[] rows) = UseOnce(40);
 
 		object second = RentChain(type);
@@ -434,26 +443,26 @@ public static class ChunkChainTests
 	[InlineData(5000)]
 	public static void TheQueue_IsOneArrayOfExactlyTheRows_InOrder(int n)
 	{
-		Type type = ChainOf<object>();
+		Type type = ChainOf<Cell>();
 		object chain = RentChain(type);
 		try
 		{
 			MethodInfo add = type.GetMethod("Add", Instance)!;
-			for (int i = 0; i < n; ++i) add.Invoke(chain, [(object)i]);
+			for (int i = 0; i < n; ++i) add.Invoke(chain, [new Cell(i)]);
 
-			var queue = (Queue<object>)type.GetMethod("ToQueue", Instance)!
+			var queue = (Queue<Cell>)type.GetMethod("ToQueue", Instance)!
 				.Invoke(chain, null)!;
 
 			// Queue's constructor over an ICollection keeps the exact array:
 			// this is what proves the runtime does it (and fails if one
 			// ever stops).
-			var items = (object?[])typeof(Queue<object>)
+			var items = (Cell?[])typeof(Queue<Cell>)
 				.GetField("_array", Instance)!.GetValue(queue)!;
 			Assert.Equal(n, items.Length);
 			Assert.Equal(n, queue.Count);
 
 			for (int i = 0; i < n; ++i)
-				Assert.Equal(i, queue.Dequeue());
+				Assert.Equal(i, queue.Dequeue().Value);
 			Assert.Empty(queue);
 		}
 		finally

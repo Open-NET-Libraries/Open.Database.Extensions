@@ -160,4 +160,26 @@ public static class CollectTerminalTests
 		Assert.Empty(await Distinct(0).Map<PoolRow>()
 			.ToDictionaryAsync(r => r.Id, null, Ct));
 	}
+
+	// ToImmutableArrayAsync is the same read as ToArrayAsync, with the exact
+	// array wrapped: the same rows in the same order, nothing copied again.
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	[InlineData(17)]
+	[InlineData(100)]
+	public static async Task ToImmutableArrayAsync_IsTheArrayOfToArrayAsync(int n)
+	{
+		FakeExecuteReader command = Distinct(n);
+
+		PoolRow[] array = await command.Map<PoolRow>().ToArrayAsync(Ct);
+		ImmutableArray<PoolRow> immutable = await command.Map<PoolRow>()
+			.ToImmutableArrayAsync(Ct);
+
+		Assert.Equal(n, immutable.Length);
+		Assert.Equal(array.Select(static r => r.Id), immutable.Select(static r => r.Id));
+		Assert.Equal(
+			Enumerable.Range(1, n),
+			immutable.Select(static r => r.Id));
+	}
 }
