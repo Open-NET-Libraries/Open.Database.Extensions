@@ -1,5 +1,7 @@
 using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Open.Database.Extensions;
 using Samples;
 
@@ -459,6 +461,76 @@ Check(
 	+ "OperationCanceledException, "
 	+ "and the rows before the cancel were seen");
 
+// How little code: the same tasks with ODX, Dapper, EF Core and plain ADO.NET give the same rows.
+Db.Seed();
+using CancellationTokenSource littleCodeSource = new(TimeSpan.FromMinutes(2));
+CancellationToken littleCodeToken = littleCodeSource.Token;
+string littleCodeConnectionString = Db.ConnectionString;
+await using HowLittleCode.BlogContext ef = new(
+	new DbContextOptionsBuilder<HowLittleCode.BlogContext>()
+		.UseSqlite(littleCodeConnectionString)
+		.Options);
+
+string[] expectedTitles = ["Post 1", "Post 2", "Post 3"];
+string expectedRows = HowLittleCode.Fingerprint(
+	await HowLittleCode.ListPostsAdoAsync(littleCodeConnectionString, littleCodeToken));
+Check(
+	expectedRows == "1:42:Post 1:Body 1|2:42:Post 2:<null>|3:42:Post 3:Body 3|4:7:Post 4:<null>|5:7:Post 5:Body 5",
+	"how little code, task 1: plain ADO.NET reads all five rows, NULL included");
+Check(
+	HowLittleCode.Fingerprint(await HowLittleCode.ListPostsOdxAsync(factory, littleCodeToken)) == expectedRows
+	&& HowLittleCode.Fingerprint(await HowLittleCode.ListPostsDapperAsync(littleCodeConnectionString, littleCodeToken)) == expectedRows
+	&& HowLittleCode.Fingerprint(await HowLittleCode.ListPostsEfAsync(ef, littleCodeToken)) == expectedRows,
+	"how little code, task 1: ODX, Dapper and EF Core return the same rows as plain ADO.NET");
+Check(
+	ef.ChangeTracker.Entries<Post>().Count() == 5,
+	"how little code: EF Core tracks the entities it returns by default (the snippets do not call AsNoTracking)");
+
+IAsyncEnumerable<string> odxStream = HowLittleCode.AuthorTitlesOdxAsync(factory, littleCodeToken);
+Check(
+	(await HowLittleCode.CollectAsync(odxStream, littleCodeToken)).SequenceEqual(expectedTitles),
+	"how little code, task 2: the ODX stream filters and projects without async, await or using in the method");
+Check(
+	await ThrowsAsync<InvalidOperationException>(async () => await HowLittleCode.CollectAsync(odxStream, littleCodeToken)),
+	"how little code, task 2: the ODX stream is single-use, a second enumeration throws");
+Check(
+	(await HowLittleCode.CollectAsync(HowLittleCode.AuthorTitlesDapperAsync(littleCodeConnectionString, littleCodeToken), littleCodeToken)).SequenceEqual(expectedTitles)
+	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorTitlesEfAsync(ef), littleCodeToken)).SequenceEqual(expectedTitles)
+	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorTitlesEfSqlAsync(ef), littleCodeToken)).SequenceEqual(expectedTitles)
+	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorTitlesAdoAsync(littleCodeConnectionString, littleCodeToken), littleCodeToken)).SequenceEqual(expectedTitles),
+	"how little code, task 2: Dapper, EF Core (in memory and translated to SQL) and plain ADO.NET stream the same titles");
+
+Check(
+	(await HowLittleCode.AuthorTitlesBufferOdxAsync(factory, littleCodeToken)).SequenceEqual(expectedTitles)
+	&& (await HowLittleCode.AuthorTitlesBufferDapperAsync(littleCodeConnectionString, littleCodeToken)).SequenceEqual(expectedTitles)
+	&& (await HowLittleCode.AuthorTitlesBufferEfAsync(ef, littleCodeToken)).SequenceEqual(expectedTitles)
+	&& (await HowLittleCode.AuthorTitlesBufferAdoAsync(littleCodeConnectionString, littleCodeToken)).SequenceEqual(expectedTitles),
+	"how little code, task 3: the whole set read, then sync LINQ over it, gives the same titles in all four");
+
+// Task 4 needs SQL Server: it runs when LocalDB can be reached and is reported as skipped when it cannot.
+await using (LittleCodeSqlServer? sqlServer = await LittleCodeSqlServer.TryStartAsync(littleCodeToken))
+{
+	if (sqlServer is not null)
+	{
+		string serverConnectionString = LittleCodeSqlServer.ConnectionString;
+		IDbConnectionFactory<SqlConnection> serverFactory = new SqlConnectionFactory(serverConnectionString);
+		await using HowLittleCode.BlogContext serverEf = new(
+			new DbContextOptionsBuilder<HowLittleCode.BlogContext>()
+				.UseSqlServer(serverConnectionString)
+				.Options);
+
+		const int searchAuthor = 42;
+		const string searchTitle = "2";
+		string expectedSearch = "2:42:Post 2:<null>";
+		Check(
+			HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsOdxAsync(serverFactory, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch
+			&& HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsDapperAsync(serverConnectionString, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch
+			&& HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsEfAsync(serverEf, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch
+			&& HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsAdoAsync(serverConnectionString, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch,
+			"how little code, task 4 (SQL Server): the stored procedure with two parameters returns the same row in all four");
+	}
+}
+
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 
@@ -479,3 +551,16 @@ static string Describe(IEnumerable<Post> posts)
 	=> string.Join(
 		"|",
 		posts.Select(static p => $"{p.Id}:{p.Title}"));
+
+static async Task<bool> ThrowsAsync<TException>(Func<Task> action) where TException : Exception
+{
+	try
+	{
+		await action();
+		return false;
+	}
+	catch (TException)
+	{
+		return true;
+	}
+}

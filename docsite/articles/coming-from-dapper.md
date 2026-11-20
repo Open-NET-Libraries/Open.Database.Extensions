@@ -1,6 +1,6 @@
 # Coming from Dapper
 
-Open.Database.Extensions is a set of extensions on ADO.NET, not a Dapper clone, and plenty of code uses both. This page is for readers who know Dapper. The biggest difference is not the query syntax: it is who handles the connection. For speed and memory, see [Performance](performance.md).
+Open.Database.Extensions is a set of extensions on ADO.NET, not a Dapper clone, and plenty of code uses both. This page is for readers who know Dapper. The biggest difference is not the query syntax: it is who handles the connection. For speed and memory, see [Performance](performance.md). For the size of the code against Dapper, EF Core and plain ADO.NET, see [How little code](how-little-code.md).
 
 Column names that differ from your properties by more than case and underscores need a `RowMap<T>` declared once: see [Renamed columns](#renamed-columns). Names that differ only by case or underscores need nothing.
 
