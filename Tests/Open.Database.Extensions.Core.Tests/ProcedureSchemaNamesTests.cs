@@ -209,7 +209,7 @@ public static class ProcedureSchemaNamesTests
 	}
 
 	[Fact]
-	public static void ATableWithoutParameters_IsNotKnown_AndNotRemembered()
+	public static void ATableWithoutParameters_IsNotKnown_AndRememberedForAShortWhile()
 	{
 		const int orderId = 5;
 		var connection = new SchemaConnection(Table(Row(0, "")), null);
@@ -217,7 +217,7 @@ public static class ProcedureSchemaNamesTests
 
 		Assert.Equal(["orderId"], Run(connection, procedure, c => c.AddParam(orderId)));
 		Assert.Equal(["orderId"], Run(connection, procedure, c => c.AddParam(orderId)));
-		Assert.Equal(2, connection.SchemaCalls); // an empty answer is never remembered
+		Assert.Equal(1, connection.SchemaCalls); // an empty answer ("not known") is remembered for a short while, not read again in every run
 	}
 
 	public static TheoryData<Exception> Unsupported => new()

@@ -417,7 +417,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <remarks>
 	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>.
 	/// When the real names are known, a member that the procedure does not declare is not sent, so one object can serve several procedures
-	/// (a member that the remembered names lack makes them be read once more first, in case the procedure gained that parameter since); parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
+	/// (a member that the remembered names lack makes them be read once more first, in case the procedure gained that parameter since: once per remembered set, so a member the procedure never takes costs one extra read, not one per run); parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
 	/// A parameter you add with <c>AddParam</c>, by name or from an argument, wins over a member that resolves to the same name.</para>
 	/// <para>Every public readable property and field is read when this method is called, whether or not the procedure declares it, so a getter that throws or loads lazily runs then. Static members and indexers are ignored.
 	/// The members are those of the static type <typeparamref name="T"/>, not of the object's runtime type: an interface adds only its own. The one exception is <see cref="object"/>: a variable typed <see cref="object"/>, or the result of a <c>Func&lt;T, object&gt;</c>, has no members of its own, so the members of its runtime type are used.
@@ -599,7 +599,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// </summary>
 	/// <remarks>
 	/// Return the names exactly as the provider spells them: a leading <c>@</c> is ignored when matching, nothing else is changed, and the name that is sent is the one returned.
-	/// An empty or default array means "not known", which also covers a procedure that declares no parameters; it is never remembered.
+	/// An empty or default array means "not known", which also covers a procedure that declares no parameters. It is remembered for 15 seconds, not the five minutes of known names, and replaces any older names of that procedure.
 	/// </remarks>
 	/// <param name="connection">An open connection to run the lookup on. A command that executes inside a transaction must use <see cref="Transaction"/>.</param>
 	/// <param name="procedure">The procedure name as given to the command.</param>
@@ -717,15 +717,27 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 	}
 
-	// Remembers the names a procedure reported and returns the set made from them; an empty answer is "not known" (null) and is not remembered.
+	// Remembers the names a procedure reported and returns the set made from them.
+	// An empty answer is "not known" (null): it is remembered for a short while (so an unreadable procedure is not read again in every run),
+	// and it replaces an older entry, which the answer has outdated.
 	// `afterMiss` is true when the names were read again because the remembered ones did not fit: the set made is a second look (see NameSet.Rechecked).
 	NameSet? Remember(
 		ProcedureKey key,
 		ImmutableArray<string> names,
 		bool afterMiss)
-		=> names.IsDefaultOrEmpty
-			? null
-			: ProcedureNameCache.Set(NameCacheOwner, key, names, afterMiss);
+	{
+		if (!names.IsDefaultOrEmpty)
+		{
+			return ProcedureNameCache.Set(
+				NameCacheOwner,
+				key,
+				names,
+				afterMiss);
+		}
+
+		ProcedureNameCache.SetUnknown(NameCacheOwner, key);
+		return null;
+	}
 
 	// Remembered names belong to the object commands take connections from: a factory (not the wrapper made around it for each command), a pool, or the bare connection.
 	object NameCacheOwner => _poolOrConnection switch
@@ -748,9 +760,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	// without another read, so a member the procedure never takes does not
 	// cost a read in every run.
 	// Nothing is built or kept, so a false answer leaves no state behind.
-	// `real` is null when the names are not known (and has no names for
-	// a text without markers): each argument then keeps its last member
-	// as written.
+	// `real` has no names when they are not known (null, or the shared
+	// "not known" set) and for a text without markers: each argument then
+	// keeps its last member as written.
 	bool Fits(NameSet? real)
 	{
 		if (real is not { Names.Length: > 0 }) return true;

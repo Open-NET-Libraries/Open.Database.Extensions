@@ -290,7 +290,7 @@ public static class DerivedParameterNameTests
 	}
 
 	[Fact]
-	public static void RealNames_AnEmptyAnswerIsNotRemembered()
+	public static void RealNames_AnEmptyAnswerIsRememberedForAShortWhile()
 	{
 		var filter = new Filter();
 		var probe = new ConnectionProbe(ConnectionState.Open);
@@ -300,7 +300,9 @@ public static class DerivedParameterNameTests
 		second.AddParam(filter.Region).ExecuteNonQuery();
 
 		Assert.Equal(1, first.Lookups);
-		Assert.Equal(1, second.Lookups); // asked again, because "not known" may only be a missing permission or a procedure created later
+		// "Not known" may only be a missing permission or a procedure created later, so it is remembered for a short while (not for as long as known names),
+		// and not read again in every run (see ParameterNameMemoryTests for the lifetime).
+		Assert.Equal(0, second.Lookups);
 	}
 
 	[Fact]
