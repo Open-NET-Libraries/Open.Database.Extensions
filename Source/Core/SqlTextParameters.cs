@@ -16,7 +16,26 @@ static class SqlTextParameters
 	{
 		ImmutableArray<string>.Builder? tokens = null;
 		HashSet<string>? seen = null;
-		int i = 0;
+		int position = 0;
+		while (NextMarker(text, ref position, out int start, out int stop))
+		{
+			string token = text[start..stop];
+			seen ??= new(StringComparer.OrdinalIgnoreCase);
+			if (seen.Add(token)) (tokens ??= ImmutableArray.CreateBuilder<string>()).Add(token);
+		}
+
+		return tokens?.ToImmutable() ?? [];
+	}
+
+	/// <summary>
+	/// Finds the next marker of the text at or after <paramref name="position"/>, without allocating: <paramref name="start"/> is the index of its <c>@</c>,
+	/// <paramref name="stop"/> the index after its last character, and <paramref name="position"/> moves to <paramref name="stop"/>.
+	/// <see cref="Parse"/> is built on this, so the markers a scan sees are exactly the tokens a parse makes (a repeat, in any case, is another marker here and one token there).
+	/// </summary>
+	/// <returns><see langword="false"/> when the text has no more markers.</returns>
+	internal static bool NextMarker(ReadOnlySpan<char> text, ref int position, out int start, out int stop)
+	{
+		int i = position;
 		while (i < text.Length)
 		{
 			switch (text[i])
@@ -34,36 +53,36 @@ static class SqlTextParameters
 					i = SkipLine(text, i + 2);
 					break;
 				case '/' when i + 1 < text.Length && text[i + 1] == '*':
-					int end = text.IndexOf("*/", i + 2, StringComparison.Ordinal);
-					i = end < 0 ? text.Length : end + 2;
+					int end = text[(i + 2)..].IndexOf("*/".AsSpan(), StringComparison.Ordinal);
+					i = end < 0 ? text.Length : i + 2 + end + 2;
 					break;
 				case '@' when i + 1 < text.Length && text[i + 1] == '@':
 					i = SkipWord(text, i + 2); // @@rowcount: a system variable
 					break;
 				case '@':
-					int stop = i + 1 < text.Length && (char.IsLetter(text[i + 1]) || text[i + 1] == '_') ? SkipWord(text, i + 2) : i + 1;
-					if (stop == i + 1)
+					int after = i + 1 < text.Length && (char.IsLetter(text[i + 1]) || text[i + 1] == '_') ? SkipWord(text, i + 2) : i + 1;
+					if (after == i + 1)
 					{
 						i++; // an @ that starts no name
 						break;
 					}
 
-					string token = text[i..stop];
-					seen ??= new(StringComparer.OrdinalIgnoreCase);
-					if (seen.Add(token)) (tokens ??= ImmutableArray.CreateBuilder<string>()).Add(token);
-					i = stop;
-					break;
+					start = i;
+					stop = position = after;
+					return true;
 				default:
 					i++;
 					break;
 			}
 		}
 
-		return tokens?.ToImmutable() ?? [];
+		position = text.Length;
+		start = stop = 0;
+		return false;
 	}
 
 	// The index after the closing character of a quoted part that starts at `open` (a doubled closing character is one character of the text); the end of the text when it is not closed.
-	static int SkipQuoted(string text, int open, char close)
+	static int SkipQuoted(ReadOnlySpan<char> text, int open, char close)
 	{
 		for (int i = open + 1; i < text.Length; i++)
 		{
@@ -81,7 +100,7 @@ static class SqlTextParameters
 	}
 
 	// The index of the line break that ends a comment, or the end of the text.
-	static int SkipLine(string text, int from)
+	static int SkipLine(ReadOnlySpan<char> text, int from)
 	{
 		for (int i = from; i < text.Length; i++)
 		{
@@ -92,7 +111,7 @@ static class SqlTextParameters
 	}
 
 	// The index after the name characters (letters, digits, _, $ and #) that start at `from`.
-	static int SkipWord(string text, int from)
+	static int SkipWord(ReadOnlySpan<char> text, int from)
 	{
 		int i = from;
 		while (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] is '_' or '$' or '#')) i++;
