@@ -417,7 +417,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <remarks>
 	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>.
 	/// When the real names are known, a member that the procedure does not declare is not sent, so one object can serve several procedures
-	/// (a member that the remembered names lack makes them be read once more first, in case the procedure gained that parameter since); parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
+	/// (a member that the remembered names lack makes them be read once more first, in case the procedure gained that parameter since: once per remembered set, so a member the procedure never takes costs one extra read, not one per run); parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
 	/// A parameter you add with <c>AddParam</c>, by name or from an argument, wins over a member that resolves to the same name.</para>
 	/// <para>Every public readable property and field is read when this method is called, whether or not the procedure declares it, so a getter that throws or loads lazily runs then. Static members and indexers are ignored.
 	/// The members are those of the static type <typeparamref name="T"/>, not of the object's runtime type: an interface adds only its own. The one exception is <see cref="object"/>: a variable typed <see cref="object"/>, or the result of a <c>Func&lt;T, object&gt;</c>, has no members of its own, so the members of its runtime type are used.

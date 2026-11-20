@@ -38,9 +38,12 @@ public static class ParameterNameMemoryTests
 
 			public int Lookups { get; private set; }
 
+			public int SyncLookups { get; private set; }
+
 			protected override ImmutableArray<string> GetProcedureParameterNames(DbConnection connection, string procedure)
 			{
 				Lookups++;
+				SyncLookups++;
 				return _declared;
 			}
 
@@ -63,13 +66,19 @@ public static class ParameterNameMemoryTests
 
 		public int Lookups { get; private set; }
 
+		public int SyncLookups { get; private set; }
+
 		public async Task<string[]> RunAsync(string[] declared, Action<ExpressiveDbCommand> add)
 		{
 			_db.Sent.Clear();
 			var command = new Command(_connection, _name, declared);
 			add(command);
 			try { await command.ExecuteNonQueryAsync(); }
-			finally { Lookups += command.Lookups; }
+			finally
+			{
+				Lookups += command.Lookups;
+				SyncLookups += command.SyncLookups;
+			}
 
 			return [.. _db.Sent.Select(p => p.ParameterName)];
 		}
@@ -137,6 +146,23 @@ public static class ParameterNameMemoryTests
 		Assert.Equal(2, procedure.Lookups);
 
 		Assert.Equal(["@a", "@b"], await procedure.RunAsync(["@a", "@b"], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
+		Assert.Equal(0, procedure.SyncLookups); // the second look went down the asynchronous read
+	}
+
+	[Fact]
+	public static void AfterTheSecondLook_AParameterTheProcedureGainsLater_IsNotSent_UntilTheEntryExpires()
+	{
+		var procedure = new Procedure("dbo.gained_late");
+		var args = new { A = 1, B = 2 };
+
+		Assert.Equal(["@a"], procedure.Run(["@a"], c => c.AddParams(args)));
+		Assert.Equal(["@a"], procedure.Run(["@a"], c => c.AddParams(args))); // the second look: B is still not declared
+		Assert.Equal(2, procedure.Lookups);
+
+		// The procedure gains @b after that look. The second look is remembered, so B is dropped from memory and nothing is read
+		// until the entry expires (five minutes: there is no clock to move here, so only the part before the expiry is pinned).
+		Assert.Equal(["@a"], procedure.Run(["@a", "@b"], c => c.AddParams(args)));
 		Assert.Equal(2, procedure.Lookups);
 	}
 

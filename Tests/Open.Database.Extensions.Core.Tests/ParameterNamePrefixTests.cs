@@ -160,7 +160,7 @@ public static class ParameterNamePrefixTests
 		Assert.Equal(ParameterNameEndToEndTests.Expected(real), run.Values);
 		Assert.Equal(6, run.Probe.Parameters.Count);
 
-		run.Run(c => source.Sync(c)); // from memory
+		run.Run(c => source.Sync(c)); // the second look at Unrelated (only the third run is from memory)
 		Assert.Equal(ParameterNameEndToEndTests.Expected(real), run.Values);
 		Assert.Equal(2, run.Lookups); // the first read, and one second look at Unrelated, which the procedure does not declare: that look is remembered
 	}
