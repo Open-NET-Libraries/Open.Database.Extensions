@@ -36,12 +36,13 @@ public interface IMappedQuery<T>
 	/// In async code that time has no bound: every <c>await</c> in the
 	/// loop body can yield, and nothing says when the loop resumes.
 	/// Until it does, the connection is on hold: a pooled connection is
-	/// not returned to the pool, and the server keeps its locks and the
+	/// not returned to the pool, and the server may keep its locks and the
 	/// open result set.
 	/// <br/>
 	/// <br/>
-	/// It is here for the cases that need exactly that, such as a result
-	/// too large to buffer or a row-by-row pipeline.
+	/// These members suit work that must happen while the connection is
+	/// open, for example a result too large to buffer or a row-by-row
+	/// pipeline.
 	/// Otherwise use a call that lets go of the connection first:
 	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// and
@@ -49,11 +50,10 @@ public interface IMappedQuery<T>
 	/// buffer the rows and release the connection, and
 	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
 	/// streams them to a consumer without holding it
-	/// (the producer is unbounded: it reads at full speed and frees the
-	/// connection while the consumer takes its time, and the rows wait
-	/// in memory until the consumer takes them).
-	/// A producer that waited for room would bring the hold back,
-	/// so it does not wait.
+	/// (the producer is unbounded: it reads without waiting for the
+	/// consumer and frees the connection while the consumer takes its
+	/// time, and the rows wait in memory until the consumer takes them;
+	/// dispose the enumerator, as <c>await foreach</c> does).
 	/// </note>
 	/// <para>
 	/// The connection is opened if it is not already open and is released when the handler returns, whether the handler completes or throws. Exceptions from the provider propagate unchanged.

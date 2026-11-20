@@ -274,12 +274,12 @@ An async terminal executes and opens asynchronously but reads the rows with `Rea
 > [!WARNING]
 > **Streaming is not the recommended way to read rows: it holds the connection while your code runs for each row.** The `Read` and `ReadAsync` handlers, `ForEach` and `ForEachAsync`, `IterateReader` and `IterateReaderWhile`, and a reader's `AsEnumerable` and `AsAsyncEnumerable` all run your code for each row while the reader, and the connection under it, are open. The connection stays held for as long as your code takes per row, added up over all the rows.
 >
-> In async code that time has no bound: every `await` in the loop body can yield, and nothing says when the loop resumes. Until it does, the connection is on hold: a pooled connection is not returned to the pool, and the server keeps its locks and the open result set.
+> In async code that time has no bound: every `await` in the loop body can yield, and nothing says when the loop resumes. Until it does, the connection is on hold: a pooled connection is not returned to the pool, and the server may keep its locks and the open result set.
 >
 > These members are here for the cases that need exactly that, such as a result too large to buffer or a row-by-row pipeline. Otherwise use a call that lets go of the connection first:
 >
 > - `ToListAsync(cancellationToken)` and `ToArrayAsync(cancellationToken)` buffer the rows and release the connection.
-> - `ToBufferedAsyncStream(clearOnReturn, cancellationToken)` and `ToAsyncBufferStream(clearOnReturn, cancellationToken)` stream the rows to a consumer without holding the connection. The producer reads at full speed into pooled chunks and frees the connection while the consumer takes its time. The stream is unbounded: the rows wait in memory until the consumer takes them. A producer that waited for room would bring the hold back, so it does not wait ([Async buffers and streams](async-buffers.md)).
+> - `ToBufferedAsyncStream(clearOnReturn, cancellationToken)` and `ToAsyncBufferStream(clearOnReturn, cancellationToken)` stream the rows to a consumer without holding the connection. The producer reads into pooled chunks without waiting for the consumer, and frees the connection while the consumer takes its time (dispose the enumerator: `await foreach` does; an abandoned stream keeps reading the whole query). The stream is unbounded: the rows wait in memory until the consumer takes them. A producer that waited for room would bring the hold back, so it does not wait ([Async buffers and streams](async-buffers.md)).
 
 ## Mapping a reader or a command you already have
 
