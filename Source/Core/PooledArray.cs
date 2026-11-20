@@ -201,8 +201,8 @@ public sealed class PooledArray<T>
 	}
 
 	/// <summary>
-	/// Copies every row, in order, into a new list whose capacity is
-	/// exactly <see cref="Count"/>: one copy per chunk, nothing grown.
+	/// Copies every row, in order, into a new list sized to the rows:
+	/// one copy per chunk, nothing grown.
 	/// </summary>
 	/// <returns>
 	/// The rows in a new list; it does not depend on this view, which

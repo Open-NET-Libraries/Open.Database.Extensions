@@ -67,8 +67,6 @@ internal sealed class ChunkChain<T>
 		T[][] chunks = _chunks
 			?? throw new ObjectDisposedException(nameof(ChunkChain<>));
 
-		_filled += _index;
-
 		if (_chunkCount == chunks.Length)
 		{
 			Array.Resize(ref chunks, chunks.Length * 2);
@@ -79,8 +77,11 @@ internal sealed class ChunkChain<T>
 		if (size == 0) size = ChunkSizing.ResolveCollectFirstRows();
 		_nextSize = ChunkSizing.NextCollectRows(size);
 
+		// Counted only once the rent has succeeded, so a failed rent leaves
+		// the chain as it was.
 		T[] next = _pool.Rent(size);
 		chunks[_chunkCount++] = next;
+		_filled += _index;
 		_current = next;
 		next[0] = item;
 		_index = 1;
@@ -167,5 +168,7 @@ internal sealed class ChunkChain<T>
 		}
 
 		_index = 0;
+		_filled = 0;
+		_chunkCount = 0;
 	}
 }
