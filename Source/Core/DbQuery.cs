@@ -53,8 +53,6 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	// command does not take it). Up to four are kept, newest first (a definition used with
 	// more values types, or on more sets of names, drops the oldest), so values
 	// types used in turn cost nothing once matched.
-	internal const int MaxMatches = 4;
-
 	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved)
 	{
 		internal Type Type { get; } = type;

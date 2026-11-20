@@ -142,6 +142,9 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 			_ => false,
 		};
 
+	// How many (values type, set of names) matches a definition keeps.
+	const int MaxMatches = 4;
+
 	static bool Known(NameSet? names)
 		=> names is { Names.Length: > 0 };
 
@@ -279,7 +282,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 			resolved[i] = names.Match(members[i], definition.CommandText);
 
 		// Newest first; the oldest of four goes.
-		kept = Math.Min(kept, DbQuery.MaxMatches - 1);
+		kept = Math.Min(kept, MaxMatches - 1);
 		var next = new DbQuery.MemberMatch[kept + 1];
 		next[0] = new(typeof(T), names, resolved);
 		if (kept > 0) Array.Copy(known!, 0, next, 1, kept);
