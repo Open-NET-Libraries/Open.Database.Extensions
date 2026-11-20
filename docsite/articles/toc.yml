@@ -3,6 +3,7 @@
 - href: foundation.md
 - href: expressive-commands.md
 - href: mapping.md
+- href: shaping-rows.md
 - href: async-reads.md
 - href: channels-and-dataflow.md
 - href: async-buffers.md
