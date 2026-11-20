@@ -103,7 +103,8 @@ public class PostsController(
 	[HttpGet]
 	public async Task<IReadOnlyList<Post>> GetAsync()
 	{
-		// LatestPosts is the data-layer method shown above (call it as you have named it): the read starts here.
+		// LatestPosts is the data-layer method shown above (call it as you
+		// have named it): the read starts here.
 		PooledBuffer<Post> buffer = LatestPosts(
 			connectionFactory,
 			HttpContext.RequestAborted);
