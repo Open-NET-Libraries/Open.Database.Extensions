@@ -154,20 +154,21 @@ public static class ClearOnReturnTests
 	[Theory, MemberData(nameof(Terminals))]
 	public static async Task TheDefaultPath_NeverPostsToTheBin(string terminal)
 	{
-		var pool = new CountingPool<ChannelRow>();
+		// Rows with no references: the default path never clears them.
+		var pool = new CountingPool<int>();
 		int before = Volatile.Read(ref _hookCalls);
 		SetHook("Count");
 		try
 		{
 			Assert.Equal(
 				100,
-				await ReadAll(terminal, Rows(100), pool, clear: false));
+				await ReadAll(terminal, Ints(100), pool, clear: false));
 			Assert.Equal(
 				100,
 				await ReadAll(
 					terminal,
-					Rows(100),
-					MemoryPool<ChannelRow>.Shared,
+					Ints(100),
+					MemoryPool<int>.Shared,
 					false));
 		}
 		finally

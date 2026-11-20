@@ -108,6 +108,15 @@ public static class PooledBufferTests
 	static Run Rows100()
 		=> Run.Create(() => new ChannelTestReader(100));
 
+	// Rows with no references: the buffers of these are not cleared, so they
+	// go back on the caller's path, which is what the tests of the release
+	// mechanics need to see.
+	static MappedCommand<int> Ints100()
+		=> new FakeDbCommand(
+			new FakeDbConnection(),
+			() => new ChannelTestReader(100))
+			.Map<int>();
+
 	static void AssertContiguous(List<int[]> chunks, int rows)
 	{
 		Assert.Equal(Ids(rows), chunks.SelectMany(c => c).ToList());
@@ -609,6 +618,9 @@ public static class PooledBufferTests
 
 	static void AssertBalanced(CountingPool<ChannelRow> pool)
 	{
+		// Rows that hold references are cleared, and go back through the
+		// cleanup queue, off the caller's path.
+		SpinWait.SpinUntil(() => pool.Outstanding == 0, 30_000);
 		Assert.True(pool.Rents > 0, "nothing was rented");
 		Assert.Equal(pool.Rents, pool.Returns);
 		Assert.Equal(0, pool.Unmatched);
@@ -1182,18 +1194,17 @@ public static class PooledBufferTests
 	}
 
 	[Fact]
-	public static async Task Release_DoesNotClearByDefault()
+	public static async Task Release_DoesNotClearRowsWithNoReferences_ByDefault()
 	{
-		var pool = new CountingPool<ChannelRow>();
-		var run = Rows100();
-		var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var pool = new CountingPool<int>();
+		var buffer = Ints100().UsePool(pool, clear: false).ToAsyncBuffer(Ct);
 		await buffer.Items.Within();
 		await buffer.DisposeAsync();
 
 		// The BCL default: the arrays went back with the rows in them.
 		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(1, pool.Captured[0][0].Id);
-		Assert.All(pool.Captured, a => Assert.NotNull(a[0]));
+		Assert.Equal(1, pool.Captured[0][0]);
+		Assert.All(pool.Captured, a => Assert.NotEqual(0, a[0]));
 	}
 
 	// The recipe the pool parameter's docs give: a pool whose owners
@@ -1225,28 +1236,27 @@ public static class PooledBufferTests
 	[Fact]
 	public static async Task AClearingPool_ScrubsTheRows_OnEveryPath()
 	{
-		var counting = new CountingPool<ChannelRow>();
-		var pool = new ClearingPool<ChannelRow>(counting);
-		var run = Rows100();
+		var counting = new CountingPool<int>();
+		var pool = new ClearingPool<int>(counting);
 
-		var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = Ints100().UsePool(pool, clear: false).ToAsyncBuffer(Ct);
 		await buffer.Items.Within();
-		Assert.All(counting.Captured, a => Assert.NotNull(a[0]));
+		Assert.All(counting.Captured, a => Assert.NotEqual(0, a[0]));
 		await buffer.DisposeAsync();
 		Assert.All(
 			counting.Captured,
-			a => Assert.All(a, r => Assert.Null(r)));
+			a => Assert.All(a, r => Assert.Equal(0, r)));
 
-		var counting2 = new CountingPool<ChannelRow>();
-		var pool2 = new ClearingPool<ChannelRow>(counting2);
-		await foreach (var _ in Rows100().View
+		var counting2 = new CountingPool<int>();
+		var pool2 = new ClearingPool<int>(counting2);
+		await foreach (var _ in Ints100()
 			.UsePool(pool2, clear: false).ToAsyncBufferStream(Ct)) { }
 
 		Assert.True(counting2.Rents > 0);
 		Assert.Equal(counting2.Rents, counting2.Returns);
 		Assert.All(
 			counting2.Captured,
-			a => Assert.All(a, r => Assert.Null(r)));
+			a => Assert.All(a, r => Assert.Equal(0, r)));
 	}
 
 	[Fact]
@@ -1285,9 +1295,8 @@ public static class PooledBufferTests
 	[Fact]
 	public static async Task APoolWhoseReturnThrows_PropagatesFromDisposeAsync()
 	{
-		var pool = new CountingPool<ChannelRow>();
-		var run = Rows100();
-		var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var pool = new CountingPool<int>();
+		var buffer = Ints100().UsePool(pool, clear: false).ToAsyncBuffer(Ct);
 		await buffer.Items.Within();
 		pool.ThrowOnReturn = true;
 
@@ -1505,7 +1514,7 @@ public static class PooledBufferTests
 		{
 			for (int i = 0; i < Backing.Length; ++i)
 			{
-				if (Backing[i].Id != -1
+				if (Backing[i] is { Id: not -1 }
 					&& !_given.Any(g => i >= g.Start
 						&& i < g.Start + g.Length))
 				{
@@ -1553,6 +1562,7 @@ public static class PooledBufferTests
 
 		Assert.Contains("less memory", ex.Message);
 		Assert.True(pool.NeighboursUntouched());
+		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
 		Assert.Equal(pool.Rents, pool.Disposes);
 	}
 
@@ -1934,6 +1944,7 @@ public static class PooledBufferTests
 		Assert.Same(items, buffer.Items);
 
 		await buffer.DisposeAsync().AsTask().Within();
+		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
 		Assert.Equal(pool.Rents, pool.Disposes);
 	}
 
@@ -1957,6 +1968,7 @@ public static class PooledBufferTests
 
 		await buffer.DisposeAsync().AsTask().Within();
 		await Until(() => pool.Rents == pool.Disposes, "the owners released");
+		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
 		Assert.Equal(pool.Rents, pool.Disposes);
 	}
 
@@ -2042,6 +2054,7 @@ public static class PooledBufferTests
 				items.ToArray().Select(r => r.Id).ToList());
 		}
 
+		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
 		Assert.Equal(pool.Rents, pool.Disposes);
 
 		var pool2 = new MixedPool();
@@ -2055,6 +2068,7 @@ public static class PooledBufferTests
 
 		Assert.Equal([16, 32, 52], sizes);
 		Assert.Equal(Ids(100), ids);
+		SpinWait.SpinUntil(() => pool2.Rents == pool2.Disposes, 30_000);
 		Assert.Equal(pool2.Rents, pool2.Disposes);
 	}
 
@@ -2092,7 +2106,7 @@ public static class PooledBufferTests
 		{
 			for (int i = 0; i < Backing.Length; ++i)
 			{
-				if (Backing[i].Id != -1
+				if (Backing[i] is { Id: not -1 }
 					&& !_given.Any(g => i >= g.Start
 						&& i < g.Start + g.Length))
 				{
@@ -2134,6 +2148,7 @@ public static class PooledBufferTests
 		}
 
 		Assert.True(pool.GapsUntouched());
+		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
 		Assert.Equal(pool.Rents, pool.Disposes);
 
 		var pool2 = new SlabPool();
@@ -2145,6 +2160,7 @@ public static class PooledBufferTests
 
 		Assert.Equal(Ids(100), ids);
 		Assert.True(pool2.GapsUntouched());
+		SpinWait.SpinUntil(() => pool2.Rents == pool2.Disposes, 30_000);
 		Assert.Equal(pool2.Rents, pool2.Disposes);
 	}
 
@@ -2251,6 +2267,7 @@ public static class PooledBufferTests
 		// chunk reached the consumer, and the owner was released.
 		Assert.Equal("span failed", ex.Message);
 		Assert.Empty(chunks);
+		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
 		Assert.Equal(pool.Rents, pool.Disposes);
 	}
 
@@ -2267,6 +2284,7 @@ public static class PooledBufferTests
 		Assert.Equal("memory failed", ex.Message);
 		await buffer.DisposeAsync();
 		Assert.True(pool.Rents > 0);
+		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
 		Assert.Equal(pool.Rents, pool.Disposes);
 	}
 

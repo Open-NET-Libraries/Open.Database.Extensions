@@ -107,9 +107,13 @@ file sealed class DeferredClearOwner<T>(IMemoryOwner<T> inner)
 		_ = RecycleBin.Post(() => ClearAndDispose(owner));
 	}
 
+	// The owner is disposed whatever the clear does (an owner whose memory
+	// cannot be reached must still be given back).
 	static void ClearAndDispose(IMemoryOwner<T> owner)
 	{
-		owner.Memory.Span.Clear();
-		owner.Dispose();
+		using (owner)
+		{
+			owner.Memory.Span.Clear();
+		}
 	}
 }
