@@ -1,5 +1,7 @@
 using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Open.Database.Extensions;
 using Samples;
 
@@ -208,6 +210,15 @@ Check(
 	"the Items view has a count, an indexer, an enumerator and a LINQ copy");
 
 Check(
+	(await AsyncBuffers.FinishQueryAsync(factory, CancellationToken.None))
+		.SequenceEqual(["1: Post 1", "2: Post 2", "3: Post 3", "4: Post 4", "5: Post 5"]),
+	"a LINQ query finished with ToList() before the dispose holds its rows");
+
+Check(
+	await AsyncBuffers.LazyAfterDisposeAsync(factory, CancellationToken.None),
+	"a lazy LINQ query enumerated after the dispose throws ObjectDisposedException");
+
+Check(
 	(await AsyncBuffers.SkipTakeAsync(factory, CancellationToken.None))
 		.SequenceEqual([2, 3]),
 	"ToAsyncBuffer after Skip(1).Take(2) holds posts 2 and 3");
@@ -224,9 +235,11 @@ Check(
 	"ToBufferedAsyncStream yields every row in order and is single-use");
 
 Check(
-	(await AsyncBuffers.LinqAsyncAsync(factory, CancellationToken.None))
-		.SequenceEqual(["Post 1", "Post 2", "Post 3"]),
-	"System.Linq over ToBufferedAsyncStream projects the rows");
+	(await AsyncBuffers
+		.PostLabelsAsync(factory, 42, CancellationToken.None)
+		.ToListAsync())
+		.SequenceEqual(["1: Post 1", "2: Post 2", "3: Post 3"]),
+	"System.Linq over ToBufferedAsyncStream, returned with no await, projects the filtered rows");
 
 Check(
 	(await AsyncBuffers.SmallResultAsync(factory, CancellationToken.None))
@@ -459,6 +472,135 @@ Check(
 	+ "OperationCanceledException, "
 	+ "and the rows before the cancel were seen");
 
+// How little code: the same tasks with ODX, Dapper, EF Core and plain ADO.NET give the same rows.
+Db.Seed();
+using CancellationTokenSource littleCodeSource = new(TimeSpan.FromMinutes(2));
+CancellationToken littleCodeToken = littleCodeSource.Token;
+string littleCodeConnectionString = Db.ConnectionString;
+await using HowLittleCode.BlogContext ef = new(
+	new DbContextOptionsBuilder<HowLittleCode.BlogContext>()
+		.UseSqlite(littleCodeConnectionString)
+		.Options);
+
+string expectedRows = HowLittleCode.Fingerprint(
+	await HowLittleCode.ListPostsAdoAsync(littleCodeConnectionString, littleCodeToken));
+Check(
+	expectedRows == "1:42:Post 1:Body 1|2:42:Post 2:<null>|3:42:Post 3:Body 3|4:7:Post 4:<null>|5:7:Post 5:Body 5",
+	"how little code, task 1: plain ADO.NET reads all five rows, NULL included");
+Check(
+	HowLittleCode.Fingerprint(await HowLittleCode.ListPostsOdxAsync(factory, littleCodeToken)) == expectedRows
+	&& HowLittleCode.Fingerprint(await HowLittleCode.ListPostsDapperAsync(littleCodeConnectionString, littleCodeToken)) == expectedRows
+	&& HowLittleCode.Fingerprint(await HowLittleCode.ListPostsEfAsync(ef, littleCodeToken)) == expectedRows,
+	"how little code, task 1: ODX, Dapper and EF Core return the same rows as plain ADO.NET");
+Check(
+	ef.ChangeTracker.Entries<Post>().Count() == 5,
+	"how little code: EF Core tracks the entities it returns by default (the snippets do not call AsNoTracking)");
+
+const int littleCodeAuthor = 42;
+string[] expectedHeadlines = ["POST 1: Body 1", "POST 2: (no body)", "POST 3: Body 3"];
+IAsyncEnumerable<string> odxStream = HowLittleCode.AuthorHeadlinesOdxAsync(factory, littleCodeAuthor, littleCodeToken);
+Check(
+	(await HowLittleCode.CollectAsync(odxStream, littleCodeToken)).SequenceEqual(expectedHeadlines),
+	"how little code, task 2: the ODX stream filters in SQL and projects without async, await or using in the method");
+Check(
+	await ThrowsAsync<InvalidOperationException>(async () => await HowLittleCode.CollectAsync(odxStream, littleCodeToken)),
+	"how little code, task 2: the ODX stream is single-use, a second enumeration throws");
+Check(
+	(await HowLittleCode.CollectAsync(HowLittleCode.AuthorHeadlinesDapperAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken), littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorHeadlinesEfAsync(ef, littleCodeAuthor), littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.CollectAsync(HowLittleCode.AuthorHeadlinesAdoAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken), littleCodeToken)).SequenceEqual(expectedHeadlines),
+	"how little code, task 2: Dapper, EF Core and plain ADO.NET stream the same headlines");
+
+Check(
+	(await HowLittleCode.AuthorHeadlinesBufferOdxAsync(factory, littleCodeAuthor, littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.AuthorHeadlinesBufferDapperAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.AuthorHeadlinesBufferEfAsync(ef, littleCodeAuthor, littleCodeToken)).SequenceEqual(expectedHeadlines)
+	&& (await HowLittleCode.AuthorHeadlinesBufferAdoAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken)).SequenceEqual(expectedHeadlines),
+	"how little code, task 3: one author's rows read, then sync LINQ over them, give the same headlines in all four");
+
+// Task 4 needs SQL Server: it runs when LocalDB can be reached and is reported as skipped when it cannot.
+await using (LittleCodeSqlServer? sqlServer = await LittleCodeSqlServer.TryStartAsync(littleCodeToken))
+{
+	if (sqlServer is not null)
+	{
+		string serverConnectionString = LittleCodeSqlServer.ConnectionString;
+		IDbConnectionFactory<SqlConnection> serverFactory = new SqlConnectionFactory(serverConnectionString);
+		await using HowLittleCode.BlogContext serverEf = new(
+			new DbContextOptionsBuilder<HowLittleCode.BlogContext>()
+				.UseSqlServer(serverConnectionString)
+				.Options);
+
+		const int searchAuthor = 42;
+		const string searchTitle = "2";
+		string expectedSearch = "2:42:Post 2:<null>";
+		Check(
+			HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsOdxAsync(serverFactory, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch
+			&& HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsDapperAsync(serverConnectionString, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch
+			&& HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsEfAsync(serverEf, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch
+			&& HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsAdoAsync(serverConnectionString, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch,
+			"how little code, task 4 (SQL Server): the stored procedure with two parameters returns the same row in all four");
+	}
+}
+
+// Shaping rows: the recipes of the article.
+Db.Seed();
+await ShapingRows.SeedAsync(connection, CancellationToken.None);
+(Plant[] plantsInitializer, Plant[] plantsFactory) = await ShapingRows.NullToEmptyAsync(connection, CancellationToken.None);
+Check(
+	plantsInitializer is [{ Id: 1, Code: "PRESS", SortDescr: "Stamping" }, { Id: 2, Code: "", SortDescr: "" }],
+	"a NULL keeps the initializer of a non-nullable member and the converter is not called for it");
+Check(
+	plantsFactory is [{ Id: 1, Code: "PRESS", SortDescr: "Stamping" }, { Id: 2, Code: "", SortDescr: "" }],
+	"a factory parameter declared string? receives null for a NULL, so the function can write ?? \"\"");
+(PostStamp[] stampsAfterClose, PostStampInit[] stampsInQuery) = await ShapingRows.ValueFromOutsideAsync(connection, CancellationToken.None);
+Check(
+	stampsAfterClose.Length == 5 && stampsAfterClose.All(static stamp => stamp.Serial == "S-100"),
+	"a value from outside the row is set on the rows after the close");
+Check(
+	stampsInQuery.Length == 5 && stampsInQuery.All(static stamp => stamp.Serial == "S-100") && stampsInQuery[2] is { Id: 3, Title: "Post 3" },
+	"a value from outside the row can come back from the query as a column");
+(Employee[] employeesIgnored, Employee[] employeesListed, Employee[] employeesNoManagerColumn) = await ShapingRows.ChooseWhatIsReadAsync(connection, CancellationToken.None);
+Check(
+	employeesIgnored is [{ Badge: "E-1", Desk: "", Manager: "Kim" }, { Badge: "E-2", Desk: "", Manager: "Lee" }],
+	"a null column in the map leaves the member unmapped although a column of its name exists");
+Check(
+	employeesListed is [{ Badge: "E-1", Desk: "", Manager: "Kim" }, { Badge: "E-2", Desk: "", Manager: "Lee" }],
+	"a factory map fills only what its function takes: the desk column is read by nobody");
+Check(
+	employeesNoManagerColumn is [{ Badge: "E-1", Manager: "unknown" }, { Badge: "E-2", Manager: "unknown" }],
+	"a factory parameter no column feeds is null (its default) and nothing throws");
+(StrictEmployee[] strictFound, ValueMappingException? strictMissing) = await ShapingRows.StrictAsync(connection, CancellationToken.None);
+Check(
+	strictFound is [{ Badge: "E-1", Manager: "Kim" }, { Badge: "E-2", Manager: "Lee" }],
+	"a required member is mapped when a column feeds it");
+Check(
+	strictMissing is { PropertyName: "Badge" },
+	"a result with no column for a required member throws ValueMappingException at its first row");
+(WideReading wide, WideEnds wideEnds) = await ShapingRows.WideAsync(connection, CancellationToken.None);
+Check(
+	wide.Channel01 == 1 && wide.Channel09 == 9 && wide.Channel17 == 17,
+	"a record with 17 constructor parameters maps through Map<T>()");
+Check(
+	wideEnds == new WideEnds(1, 17),
+	"a factory with 17 parameters maps too");
+(Post[] filterInSql, Post[] filterAfterClose, Post[] filterBusy, Post[] filterWithNulls) = await ShapingRows.FilterAsync(connection, CancellationToken.None);
+Check(
+	filterInSql.Select(static post => post.Id).SequenceEqual([3, 4, 5]),
+	"a filter in the query's WHERE returns only the wanted rows");
+Check(
+	filterAfterClose.Select(static post => post.Id).SequenceEqual([3, 4, 5]),
+	"a filter over the array after the close returns the wanted rows");
+Check(
+	filterWithNulls.Length == 5 && filterWithNulls.Count(static post => post is null) == 2 && filterBusy.Select(static post => post.Id).SequenceEqual([3, 4, 5]),
+	"a factory that returns null leaves a null in the result for each skipped row, and the list is filtered after the close");
+(long? lastNone, long? lastSome) = await ShapingRows.OneNamedColumnAsync(connection, CancellationToken.None);
+Check(
+	lastNone is null && lastSome == 3,
+	"Map<long?>() over one selected column gives null for a NULL and the value otherwise");
+Check(
+	ShapingRows.SingleValueFactoryIsRejected(),
+	"a factory map for a single value is rejected: a single value is not a row model");
+
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 
@@ -479,3 +621,16 @@ static string Describe(IEnumerable<Post> posts)
 	=> string.Join(
 		"|",
 		posts.Select(static p => $"{p.Id}:{p.Title}"));
+
+static async Task<bool> ThrowsAsync<TException>(Func<Task> action) where TException : Exception
+{
+	try
+	{
+		await action();
+		return false;
+	}
+	catch (TException)
+	{
+		return true;
+	}
+}

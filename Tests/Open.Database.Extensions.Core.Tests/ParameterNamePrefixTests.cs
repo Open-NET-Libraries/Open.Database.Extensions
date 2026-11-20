@@ -162,7 +162,7 @@ public static class ParameterNamePrefixTests
 
 		run.Run(c => source.Sync(c)); // from memory
 		Assert.Equal(ParameterNameEndToEndTests.Expected(real), run.Values);
-		Assert.Equal(1, run.Lookups);
+		Assert.Equal(2, run.Lookups); // the first read, and one second look at Unrelated, which the procedure does not declare: that look is remembered
 	}
 
 	[Theory]
@@ -177,7 +177,7 @@ public static class ParameterNamePrefixTests
 		Assert.Equal(ParameterNameEndToEndTests.Expected(real), run.Values);
 
 		await run.RunAsync(c => source.Async(c));
-		Assert.Equal(1, run.Lookups);
+		Assert.Equal(2, run.Lookups); // the first read, and one second look at Unrelated, which the procedure does not declare: that look is remembered
 		Assert.Equal(0, run.SyncLookups);
 	}
 

@@ -385,7 +385,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c>, <c>v_</c>, or a lone <c>p</c> before a capital letter), so <c>Author</c> finds <c>@p_author</c> and <c>@pAuthor</c>.
 	/// A field prefix on the last member (<c>m_</c>, <c>s_</c> or <c>_</c>) is also tried without. A chain tries its more specific endings first:
 	/// <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>. A name that matches nothing, matches two parameters at one tier, or is claimed by two arguments throws <see cref="InvalidOperationException"/> that says what you wrote and, when the names are known, what the procedure declares.
-	/// The names are remembered for five minutes per connection factory, pool or connection. When an argument matches none of the remembered names they are read again once before that throws; nothing else triggers a read, so an ambiguity, a collision and a less specific match are decided from the remembered names.
+	/// The names are remembered for five minutes per connection factory, pool or connection. When an argument matches none of the remembered names they are read again once before that throws, and so are they before a member of an <c>AddParams</c> object that they do not declare is dropped (once per set of names: a second look that still lacks the member is remembered); nothing else triggers a read, so an ambiguity, a collision and a less specific match are decided from the remembered names.
 	/// Where the real names are not available (a text command with no <c>@name</c> marker, or a provider that does not supply them) the last member is used as written.</para>
 	/// </remarks>
 	/// <typeparam name="T">The type of the value.</typeparam>
@@ -416,7 +416,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// </summary>
 	/// <remarks>
 	/// <para>Each member is matched to the stored procedure's real parameter names the same way as <see cref="AddParam{T}(T, string?)"/>.
-	/// When the real names are known, a member that the procedure does not declare is not sent, so one object can serve several procedures; parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
+	/// When the real names are known, a member that the procedure does not declare is not sent, so one object can serve several procedures
+	/// (a member that the remembered names lack makes them be read once more first, in case the procedure gained that parameter since); parameters the procedure declares that no member matches are left to default values or to explicit <c>AddParam</c> calls.
 	/// A parameter you add with <c>AddParam</c>, by name or from an argument, wins over a member that resolves to the same name.</para>
 	/// <para>Every public readable property and field is read when this method is called, whether or not the procedure declares it, so a getter that throws or loads lazily runs then. Static members and indexers are ignored.
 	/// The members are those of the static type <typeparamref name="T"/>, not of the object's runtime type: an interface adds only its own. The one exception is <see cref="object"/>: a variable typed <see cref="object"/>, or the result of a <c>Func&lt;T, object&gt;</c>, has no members of its own, so the members of its runtime type are used.
@@ -628,18 +629,18 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (Type == CommandType.StoredProcedure)
 		{
 			ProcedureKey key = ProcedureKey(connection);
-			if (ProcedureNameCache.TryGet(
+			bool found = ProcedureNameCache.TryGet(
 				NameCacheOwner,
 				key,
-				out NameSet? remembered)
-				&& Fits(remembered))
-			{
-				return remembered;
-			}
+				out NameSet? remembered);
+			if (found && Fits(remembered)) return remembered;
 
 			// Nothing is remembered, or the remembered names did not fit:
 			// the procedure may have changed since they were read.
-			return Remember(key, GetProcedureParameterNames(connection, Command));
+			return Remember(
+				key,
+				GetProcedureParameterNames(connection, Command),
+				found);
 		}
 
 		// The @name markers found in the text.
@@ -658,13 +659,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (Type == CommandType.StoredProcedure)
 		{
 			ProcedureKey key = ProcedureKey(connection);
-			return ProcedureNameCache.TryGet(
+			bool found = ProcedureNameCache.TryGet(
 				NameCacheOwner,
 				key,
-				out NameSet? remembered)
-				&& Fits(remembered)
+				out NameSet? remembered);
+			return found && Fits(remembered)
 				? new(remembered)
-				: ReadNamesAsync(connection, key, cancellationToken);
+				: ReadNamesAsync(connection, key, found, cancellationToken);
 		}
 
 		// The @name markers found in the text.
@@ -679,6 +680,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	async ValueTask<NameSet?> ReadNamesAsync(
 		TConnection connection,
 		ProcedureKey key,
+		bool afterMiss,
 		CancellationToken cancellationToken)
 		=> Remember(
 			key,
@@ -686,7 +688,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 					connection,
 					Command,
 					cancellationToken)
-				.ConfigureAwait(false));
+				.ConfigureAwait(false),
+			afterMiss);
 
 	TCommand PrepareResolved(TConnection connection)
 		=> _hasDerivedParams
@@ -723,8 +726,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	}
 
 	// Remembers the names a procedure reported and returns the set made from them; an empty answer is "not known" (null) and is not remembered.
-	NameSet? Remember(ProcedureKey key, ImmutableArray<string> names)
-		=> names.IsDefaultOrEmpty ? null : ProcedureNameCache.Set(NameCacheOwner, key, names);
+	// `afterMiss` is true when the names were read again because the remembered ones did not fit: the set made is a second look (see NameSet.Rechecked).
+	NameSet? Remember(
+		ProcedureKey key,
+		ImmutableArray<string> names,
+		bool afterMiss)
+		=> names.IsDefaultOrEmpty
+			? null
+			: ProcedureNameCache.Set(NameCacheOwner, key, names, afterMiss);
 
 	// Remembered names belong to the object commands take connections from: a factory (not the wrapper made around it for each command), a pool, or the bare connection.
 	object NameCacheOwner => _poolOrConnection switch
@@ -740,7 +749,12 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	ProcedureKey ProcedureKey(TConnection connection) => new((connection as DbConnection)?.DataSource, connection.Database, Command);
 
 	// False when an argument named by the caller matches none of the
-	// remembered names: the procedure may have changed since they were read.
+	// remembered names, or when a member of an AddParams object matches none
+	// and the names are a first look (not Rechecked): the procedure may have
+	// changed since they were read, so they are read again before anything
+	// is dropped. A set that is already a second look drops such a member
+	// without another read, so a member the procedure never takes does not
+	// cost a read in every run.
 	// Nothing is built or kept, so a false answer leaves no state behind.
 	// `real` is null when the names are not known (and has no names for
 	// a text without markers): each argument then keeps its last member
@@ -753,12 +767,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		for (int i = 0; i < list.Count; i++)
 		{
 			Param p = list[i];
-			if (p.Expression is { } expression
-				&& !p.FromObject
-				&& real.Match(expression, Command) is null)
+			if (p.Expression is not { } expression
+				|| (p.FromObject && real.Rechecked))
 			{
-				return false;
+				continue;
 			}
+
+			if (real.Match(expression, Command) is null) return false;
 		}
 
 		return true;

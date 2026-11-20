@@ -40,7 +40,7 @@ If there is one consumer, only a few rows, and nothing else to overlap, you do n
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_buffer)]
 
-Iterating the query directly (the `ReadAsync` handler) holds the connection for the whole loop, so it is not the way to do slow work per row. The caution about streaming is documented separately.
+Iterating the query directly (the `Read` or `ReadAsync` handler) holds the connection for the whole loop, so it is not the way to do slow work per row. The caution about streaming is [documented in the mapping article](mapping.md#streaming-holds-the-connection).
 
 ### What it costs
 

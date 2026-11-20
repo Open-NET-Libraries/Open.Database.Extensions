@@ -68,6 +68,85 @@ Each job is one complete call: open the connection, run the SQL with one paramet
 
 What you no longer write: opening and closing the connection, creating the command and setting its text, creating and adding every parameter, the read loop, copying columns into properties (ordinals, `IsDBNull`), and disposing all of it.
 
+## How little code
+
+The same four tasks, written with Open.Database.Extensions (ODX), Dapper, EF Core and plain ADO.NET, all async. Every snippet is compiled in [`docsite/samples/HowLittleCode.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/HowLittleCode.cs), and the samples run the four versions of each task and check that they return the same rows. This is about the size of the code, not about speed. Each cell counts one method, from its signature to its closing brace, without blank lines or comments:
+
+| Task | ODX | Dapper | EF Core | plain ADO.NET |
+|---|---:|---:|---:|---:|
+| 1. Rows to a list | 7 | 9 | 6 | 22 |
+| 2. Filter in SQL, project in C#, as an async stream | 10 | 14 | 8 | 22 |
+| 3. The rows of one author in memory, then LINQ | 15 | 15 | 13 | 26 |
+| 4. A stored procedure with two parameters | 11 | 14 | 12 | 29 |
+
+Outside the count: ODX takes a connection factory created once per application (one to three lines), and EF Core takes a `DbContext` that maps the model (five lines). Dapper and plain ADO.NET create their own connection inside the method, and that line is counted. ODX is not the smallest in every row: EF Core is shorter than ODX in every row once its context exists. Where ODX needs less is the plumbing, the connection and the column copying. The ODX versions (`AllPostsSql` is `"select * from posts order by id"`, `AuthorPostsSql` adds `where author = @author`, and `Headline` formats a post in C#):
+
+**1. Rows to a list**
+
+```cs
+public static ValueTask<List<Post>> ListPostsOdxAsync(
+    IDbConnectionFactory<SqliteConnection> db,
+    CancellationToken ct)
+    => db
+        .Command(AllPostsSql)
+        .Map<Post>()
+        .ToListAsync(ct);
+```
+
+**2. Filter in SQL, project in C#, returned as an async stream (no `async`, `await` or `using`)**
+
+```cs
+public static IAsyncEnumerable<string> AuthorHeadlinesOdxAsync(
+    IDbConnectionFactory<SqliteConnection> db,
+    int author,
+    CancellationToken ct)
+    => db
+        .Command(AuthorPostsSql)
+        .AddParam(author)
+        .Map<Post>()
+        .ToBufferedAsyncStream(clearOnReturn: false, ct)
+        .Select(static p => Headline(p));
+```
+
+**3. The rows of one author in memory, then LINQ over them**
+
+```cs
+public static async Task<List<string>> AuthorHeadlinesBufferOdxAsync(
+    IDbConnectionFactory<SqliteConnection> db,
+    int author,
+    CancellationToken ct)
+{
+    using PooledArray<Post> posts = await db
+        .Command(AuthorPostsSql)
+        .AddParam(author)
+        .Map<Post>()
+        .ToAsyncBuffer(clearOnDispose: false, ct)
+        .Items;
+
+    return posts
+        .Select(static p => Headline(p))
+        .ToList();
+}
+```
+
+**4. A stored procedure with two parameters (SQL Server)**
+
+```cs
+public static ValueTask<List<Post>> SearchPostsOdxAsync(
+    IDbConnectionFactory<SqlConnection> db,
+    int author,
+    string titleContains,
+    CancellationToken ct)
+    => db
+        .StoredProcedure("[dbo].[SearchPosts]")
+        .AddParam(author)
+        .AddParam(titleContains)
+        .Map<Post>()
+        .ToListAsync(ct);
+```
+
+The four-way code for every task, with the notes on what each count includes, is on the [How little code](https://open-net-libraries.github.io/Open.Database.Extensions/articles/how-little-code.html) page.
+
 ## Install
 
 ```sh

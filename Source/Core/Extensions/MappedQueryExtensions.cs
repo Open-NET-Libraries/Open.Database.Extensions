@@ -35,8 +35,15 @@ public static class MappedQueryExtensions
 	const string ReadAsyncTokenFirstObsolete = "Pass the token last: query.ReadAsync(handler, cancellationToken). Removed in 12.";
 
 	/// <summary>
-	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/> as they are read. Use this overload when the handler does not need the cancellation token.
+	/// Asynchronously executes the query and passes the mapped rows to
+	/// <paramref name="handler"/> as they are read;
+	/// the connection is held while each row is processed.
+	/// Use this overload when the handler does not need the
+	/// cancellation token.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"
+	/// path="/remarks"/>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <param name="query">The query to execute.</param>
 	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows. Enumerate it inside the handler; it is not valid after the handler returns.</param>
@@ -53,8 +60,16 @@ public static class MappedQueryExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/> as they are read, and returns the handler's result. Use this overload when the handler does not need the cancellation token.
+	/// Asynchronously executes the query, passes the mapped rows to
+	/// <paramref name="handler"/> as they are read,
+	/// and returns the handler's result;
+	/// the connection is held while each row is processed.
+	/// Use this overload when the handler does not need the
+	/// cancellation token.
 	/// </summary>
+	/// <inheritdoc
+	/// cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"
+	/// path="/remarks"/>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
 	/// <param name="query">The query to execute.</param>
