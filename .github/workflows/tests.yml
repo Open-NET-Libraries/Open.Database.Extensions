@@ -159,7 +159,7 @@ jobs:
         run: |
           $projects = @(
             'Source\Core', 'Source\SqlClient', 'Source\MSSqlClient', 'Source\Channel', 'Source\Dataflow', 'Source\Extensions',
-            'Tests\Open.Database.Extensions.Core.Tests', 'docsite\samples', 'Benchmarks\Open.Database.Extensions.Benchmarks')
+            'Tests\Open.Database.Extensions.Core.Tests', 'Tests\Open.Database.Extensions.LegacyCompiler.Tests', 'docsite\samples', 'Benchmarks\Open.Database.Extensions.Benchmarks')
           $failures = @()
           foreach ($project in $projects) {
             # A full Windows path: with forward slashes the formatter loads nothing and reports a false zero.
