@@ -419,14 +419,14 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 		{
 			connection?.EnsureOpen();
 			using IDataReader reader = command.ExecuteReader(
-				before == ConnectionState.Closed
+				ConnectionExtensions.NeedsOpen(before)
 					? behavior | CommandBehavior.CloseConnection
 					: behavior);
 			return transform(reader, state);
 		}
 		finally
 		{
-			if (before == ConnectionState.Closed) connection?.Close();
+			if (ConnectionExtensions.NeedsOpen(before)) connection?.Close();
 		}
 	}
 
@@ -444,14 +444,10 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 		try
 		{
 			// An open connection (the usual case) needs no awaiting at all.
-			if (connection is not null
-				&& (before & (ConnectionState.Open | ConnectionState.Broken))
-					!= ConnectionState.Open)
-			{
+			if (connection is not null && ConnectionExtensions.NeedsOpen(before))
 				await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-			}
 
-			CommandBehavior b = before == ConnectionState.Closed
+			CommandBehavior b = ConnectionExtensions.NeedsOpen(before)
 				? behavior | CommandBehavior.CloseConnection
 				: behavior;
 
@@ -475,7 +471,7 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 		}
 		finally
 		{
-			if (before == ConnectionState.Closed) connection?.Close();
+			if (ConnectionExtensions.NeedsOpen(before)) connection?.Close();
 		}
 	}
 }
