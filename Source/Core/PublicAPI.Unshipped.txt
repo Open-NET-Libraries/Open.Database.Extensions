@@ -1,1 +1,3 @@
 #nullable enable
+Open.Database.Extensions.PooledArray<T>.ToArray() -> T[]!
+Open.Database.Extensions.PooledArray<T>.ToList() -> System.Collections.Generic.List<T>!
