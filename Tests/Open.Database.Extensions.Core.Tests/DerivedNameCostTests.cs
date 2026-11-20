@@ -177,7 +177,7 @@ public static class DerivedNameCostTests
 	}
 
 	// The SQL text is a new string object on every call (same characters), as when a query is put together at run time.
-	// A derived name must cost no more than the hand-written one there too: the names of a text are remembered by its content, not only by its object.
+	// A derived name must cost no more than the hand-written one there too: a text that is not interned is scanned on every call, with nothing allocated or stored.
 	// (Both versions build the text each call, so the difference is the cost of the names alone.)
 	[Theory]
 	[InlineData(1)]
