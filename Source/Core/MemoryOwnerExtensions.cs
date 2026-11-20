@@ -19,8 +19,8 @@ namespace Open.Database.Extensions.Core;
 // consumer would wait for it.
 //
 // Why ClearOnDispose exists.
-// When the caller asked for clearing (clearOnReturn / clearOnDispose:
-// true) the WRITER decides: the producer wraps each exactly-sized owner
+// When clearing applies (PoolClearing: rows with references, UsePool or the
+// switch) the WRITER decides: the producer wraps each exactly-sized owner
 // (right after Slice, before it is published) in a DeferredClearOwner.
 // Whoever disposes it later, wherever and whenever (the stream's next
 // step, the buffer's ReleaseAll, a refused or abandoned chunk), just

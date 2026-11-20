@@ -56,10 +56,12 @@ static class DbQueryRunner
 				case DbTransaction tx:
 					return new(source, OpenConnectionOf(tx), tx, false);
 				case IDbConnectionFactory factory:
-					connection = (DbConnection?)factory.Create();
+					connection = AsDbConnection(factory.Create(), factory);
 					break;
 				default:
-					connection = (DbConnection?)((IDbConnectionPool)source).Take();
+					connection = AsDbConnection(
+						((IDbConnectionPool)source).Take(),
+						source);
 					break;
 			}
 
@@ -71,6 +73,24 @@ static class DbQueryRunner
 					connection,
 					null,
 					ConnectionExtensions.NeedsOpen(connection.State));
+		}
+
+		// A source that supplies something that is not a DbConnection: it is
+		// let go the way its source lets go of a connection (disposed for a
+		// factory, given back to a pool), not leaked, and the run fails with
+		// the type named. Null is left to the caller's check.
+		static DbConnection? AsDbConnection(IDbConnection? supplied, object source)
+		{
+			if (supplied is null or DbConnection)
+				return supplied as DbConnection;
+
+			if (source is not IDbConnectionFactory && source is IDbConnectionPool pool)
+				pool.Give(supplied);
+			else
+				supplied.Dispose();
+
+			throw new InvalidOperationException(
+				$"The connection source supplied a {supplied.GetType()}, which is not a DbConnection.");
 		}
 
 		// A transaction is begun on an open connection and holds it: it is

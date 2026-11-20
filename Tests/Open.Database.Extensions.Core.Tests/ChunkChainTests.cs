@@ -301,8 +301,7 @@ public static class ChunkChainTests
 	public static async Task APooledArray_CopiesItselfToAnExactArrayAndList(
 		int n)
 	{
-		await using var buffer = Rows(n).ToAsyncBuffer(
-			clearOnDispose: false, Ct);
+		await using var buffer = Rows(n).ToAsyncBuffer(Ct);
 		PooledArray<PoolRow> items = await buffer.Items;
 
 		PoolRow[] array = items.ToArray();
@@ -319,8 +318,7 @@ public static class ChunkChainTests
 	{
 		PoolRow[] array;
 		List<PoolRow> list;
-		await using (var buffer = Rows(100).ToAsyncBuffer(
-			clearOnDispose: false, Ct))
+		await using (var buffer = Rows(100).ToAsyncBuffer(Ct))
 		{
 			PooledArray<PoolRow> items = await buffer.Items;
 			array = items.ToArray();
@@ -334,8 +332,7 @@ public static class ChunkChainTests
 	[Fact]
 	public static async Task ADisposedView_ThrowsFromBothCopies()
 	{
-		await using var buffer = Rows(10).ToAsyncBuffer(
-			clearOnDispose: false, Ct);
+		await using var buffer = Rows(10).ToAsyncBuffer(Ct);
 		PooledArray<PoolRow> items = await buffer.Items;
 		items.Dispose();
 
@@ -353,7 +350,7 @@ public static class ChunkChainTests
 			.MakeGenericType(typeof(T));
 
 	static object RentChain(Type chain)
-		=> chain.GetMethod("Rent", Internal)!.Invoke(null, null)!;
+		=> chain.GetMethod("Rent", Internal)!.Invoke(null, [null, false])!;
 
 	static int CountOf(Type chain, object instance)
 		=> (int)chain.GetProperty("Count", Instance)!.GetValue(instance)!;

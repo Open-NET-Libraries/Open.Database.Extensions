@@ -45,7 +45,7 @@ namespace Open.Database.Extensions;
 /// <para>
 /// It is valid until it is disposed. Disposing it disposes the
 /// buffer it came from, which returns the arrays to the pool (and,
-/// if the buffer was made with <c>clearOnDispose: true</c>, clears
+/// if the rows are to be cleared (see UsePool), clears
 /// the rows: that is when the clear takes effect).
 /// After that, every member throws
 /// <see cref="ObjectDisposedException"/>, an enumeration in

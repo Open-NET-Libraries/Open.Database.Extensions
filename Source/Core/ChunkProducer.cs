@@ -49,7 +49,7 @@ namespace Open.Database.Extensions.Core;
 //   Finish.
 //
 // Invariants.
-// - With clearing on (the terminal's clearOnReturn / clearOnDispose),
+// - With clearing on (PoolClearing: references, UsePool or the switch),
 //   Take wraps each exactly-sized owner so that disposing it clears
 //   its rows through the recycle bin (see MemoryOwnerExtensions). It
 //   wraps before the Publish attempt, so a chunk the target refuses,

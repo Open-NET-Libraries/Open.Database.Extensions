@@ -2,9 +2,9 @@ using System.Threading.Channels;
 
 namespace Open.Database.Extensions.Core;
 
-// The recycle bin: where a pooled buffer is cleared and returned when the
-// caller asked for it (clearOnDispose / clearOnReturn: true), so the clear
-// is off the read path.
+// The recycle bin: where a pooled buffer is cleared and returned when
+// clearing applies (rows that hold references, UsePool or the switch),
+// so the clear is off the read path.
 //
 // It is INTERNAL ONLY: nothing outside DeferredClearOwner (see
 // MemoryOwnerExtensions) can feed it, and the only work it ever runs is

@@ -252,34 +252,50 @@ Check(
 		factory,
 		overloadPool,
 		CancellationToken.None)).All(static n => n == 5),
-	"the three ToAsyncBuffer overloads each hold the five rows");
+	"the shared pool, a pool of your own and a pool of your own with clear: true each hold the five rows");
 await AsyncBuffers.SettleAsync(overloadPool);
 Check(
 	overloadPool.Rented == overloadPool.Returned && overloadPool.Rented > 0,
 	"disposing the buffers returns every array to the pool");
 
-CountingPool<Post> keepPool = new();
-await AsyncBuffers.KeepsRowsAsync(
+CountingPool<int> keepPool = new();
+await AsyncBuffers.ClearingAsync(
 	factory,
 	keepPool,
+	clear: false,
 	CancellationToken.None);
 await AsyncBuffers.SettleAsync(keepPool);
 Check(
 	keepPool.Dirty == keepPool.Returned && keepPool.Returned > 0,
-	"nothing is cleared by default: the arrays go back with their rows");
+	"rows with no references are not cleared unless asked: the arrays go back with their rows");
 
-CountingPool<Post> clearPool = new();
+CountingPool<int> clearPool = new();
 await AsyncBuffers.ClearingAsync(
 	factory,
 	clearPool,
+	clear: true,
 	CancellationToken.None);
 await AsyncBuffers.SettleAsync(clearPool);
 Check(
 	clearPool.Dirty == 0 && clearPool.Returned > 0,
-	"clearOnDispose: true clears the rows before the arrays go back");
+	"clear: true clears the rows before the arrays go back");
 
 Check(
-	AsyncBuffers.NullPoolThrows(factory, CancellationToken.None),
+	await AsyncBuffers.ClearingSharedAsync(factory, CancellationToken.None) == 5,
+	"UsePool(MemoryPool<int>.Shared, clear: true) reads the five rows");
+
+CountingPool<Post> referencePool = new();
+await AsyncBuffers.ReferenceRowsAsync(
+	factory,
+	referencePool,
+	CancellationToken.None);
+await AsyncBuffers.SettleAsync(referencePool);
+Check(
+	referencePool.Dirty == 0 && referencePool.Returned > 0,
+	"rows that hold references are cleared even with clear: false");
+
+Check(
+	AsyncBuffers.NullPoolThrows(factory),
 	"a null pool throws ArgumentNullException at the call");
 
 Check(

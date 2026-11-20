@@ -520,7 +520,7 @@ public static partial class CommandExtensions
 	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// buffer the rows and release the connection
 	/// (call <c>.Map&lt;T&gt;()</c> first), and
-	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	/// streams them to a consumer without holding it
 	/// (the producer is unbounded: it reads without waiting for the
 	/// consumer and frees the connection while the consumer takes its

@@ -115,7 +115,7 @@ namespace Open.Database.Extensions;
 /// finalizer).
 /// </para>
 /// <para>
-/// If the buffer was made with <c>clearOnDispose: true</c>, the rows
+/// When the rows are to be cleared (see UsePool), they
 /// are cleared as the arrays go back to the pool, and that happens
 /// when the buffer, or the <see cref="PooledArray{T}"/> view of it,
 /// is disposed (not when the read completes). The clear is off the
@@ -155,11 +155,11 @@ public sealed class PooledBuffer<T>
 	internal PooledBuffer(
 		MappedQueryCore<T> query,
 		MemoryPool<T> pool,
-		bool clearOnDispose,
+		bool clear,
 		CancellationToken cancellationToken)
 	{
 		// The read starts now, whether or not anyone reads yet.
-		_producer = new(query, this, pool, clearOnDispose, cancellationToken);
+		_producer = new(query, this, pool, clear, cancellationToken);
 		_producerTask = _producer.Start();
 	}
 

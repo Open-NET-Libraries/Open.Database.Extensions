@@ -116,15 +116,13 @@ public static class ClearOnReturnTests
 		{
 			case "buffer":
 				{
-					await using var buffer = view.ToAsyncBuffer(
-						pool, clearOnDispose: clear, Ct);
+					await using var buffer = view.UsePool(pool, clear: clear).ToAsyncBuffer(Ct);
 					rows = (await buffer.Items.Within()).Count;
 					break;
 				}
 
 			case "stream":
-				await foreach (var chunk in view.ToAsyncBufferStream(
-					pool, clearOnReturn: clear, Ct))
+				await foreach (var chunk in view.UsePool(pool, clear: clear).ToAsyncBufferStream(Ct))
 				{
 					rows += chunk.Length;
 				}
@@ -132,8 +130,7 @@ public static class ClearOnReturnTests
 				break;
 
 			default:
-				await foreach (var _ in view.ToBufferedAsyncStream(
-					pool, clearOnReturn: clear, Ct))
+				await foreach (var _ in view.UsePool(pool, clear: clear).ToBufferedAsyncStream(Ct))
 				{
 					++rows;
 				}
@@ -423,8 +420,7 @@ public static class ClearOnReturnTests
 		var view = Stalling(r => reader = r);
 		var pool = RowPool();
 
-		await foreach (var chunk in view.ToAsyncBufferStream(
-			pool, clearOnReturn: true, Ct))
+		await foreach (var chunk in view.UsePool(pool, clear: true).ToAsyncBufferStream(Ct))
 		{
 			// The partial chunk after the cancel is queued behind this
 			// one: it holds rows, and is released by the drain.
@@ -443,7 +439,7 @@ public static class ClearOnReturnTests
 		StallReader? reader = null;
 		var view = Stalling(r => reader = r);
 		var pool = RowPool();
-		var buffer = view.ToAsyncBuffer(pool, clearOnDispose: true, Ct);
+		var buffer = view.UsePool(pool, clear: true).ToAsyncBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		// The published chunk is kept; the partial one is sealed after
@@ -521,8 +517,7 @@ public static class ClearOnReturnTests
 	{
 		var pool = RowPool();
 
-		await using var buffer = Rows(100).Take(0).ToAsyncBuffer(
-			pool, clearOnDispose: true, Ct);
+		await using var buffer = Rows(100).Take(0).UsePool(pool, clear: true).ToAsyncBuffer(Ct);
 		Assert.Empty(await buffer.Items.Within());
 
 		Assert.Equal(0, pool.Rents);
@@ -562,17 +557,17 @@ public static class ClearOnReturnTests
 		var v = new FakeExecuteReader(() => new ChannelTestReader(100))
 			.Map<ChannelRow>();
 
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(false, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(Own(), Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(Own(), true, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBufferStream(false, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBufferStream(Own(), Ct)));
+		Assert.Equal(100, await Count(v.ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: true).ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.ToAsyncBufferStream(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToAsyncBufferStream(Ct)));
 		Assert.Equal(
-			100, await Count(v.ToAsyncBufferStream(Own(), true, Ct)));
-		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(false, Ct)));
-		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(Own(), Ct)));
+			100, await Count(v.UsePool(Own(), clear: true).ToAsyncBufferStream(Ct)));
+		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToBufferedAsyncStream(Ct)));
 		Assert.Equal(
-			100, await Count(v.ToBufferedAsyncStream(Own(), true, Ct)));
+			100, await Count(v.UsePool(Own(), clear: true).ToBufferedAsyncStream(Ct)));
 	}
 
 	[Fact]
@@ -582,17 +577,17 @@ public static class ClearOnReturnTests
 			.Map<ChannelRow>()
 			.Skip(0);
 
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(false, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(Own(), Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(Own(), true, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBufferStream(false, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBufferStream(Own(), Ct)));
+		Assert.Equal(100, await Count(v.ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: true).ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.ToAsyncBufferStream(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToAsyncBufferStream(Ct)));
 		Assert.Equal(
-			100, await Count(v.ToAsyncBufferStream(Own(), true, Ct)));
-		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(false, Ct)));
-		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(Own(), Ct)));
+			100, await Count(v.UsePool(Own(), clear: true).ToAsyncBufferStream(Ct)));
+		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToBufferedAsyncStream(Ct)));
 		Assert.Equal(
-			100, await Count(v.ToBufferedAsyncStream(Own(), true, Ct)));
+			100, await Count(v.UsePool(Own(), clear: true).ToBufferedAsyncStream(Ct)));
 	}
 
 	[Fact]
@@ -602,17 +597,17 @@ public static class ClearOnReturnTests
 			.Map<ChannelRow>()
 			.Take(1000);
 
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(false, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(Own(), Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(Own(), true, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBufferStream(false, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBufferStream(Own(), Ct)));
+		Assert.Equal(100, await Count(v.ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: true).ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.ToAsyncBufferStream(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToAsyncBufferStream(Ct)));
 		Assert.Equal(
-			100, await Count(v.ToAsyncBufferStream(Own(), true, Ct)));
-		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(false, Ct)));
-		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(Own(), Ct)));
+			100, await Count(v.UsePool(Own(), clear: true).ToAsyncBufferStream(Ct)));
+		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToBufferedAsyncStream(Ct)));
 		Assert.Equal(
-			100, await Count(v.ToBufferedAsyncStream(Own(), true, Ct)));
+			100, await Count(v.UsePool(Own(), clear: true).ToBufferedAsyncStream(Ct)));
 	}
 
 	[Fact]
@@ -620,17 +615,17 @@ public static class ClearOnReturnTests
 	{
 		var v = Rows(100);
 
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(false, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(Own(), Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBuffer(Own(), true, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBufferStream(false, Ct)));
-		Assert.Equal(100, await Count(v.ToAsyncBufferStream(Own(), Ct)));
+		Assert.Equal(100, await Count(v.ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: true).ToAsyncBuffer(Ct)));
+		Assert.Equal(100, await Count(v.ToAsyncBufferStream(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToAsyncBufferStream(Ct)));
 		Assert.Equal(
-			100, await Count(v.ToAsyncBufferStream(Own(), true, Ct)));
-		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(false, Ct)));
-		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(Own(), Ct)));
+			100, await Count(v.UsePool(Own(), clear: true).ToAsyncBufferStream(Ct)));
+		Assert.Equal(100, await Count(v.ToBufferedAsyncStream(Ct)));
+		Assert.Equal(100, await Count(v.UsePool(Own(), clear: false).ToBufferedAsyncStream(Ct)));
 		Assert.Equal(
-			100, await Count(v.ToBufferedAsyncStream(Own(), true, Ct)));
+			100, await Count(v.UsePool(Own(), clear: true).ToBufferedAsyncStream(Ct)));
 	}
 
 	// null does not convert to bool or to CancellationToken, so it can
@@ -640,10 +635,10 @@ public static class ClearOnReturnTests
 	{
 		var v = Rows(100);
 
-		Assert.Throws<ArgumentNullException>(() => v.ToAsyncBuffer(null!, Ct));
+		Assert.Throws<ArgumentNullException>(() => v.UsePool(null!, clear: false).ToAsyncBuffer(Ct));
 		Assert.Throws<ArgumentNullException>(
-			() => v.ToAsyncBufferStream(null!, Ct));
+			() => v.UsePool(null!, clear: false).ToAsyncBufferStream(Ct));
 		Assert.Throws<ArgumentNullException>(
-			() => v.ToBufferedAsyncStream(null!, Ct));
+			() => v.UsePool(null!, clear: false).ToBufferedAsyncStream(Ct));
 	}
 }
