@@ -73,16 +73,16 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	/// <summary>
 	/// An empty chain: the spare one if there is one. The chunks come from
 	/// <paramref name="pool"/>, or from the shared array pool when it is
-	/// null or <see cref="MemoryPool{T}.Shared"/>; <paramref name="clear"/>
+	/// null or <see cref="MemoryPool{T}.Shared"/>; <paramref name="clearOnReturn"/>
 	/// is what <c>PoolClearing.Resolve</c> decided.
 	/// </summary>
-	public static ChunkChain<T> Rent(MemoryPool<T>? pool, bool clear)
+	public static ChunkChain<T> Rent(MemoryPool<T>? pool, bool clearOnReturn)
 	{
 		ChunkChain<T>? chain = Interlocked.Exchange(ref _spare, null);
 		chain ??= new ChunkChain<T>();
 
 		chain._parked = false;
-		chain._clear = clear;
+		chain._clear = clearOnReturn;
 		chain._custom = pool is null
 			|| ReferenceEquals(pool, MemoryPool<T>.Shared)
 			? null

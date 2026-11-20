@@ -82,7 +82,7 @@ internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,
 	IChunkTarget<T> target,
 	MemoryPool<T> pool,
-	bool clear,
+	bool clearOnReturn,
 	CancellationToken caller)
 {
 	// The caller's token and the owner's dispose, as one token:
@@ -320,7 +320,7 @@ internal sealed class ChunkProducer<T>(
 		// wrapped here, before any Publish, so a refused or leftover chunk
 		// (released on a cancel, a fault or at Seal) is cleared too, like any
 		// other (when the bin takes it).
-		if (clear) owner = owner.ClearOnDispose();
+		if (clearOnReturn) owner = owner.ClearOnDispose();
 		_owner = null;
 		_array = null;
 		_offset = 0;

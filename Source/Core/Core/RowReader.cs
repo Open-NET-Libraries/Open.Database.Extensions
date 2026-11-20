@@ -111,11 +111,11 @@ internal static class RowReader
 	// PoolClearing decided for this call.
 	public static TResult Collect<T, TBuild, TResult>(
 		IRowSource<T> source, IDataReader reader, int skip, int take,
-		TBuild build, MemoryPool<T>? pool, bool clear,
+		TBuild build, MemoryPool<T>? pool, bool clearOnReturn,
 		CancellationToken token = default)
 		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		using var chain = ChunkChain<T>.Rent(pool, clear);
+		using var chain = ChunkChain<T>.Rent(pool, clearOnReturn);
 		var sink = new ChainSink<T>(chain);
 		Fill(source, reader, skip, take, ref sink, token);
 		return build.Build(chain);
@@ -123,7 +123,7 @@ internal static class RowReader
 
 	public static T[] ToArray<T>(
 		IRowSource<T> source, IDataReader reader, int skip, int take,
-		MemoryPool<T>? pool, bool clear, CancellationToken token = default)
+		MemoryPool<T>? pool, bool clearOnReturn, CancellationToken token = default)
 	{
 		// A bare IDataReader has no DbDataReader fast path: Stream reads it (and
 		// treats take 0 the same way as the line below), then ToArray copies.
@@ -133,7 +133,7 @@ internal static class RowReader
 		if (take == 0 || !SkipRows(db, skip) || !db.Read()) return [];
 
 		Func<DbDataReader, T> map = source.Mapper(db);
-		var buffer = new ArraySink<T>(pool, clear);
+		var buffer = new ArraySink<T>(pool, clearOnReturn);
 		try
 		{
 			int n = 0;
@@ -322,11 +322,11 @@ internal static class RowReader
 	// last row.
 	public static async ValueTask<TResult> CollectAsync<T, TBuild, TResult>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync,
-		TBuild build, MemoryPool<T>? pool, bool clear,
+		TBuild build, MemoryPool<T>? pool, bool clearOnReturn,
 		CancellationToken cancellationToken)
 		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		using var chain = ChunkChain<T>.Rent(pool, clear);
+		using var chain = ChunkChain<T>.Rent(pool, clearOnReturn);
 		if (take != 0
 			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 			&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
@@ -516,14 +516,14 @@ internal readonly struct DictionaryValueBuild<T, TKey, TValue>(
 /// The arrays come from the shared array pool, or from a caller's own <see cref="MemoryPool{T}"/> (see <see cref="PoolRent"/>); <c>clear</c> is what <see cref="PoolClearing"/> decided: the used rows are cleared before the array goes back.
 /// The default value of the struct uses the shared array pool and clears nothing.
 /// </remarks>
-internal struct ArraySink<T>(MemoryPool<T>? pool, bool clear) : IRowSink<T>
+internal struct ArraySink<T>(MemoryPool<T>? pool, bool clearOnReturn) : IRowSink<T>
 {
 	// The caller's own pool, or null for ArrayPool<T>.Shared.
 	readonly MemoryPool<T>? _custom = pool is null
 		|| ReferenceEquals(pool, MemoryPool<T>.Shared)
 		? null
 		: pool;
-	readonly bool _clear = clear;
+	readonly bool _clear = clearOnReturn;
 	IMemoryOwner<T>? _owner;
 	T[]? _items;
 	int _count;

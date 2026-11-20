@@ -10,6 +10,9 @@
 /// <para>
 /// Implementations decide what giving a connection back means. A pool that hosts a single connection for non-concurrent operations returns the connection to the state it was in when it was taken (a connection that was closed is closed again). A connection factory can pose as a pool through <see cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/>, in which case taking always creates a new connection and giving back always disposes it.
 /// </para>
+/// <para>
+/// This interface exists so that a <em>custom</em> pooling scheme can be plugged in: a pool a particular database needs, or one you keep in memory and reuse locally. It is not a recommendation to pool. Database providers already pool their own connections behind <see cref="IDbConnection.Open"/> (for example Microsoft SQL Server, through <c>Microsoft.Data.SqlClient</c>), so for those databases a plain <see cref="IDbConnectionFactory"/> is the right source and an <see cref="IDbConnectionPool"/> adds nothing. Reach for a pool only when you have an implementation of your own to supply.
+/// </para>
 /// </remarks>
 /// <seealso cref="IDbConnectionPool{TConnection}"/>
 /// <seealso cref="IDbConnectionFactory"/>

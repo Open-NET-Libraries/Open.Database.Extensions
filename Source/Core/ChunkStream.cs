@@ -76,7 +76,7 @@ namespace Open.Database.Extensions.Core;
 internal sealed class ChunkStream<T>(
 	MappedQueryCore<T> query,
 	MemoryPool<T> pool,
-	bool clear,
+	bool clearOnReturn,
 	CancellationToken caller)
 	: IAsyncEnumerable<ReadOnlyMemory<T>>
 {
@@ -107,7 +107,7 @@ internal sealed class ChunkStream<T>(
 
 		StreamTarget<T> target = new();
 		ChunkProducer<T> producer = new(
-			query, target, pool, clear, caller);
+			query, target, pool, clearOnReturn, caller);
 		Task producerTask = producer.Start();
 		try
 		{

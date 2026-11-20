@@ -25,6 +25,8 @@ The factory form (`connectionFactory.Command(sql)` or `connectionFactory.StoredP
 
 In the factory form the command creates, opens and disposes a connection for every terminal. In the connection form the connection is yours: the command opens it only when it is closed, closes only what it opened, and never disposes it. See [who owns the connection](foundation.md#who-owns-the-connection).
 
+A connection pool (`IDbConnectionPool`) is also a valid source, but it is there for a pooling scheme of your own: a pool a particular database needs, or one kept in memory and reused locally. Providers already pool their connections (Microsoft SQL Server included), so with those a factory is the right source and a pool of your own adds nothing.
+
 A command is not safe to share across threads: one built from a single connection throws `InvalidOperationException` if two terminals run at once.
 
 ## Which command type you get

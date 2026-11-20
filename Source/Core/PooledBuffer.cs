@@ -155,11 +155,11 @@ public sealed class PooledBuffer<T>
 	internal PooledBuffer(
 		MappedQueryCore<T> query,
 		MemoryPool<T> pool,
-		bool clear,
+		bool clearOnReturn,
 		CancellationToken cancellationToken)
 	{
 		// The read starts now, whether or not anyone reads yet.
-		_producer = new(query, this, pool, clear, cancellationToken);
+		_producer = new(query, this, pool, clearOnReturn, cancellationToken);
 		_producerTask = _producer.Start();
 	}
 
