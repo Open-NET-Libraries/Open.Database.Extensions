@@ -125,7 +125,7 @@ The parameter names come from the arguments (`author` and `titleContains` find `
 
 ## What the numbers say
 
-ODX is not the smallest in every cell. EF Core is shorter than ODX in tasks 1, 2, 3 and 4 (by 1, 2, 2 and 1 lines) once its context, which the table does not count, is in place. ODX is shorter than Dapper in tasks 1, 2 and 4, equal to it in task 3 (15 lines each), and shorter than plain ADO.NET in all four. Where ODX needs less is the plumbing: no connection to create, open or dispose in the method, and none of the column copying that ADO.NET needs.
+ODX is not the smallest in every cell. Once its context, which the table does not count, is in place, EF Core is shorter than ODX in tasks 1 to 3 (by 1, 2 and 2 lines), and ODX is shorter in task 4 (by 1). ODX is shorter than Dapper in tasks 1, 2 and 4, equal to it in task 3 (15 lines each), and shorter than plain ADO.NET in all four. Where ODX needs less is the plumbing: no connection to create, open or dispose in the method, and none of the column copying that ADO.NET needs.
 
 The table is a table of task by library, and each cell names a region of [`HowLittleCode.cs`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/samples/HowLittleCode.cs), so a cell can be replaced by another snippet and the script run again.
 

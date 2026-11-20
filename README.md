@@ -79,7 +79,7 @@ The same four tasks, written with Open.Database.Extensions (ODX), Dapper, EF Cor
 | 3. The rows of one author in memory, then LINQ | 15 | 15 | 13 | 26 |
 | 4. A stored procedure with two parameters | 11 | 14 | 12 | 29 |
 
-Outside the count: ODX takes a connection factory created once per application (one to three lines), and EF Core takes a `DbContext` that maps the model (five lines). Dapper and plain ADO.NET create their own connection inside the method, and that line is counted. ODX is not the smallest in every row: EF Core is shorter than ODX in every row once its context exists. Where ODX needs less is the plumbing, the connection and the column copying. The ODX versions (`AllPostsSql` is `"select * from posts order by id"`, `AuthorPostsSql` adds `where author = @author`, and `Headline` formats a post in C#):
+Outside the count: ODX takes a connection factory created once per application (one to three lines), and EF Core takes a `DbContext` that maps the model (five lines). Dapper and plain ADO.NET create their own connection inside the method, and that line is counted. ODX is not the smallest in every row: once its context exists, EF Core is shorter than ODX in tasks 1 to 3 (by 1, 2 and 2 lines), and ODX is shorter in task 4 (by 1). Where ODX needs less is the plumbing, the connection and the column copying. The ODX versions (`AllPostsSql` is `"select * from posts order by id"`, `AuthorPostsSql` adds `where author = @author`, and `Headline` formats a post in C#):
 
 **1. Rows to a list**
 
