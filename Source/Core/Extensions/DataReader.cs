@@ -44,13 +44,13 @@ public static class DataReaderExtensions
 	/// and
 	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// buffer the rows and release the connection, and
-	/// <see cref="MappedQuery{T}.ToChannelReader(CancellationToken)"/>
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
 	/// streams them to a consumer without holding it
-	/// (it is unbounded by default: the read runs at full speed and
-	/// frees the connection while the consumer takes its time, and the
-	/// rows wait in memory until the consumer takes them).
-	/// A bounded channel that waits when full brings the hold back,
-	/// because the read then waits for room.
+	/// (the producer is unbounded: it reads at full speed and frees the
+	/// connection while the consumer takes its time, and the rows wait
+	/// in memory until the consumer takes them).
+	/// A producer that waited for room would bring the hold back,
+	/// so it does not wait.
 	/// </note>
 	/// <para>
 	/// The token is checked before each read:
@@ -131,13 +131,13 @@ public static class DataReaderExtensions
 	/// and
 	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// buffer the rows and release the connection, and
-	/// <see cref="MappedQuery{T}.ToChannelReader(CancellationToken)"/>
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
 	/// streams them to a consumer without holding it
-	/// (it is unbounded by default: the read runs at full speed and
-	/// frees the connection while the consumer takes its time, and the
-	/// rows wait in memory until the consumer takes them).
-	/// A bounded channel that waits when full brings the hold back,
-	/// because the read then waits for room.
+	/// (the producer is unbounded: it reads at full speed and frees the
+	/// connection while the consumer takes its time, and the rows wait
+	/// in memory until the consumer takes them).
+	/// A producer that waited for room would bring the hold back,
+	/// so it does not wait.
 	/// </note>
 	/// <para>
 	/// The token is passed to <c>ReadAsync</c>, so the provider
@@ -386,13 +386,13 @@ public static class DataReaderExtensions
 	/// and
 	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// buffer the rows and release the connection, and
-	/// <see cref="MappedQuery{T}.ToChannelReader(CancellationToken)"/>
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
 	/// streams them to a consumer without holding it
-	/// (it is unbounded by default: the read runs at full speed and
-	/// frees the connection while the consumer takes its time, and the
-	/// rows wait in memory until the consumer takes them).
-	/// A bounded channel that waits when full brings the hold back,
-	/// because the read then waits for room.
+	/// (the producer is unbounded: it reads at full speed and frees the
+	/// connection while the consumer takes its time, and the rows wait
+	/// in memory until the consumer takes them).
+	/// A producer that waited for room would bring the hold back,
+	/// so it does not wait.
 	/// </note>
 	/// <para>
 	/// <see cref="DBNull"/> values are retained.
@@ -941,13 +941,13 @@ public static class DataReaderExtensions
 	/// and
 	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// buffer the rows and release the connection, and
-	/// <see cref="MappedQuery{T}.ToChannelReader(CancellationToken)"/>
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
 	/// streams them to a consumer without holding it
-	/// (it is unbounded by default: the read runs at full speed and
-	/// frees the connection while the consumer takes its time, and the
-	/// rows wait in memory until the consumer takes them).
-	/// A bounded channel that waits when full brings the hold back,
-	/// because the read then waits for room.
+	/// (the producer is unbounded: it reads at full speed and frees the
+	/// connection while the consumer takes its time, and the rows wait
+	/// in memory until the consumer takes them).
+	/// A producer that waited for room would bring the hold back,
+	/// so it does not wait.
 	/// </note>
 	/// <para>
 	/// The token is checked before each read:

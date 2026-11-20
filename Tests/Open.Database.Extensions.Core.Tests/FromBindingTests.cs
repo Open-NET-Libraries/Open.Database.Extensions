@@ -36,7 +36,7 @@ public static class FromBindingTests
 	[Fact]
 	public static void FromACollectionExpression_BindsThePairsForm()
 	{
-		RowMap<Post> map = RowMap<Post>.From([new("Id", "N")]);
+		var map = RowMap<Post>.From([new("Id", "N")]);
 		Assert.NotSame(RowMap<Post>.Default, map);
 		Assert.Equal(7, IdOf(map)); // the pair is the pairs form's: column N feeds Id
 	}

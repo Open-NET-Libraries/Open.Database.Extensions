@@ -95,7 +95,7 @@ public static class MappedQuerySelectRemovedTests
 	public static void TheReplacementForms_GiveWhatSelectGave()
 	{
 		using DataTable table = TwoRows();
-		RowMap<Label> map = RowMap<Label>.From(
+		var map = RowMap<Label>.From(
 			static (int id, string name) => new Label(id, "n:" + name));
 
 		Assert.Equal(

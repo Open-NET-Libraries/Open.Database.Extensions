@@ -198,14 +198,14 @@ internal static class RowReader
 			else
 			{
 				Func<IDataRecord, T>? map = null;
-				while (true)
+				do
 				{
 					token.ThrowIfCancellationRequested();
 					if (!reader.Read()) break;
 					map ??= source.Mapper(reader);
 					yield return map(reader);
-					if (++n == take) break;
 				}
+				while (++n != take);
 			}
 		}
 
@@ -219,11 +219,11 @@ internal static class RowReader
 		IDataReader reader,
 		CancellationToken token = default)
 	{
-		while (true)
+		do
 		{
 			token.ThrowIfCancellationRequested();
-			if (!reader.NextResult()) break;
 		}
+		while (reader.NextResult());
 	}
 
 	static bool SkipRows(DbDataReader reader, int skip)

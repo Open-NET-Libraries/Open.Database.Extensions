@@ -293,6 +293,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="type">The database type of the parameter.</param>
 	/// <param name="direction">The direction of the parameter.</param>
 	/// <returns>This instance for use in method chaining.</returns>
+	/// <remarks>
+	/// A <see langword="null"/> <paramref name="value"/> passed to an overload whose argument has a static type (a nullable value type, or a <see cref="string"/>) is sent with the database type of that type, the same choice <c>AddParams</c> makes for a NULL member. A <paramref name="type"/> you pass always wins. The <see cref="object"/> overloads have no type to use, and neither does a call that gives the direction by position (<c>AddParam(name, value, ParameterDirection.Input)</c>): pass a database type, or name the direction (<c>direction: ...</c>).
+	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
 	/// <exception cref="ArgumentException"><paramref name="name"/> is blank.</exception>
 	public TThis AddParam(string name, object? value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
@@ -305,7 +308,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParam<T>(string name, T? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
 		where T : struct
-		=> AddParam(new(name, value, type, direction));
+		=> AddParam(Param.Typed(name, value, typeof(T), type, direction));
 
 	// A literal 0 converts implicitly to any enum, so without these a call like AddParam("id", 0) would bind to
 	// the type-only or direction-only overloads below and silently add a parameter with no value.
@@ -324,7 +327,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParam(string name, string? value, TDbType? type = null, ParameterDirection direction = ParameterDirection.Input)
-		=> AddParam(new(name, value, type, direction));
+		=> AddParam(Param.Typed(name, value, typeof(string), type, direction));
 
 	// The same values with the database type required. With the optional-type overloads above alone, AddParam("id", id, SqlDbType.Int) matches them and the object overload with neither better
 	// (one has the exact value type, the other the exact database type), which compilers report as ambiguous (CS0121). A required type of the exact enum type makes these the best match.
@@ -343,12 +346,12 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParam(string name, string? value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
-		=> AddParam(new(name, value, type, direction));
+		=> AddParam(Param.Typed(name, value, typeof(string), type, direction));
 
 	/// <inheritdoc cref="AddParam(string, object, TDbType, ParameterDirection)"/>
 	public TThis AddParam<T>(string name, T? value, TDbType type, ParameterDirection direction = ParameterDirection.Input)
 		where T : struct
-		=> AddParam(new(name, value, type, direction));
+		=> AddParam(Param.Typed(name, value, typeof(T), type, direction));
 
 	/// <summary>
 	/// Adds an input parameter with a string value, named as you write it.
@@ -806,6 +809,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			{
 				// A member of an object that the procedure does not take is simply not sent; an argument named by the caller must match.
 				if (p.FromObject) { names[i] = null; continue; } // the pooled slot holds whatever an earlier renter left: write it before it is read
+
 				throw NoMatch(expression, real!.Names);
 			}
 

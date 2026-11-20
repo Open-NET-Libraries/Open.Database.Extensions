@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Threading.Channels;
 
 namespace Open.Database.Extensions;
 
@@ -878,96 +877,67 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToHashSetAsync(comparer, cancellationToken);
 
-	#region Channel terminals
+	#region Buffer terminals
 
-	/// <inheritdoc cref="MappedQuery{T}.ToChannelReader(CancellationToken)"/>
-	public ChannelReader<T> ToChannelReader(
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(bool, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		bool clearOnDispose,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, false, cancellationToken).Reader;
+		=> _core.ToAsyncBuffer(
+			MemoryPool<T>.Shared, clearOnDispose, cancellationToken);
 
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannelReader(ChannelOptions, CancellationToken)"/>
-	public ChannelReader<T> ToChannelReader(
-		ChannelOptions? options,
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, false, cancellationToken).Reader;
+		=> _core.ToAsyncBuffer(pool, false, cancellationToken);
 
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannelReader(bool, CancellationToken)"/>
-	public ChannelReader<T> ToChannelReader(
-		bool startImmediately,
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, bool, CancellationToken)"/>
+	public PooledBuffer<T> ToAsyncBuffer(
+		MemoryPool<T> pool,
+		bool clearOnDispose,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, startImmediately, cancellationToken).Reader;
+		=> _core.ToAsyncBuffer(pool, clearOnDispose, cancellationToken);
 
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannelReader(ChannelOptions, bool, CancellationToken)"/>
-	public ChannelReader<T> ToChannelReader(
-		ChannelOptions? options,
-		bool startImmediately,
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(bool, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		bool clearOnReturn,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, startImmediately, cancellationToken).Reader;
+		=> _core.ToAsyncBufferStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToChannel(CancellationToken)"/>
-	public Channel<T> ToChannel(
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, false, cancellationToken).Channel;
+		=> _core.ToAsyncBufferStream(pool, false, cancellationToken);
 
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(ChannelOptions, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		ChannelOptions? options,
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, bool, CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, false, cancellationToken).Channel;
+		=> _core.ToAsyncBufferStream(pool, clearOnReturn, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToChannel(bool, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		bool startImmediately,
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		bool clearOnReturn,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, startImmediately, cancellationToken).Channel;
+		=> _core.ToBufferedAsyncStream(
+			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
 
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(ChannelOptions, bool, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		ChannelOptions? options,
-		bool startImmediately,
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, startImmediately, cancellationToken).Channel;
+		=> _core.ToBufferedAsyncStream(pool, false, cancellationToken);
 
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(out Task{long}, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		out Task<long> readCount,
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, bool, CancellationToken)"/>
+	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+		MemoryPool<T> pool,
+		bool clearOnReturn,
 		CancellationToken cancellationToken = default)
-		=> _core.Feed(null, false, out readCount, cancellationToken).Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(out Task{long}, ChannelOptions, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		out Task<long> readCount,
-		ChannelOptions? options,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(options, false, out readCount, cancellationToken).Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(out Task{long}, bool, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		out Task<long> readCount,
-		bool startImmediately,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(
-			null, startImmediately, out readCount, cancellationToken)
-			.Channel;
-
-	/// <inheritdoc
-	/// cref="MappedQuery{T}.ToChannel(out Task{long}, ChannelOptions, bool, CancellationToken)"/>
-	public Channel<T> ToChannel(
-		out Task<long> readCount,
-		ChannelOptions? options,
-		bool startImmediately,
-		CancellationToken cancellationToken = default)
-		=> _core.Feed(
-			options, startImmediately, out readCount, cancellationToken)
-			.Channel;
+		=> _core.ToBufferedAsyncStream(pool, clearOnReturn, cancellationToken);
 
 	#endregion
 }

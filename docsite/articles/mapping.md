@@ -259,7 +259,7 @@ An insert that returns its new id is one `SingleAsync`: no handler, and no check
 
 [!code-csharp[](../samples/Mapping.cs#map_paging)]
 
-To process a large result one row at a time without holding it all, use `Read(rows => ...)` (`Action<IEnumerable<T>>`, or `Func<IEnumerable<T>, TResult>` to return a value). `rows` is a lazy sequence that is only valid inside the handler. In async code use `ReadAsync(handler, cancellationToken)`, whose handler is a `Func<IAsyncEnumerable<T>, CancellationToken, ValueTask>` (or `ValueTask<TResult>` to return a value): enumerate the rows inside it with `await foreach`. To hand rows to another consumer use [`ToChannel`](channels-and-dataflow.md), and for the raw reader `ExecuteReader(reader => ...)`:
+To process a large result one row at a time without holding it all, use `Read(rows => ...)` (`Action<IEnumerable<T>>`, or `Func<IEnumerable<T>, TResult>` to return a value). `rows` is a lazy sequence that is only valid inside the handler. In async code use `ReadAsync(handler, cancellationToken)`, whose handler is a `Func<IAsyncEnumerable<T>, CancellationToken, ValueTask>` (or `ValueTask<TResult>` to return a value): enumerate the rows inside it with `await foreach`. To hand rows to another consumer use [`ToBufferedAsyncStream`](channels-and-dataflow.md), and for the raw reader `ExecuteReader(reader => ...)`:
 
 [!code-csharp[](../samples/Mapping.cs#map_stream)]
 
@@ -279,7 +279,7 @@ An async terminal executes and opens asynchronously but reads the rows with `Rea
 > These members are here for the cases that need exactly that, such as a result too large to buffer or a row-by-row pipeline. Otherwise use a call that lets go of the connection first:
 >
 > - `ToListAsync(cancellationToken)` and `ToArrayAsync(cancellationToken)` buffer the rows and release the connection.
-> - `ToChannelReader()` streams the rows to a consumer without holding the connection. It is unbounded by default: the read runs at full speed and frees the connection while the consumer takes its time, and the rows wait in memory until the consumer takes them. A bounded channel that waits when full brings the hold back, because the read then waits for room ([what each choice costs](channels-and-dataflow.md#what-each-choice-costs)).
+> - `ToBufferedAsyncStream(clearOnReturn, cancellationToken)` and `ToAsyncBufferStream(clearOnReturn, cancellationToken)` stream the rows to a consumer without holding the connection. The producer reads at full speed into pooled chunks and frees the connection while the consumer takes its time. The stream is unbounded: the rows wait in memory until the consumer takes them. A producer that waited for room would bring the hold back, so it does not wait ([Async buffers and streams](async-buffers.md)).
 
 ## Mapping a reader or a command you already have
 

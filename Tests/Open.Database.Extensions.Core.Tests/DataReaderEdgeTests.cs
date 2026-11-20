@@ -292,10 +292,7 @@ public static class DataReaderEdgeTests
 			: reader.Select(static r => r.GetInt32(0), cts.Token);
 
 		using IEnumerator<int> e = ids.GetEnumerator();
-		Assert.Throws<OperationCanceledException>(() =>
-		{
-			e.MoveNext();
-		});
+		Assert.Throws<OperationCanceledException>(() => e.MoveNext());
 		Assert.Equal(0, reader.Reads);
 	}
 
@@ -580,8 +577,8 @@ public static class DataReaderEdgeTests
 	{
 		using var cts = new CancellationTokenSource();
 		var rig = new TokenRig { Stall = TokenStage.Read }; // never answers
-		using var reader = new TokenReader(rig);
-		Task run = Task.Run(
+		await using var reader = new TokenReader(rig);
+		var run = Task.Run(
 			async () =>
 			{
 				switch (variant)

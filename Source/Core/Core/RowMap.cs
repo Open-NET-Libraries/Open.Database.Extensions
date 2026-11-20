@@ -8,7 +8,7 @@ namespace Open.Database.Extensions;
 
 /// <summary>
 /// A validated, read-only mapping of the properties and constructor parameters of <typeparamref name="T"/> to the columns that feed them, for when the columns are named differently from the members.
-/// Declare it once and pass it as the <c>map</c> argument of the query methods (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, <c>ToChannel</c>, …).
+/// Declare it once and pass it as the <c>map</c> argument of the query methods (<c>Map&lt;T&gt;</c>, <c>Results&lt;T&gt;</c>, …).
 /// </summary>
 /// <remarks>
 /// Properties the map does not mention still map by name: a column feeds the property of that name exactly, else ignoring case, else ignoring case and underscores (<c>q_type</c> feeds <c>QType</c>).

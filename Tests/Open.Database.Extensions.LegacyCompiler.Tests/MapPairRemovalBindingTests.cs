@@ -82,10 +82,10 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.Equal("", Bound((Func<IDbCommand, object>)(r => r.Map<Item>())));
 			Assert.Equal("", Bound((Func<DataTable, object>)(r => r.Map<Item>())));
 
-			Assert.Equal("Func`2", Bound((Func<IExecuteReader, object>)(r => r.Map(x => new Item()))));
-			Assert.Equal("Func`2", Bound((Func<IDataReader, object>)(r => r.Map(x => new Item()))));
-			Assert.Equal("Func`2", Bound((Func<IDbCommand, object>)(r => r.Map(x => new Item()))));
-			Assert.Equal("Func`2", Bound((Func<DataTable, object>)(r => r.Map(x => new Item()))));
+			Assert.Equal("Func`2", Bound((Func<IExecuteReader, object>)(r => r.Map(_ => new Item()))));
+			Assert.Equal("Func`2", Bound((Func<IDataReader, object>)(r => r.Map(_ => new Item()))));
+			Assert.Equal("Func`2", Bound((Func<IDbCommand, object>)(r => r.Map(_ => new Item()))));
+			Assert.Equal("Func`2", Bound((Func<DataTable, object>)(r => r.Map(_ => new Item()))));
 		}
 
 #if NET11_0_OR_GREATER
