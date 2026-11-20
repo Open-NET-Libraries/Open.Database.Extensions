@@ -307,7 +307,7 @@ public static class ParameterNameMemoryTests
 	}
 
 	// Moves the clock the cache reads forward, for one source only, by shortening what its entries have left: the assembly has no InternalsVisibleTo for tests, so this
-	// reaches the cache by reflection (and fails loudly, by name, if what it reaches is renamed). Only the entries of the source given are touched, so the tests
+	// reaches the cache by reflection (by private names: a rename breaks it with a null reference, not a named failure). Only the entries of the source given are touched, so the tests
 	// that run beside this one are not aged.
 	static class NameCacheAging
 	{

@@ -768,9 +768,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	// without another read, so a member the procedure never takes does not
 	// cost a read in every run.
 	// Nothing is built or kept, so a false answer leaves no state behind.
-	// `real` is null when the names are not known (and has no names for
-	// a text without markers): each argument then keeps its last member
-	// as written.
+	// `real` has no names when they are not known (null, or the shared
+	// "not known" set) and for a text without markers: each argument then
+	// keeps its last member as written.
 	bool Fits(NameSet? real)
 	{
 		if (real is not { Names.Length: > 0 }) return true;

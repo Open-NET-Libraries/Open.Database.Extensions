@@ -77,7 +77,7 @@ An argument that is not a plain member chain (a call, an index, an operator, a l
 
 #### Remembered names
 
-The names are read once and remembered for five minutes, per server, database and procedure name, on the connection factory (or on the connection itself when you start from a connection). Register the factory once: a connection or a factory you create for each call starts with nothing remembered, so its names are read for every command. Names read inside a transaction are remembered too, even if the transaction rolls back.
+Known names are read once and remembered for five minutes (an empty answer for 15 seconds, see below), per server, database and procedure name, on the connection factory (or on the connection itself when you start from a connection). Register the factory once: a connection or a factory you create for each call starts with nothing remembered, so its names are read for every command. Names read inside a transaction are remembered too, even if the transaction rolls back.
 
 A procedure that changes can show its old names for up to five minutes. Two cases read again before they fail or drop anything: an argument from `AddParam(value)` that matches none of the remembered names, and a member of an `AddParams` object that the remembered names do not declare. Either makes the library read the names once more. A read that follows a miss is itself remembered together with the fact that it was a second look, so a member the procedure never declares costs one extra read per five minutes, not one per run. Everything else uses the remembered names as they are until they expire:
 
