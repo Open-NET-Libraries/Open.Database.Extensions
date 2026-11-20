@@ -1,17 +1,90 @@
 # What's new in 11
 
 > [!NOTE]
-> This is `11.0.0-rc.9`, a release candidate. The API is settled, apart from the removal listed first below under "Changes since rc.7". Please try it and report what you find.
+> This is `11.0.0-rc.10`, a release candidate. The API is settled: since rc.7 it has lost only the typed `ToChannelReader` and `ToChannel` (see "Removed" under "Changes since rc.7"), and every other change to the API has been an addition. Please try it and report what you find.
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Start here
+
+This is for anyone moving to 11, from 10.x or from an earlier 11 release candidate, whether a person or a coding agent. Read "Start here", then "Upgrading from 10.x", then "Deprecated in 11.0"; the "Changes since" sections are history.
+
+### The new way, in one example
+
+A command, a parameter named from its argument, a typed map, and an async terminal with a token:
+
+```cs
+const int author = 42;
+
+List<Post> posts = await connectionFactory
+	.Command("select * from posts where author = @author")
+	.AddParam(author) // the name "author" comes from the variable
+	.Map<Post>()
+	.ToListAsync(cancellationToken);
+```
+
+When a column is named differently, declare the map once and pass it to every query:
+
+```cs
+public static RowMap<Post> PostMap => field ??= [
+	new(nameof(Post.Id), "post_id"),
+	new(nameof(Post.Author), "author_id"),
+];
+
+List<Post> posts = await connectionFactory
+	.Command("select * from posts where author_id = @author")
+	.AddParam(author)
+	.Map(PostMap)
+	.ToListAsync(cancellationToken);
+```
+
+### What is new, and how to use it
+
+- **`Map<T>()` and its terminals.** `command.Map<Post>().ToListAsync(cancellationToken)`; `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `ToDictionaryAsync`, `FirstOrDefaultAsync` and `SingleOrDefaultAsync` work the same way, and `Skip` and `Take` come before the terminal. It is better because the terminals read straight from the reader through a mapping that is compiled once and cached, with no boxing on the common path. In the library's in-memory benchmark, 100 or more rows into a list take 0.36 to 0.42 times Dapper's time; against SQL Server the database dominates and the times are within the noise. See [Performance](performance.md).
+- **`RowMap<T>`, declared once.** `.Map(PostMap)` (shown above); `RowMap<T>.From(static (int id, string title) => new PostSummary(id, title))` builds one from a delegate, and `map.Convert<long, string>(nameof(Order.OrderNum), static n => n.ToString("D6"))` converts a column on its way to a member. It is better because a map built at the call site costs about 0.43 ms and 29.5 KB for 12 properties each time, and a declared one is built once. With no map, a column matches a property exactly, else ignoring case, else ignoring case and underscores (`first_name` fills `FirstName`). See [Mapping rows to objects](mapping.md).
+- **Parameter names from the arguments.** `.AddParam(author)`, `.AddParamIf(condition, author)` and `.AddParams(search)` take the name from the variable or member chain and match it to the stored procedure's real name: exactly, ignoring case, ignoring case and underscores, then without a prefix such as `p_` or `in_`. `AddParams` sends only the members the procedure or the `@name` markers declare. It is better because you do not spell a name twice, and a name you pass yourself, `AddParam("name", value)`, always wins. See [Parameters](expressive-commands.md#name-a-parameter-from-its-argument).
+- **Later result sets are read; `.SingleResult()` opts out.** `command.SingleResult().Map<Post>().ToListAsync(cancellationToken)` reads only the first set. It is better because a failure in a later statement is thrown, not lost. See [Results, and a failure after the first one](mapping.md#results-and-a-failure-after-the-first-one).
+- **Row reads are synchronous by default; `AsyncReads()` opts in.** `command.AsyncReads().Map<Post>()` reads rows with `ReadAsync()`. The command still executes, and the connection still opens, asynchronously. It is better because a `Read()` costs less CPU, and about 40% less memory on the `Map(Func)` path, for the same wall time over a real network link. See [AsyncReads()](async-reads.md).
+- **`First` and `Single` throw on no rows.** `await command.Map<long>().SingleAsync(cancellationToken)` (or `command.SingleAsync<long>(cancellationToken)`) throws `InvalidOperationException` for no row, and `Single` also for more than one; `FirstOrDefaultAsync` and `SingleOrDefaultAsync` return `default` instead. It is better because an insert that returns its new id needs no handler to check the row count. See [Terminals](mapping.md#terminals).
+- **`ExecuteScalar<T>()` converts.** `await command.ExecuteScalarAsync<int>(cancellationToken)` converts a `bigint` to `int` with a range check, the way `Map<T>()` does, where 10.x threw `InvalidCastException`. NULL and no row give `default(T)`.
+- **A typed NULL parameter.** `AddParam("@id", (long?)null)` is sent with the database type of its overload, so SQL Server sees the type you meant. It is better because a NULL with no type could change the parameter type and the query plan.
+- **Buffers that release the connection early.** `Map<Post>().ToAsyncBuffer(clearOnDispose, cancellationToken)` returns a `PooledBuffer<Post>`; `await buffer.Items` gives a read-only `PooledArray<Post>`; dispose the buffer to return the arrays to the pool. `ToAsyncBufferStream` (chunks) and `ToBufferedAsyncStream` (elements) are lazy streams with the same overloads. It is better because a background producer reads the query and the connection is released as soon as the last row is read, however slowly the consumer works. See [Async buffers and streams](async-buffers.md).
+- **NULL rules.** A nullable member gets `null`; a non-nullable value type keeps its initializer, else its default; a constructor parameter gets its declared default. Nothing throws, and a NULL never overwrites a member that the C# type declares non-nullable. See [NULL in a non-nullable column](mapping.md#null-in-a-non-nullable-column).
+- **`ValueMappingException`.** A value that cannot be mapped throws it, a `DataException` that names the property, the column and the target type; it replaces `InvalidOperationException` for that case. Provider exceptions are not wrapped.
+- **Constructor binding, `required` and `init`.** Positional records and classes with one public constructor are built through it, and a `required` property that no column feeds throws on the first row. See [Records and constructors](mapping.md#records-and-constructors).
+- **Packages.** Use `Open.Database.Extensions.MSSqlClient` (on `Microsoft.Data.SqlClient`) for SQL Server. The `SqlClient` package, on the older `System.Data.SqlClient`, is deprecated, and every type in it has its twin in `MSSqlClient`.
+
+### Instead of ... use ...
+
+The old calls still work in 11 with a compile warning (CS0618) and are removed in 12. Each warning names the new call.
+
+| Instead of | Use |
+|---|---|
+| `Results<T>(IExecuteReader)` | `.Map<T>().ToListAsync(cancellationToken)` |
+| `ExpressiveDbCommand.ResultsAsync<T>` | `.Map<T>().ToListAsync(cancellationToken)` |
+| `FirstOrDefault(selector)` on an `IExecuteReader` | `.Map(selector).FirstOrDefaultAsync(cancellationToken)` |
+| `cmd.Retrieve().DequeueAs<T>()` | `cmd.Map<T>().ToListAsync(cancellationToken)` |
+| `ToListAsync(selector)` on a command | `.Map(selector).ToListAsync(cancellationToken)` |
+| Types of `Open.Database.Extensions.SqlClient` | The same types in `Open.Database.Extensions.MSSqlClient` |
+
+The rest, with what changes in each, is in [Deprecated in 11.0](#deprecated-in-110).
+
+> [!WARNING]
+> Streaming members (`Read`, `ReadAsync`, `ForEach` and the like) hold the connection while your code runs for each row, so they are not the recommended way to read rows. Buffer with `ToListAsync`, or use the buffer and stream terminals above. See [Streaming holds the connection](mapping.md#streaming-holds-the-connection).
+
 ## Changes since rc.9
+
+- **`ToListAsync`, `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync` and `ToDictionaryAsync` build an exactly sized result, once.** A list or array used to grow while the reader was open (doubling, so a 10,000-row list kept room for 16,384). The rows now go into a chain of pooled chunks on the calling flow, with no background producer, and the result is built right after the last row: one block copy for a list, an array or an immutable array, and a hash set or dictionary created at the size of the result, so it never regrows. `ToImmutableArrayAsync` wraps the array without a copy on .NET 8 and later. The synchronous `ToHashSet` and `ToDictionary` work the same way. In the library's synthetic benchmark, 10,000 rows into `ToListAsync` take 206 µs, against 522 µs in rc.9; with a 50 µs network link every route is within 3%, so expect less time on the CPU and less garbage, not a faster query. Bytes per call against SQL Server LocalDB are at most 16 B above rc.9 for 1 and 100 rows, and 1,320 B below it for a 100-row list. One change you can see: a duplicate or null key in `ToDictionary` and `ToDictionaryAsync` throws the same exception as before, but only after every row has been read, and the key and value selectors run after the read. New: `PooledArray<T>.ToArray()` and `ToList()` copy a buffer's rows into an exactly sized array or list.
+
+- **Derived parameter names cost no more than explicit ones when the SQL text is built at run time.** The `@name` markers of a text command were remembered per string object, so a text assembled on every call was read again on every call: 680 B more per call for one parameter, 1,360 B for four. Texts of up to 4,096 characters are now also remembered by their content (up to 1,024 of them), and a rebuilt text costs within 16 B of naming the parameters yourself. A literal or kept text was never affected; longer texts behave as before. No API changes.
 
 - **An unreadable procedure is looked up once in 15 seconds, not once per run, and a stale list no longer outlives an empty answer.** When the provider reported no parameter names for a stored procedure (the login cannot see it, it does not exist, or it declares no parameters), nothing was remembered, so every run read the names again: one extra schema query per execute while the connection was open. And when such an answer came after an older list, the older list stayed for the full five minutes, so a procedure that had lost its parameters was still sent the old ones. An empty answer now replaces the older list and is remembered for 15 seconds (a fraction of the five minutes for known names, so a procedure that is created or changed shows up soon). Derived names are sent as written until then. No API changes.
 
 - **A parameter added to a stored procedure is no longer silently left out of an `AddParams` call.** `AddParams(new { Id, Title })` against a procedure that declared only `@Id` remembered those names, and when the procedure later gained `@Title` (inside the five minutes the names are remembered), the run dropped `Title` with no error and the procedure used its default. A member that the remembered names do not declare now makes the library read the names once more before it drops the member, as an unmatched `AddParam(value)` argument already did. If the second read still lacks the member it is dropped as before, and that read is remembered, so a member the procedure never takes costs one extra read per five minutes, not one per run (a procedure that declares no parameters: every 15 seconds, see above). No signatures change. See [Remembered names](expressive-commands.md#remembered-names).
 
 - **A mapped read no longer boxes a date, a decimal or a bool that the provider hands over as another type.** SQLite stores a date and a decimal as text and a bool as an integer, so the column type differs from the member type, and each such cell cost a box on top of the value: 24 bytes for a `DateTime`, 32 for a `decimal`, 48 for a `bool`, per row (the nullable members too). The map now reads them through a typed conversion with the same culture, the same failures and the same NULL rules as before, and allocates what the hand-written read does. No signatures change.
+
+- **Docs.** "Start here" at the top of this page: what is new, how to use it, and what to use instead. New articles: [Shaping rows](shaping-rows.md) and [How little code](how-little-code.md) (the same four tasks with ODX, Dapper, EF Core and ADO.NET). The streaming members are documented as not the recommended way to read rows, because they hold the connection for every row. [Async buffers and streams](async-buffers.md) covers who owns a `PooledBuffer` and for how long, including returning one from a controller. [Mapping](mapping.md) shows how to get an immutable or frozen result from the terminals.
 
 ## Changes since rc.8
 
