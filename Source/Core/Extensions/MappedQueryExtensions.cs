@@ -196,6 +196,8 @@ public static class MappedQueryExtensions
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
 	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// A result with rows is a new array, exactly as long as the number of rows, and nothing else refers to it: keep it, change it or hand it on.
+	/// <c>ToImmutableArrayAsync</c> wraps such an array without copying it on .NET 8 and later (the netstandard2.0 build copies it once). (An empty result is the shared empty array, which has nothing to change.)
 	/// </remarks>
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
@@ -263,6 +265,7 @@ public static class MappedQueryExtensions
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
 	/// <remarks>
 	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a null key) throws only after the whole read.
 	/// </remarks>
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
@@ -284,6 +287,7 @@ public static class MappedQueryExtensions
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
 	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a null key) throws only after the whole read.
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
@@ -321,7 +325,7 @@ public static class MappedQueryExtensions
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
 	/// <remarks>
 	/// <para>
-	/// The dictionary is built in one pass: each selector is called once per row, key first, and no list of the rows is kept.
+	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a null key) throws, and the selectors run, only after the whole read.
 	/// A duplicate key throws, as it does for <see cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/> and for LINQ's <c>ToDictionary</c>.
 	/// </para>
 	/// <para>
@@ -364,7 +368,7 @@ public static class MappedQueryExtensions
 	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
 	/// <para>
-	/// The dictionary is built in one pass: each selector is called once per row, key first, and no list of the rows is kept.
+	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a null key) throws, and the selectors run, only after the whole read.
 	/// A duplicate key throws, as it does for <see cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>.
 	/// </para>
 	/// <para>

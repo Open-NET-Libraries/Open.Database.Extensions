@@ -175,6 +175,70 @@ public sealed class PooledArray<T>
 		}
 	}
 
+	/// <summary>
+	/// Copies every row, in order, into a new array of exactly
+	/// <see cref="Count"/> rows: one copy per chunk, nothing grown.
+	/// </summary>
+	/// <returns>
+	/// The rows in a new array; it does not depend on this view, which
+	/// can be disposed afterwards.
+	/// </returns>
+	/// <exception cref="ObjectDisposedException">
+	/// The array is disposed.
+	/// </exception>
+	public T[] ToArray()
+	{
+		int count = Count;
+		if (count == 0) return [];
+
+#if NET
+		T[] result = GC.AllocateUninitializedArray<T>(count);
+#else
+		T[] result = new T[count];
+#endif
+		CopyTo(result);
+		return result;
+	}
+
+	/// <summary>
+	/// Copies every row, in order, into a new list sized to the rows:
+	/// one copy per chunk, nothing grown.
+	/// </summary>
+	/// <returns>
+	/// The rows in a new list; it does not depend on this view, which
+	/// can be disposed afterwards.
+	/// </returns>
+	/// <exception cref="ObjectDisposedException">
+	/// The array is disposed.
+	/// </exception>
+	public List<T> ToList()
+	{
+		int count = Count;
+		List<T> list = new(count);
+		if (count == 0) return list;
+
+#if NET8_0_OR_GREATER
+		CollectionsMarshal.SetCount(list, count);
+		CopyTo(CollectionsMarshal.AsSpan(list));
+#else
+		for (int i = 0; i < _chunks.Length; ++i)
+		{
+			T[]? array = _arrays[i];
+			if (array is not null)
+			{
+				list.AddRange(
+					new ArraySegment<T>(array, _offsets[i], _lengths[i]));
+			}
+			else
+			{
+				foreach (T row in _chunks[i].Memory.Span) list.Add(row);
+			}
+		}
+#endif
+
+		return list;
+	}
+
 	/// <summary>Enumerates the rows in order.</summary>
 	/// <remarks>
 	/// <c>foreach</c> binds to this method: the enumerator is a struct
