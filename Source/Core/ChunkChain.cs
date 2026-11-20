@@ -19,11 +19,21 @@ namespace Open.Database.Extensions.Core;
 // ChunkSizing's collect-shift per chunk up to its collect-max; they are
 // always powers of two, so a pool hands back exactly that size.
 //
+// The chain object is reused: one spare is kept per T, taken by Rent and
+// parked again by Dispose, so a small result allocates nothing for it
+// (as the sink struct of the earlier path allocated nothing). A chain is
+// rented by one call, used by that call alone, and disposed once, in its
+// finally: after that it belongs to the spare slot, and no reference to
+// it is used again.
+//
 // Clearing: a chunk that may hold references is cleared before it goes
 // back (the used part only), so a pooled array never keeps a row alive.
 // A chunk of plain values is returned as it is.
 internal sealed class ChunkChain<T>
 {
+	// The one spare chain of this T.
+	static ChunkChain<T>? _spare;
+
 	// A test seam (like ChunkSizing): set by reflection to count rents and
 	// returns, then put back. Per T.
 	internal static ArrayPool<T> _pool = ArrayPool<T>.Shared;
@@ -35,12 +45,23 @@ internal sealed class ChunkChain<T>
 		= RuntimeHelpers.IsReferenceOrContainsReferences<T>();
 #endif
 
-	T[][]? _chunks = new T[4][];
+	T[][] _chunks = new T[4][];
+	bool _parked;
 	int _chunkCount;
 	T[] _current = [];
 	int _index;
 	int _filled; // rows in the chunks before the current one
 	int _nextSize;
+
+	/// <summary>An empty chain: the spare one if there is one.</summary>
+	internal static ChunkChain<T> Rent()
+	{
+		ChunkChain<T>? chain = Interlocked.Exchange(ref _spare, null);
+		if (chain is null) return new ChunkChain<T>();
+
+		chain._parked = false;
+		return chain;
+	}
 
 	/// <summary>How many rows were added.</summary>
 	internal int Count
@@ -64,9 +85,10 @@ internal sealed class ChunkChain<T>
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	void AddSlow(T item)
 	{
-		T[][] chunks = _chunks
-			?? throw new ObjectDisposedException(nameof(ChunkChain<>));
+		if (_parked)
+			throw new ObjectDisposedException(nameof(ChunkChain<>));
 
+		T[][] chunks = _chunks;
 		if (_chunkCount == chunks.Length)
 		{
 			Array.Resize(ref chunks, chunks.Length * 2);
@@ -118,7 +140,7 @@ internal sealed class ChunkChain<T>
 		List<T> list = new(count);
 		if (count == 0) return list;
 
-		T[][] chunks = _chunks!;
+		T[][] chunks = _chunks;
 		for (int i = 0; i < _chunkCount; ++i)
 		{
 			T[] chunk = chunks[i];
@@ -132,7 +154,7 @@ internal sealed class ChunkChain<T>
 
 	void CopyTo(Span<T> destination)
 	{
-		T[][] chunks = _chunks!;
+		T[][] chunks = _chunks;
 		int last = _chunkCount - 1;
 		for (int i = 0; i < last; ++i)
 		{
@@ -145,15 +167,17 @@ internal sealed class ChunkChain<T>
 	}
 
 	/// <summary>
-	/// Clears what may hold references and returns every array to the
-	/// pool. Safe to call more than once.
+	/// Clears what may hold references, returns every array to the pool
+	/// and parks the chain as the spare. Call it once, from the finally of
+	/// the call that rented the chain (a second call, before the chain is
+	/// rented again, does nothing).
 	/// </summary>
 	internal void Dispose()
 	{
-		T[][]? chunks = _chunks;
-		if (chunks is null) return;
+		if (_parked) return;
 
-		_chunks = null;
+		_parked = true;
+		T[][] chunks = _chunks;
 		_current = [];
 		int last = _chunkCount - 1;
 		for (int i = 0; i <= last; ++i)
@@ -167,8 +191,11 @@ internal sealed class ChunkChain<T>
 			_pool.Return(chunk, clearArray: false);
 		}
 
+		Array.Clear(chunks, 0, _chunkCount);
 		_index = 0;
 		_filled = 0;
+		_nextSize = 0;
 		_chunkCount = 0;
+		Interlocked.CompareExchange(ref _spare, this, null);
 	}
 }

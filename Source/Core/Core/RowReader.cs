@@ -266,11 +266,9 @@ internal static class RowReader
 		return sink;
 	}
 
-
 	public static async ValueTask<Queue<T>> ToQueueAsync<T>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 		=> (await FillAsync(source, reader, skip, take, useReadAsync, new QueueSink<T>(new Queue<T>()), cancellationToken).ConfigureAwait(false)).Queue;
-
 
 	public static async ValueTask<(bool Found, T? Item)> TryFirstAsync<T>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
