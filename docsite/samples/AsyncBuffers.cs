@@ -78,6 +78,50 @@ public static class AsyncBuffers
 		int IdSum,
 		int CopyLength);
 
+	#region buffers_finish_query
+	// A LINQ query over the view is lazy: it runs when it is
+	// enumerated. Finish it before the buffer is disposed.
+	public static async Task<List<string>> FinishQueryAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		// Disposing the view disposes the buffer it came from.
+		using PooledArray<Post> posts
+			= await LatestPosts(connectionFactory, cancellationToken).Items;
+
+		// ToList() runs the query now, while the view is alive.
+		return posts
+			.Select(static post => $"{post.Id}: {post.Title}")
+			.ToList();
+	}
+	#endregion
+
+	#region buffers_lazy_trap
+	// The mistake: the query has not run when the buffer is
+	// disposed, so it runs on arrays that are already back in the pool.
+	public static async Task<bool> LazyAfterDisposeAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		IEnumerable<int> ids;
+		using (PooledArray<Post> posts
+			= await LatestPosts(connectionFactory, cancellationToken).Items)
+		{
+			ids = posts.Select(static post => post.Id);
+		}
+
+		try
+		{
+			_ = ids.ToList();
+			return false;
+		}
+		catch (ObjectDisposedException)
+		{
+			return true;
+		}
+	}
+	#endregion
+
 	#region buffers_skip_take
 	public static async Task<int[]> SkipTakeAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
@@ -159,18 +203,20 @@ public static class AsyncBuffers
 	#endregion
 
 	#region buffers_linq_async
-	public static async Task<List<string>> LinqAsyncAsync(
+	// The SQL filters; the C# shapes. No async, await or using:
+	// the read starts when the caller enumerates the stream.
+	public static IAsyncEnumerable<string> PostLabelsAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		int author,
 		CancellationToken cancellationToken)
-		=> await connectionFactory
-			.Command("select * from posts order by id")
+		=> connectionFactory
+			.Command("select * from posts where author = @author order by id")
+			.AddParam(author)
 			.Map<Post>()
 			.ToBufferedAsyncStream(
 				clearOnReturn: false,
 				cancellationToken)
-			.Where(static post => post.Author == 42)
-			.Select(static post => post.Title)
-			.ToListAsync(cancellationToken);
+			.Select(static post => $"{post.Id}: {post.Title}");
 	#endregion
 
 	#region buffers_small_result

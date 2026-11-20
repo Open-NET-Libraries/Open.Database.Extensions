@@ -208,6 +208,15 @@ Check(
 	"the Items view has a count, an indexer, an enumerator and a LINQ copy");
 
 Check(
+	(await AsyncBuffers.FinishQueryAsync(factory, CancellationToken.None))
+		.SequenceEqual(["1: Post 1", "2: Post 2", "3: Post 3", "4: Post 4", "5: Post 5"]),
+	"a LINQ query finished with ToList() before the dispose holds its rows");
+
+Check(
+	await AsyncBuffers.LazyAfterDisposeAsync(factory, CancellationToken.None),
+	"a lazy LINQ query enumerated after the dispose throws ObjectDisposedException");
+
+Check(
 	(await AsyncBuffers.SkipTakeAsync(factory, CancellationToken.None))
 		.SequenceEqual([2, 3]),
 	"ToAsyncBuffer after Skip(1).Take(2) holds posts 2 and 3");
@@ -224,9 +233,11 @@ Check(
 	"ToBufferedAsyncStream yields every row in order and is single-use");
 
 Check(
-	(await AsyncBuffers.LinqAsyncAsync(factory, CancellationToken.None))
-		.SequenceEqual(["Post 1", "Post 2", "Post 3"]),
-	"System.Linq over ToBufferedAsyncStream projects the rows");
+	(await AsyncBuffers
+		.PostLabelsAsync(factory, 42, CancellationToken.None)
+		.ToListAsync())
+		.SequenceEqual(["1: Post 1", "2: Post 2", "3: Post 3"]),
+	"System.Linq over ToBufferedAsyncStream, returned with no await, projects the filtered rows");
 
 Check(
 	(await AsyncBuffers.SmallResultAsync(factory, CancellationToken.None))
