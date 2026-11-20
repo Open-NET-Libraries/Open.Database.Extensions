@@ -52,16 +52,13 @@ static class TextNameCache
 		if (ParameterNames.Describe(expression) is not { } described)
 			return Slow(text, expression);
 
-		switch (ParameterNames.Scan(text, described.Candidates, out ReadOnlySpan<char> real))
+		// An ambiguity throws with the names the text declares in its message: the parsed way makes it.
+		return ParameterNames.Scan(text, described.Candidates, out ReadOnlySpan<char> real) switch
 		{
-			case ParameterNames.ScanResult.Found:
-				return described.Real(real);
-			case ParameterNames.ScanResult.None:
-				return null;
-			default:
-				// An ambiguity throws with the names the text declares in its message: the parsed way makes it.
-				return Slow(text, expression);
-		}
+			ParameterNames.ScanResult.Found => described.Real(real),
+			ParameterNames.ScanResult.None => null,
+			_ => Slow(text, expression),
+		};
 	}
 
 	static string? Slow(string text, string expression)

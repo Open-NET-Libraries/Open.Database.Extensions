@@ -19,7 +19,7 @@ static class SqlTextParameters
 		int position = 0;
 		while (NextMarker(text, ref position, out int start, out int stop))
 		{
-			string token = text.Substring(start, stop - start);
+			string token = text[start..stop];
 			seen ??= new(StringComparer.OrdinalIgnoreCase);
 			if (seen.Add(token)) (tokens ??= ImmutableArray.CreateBuilder<string>()).Add(token);
 		}
