@@ -14,6 +14,8 @@
 | A column can hold NULL | Declare the property nullable (`int?`, `string?`): see [NULL in a non-nullable column](#null-in-a-non-nullable-column) |
 | Your own conversion | `Map(selector)` |
 
+For the shapes this table does not cover, such as a NULL that means an empty string, a value that is not in the row or a row to skip, see [Shaping rows](shaping-rows.md).
+
 ## The rules
 
 - **Construction.** A row is built through the type's constructor or from its default value, as the table in [Which types are built through a constructor](#which-types-are-built-through-a-constructor) says, and then its properties are set; any other type throws `InvalidOperationException` at the call, even for an empty result (see [Errors](#errors)).
