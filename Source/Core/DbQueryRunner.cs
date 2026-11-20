@@ -10,63 +10,115 @@ namespace Open.Database.Extensions;
 // Open happens before the command is created, as some providers need.
 static class DbQueryRunner
 {
-	internal static InvalidOperationException Unbound()
+	public static InvalidOperationException Unbound()
 		=> new("This query was not created by Using(...); a default value cannot be used.");
 
-	static DbConnection Acquire(object source, out DbTransaction? transaction)
+	// What one run holds: the connection, and what is owed when the run ends,
+	// which Dispose does (so a run is `using Lease lease = Lease.Take(...)`).
+	// A connection or a transaction is the caller's: it is neither disposed nor
+	// given back. A transaction's connection is also never opened or closed
+	// here. A connection that needed opening (it was closed, or broken) is
+	// closed again, even when the run throws; one from a factory is disposed
+	// and one from a pool is given back, after that.
+	public readonly struct Lease : IDisposable
 	{
-		Debug.Assert(source is not null);
-		transaction = null;
-		DbConnection? connection;
-		switch (source)
+		readonly object _source;
+		readonly bool _opened;
+
+		Lease(
+			object source,
+			DbConnection connection,
+			DbTransaction? transaction,
+			bool opened)
 		{
-			case DbConnection direct:
-				return direct;
-			case DbTransaction tx:
-				transaction = tx;
-				connection = tx.Connection;
-				break;
-			case IDbConnectionFactory factory:
-				connection = (DbConnection?)factory.Create();
-				break;
-			default:
-				connection = (DbConnection?)((IDbConnectionPool)source).Take();
-				break;
+			_source = source;
+			Connection = connection;
+			Transaction = transaction;
+			_opened = opened;
 		}
 
-		return connection
-			?? throw new InvalidOperationException(
-				"The connection source supplied no connection.");
+		public DbConnection Connection { get; }
+
+		public DbTransaction? Transaction { get; }
+
+		public static Lease Take(object source)
+		{
+			Debug.Assert(source is not null);
+			DbConnection? connection;
+			switch (source)
+			{
+				case DbConnection direct:
+					return new(
+						source,
+						direct,
+						null,
+						ConnectionExtensions.NeedsOpen(direct.State));
+				case DbTransaction tx:
+					return new(source, OpenConnectionOf(tx), tx, false);
+				case IDbConnectionFactory factory:
+					connection = (DbConnection?)factory.Create();
+					break;
+				default:
+					connection = (DbConnection?)((IDbConnectionPool)source).Take();
+					break;
+			}
+
+			return connection is null
+				? throw new InvalidOperationException(
+					"The connection source supplied no connection.")
+				: new(
+					source,
+					connection,
+					null,
+					ConnectionExtensions.NeedsOpen(connection.State));
+		}
+
+		// A transaction is begun on an open connection and holds it: it is
+		// neither opened nor reopened here.
+		static DbConnection OpenConnectionOf(DbTransaction transaction)
+		{
+			DbConnection connection = transaction.Connection
+				?? throw new InvalidOperationException(
+					"The transaction has completed, so it has no connection.");
+
+			return ConnectionExtensions.NeedsOpen(connection.State)
+				? throw new InvalidOperationException(
+					"The transaction's connection is not open.")
+				: connection;
+		}
+
+		public void Open()
+		{
+			if (_opened) Connection.EnsureOpen();
+		}
+
+		// An open connection (the usual case) needs no awaiting at all.
+		public ValueTask OpenAsync(CancellationToken cancellationToken)
+			=> _opened
+				? ValueTaskHelpers.Discard(
+					Connection.EnsureOpenAsync(cancellationToken))
+				: default;
+
+		public CommandBehavior Behavior(CommandBehavior behavior)
+			=> _opened
+				? behavior | CommandBehavior.CloseConnection
+				: behavior;
+
+		public void Dispose()
+		{
+			try
+			{
+				if (_opened) Connection.Close();
+			}
+			finally
+			{
+				if (_source is IDbConnectionFactory)
+					Connection.Dispose();
+				else if (_source is IDbConnectionPool pool)
+					pool.Give(Connection);
+			}
+		}
 	}
-
-	static void Release(
-		object source,
-		DbConnection connection,
-		ConnectionState before)
-	{
-		try
-		{
-			if (before == ConnectionState.Closed) connection.Close();
-		}
-		finally
-		{
-			// Same order as Acquire. A connection or transaction is the
-			// caller's, and is neither disposed nor given back.
-			if (source is DbConnection or DbTransaction)
-			{
-				// Nothing more.
-			}
-			else if (source is IDbConnectionFactory)
-			{
-				connection.Dispose();
-			}
-			else
-			{
-				((IDbConnectionPool)source).Give(connection);
-			}
-		}
-	}
-
 	static DbCommand Make(
 		DbConnection connection,
 		DbTransaction? transaction,
@@ -197,19 +249,7 @@ static class DbQueryRunner
 	static bool Fits(NameSet? remembered, DbQueryCall call, DbQuery definition)
 		=> remembered is null || call.Fits(remembered, definition.CommandText);
 
-	// An open connection (the usual case) needs no awaiting at all.
-	static ValueTask<ConnectionState> OpenIfNeededAsync(
-		DbConnection connection,
-		CancellationToken cancellationToken)
-	{
-		ConnectionState state = connection.State;
-		return (state & (ConnectionState.Open | ConnectionState.Broken))
-			== ConnectionState.Open
-			? new ValueTask<ConnectionState>(state)
-			: connection.EnsureOpenAsync(cancellationToken);
-	}
-
-	internal static TResult Run<TState, TResult>(
+	public static TResult Run<TState, TResult>(
 		DbQuery definition,
 		object source,
 		DbQueryCall? call,
@@ -220,28 +260,23 @@ static class DbQueryRunner
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		DbConnection connection = Acquire(source, out DbTransaction? tx);
-		ConnectionState before = connection.State;
-		try
-		{
-			connection.EnsureOpen();
-			NameSet? names = call is { NeedsNames: true }
-				? Resolve(definition, source, connection, call)
-				: null;
-			using DbCommand command = Make(connection, tx, definition, call, names);
-			using DbDataReader reader = command.ExecuteReader(
-				before == ConnectionState.Closed
-					? behavior | CommandBehavior.CloseConnection
-					: behavior);
-			return transform(reader, state);
-		}
-		finally
-		{
-			Release(source, connection, before);
-		}
+		using Lease lease = Lease.Take(source);
+		lease.Open();
+		NameSet? names = call is { NeedsNames: true }
+			? Resolve(definition, source, lease.Connection, call)
+			: null;
+		using DbCommand command = Make(
+			lease.Connection,
+			lease.Transaction,
+			definition,
+			call,
+			names);
+		using DbDataReader reader = command.ExecuteReader(
+			lease.Behavior(behavior));
+		return transform(reader, state);
 	}
 
-	internal static async ValueTask<TResult> RunAsync<TState, TResult>(
+	public static async ValueTask<TResult> RunAsync<TState, TResult>(
 		DbQuery definition,
 		object source,
 		DbQueryCall? call,
@@ -256,46 +291,39 @@ static class DbQueryRunner
 		// Cancelled awaited tasks throw, so this does too.
 		cancellationToken.ThrowIfCancellationRequested();
 
-		DbConnection connection = Acquire(source, out DbTransaction? tx);
-		ConnectionState before = connection.State;
-		try
-		{
-			await OpenIfNeededAsync(connection, cancellationToken)
-				.ConfigureAwait(false);
-			NameSet? names = call is { NeedsNames: true }
-				? await ResolveAsync(
-						definition,
-						source,
-						connection,
-						call,
-						cancellationToken)
-					.ConfigureAwait(false)
-				: null;
-			using DbCommand command = Make(connection, tx, definition, call, names);
-			CommandBehavior b = before == ConnectionState.Closed
-				? behavior | CommandBehavior.CloseConnection
-				: behavior;
+		using Lease lease = Lease.Take(source);
+		await lease.OpenAsync(cancellationToken).ConfigureAwait(false);
+		NameSet? names = call is { NeedsNames: true }
+			? await ResolveAsync(
+					definition,
+					source,
+					lease.Connection,
+					call,
+					cancellationToken)
+				.ConfigureAwait(false)
+			: null;
+		using DbCommand command = Make(
+			lease.Connection,
+			lease.Transaction,
+			definition,
+			call,
+			names);
+		CommandBehavior b = lease.Behavior(behavior);
 #if NETSTANDARD2_0
-			using DbDataReader reader = await command
-				.ExecuteReaderAsync(b, cancellationToken)
-				.ConfigureAwait(false);
+		using DbDataReader reader = await command
+			.ExecuteReaderAsync(b, cancellationToken)
+			.ConfigureAwait(false);
 #else
-			DbDataReader reader = await command
-				.ExecuteReaderAsync(b, cancellationToken)
-				.ConfigureAwait(false);
-			await using var readerDisposal = reader.ConfigureAwait(false);
+		DbDataReader reader = await command
+			.ExecuteReaderAsync(b, cancellationToken)
+			.ConfigureAwait(false);
+		await using var readerDisposal = reader.ConfigureAwait(false);
 #endif
-			return await transform(reader, state).ConfigureAwait(false);
-		}
-		finally
-		{
-			Release(source, connection, before);
-		}
+		return await transform(reader, state).ConfigureAwait(false);
 	}
-
 	// The members of IExecuteReader that need no state, made from the two above.
 
-	internal static void Run(
+	public static void Run(
 		DbQuery definition,
 		object source,
 		DbQueryCall? call,
@@ -318,7 +346,7 @@ static class DbQueryRunner
 			behavior);
 	}
 
-	internal static T Run<T>(
+	public static T Run<T>(
 		DbQuery definition,
 		object source,
 		DbQueryCall? call,
@@ -337,7 +365,7 @@ static class DbQueryRunner
 			behavior);
 	}
 
-	internal static ValueTask RunAsync(
+	public static ValueTask RunAsync(
 		DbQuery definition,
 		object source,
 		DbQueryCall? call,
@@ -361,7 +389,7 @@ static class DbQueryRunner
 			default));
 	}
 
-	internal static ValueTask<T> RunAsync<T>(
+	public static ValueTask<T> RunAsync<T>(
 		DbQuery definition,
 		object source,
 		DbQueryCall? call,

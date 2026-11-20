@@ -122,7 +122,7 @@ readonly struct MappedQueryCore<T> : IEquatable<MappedQueryCore<T>>
 	// the same way for every type of the family.
 	readonly IExecuteReader? _command;
 
-	internal IExecuteReader Command
+	public IExecuteReader Command
 		=> _command ?? throw new InvalidOperationException(
 			"This query was not created by Map<T>(); a default value cannot be used.");
 

@@ -14,8 +14,7 @@ namespace Open.Database.Extensions;
 /// static readonly DbQuery PostsByAuthor
 ///     = DbQuery.Procedure("dbo.PostsByAuthor");
 ///
-/// List&lt;Post&gt; posts = await PostsByAuthor
-///     .Using(db)
+/// List&lt;Post&gt; posts = await PostsByAuthor.Using(db)
 ///     .AddParam(authorId)
 ///     .AddParam(day)
 ///     .Map&lt;Post&gt;()
@@ -55,11 +54,11 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	// types used in turn cost nothing once matched.
 	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved)
 	{
-		internal Type Type { get; } = type;
+		public Type Type { get; } = type;
 
-		internal NameSet Names { get; } = names;
+		public NameSet Names { get; } = names;
 
-		internal string?[] Resolved { get; } = resolved;
+		public string?[] Resolved { get; } = resolved;
 	}
 
 	internal MemberMatch[]? Matches
@@ -158,7 +157,10 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <paramref name="connection"/> is <see langword="null"/>.
 	/// </exception>
 	public DbQueryUsing Using(DbConnection connection)
-		=> new(this, connection);
+		=> new(
+			this,
+			connection ?? throw new ArgumentNullException(
+				nameof(connection)));
 
 	/// <summary>
 	/// Binds the query to a transaction, which runs it on the
@@ -170,7 +172,10 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <paramref name="transaction"/> is <see langword="null"/>.
 	/// </exception>
 	public DbQueryUsing Using(DbTransaction transaction)
-		=> new(this, transaction);
+		=> new(
+			this,
+			transaction ?? throw new ArgumentNullException(
+				nameof(transaction)));
 
 	/// <summary>
 	/// Binds the query to a pool: each run takes a connection, opens it
@@ -192,7 +197,10 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	public DbQueryUsing Using<TConnection>(
 		IDbConnectionPool<TConnection> pool)
 		where TConnection : DbConnection
-		=> new(this, pool);
+		=> new(
+			this,
+			pool ?? throw new ArgumentNullException(
+				nameof(pool)));
 
 	/// <summary>
 	/// Binds the query to a factory: each run creates a connection,
@@ -207,7 +215,10 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	public DbQueryUsing Using<TConnection>(
 		IDbConnectionFactory<TConnection> factory)
 		where TConnection : DbConnection
-		=> new(this, factory);
+		=> new(
+			this,
+			factory ?? throw new ArgumentNullException(
+				nameof(factory)));
 
 	/// <inheritdoc />
 	public bool Equals(DbQuery? other)
@@ -252,21 +263,33 @@ public sealed class DbQuery<TParams>
 
 	/// <inheritdoc cref="DbQuery.Using(DbConnection)"/>
 	public DbQueryUsing<TParams> Using(DbConnection connection)
-		=> new(_definition, connection);
+		=> new(
+			_definition,
+			connection ?? throw new ArgumentNullException(
+				nameof(connection)));
 
 	/// <inheritdoc cref="DbQuery.Using(DbTransaction)"/>
 	public DbQueryUsing<TParams> Using(DbTransaction transaction)
-		=> new(_definition, transaction);
+		=> new(
+			_definition,
+			transaction ?? throw new ArgumentNullException(
+				nameof(transaction)));
 
 	/// <inheritdoc cref="DbQuery.Using{TConnection}(IDbConnectionPool{TConnection})"/>
 	public DbQueryUsing<TParams> Using<TConnection>(
 		IDbConnectionPool<TConnection> pool)
 		where TConnection : DbConnection
-		=> new(_definition, pool);
+		=> new(
+			_definition,
+			pool ?? throw new ArgumentNullException(
+				nameof(pool)));
 
 	/// <inheritdoc cref="DbQuery.Using{TConnection}(IDbConnectionFactory{TConnection})"/>
 	public DbQueryUsing<TParams> Using<TConnection>(
 		IDbConnectionFactory<TConnection> factory)
 		where TConnection : DbConnection
-		=> new(_definition, factory);
+		=> new(
+			_definition,
+			factory ?? throw new ArgumentNullException(
+				nameof(factory)));
 }

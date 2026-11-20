@@ -380,7 +380,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		readonly string? _name = name;
 		readonly T _value = value;
 
-		internal virtual NameKind Kind
+		public virtual NameKind Kind
 			=> _name is null ? NameKind.Members : NameKind.Explicit;
 
 		internal override DbQuery Definition => _definition;
@@ -434,7 +434,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		T value)
 		: Root<T>(definition, source, expression, value)
 	{
-		internal override NameKind Kind => NameKind.Derived;
+		public override NameKind Kind => NameKind.Derived;
 	}
 
 	// Every later node: its parent, a name and a value.
@@ -446,7 +446,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		readonly string? _name = name;
 		readonly T _value = value;
 
-		internal virtual NameKind Kind
+		public virtual NameKind Kind
 			=> _name is null ? NameKind.Members : NameKind.Explicit;
 
 		internal override DbQuery Definition => _parent.Definition;
@@ -498,7 +498,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 	sealed class DerivedNode<T>(DbQueryCall parent, string expression, T value)
 		: Node<T>(parent, expression, value)
 	{
-		internal override NameKind Kind => NameKind.Derived;
+		public override NameKind Kind => NameKind.Derived;
 	}
 
 	CancellationToken IExecuteReader.CancellationToken => default;

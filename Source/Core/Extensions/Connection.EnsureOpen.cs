@@ -2,6 +2,13 @@
 
 public static partial class ConnectionExtensions
 {
+	/// <summary>
+	/// Whether a connection found in this state is opened by <see cref="EnsureOpen(IDbConnection)"/>: it is closed, or broken (closed first, then opened again). The one that opened it closes it again afterwards.
+	/// </summary>
+	internal static bool NeedsOpen(ConnectionState state)
+		=> (state & ConnectionState.Open) == 0
+		|| (state & ConnectionState.Broken) != 0;
+
 	/// <returns>The prior connection state.</returns>
 	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
 	public static ConnectionState EnsureOpen(this IDbConnection connection)

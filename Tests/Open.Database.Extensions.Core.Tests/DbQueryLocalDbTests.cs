@@ -40,8 +40,7 @@ public static class DbQueryLocalDbTests
 		int authorId = 7;
 		int views = 50;
 
-		List<Row> rows = await query
-			.Using(connection)
+		List<Row> rows = await query.Using(connection)
 			.AddParam(authorId)
 			.AddParam(views)
 			.Map<Row>()
@@ -62,8 +61,7 @@ public static class DbQueryLocalDbTests
 		int authorId = 8;
 		int views = 60;
 
-		List<Row> rows = await query
-			.Using(connection)
+		List<Row> rows = await query.Using(connection)
 			.AddParams(new(AuthorId: authorId, Views: views))
 			.Map<Row>()
 			.ToListAsync(Token);
@@ -86,8 +84,7 @@ public static class DbQueryLocalDbTests
 
 		for (int i = 0; i < 3; i++)
 		{
-			List<Row> rows = await query
-				.Using(connection)
+			List<Row> rows = await query.Using(connection)
 				.AddParams(new(AuthorId: 7, Views: 50 + i, Unused: 9))
 				.Map<Row>()
 				.ToListAsync(Token);
@@ -106,8 +103,7 @@ public static class DbQueryLocalDbTests
 			= await connection.BeginTransactionAsync(Token);
 
 		List<int> open = await DbQuery
-			.Text("select @@trancount")
-			.Using(transaction)
+			.Text("select @@trancount").Using(transaction)
 			.Map<int>()
 			.ToListAsync(Token);
 
@@ -121,8 +117,7 @@ public static class DbQueryLocalDbTests
 		LocalDbFixture.SkipUnlessAvailable();
 		var factory = new DbConnectionFactory<SqlConnection>(LocalDbFixture.Create);
 		DbQueryUsing query = DbQuery
-			.Text("select @@spid")
-			.Using(factory);
+			.Text("select @@spid").Using(factory);
 
 		List<int> first = await query.Map<int>().ToListAsync(Token);
 		List<int> second = await query.Map<int>().ToListAsync(Token);
@@ -139,8 +134,7 @@ public static class DbQueryLocalDbTests
 		int? none = null;
 
 		List<int> flag = await DbQuery
-			.Text("select case when @none is null then 1 else 0 end")
-			.Using(connection)
+			.Text("select case when @none is null then 1 else 0 end").Using(connection)
 			.AddParam(none)
 			.Map<int>()
 			.ToListAsync(Token);

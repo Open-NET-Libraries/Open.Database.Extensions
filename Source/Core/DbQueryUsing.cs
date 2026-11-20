@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -20,8 +22,8 @@ public readonly struct DbQueryUsing
 
 	internal DbQueryUsing(DbQuery definition, object source)
 	{
-		if (source is null) throw new ArgumentNullException(nameof(source));
-		Contract.EndContractBlock();
+		// The Using(...) that makes this has checked the source.
+		Debug.Assert(source is not null);
 
 		_definition = definition;
 		_source = source;
@@ -246,8 +248,8 @@ public readonly struct DbQueryUsing<TParams>
 
 	internal DbQueryUsing(DbQuery definition, object source)
 	{
-		if (source is null) throw new ArgumentNullException(nameof(source));
-		Contract.EndContractBlock();
+		// The Using(...) that makes this has checked the source.
+		Debug.Assert(source is not null);
 
 		_definition = definition;
 		_source = source;

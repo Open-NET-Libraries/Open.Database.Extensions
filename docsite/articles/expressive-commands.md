@@ -46,15 +46,14 @@ static readonly DbQuery PostsByAuthor
     = DbQuery.Procedure("dbo.PostsByAuthor");
 
 // The names come from the variables, as AddParam(author) does on a command.
-List<Post> posts = await PostsByAuthor
-    .Using(db)
+List<Post> posts = await PostsByAuthor.Using(db)
     .AddParam(authorId)
     .AddParam(day)
     .Map<Post>()
     .ToListAsync(cancellationToken);
 ```
 
-To have the values checked at compile time, declare their type once. It is a `struct` (a `readonly record struct` is the intended shape) whose public properties and fields are the parameters, given in one call that the compiler checks:
+To have the values checked at compile time, declare their type once. It is a `struct` that implements `IEquatable<TParams>` (a `readonly record struct` is the intended shape, and does) whose public properties and fields are the parameters, given in one call that the compiler checks:
 
 ```csharp
 readonly record struct AuthorDayParams(int AuthorId, DateTime Day);
@@ -62,8 +61,7 @@ readonly record struct AuthorDayParams(int AuthorId, DateTime Day);
 static readonly DbQuery<AuthorDayParams> PostsByAuthorTyped
     = DbQuery.Procedure("dbo.PostsByAuthor").Params<AuthorDayParams>();
 
-List<Post> posts = await PostsByAuthorTyped
-    .Using(db)
+List<Post> posts = await PostsByAuthorTyped.Using(db)
     .AddParams(new(AuthorId: authorId, Day: day))
     .Map<Post>()
     .ToListAsync(cancellationToken);
@@ -71,7 +69,7 @@ List<Post> posts = await PostsByAuthorTyped
 
 Everything after `Using` is what a command does: `Map<T>()` is the same extension, every terminal and `SingleResult()` apply, the connection is opened late and closed again only if the call opened it, a factory's connection is disposed and a pool's is given back. `SetTimeout(seconds)` on a definition returns a new definition. A `DbQuery` takes the same sources as `Using` does for a command, but only the typed ones: a connection (`DbConnection`), a transaction, an `IDbConnectionPool<TConnection>` or an `IDbConnectionFactory<TConnection>`; a bare `Func<TConnection>` is not one (wrap it in `new DbConnectionFactory<TConnection>(func)`).
 
-A call is cheaper than the command builder and no dearer than ADO.NET written by hand: it is a few small immutable objects, and the typed form is one. Names are resolved as a command resolves them (see [Name a parameter from its argument](#name-a-parameter-from-its-argument)): `AddParam(authorId)` finds `@author_id`, and the typed form matches each member of the values type the same way and does not send a member the query does not declare. A text definition finds its `@name` markers once, when it is made; a procedure's names are remembered per connection source and read again only when they do not fit.
+A call is cheaper than the command builder and no dearer than ADO.NET written by hand, apart from one small node (at most 48 bytes) at a single value: it is a few small immutable objects, and the typed form is one. Names are resolved as a command resolves them (see [Name a parameter from its argument](#name-a-parameter-from-its-argument)): `AddParam(authorId)` finds `@author_id`, and the typed form matches each member of the values type the same way and, when the names are known, does not send a member the query does not declare. A text definition finds its `@name` markers once, when it is made; a procedure's names are remembered for five minutes per connection source (the factory, the pool or the connection, also for a transaction) and per server and database, and read again only when they do not fit.
 
 ## Parameters
 

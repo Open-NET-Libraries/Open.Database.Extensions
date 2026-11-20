@@ -203,20 +203,25 @@ public static class DbQueryBindingTests
 			"static void M(Both b) { Q.Using(b); }");
 
 		Diagnostic[] errors = Errors(compilation);
-		Assert.Contains(errors, static d => d.Id == "CS0121");
+		Assert.NotEmpty(errors);
+		Assert.All(errors, d => Assert.True(d.Id == "CS0121", Show(errors)));
 	}
 
+	// Each case fails with the one error named, and with nothing else: the
+	// probe's own declarations compile, so the error is the call's.
 	[Theory]
-	[InlineData("static void M() { Q.Using(c => 1); }")]
-	[InlineData("static void M(Func<SqliteConnection> f) { Q.Using(f); }")]
-	[InlineData("static void M() { Q.Using(() => new SqliteConnection()); }")]
-	[InlineData("static void M(IDbConnectionFactory f) { Q.Using(f); }")]
-	[InlineData("static void M(IDbConnectionPool p) { Q.Using(p); }")]
-	public static void ABareFuncOrAnUntypedSource_IsNotASource(string body)
+	[InlineData("static void M() { Q.Using(c => 1); }", "CS1660")]
+	[InlineData("static void M(Func<SqliteConnection> f) { Q.Using(f); }", "CS1503")]
+	[InlineData("static void M() { Q.Using(() => new SqliteConnection()); }", "CS1660")]
+	[InlineData("static void M(IDbConnectionFactory f) { Q.Using(f); }", "CS1503")]
+	[InlineData("static void M(IDbConnectionPool p) { Q.Using(p); }", "CS1503")]
+	public static void ABareFuncOrAnUntypedSource_IsNotASource(string body, string id)
 	{
 		(CSharpCompilation compilation, _) = Compile(body);
 
-		Assert.Contains(Errors(compilation), static d => d.Severity == DiagnosticSeverity.Error);
+		Diagnostic[] errors = Errors(compilation);
+		Assert.NotEmpty(errors);
+		Assert.All(errors, d => Assert.True(d.Id == id, Show(errors)));
 	}
 
 	[Fact]
@@ -320,12 +325,16 @@ public static class DbQueryBindingTests
 			readonly record struct Other(int A);
 			static void M(DbConnection c) { T.Using(c).AddParams(new Other(1)); }
 			""");
-		Assert.Contains(Errors(wrong), static d => d.Id == "CS1503");
+		Diagnostic[] wrongErrors = Errors(wrong);
+		Assert.NotEmpty(wrongErrors);
+		Assert.All(wrongErrors, d => Assert.True(d.Id == "CS1503", Show(wrongErrors)));
 
 		(CSharpCompilation notAStruct, _) = Compile("""
 			sealed record Boxed(int A);
 			static DbQuery<Boxed> B = Q.Params<Boxed>();
 			""");
-		Assert.Contains(Errors(notAStruct), static d => d.Severity == DiagnosticSeverity.Error);
+		Diagnostic[] boxedErrors = Errors(notAStruct);
+		Assert.NotEmpty(boxedErrors);
+		Assert.All(boxedErrors, d => Assert.True(d.Id == "CS0453", Show(boxedErrors)));
 	}
 }

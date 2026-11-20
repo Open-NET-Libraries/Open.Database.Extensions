@@ -142,8 +142,7 @@ public static class DbQueryTests
 		int authorId = 7;
 		int views = 50;
 
-		List<Post> posts = await Posts
-			.Using(c)
+		List<Post> posts = await Posts.Using(c)
 			.AddParam(authorId)
 			.AddParam(views)
 			.Map<Post>()
@@ -170,8 +169,7 @@ public static class DbQueryTests
 		var filter = new Filter { AuthorId = 8, Views = 0 };
 
 		List<Post> posts = await DbQuery
-			.Text(PostsTypedSql)
-			.Using(c)
+			.Text(PostsTypedSql).Using(c)
 			.AddParam(filter.AuthorId)
 			.AddParam(filter.Views)
 			.Map<Post>()
@@ -201,8 +199,7 @@ public static class DbQueryTests
 		string author = "7";
 
 		List<Post> posts = await DbQuery
-			.Text("select Id, AuthorId, Title from Posts where AuthorId = @a and Title = @t and Views >= @v")
-			.Using(c)
+			.Text("select Id, AuthorId, Title from Posts where AuthorId = @a and Title = @t and Views >= @v").Using(c)
 			.AddParam("a", author)
 			.AddParam("t", "b")
 			.AddParam("v", 50)
@@ -220,8 +217,7 @@ public static class DbQueryTests
 		int authorId = 7;
 		int views = 50;
 
-		List<Post> posts = await PostsTyped
-			.Using(c)
+		List<Post> posts = await PostsTyped.Using(c)
 			.AddParams(new(AuthorId: authorId, Views: views))
 			.Map<Post>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -240,14 +236,12 @@ public static class DbQueryTests
 		int authorId = 7;
 		int views = 10;
 
-		List<Post> adHoc = await Posts
-			.Using(c)
+		List<Post> adHoc = await Posts.Using(c)
 			.AddParam(authorId)
 			.AddParam(views)
 			.Map<Post>()
 			.ToListAsync(TestContext.Current.CancellationToken);
-		List<Post> typed = await PostsTyped
-			.Using(c)
+		List<Post> typed = await PostsTyped.Using(c)
 			.AddParams(new(authorId, views))
 			.Map<Post>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -263,8 +257,7 @@ public static class DbQueryTests
 		using Tracked c = db.Connect();
 
 		List<int> ids = await DbQuery
-			.Text("select Id from Posts order by Id")
-			.Using(c)
+			.Text("select Id from Posts order by Id").Using(c)
 			.Map<int>()
 			.ToListAsync(TestContext.Current.CancellationToken);
 
@@ -279,8 +272,7 @@ public static class DbQueryTests
 		int? none = null;
 
 		List<int> ids = await DbQuery
-			.Text("select Id from Posts where @none is null and AuthorId = 8")
-			.Using(c)
+			.Text("select Id from Posts where @none is null and AuthorId = 8").Using(c)
 			.AddParam(none)
 			.Map<int>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -304,8 +296,7 @@ public static class DbQueryTests
 		int views = 50;
 
 		List<Post> posts = await DbQuery
-			.Text("select Id, AuthorId, Title from Posts where AuthorId = @author_id and Views >= @views order by Id")
-			.Using(c)
+			.Text("select Id, AuthorId, Title from Posts where AuthorId = @author_id and Views >= @views order by Id").Using(c)
 			.AddParam(authorId)
 			.AddParam(views)
 			.Map<Post>()
@@ -323,8 +314,7 @@ public static class DbQueryTests
 		int author = 7;
 
 		List<Post> posts = await DbQuery
-			.Text("select Id, AuthorId, Title from Posts where AuthorId = @p_author and Views >= 50 order by Id")
-			.Using(c)
+			.Text("select Id, AuthorId, Title from Posts where AuthorId = @p_author and Views >= 50 order by Id").Using(c)
 			.AddParam(author)
 			.Map<Post>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -344,8 +334,7 @@ public static class DbQueryTests
 		int VIEWS = 50;
 
 		List<Post> posts = await DbQuery
-			.Text(PostsTypedSql)
-			.Using(c)
+			.Text(PostsTypedSql).Using(c)
 			.AddParam(authorid)
 			.AddParam(VIEWS)
 			.Map<Post>()
@@ -364,8 +353,7 @@ public static class DbQueryTests
 			.Text("select Id, AuthorId, Title from Posts where AuthorId = @author_id and Views >= @views order by Id")
 			.Params<WithExtra>();
 
-		List<Post> posts = await query
-			.Using(c)
+		List<Post> posts = await query.Using(c)
 			.AddParams(new(AuthorId: 7, Views: 50, Unused: 1))
 			.Map<Post>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -406,8 +394,7 @@ public static class DbQueryTests
 
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			async () => await DbQuery
-				.Text("select Id from Posts where AuthorId = @author_id")
-				.Using(c)
+				.Text("select Id from Posts where AuthorId = @author_id").Using(c)
 				.AddParam(authorId)
 				.AddParam(author_id)
 				.Map<int>()
@@ -439,8 +426,7 @@ public static class DbQueryTests
 		using var db = new Db();
 		using Tracked c = db.Connect();
 
-		List<Post> posts = await DbQuery.Text(PostsTypedSql)
-			.Using(c)
+		List<Post> posts = await DbQuery.Text(PostsTypedSql).Using(c)
 			.AddParam("Views", 90)
 			.AddParams(new AuthorViews(7, 1))
 			.Map<Post>()
@@ -456,8 +442,7 @@ public static class DbQueryTests
 		using var db = new Db();
 		using Tracked c = db.Connect();
 
-		List<Post> posts = await DbQuery.Text(PostsTypedSql)
-			.Using(c)
+		List<Post> posts = await DbQuery.Text(PostsTypedSql).Using(c)
 			.AddParams(new AuthorViews(7, 1))
 			.AddParam("Views", 90)
 			.Map<Post>()
@@ -474,14 +459,12 @@ public static class DbQueryTests
 		using Tracked c = db.Connect();
 		int views = 90;
 
-		List<Post> after = await PostsTyped
-			.Using(c)
+		List<Post> after = await PostsTyped.Using(c)
 			.AddParams(new(7, 1))
 			.AddParam(views)
 			.Map<Post>()
 			.ToListAsync(TestContext.Current.CancellationToken);
-		List<Post> before = await DbQuery.Text(PostsTypedSql)
-			.Using(c)
+		List<Post> before = await DbQuery.Text(PostsTypedSql).Using(c)
 			.AddParam(views)
 			.AddParams(new AuthorViews(7, 1))
 			.Map<Post>()
@@ -498,8 +481,7 @@ public static class DbQueryTests
 		using Tracked c = db.Connect();
 
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-			async () => await PostsTyped
-				.Using(c)
+			async () => await PostsTyped.Using(c)
 				.AddParams(new(7, 1))
 				.AddParams(new AuthorViews(8, 2))
 				.Map<Post>()
@@ -575,8 +557,7 @@ public static class DbQueryTests
 		using Tracked c = db.Connect();
 
 		await DbQuery
-			.Text("select @a, @b, @c")
-			.Using(c)
+			.Text("select @a, @b, @c").Using(c)
 			.AddParam("a", 1)
 			.AddParam("b", "two")
 			.AddParams(new { c = 3 })
@@ -659,8 +640,7 @@ public static class DbQueryTests
 		using Tracked c = db.Connect();
 		using var cts = new CancellationTokenSource();
 
-		List<int> ids = await DbQuery.Text("select Id from Posts order by Id")
-			.Using(c)
+		List<int> ids = await DbQuery.Text("select Id from Posts order by Id").Using(c)
 			.Map<int>()
 			.ToListAsync(cts.Token);
 

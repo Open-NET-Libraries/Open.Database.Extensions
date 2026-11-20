@@ -201,6 +201,12 @@ public static class DbQueryAllocationTests
 	[InlineData(4)]
 	public static void ACall_CostsNoMoreThanHandWrittenAdoNet(int k)
 	{
+#if DEBUG
+		// The byte budgets are those of an optimized build: a Debug build
+		// allocates a class per async state machine and keeps locals alive,
+		// so what each form costs there is not what a caller gets.
+		Assert.Skip($"Release only (K={k}).");
+#else
 		using DbConnection c = NewConnection();
 		long hand = Bytes(() => HandWritten(c, k));
 		long typed = Bytes(() => Typed(c, k));
@@ -212,6 +218,7 @@ public static class DbQueryAllocationTests
 		Assert.True(adHoc <= hand, $"K={k}: ad hoc {adHoc} B, hand-written {hand} B.");
 		Assert.True(typed < builder, $"K={k}: typed {typed} B, builder {builder} B.");
 		Assert.True(adHoc < builder, $"K={k}: ad hoc {adHoc} B, builder {builder} B.");
+#endif
 	}
 
 	// One value: the single node (48 B for the first, the one a bound query
@@ -219,6 +226,10 @@ public static class DbQueryAllocationTests
 	[Fact]
 	public static void TheFewestValues_CostOneNodeOverHandWrittenAdoNet()
 	{
+#if DEBUG
+		// Release only, as ACall_CostsNoMoreThanHandWrittenAdoNet.
+		Assert.Skip("Release only.");
+#else
 		using DbConnection c = NewConnection();
 		long hand = Bytes(() => HandWritten(c, 1));
 		long typed = Bytes(() => Typed(c, 1));
@@ -229,6 +240,7 @@ public static class DbQueryAllocationTests
 		Assert.True(typed <= hand + 48, $"K=1: typed {typed} B, hand-written {hand} B.");
 		Assert.True(adHoc <= hand + 48, $"K=1: ad hoc {adHoc} B, hand-written {hand} B.");
 		Assert.True(typed < builder, $"K=1: typed {typed} B, builder {builder} B.");
+#endif
 	}
 
 	// Derived names cost nothing over named ones: the facts of an expression
