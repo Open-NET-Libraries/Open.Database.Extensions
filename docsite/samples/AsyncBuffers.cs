@@ -81,7 +81,7 @@ public static class AsyncBuffers
 	#region buffers_finish_query
 	// A LINQ query over the view is lazy: it runs when it is
 	// enumerated. Finish it before the buffer is disposed.
-	public static async Task<List<int>> FinishQueryAsync(
+	public static async Task<List<string>> FinishQueryAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
 		CancellationToken cancellationToken)
 	{
@@ -91,8 +91,7 @@ public static class AsyncBuffers
 
 		// ToList() runs the query now, while the view is alive.
 		return posts
-			.Where(static post => post.Author == 42)
-			.Select(static post => post.Id)
+			.Select(static post => $"{post.Id}: {post.Title}")
 			.ToList();
 	}
 	#endregion
@@ -204,18 +203,20 @@ public static class AsyncBuffers
 	#endregion
 
 	#region buffers_linq_async
-	public static async Task<List<string>> LinqAsyncAsync(
+	// The SQL filters; the C# shapes. No async, await or using:
+	// the read starts when the caller enumerates the stream.
+	public static IAsyncEnumerable<string> PostLabelsAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		int author,
 		CancellationToken cancellationToken)
-		=> await connectionFactory
-			.Command("select * from posts order by id")
+		=> connectionFactory
+			.Command("select * from posts where author = @author order by id")
+			.AddParam(author)
 			.Map<Post>()
 			.ToBufferedAsyncStream(
 				clearOnReturn: false,
 				cancellationToken)
-			.Where(static post => post.Author == 42)
-			.Select(static post => post.Title)
-			.ToListAsync(cancellationToken);
+			.Select(static post => $"{post.Id}: {post.Title}");
 	#endregion
 
 	#region buffers_small_result

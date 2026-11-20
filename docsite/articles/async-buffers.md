@@ -72,7 +72,7 @@ A buffer is a loan of pooled arrays, and a loan has rules. These are the risks t
 - **One thread at a time.** Do not use the view from another thread while something may dispose it. The view checks that it is alive before each read, but a check is not a lock: a dispose on another thread can land just after it, with the arrays on their way back to the pool.
 - **A buffer that is never disposed is not a leak, but it costs the pool.** There is no finalizer. The arrays stay with the buffer until the garbage collector takes it, and the pool never gets them back. The cost is the allocations the pool would have saved. This includes `await LatestPosts(...).Items` when `Items` faults or is cancelled: you never receive the view, so nothing disposes the buffer, and its arrays wait for the garbage collector.
 
-To filter or project and keep only some of the rows, use async LINQ over the stream. The work overlaps the read, only the rows you keep are held, and there is nothing to dispose. In the library's own (unpublished) benchmark the stream beat reading into a buffer first and then processing, in every consumer-work cell. It is in the box on net10 and later; net472 and netstandard need the `System.Linq.Async` package.
+To shape the rows as they arrive, use async LINQ over the stream and return it: no `async`, no `await`, no `using`. Filter in the SQL; shape in C#. The work overlaps the read, only what you keep is held, and there is nothing to dispose. It is in the box on net10 and later; net472 and netstandard need the `System.Linq.Async` package.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
 
@@ -250,7 +250,7 @@ For a small result, or one that nobody else needs, `ToArrayAsync` or `ToListAsyn
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_small_result)]
 
-For a projection or a filter over a stream, use `System.Linq.Async` over `ToBufferedAsyncStream`. It is in the box on net10 and later.
+To shape a stream's rows, use `System.Linq.Async` over `ToBufferedAsyncStream`, and leave the filtering to the SQL. It is in the box on net10 and later.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
 
