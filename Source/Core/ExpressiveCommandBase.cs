@@ -598,7 +598,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// </summary>
 	/// <remarks>
 	/// Return the names exactly as the provider spells them: a leading <c>@</c> is ignored when matching, nothing else is changed, and the name that is sent is the one returned.
-	/// An empty or default array means "not known", which also covers a procedure that declares no parameters; it is never remembered.
+	/// An empty or default array means "not known", which also covers a procedure that declares no parameters. It is remembered for 15 seconds, not the five minutes of known names, and replaces any older names of that procedure.
 	/// </remarks>
 	/// <param name="connection">An open connection to run the lookup on. A command that executes inside a transaction must use <see cref="Transaction"/>.</param>
 	/// <param name="procedure">The procedure name as given to the command.</param>
@@ -722,9 +722,16 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 	}
 
-	// Remembers the names a procedure reported and returns the set made from them; an empty answer is "not known" (null) and is not remembered.
+	// Remembers the names a procedure reported and returns the set made from them.
+	// An empty answer is "not known" (null): it is remembered for a short while (so an unreadable procedure is not read again in every run),
+	// and it replaces an older entry, which the answer has outdated.
 	NameSet? Remember(ProcedureKey key, ImmutableArray<string> names)
-		=> names.IsDefaultOrEmpty ? null : ProcedureNameCache.Set(NameCacheOwner, key, names);
+	{
+		if (!names.IsDefaultOrEmpty) return ProcedureNameCache.Set(NameCacheOwner, key, names);
+
+		ProcedureNameCache.SetUnknown(NameCacheOwner, key);
+		return null;
+	}
 
 	// Remembered names belong to the object commands take connections from: a factory (not the wrapper made around it for each command), a pool, or the bare connection.
 	object NameCacheOwner => _poolOrConnection switch

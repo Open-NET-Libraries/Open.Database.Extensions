@@ -50,12 +50,24 @@ readonly struct ProcedureKey : IEquatable<ProcedureKey>
 /// An entry belongs to the object commands take their connections from (the connection factory, the pool, or the bare connection), held weakly,
 /// so the application's own objects decide how long names are remembered and nothing here keeps anything alive.
 /// An entry is a <see cref="NameSet"/>: the names, and the real name each argument expression has matched so far, so a repeat execution matches nothing again.
-/// Names expire so that a procedure whose parameters change is read again (the matches go with them), and one object remembers at most 1024 procedures. An empty answer ("not known") is never remembered.
+/// Names expire so that a procedure whose parameters change is read again (the matches go with them), and one object remembers at most 1024 procedures.
+/// An empty answer ("not known": an unreadable procedure, or one that declares nothing) is remembered too, as an entry with no names and for a short while only
+/// (<see cref="UnknownLifetimeTicks"/>), and it replaces any older entry of that procedure, so a list the procedure has outgrown is not served on.
 /// </remarks>
 static class ProcedureNameCache
 {
 	// How long the names of a procedure are trusted.
 	internal static readonly long LifetimeTicks = 5 * 60 * Stopwatch.Frequency;
+
+	// How long "not known" is trusted: a twentieth of the above (15 seconds).
+	// Without it a procedure the login cannot read is looked up on every run, which is one extra schema query per execute while the connection is open;
+	// a long memory would hide a procedure that is created, granted or changed.
+	// Fifteen seconds takes that cost down to one lookup in fifteen seconds, and still shows the procedure soon.
+	internal static readonly long UnknownLifetimeTicks = LifetimeTicks / 20;
+
+	// What an entry of "not known" holds: no names, so every argument is used as written (as for a text without markers).
+	// Nothing is matched against it, so one instance serves every entry.
+	static readonly NameSet Unknown = new([]);
 
 	// How many procedures one source remembers.
 	const int MaxProcedures = 1024;
@@ -99,18 +111,26 @@ static class ProcedureNameCache
 	/// <summary>Remembers the names and returns the set made from them.</summary>
 	internal static NameSet Set(object source, ProcedureKey key, ImmutableArray<string> names)
 	{
-		Debug.Assert(!names.IsDefaultOrEmpty, "An empty answer means 'not known' and is not remembered.");
+		Debug.Assert(!names.IsDefaultOrEmpty, "An empty answer is remembered with SetUnknown.");
 
 		var set = new NameSet(names);
+		Store(source, key, set, LifetimeTicks);
+		return set;
+	}
+
+	/// <summary>Remembers that the names of the procedure are not known, for a short while, in place of any older entry.</summary>
+	internal static void SetUnknown(object source, ProcedureKey key)
+		=> Store(source, key, Unknown, UnknownLifetimeTicks);
+
+	static void Store(object source, ProcedureKey key, NameSet set, long lifetime)
+	{
 		Entries entries = Sources.GetValue(source, static _ => new Entries());
 		lock (entries)
 		{
 			Dictionary<ProcedureKey, Entry> byProcedure = entries.ByProcedure;
 			if (byProcedure.Count >= MaxProcedures && !byProcedure.ContainsKey(key)) Trim(byProcedure);
-			byProcedure[key] = new Entry(Stopwatch.GetTimestamp() + LifetimeTicks, set);
+			byProcedure[key] = new Entry(Stopwatch.GetTimestamp() + lifetime, set);
 		}
-
-		return set;
 	}
 
 	// An expired entry is dropped when it is read again, so a source used with a stream of different procedures would keep every one of them.

@@ -84,7 +84,9 @@ A procedure that changes can show its old names for up to five minutes. Only one
 - a member of an `AddParams` object that the remembered names do not declare is skipped, so a new optional parameter is not sent;
 - a less specific match is kept while a more specific new parameter exists (`@id` for `order.Customer.Id` although `@customer_id` now exists);
 - an ambiguity, or two arguments that resolve to the same parameter, is reported from the remembered names;
-- when the second read finds nothing (the procedure is no longer visible to the login), the argument is sent as written and the old names stay until they expire.
+- when the second read finds nothing (the procedure is no longer visible to the login, or it now declares no parameters), the argument is sent as written, and the old names are dropped.
+
+A read that finds nothing (an unreadable procedure, one that does not exist, or one that declares no parameters) is remembered too, but for 15 seconds only, so a procedure that cannot be read costs one lookup in 15 seconds, not one in every run, and a procedure that appears or changes is picked up soon. Until then its derived names are sent as written.
 
 #### What was sent?
 
