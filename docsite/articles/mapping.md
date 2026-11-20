@@ -257,7 +257,7 @@ An insert that returns its new id is one `SingleAsync`: no handler, and no check
 
 [!code-csharp[](../samples/Mapping.cs#map_dictionary_values)]
 
-For a result that nobody else can change, use `ToImmutableArrayAsync`: it wraps the exactly sized array the read produced, with no second copy, and an `ImmutableArray<T>` reads as fast as an array (`AsSpan()` included). There is no `ToImmutableDictionary` or `ToImmutableHashSet` terminal on purpose: those types are trees, slower to build and to read, and the library would save you nothing over building one yourself. For a lookup that cannot change, build the dictionary and freeze it; a frozen dictionary is read faster than an immutable one:
+For a result that nobody else can change, use `ToImmutableArrayAsync`: it wraps the exactly sized array the read produced, with no second copy on .NET 8 and later (the netstandard2.0 build copies it once), and an `ImmutableArray<T>` reads as fast as an array (`AsSpan()` included). There is no `ToImmutableDictionary` or `ToImmutableHashSet` terminal on purpose: those types are trees, slower to build and to read, and the library would save you nothing over building one yourself. For a lookup that cannot change, build the dictionary and freeze it; a frozen dictionary is read faster than an immutable one:
 
 ```cs
 FrozenDictionary<int, Post> byId = (await query
