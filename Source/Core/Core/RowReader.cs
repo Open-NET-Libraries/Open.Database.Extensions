@@ -1,3 +1,6 @@
+		// Take 0, a skip past the end and no rows all end here with an empty
+		// array. The command has already run (the reader exists); take 0 only
+		// means no row is read or mapped.
 namespace Open.Database.Extensions.Core;
 
 /// <summary>Supplies the per-row mapping delegate for the layout of a reader's current result set.</summary>
@@ -37,6 +40,15 @@ internal interface IRowSink<in T>
 /// no iterator, no LINQ, no per-row allocation other than the mapped objects themselves.
 /// Skipped rows are advanced without being mapped; a take limit stops reading as soon as it is satisfied.
 /// What happens to each row is the sink's business, so one loop serves every collection type.
+///
+/// Two things hold for every loop here, and they are why the code looks the way it does:
+/// <list type="bullet">
+/// <item>The command has ALREADY run when a loop starts: the caller opened the reader (that is what executes the command, and what
+/// a Take(0) is still expected to do). A take of 0 therefore only means "read no rows": the loops return an empty result at once,
+/// without skipping or mapping anything, and the caller disposes the reader (and reads through later result sets) as for any other call.</item>
+/// <item>A reader that is not a <see cref="DbDataReader"/> (a bare <see cref="IDataReader"/>) takes the <see cref="Stream{T}"/> path:
+/// it has no virtual-call fast path, so one lazy loop reads it, and that loop makes the same take-0 decision, so the result is the same.</item>
+/// </list>
 /// </summary>
 internal static class RowReader
 {
@@ -113,6 +125,8 @@ internal static class RowReader
 		IRowSource<T> source, IDataReader reader, int skip, int take,
 		MemoryPool<T>? pool, bool clear, CancellationToken token = default)
 	{
+		// A bare IDataReader has no DbDataReader fast path: Stream reads it (and
+		// treats take 0 the same way as the line below), then ToArray copies.
 		if (reader is not DbDataReader db)
 			return Stream(source, reader, skip, take, false, token).ToArray();
 

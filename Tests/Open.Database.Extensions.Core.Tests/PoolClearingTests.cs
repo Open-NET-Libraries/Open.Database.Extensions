@@ -11,8 +11,8 @@ namespace Open.Database.Extensions.Tests;
 // - rows that hold references are ALWAYS cleared before their array goes
 //   back (nothing turns that off);
 // - rows with no references are cleared only when asked: by
-//   UsePool(pool, clear: true), or, for a query that does not call
-//   UsePool, by the app-wide switch; UsePool(pool, clear: false) wins over
+//   UsePool(pool, clearOnReturn: true), or, for a query that does not call
+//   UsePool, by the app-wide switch; UsePool(pool, clearOnReturn: false) wins over
 //   the switch;
 // - the pool a caller passes must hand out WHOLE arrays: anything else is
 //   refused with a NotSupportedException, after disposing that rent.
@@ -226,7 +226,7 @@ public static class PoolClearingTests
 				await Run(
 					terminal,
 					Rows<PoolRow>(N).UsePool(
-						MemoryPool<PoolRow>.Shared, clear: false),
+						MemoryPool<PoolRow>.Shared, clearOnReturn: false),
 					static r => r.Id))));
 
 		Assert.True(pool.Rents > 0);
@@ -243,7 +243,7 @@ public static class PoolClearingTests
 				await Run(
 					terminal,
 					Rows<PoolValue>(N).UsePool(
-						MemoryPool<PoolValue>.Shared, clear: true),
+						MemoryPool<PoolValue>.Shared, clearOnReturn: true),
 					static r => r.Id))));
 
 		Assert.True(pool.Rents > 0);
@@ -277,11 +277,11 @@ public static class PoolClearingTests
 				await Run(
 					terminal,
 					Rows<PoolValue>(N).UsePool(
-						MemoryPool<PoolValue>.Shared, clear: false),
+						MemoryPool<PoolValue>.Shared, clearOnReturn: false),
 					static r => r.Id))));
 
 		Assert.True(pool.Rents > 0);
-		Assert.True(pool.Dirty > 0, "the switch overrode clear: false");
+		Assert.True(pool.Dirty > 0, "the switch overrode clearOnReturn: false");
 	}
 
 	[Theory, MemberData(nameof(ChainTerminals))]
@@ -295,7 +295,7 @@ public static class PoolClearingTests
 				await Run(
 					terminal,
 					Rows<PoolValue>(N).UsePool(
-						MemoryPool<PoolValue>.Shared, clear: true),
+						MemoryPool<PoolValue>.Shared, clearOnReturn: true),
 					static r => r.Id))));
 
 		Assert.Equal(0, pool.Dirty);
@@ -310,7 +310,7 @@ public static class PoolClearingTests
 		await WithSwitch(false, () => WithSharedPool(pool, async () =>
 		{
 			List<PoolValue> rows = await Rows<PoolValue>(N)
-				.UsePool(MemoryPool<PoolValue>.Shared, clear: false)
+				.UsePool(MemoryPool<PoolValue>.Shared, clearOnReturn: false)
 				.ToListAsync(Ct);
 			Assert.Equal(N, rows.Count);
 		}));
@@ -355,7 +355,7 @@ public static class PoolClearingTests
 			N,
 			await Run(
 				terminal,
-				Rows<int>(N).UsePool(pool, clear: false),
+				Rows<int>(N).UsePool(pool, clearOnReturn: false),
 				static r => r));
 
 		await AssertBack(pool);
@@ -372,7 +372,7 @@ public static class PoolClearingTests
 			N,
 			await Run(
 				terminal,
-				Rows<int>(N).UsePool(pool, clear: true),
+				Rows<int>(N).UsePool(pool, clearOnReturn: true),
 				static r => r));
 
 		await AssertBack(pool);
@@ -391,11 +391,11 @@ public static class PoolClearingTests
 				N,
 				await Run(
 					terminal,
-					Rows<int>(N).UsePool(pool, clear: false),
+					Rows<int>(N).UsePool(pool, clearOnReturn: false),
 					static r => r)));
 
 		await AssertBack(pool);
-		Assert.True(pool.DirtyReturns > 0, "the switch overrode clear: false");
+		Assert.True(pool.DirtyReturns > 0, "the switch overrode clearOnReturn: false");
 	}
 
 	[Theory, MemberData(nameof(AllTerminals))]
@@ -408,7 +408,7 @@ public static class PoolClearingTests
 			N,
 			await Run(
 				terminal,
-				Rows<ChannelRow>(N).UsePool(pool, clear: false),
+				Rows<ChannelRow>(N).UsePool(pool, clearOnReturn: false),
 				static r => r.Id));
 
 		await AssertBack(pool);
@@ -419,7 +419,7 @@ public static class PoolClearingTests
 	public static void UsePool_ANullPool_IsRefused()
 	{
 		var ex = Assert.Throws<ArgumentNullException>(
-			() => Rows<int>(1).UsePool(null!, clear: false));
+			() => Rows<int>(1).UsePool(null!, clearOnReturn: false));
 		Assert.Equal("pool", ex.ParamName);
 	}
 
@@ -431,7 +431,7 @@ public static class PoolClearingTests
 		List<int> rows = await Rows<int>(N)
 			.Skip(10)
 			.Take(20)
-			.UsePool(pool, clear: true)
+			.UsePool(pool, clearOnReturn: true)
 			.ToListAsync(Ct);
 
 		Assert.Equal(20, rows.Count);
@@ -440,7 +440,7 @@ public static class PoolClearingTests
 
 		CountingPool<int> second = IntPool();
 		int[] array = await Rows<int>(N)
-			.UsePool(second, clear: true)
+			.UsePool(second, clearOnReturn: true)
 			.Skip(10)
 			.Take(20)
 			.ToArrayAsync(Ct);
@@ -651,7 +651,7 @@ public static class PoolClearingTests
 		var ex = await Assert.ThrowsAsync<NotSupportedException>(
 			() => Run(
 				collector,
-				Rows<int>(1_000).UsePool(pool, clear: false),
+				Rows<int>(1_000).UsePool(pool, clearOnReturn: false),
 				static r => r));
 
 		Assert.Contains(typeof(ShapedPool).FullName!, ex.Message);
@@ -673,7 +673,7 @@ public static class PoolClearingTests
 		var ex = await Assert.ThrowsAsync<NotSupportedException>(
 			() => Run(
 				collector,
-				Rows<int>(10_000).UsePool(pool, clear: true),
+				Rows<int>(10_000).UsePool(pool, clearOnReturn: true),
 				static r => r));
 
 		Assert.Contains(typeof(ShapedPool).FullName!, ex.Message);
@@ -695,7 +695,7 @@ public static class PoolClearingTests
 			1_000,
 			await Run(
 				collector,
-				Rows<int>(1_000).UsePool(pool, clear: true),
+				Rows<int>(1_000).UsePool(pool, clearOnReturn: true),
 				static r => r));
 
 		Assert.True(pool.Rents > 1);
@@ -710,13 +710,13 @@ public static class PoolClearingTests
 		var pool = new ShapedPool(0, Shape.WholeAndLarger);
 
 		int[] rows = await Rows<int>(1_000)
-			.UsePool(pool, clear: false)
+			.UsePool(pool, clearOnReturn: false)
 			.ToArrayAsync(Ct);
 
 		Assert.Equal(Enumerable.Range(1, 1_000), rows);
 
 		List<int> list = await Rows<int>(1_000)
-			.UsePool(pool, clear: false)
+			.UsePool(pool, clearOnReturn: false)
 			.ToListAsync(Ct);
 
 		Assert.Equal(Enumerable.Range(1, 1_000), list);
@@ -731,7 +731,7 @@ public static class PoolClearingTests
 		var bad = new ShapedPool(1, Shape.Partial);
 		await Assert.ThrowsAsync<NotSupportedException>(
 			() => Rows<int>(1_000)
-				.UsePool(bad, clear: true)
+				.UsePool(bad, clearOnReturn: true)
 				.ToListAsync(Ct)
 				.AsTask());
 
@@ -740,7 +740,7 @@ public static class PoolClearingTests
 
 		var good = new ShapedPool(0, Shape.Whole);
 		List<int> again = await Rows<int>(1_000)
-			.UsePool(good, clear: true)
+			.UsePool(good, clearOnReturn: true)
 			.ToListAsync(Ct);
 		Assert.Equal(Enumerable.Range(1, 1_000), again);
 		Assert.Equal(good.Rents, good.Disposed);

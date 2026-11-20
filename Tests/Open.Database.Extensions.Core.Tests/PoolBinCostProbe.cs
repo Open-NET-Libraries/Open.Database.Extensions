@@ -134,7 +134,7 @@ public sealed class PoolBinCostProbe(ITestOutputHelper output)
 	public async Task Probe_BytesAndWorkItemsPerCall()
 	{
 #if BEFORE_API
-		const string Arm = "BEFORE (clear: false)";
+		const string Arm = "BEFORE (clearOnReturn: false)";
 #else
 		const string Arm = "AFTER (references clear on the bin)";
 #endif

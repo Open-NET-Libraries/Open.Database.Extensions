@@ -129,8 +129,7 @@ public static class AsyncBuffers
 		await using PooledBuffer<Post> buffer = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.Skip(1)
-			.Take(2)
+			.Skip(1).Take(2)
 			.ToAsyncBuffer(cancellationToken);
 
 		PooledArray<Post> posts = await buffer.Items;
@@ -237,12 +236,12 @@ public static class AsyncBuffers
 
 		// Your own pool, chosen after Map. Both arguments are required.
 		await using PooledBuffer<Post> own = Query(connectionFactory)
-			.UsePool(pool, clear: false)
+			.UsePool(pool, clearOnReturn: false)
 			.ToAsyncBuffer(cancellationToken);
 
 		// The same, and the rows are cleared as the arrays go back.
 		await using PooledBuffer<Post> scrubbed = Query(connectionFactory)
-			.UsePool(pool, clear: true)
+			.UsePool(pool, clearOnReturn: true)
 			.ToAsyncBuffer(cancellationToken);
 
 		return
@@ -258,7 +257,7 @@ public static class AsyncBuffers
 	public static async Task ClearingAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
 		MemoryPool<int> pool,
-		bool clear,
+		bool clearOnReturn,
 		CancellationToken cancellationToken)
 	{
 		// A row with no references (an int) is cleared only when asked:
@@ -266,7 +265,7 @@ public static class AsyncBuffers
 		await using PooledBuffer<int> buffer = connectionFactory
 			.Command("select id from posts order by id")
 			.Map<int>()
-			.UsePool(pool, clear: clear)
+			.UsePool(pool, clearOnReturn: clearOnReturn)
 			.ToAsyncBuffer(cancellationToken);
 
 		PooledArray<int> ids = await buffer.Items;
@@ -286,7 +285,7 @@ public static class AsyncBuffers
 		await using PooledBuffer<int> buffer = connectionFactory
 			.Command("select id from posts order by id")
 			.Map<int>()
-			.UsePool(MemoryPool<int>.Shared, clear: true)
+			.UsePool(MemoryPool<int>.Shared, clearOnReturn: true)
 			.ToAsyncBuffer(cancellationToken);
 
 		return (await buffer.Items).Count;
@@ -301,7 +300,7 @@ public static class AsyncBuffers
 		CancellationToken cancellationToken)
 	{
 		await using PooledBuffer<Post> buffer = Query(connectionFactory)
-			.UsePool(pool, clear: false)
+			.UsePool(pool, clearOnReturn: false)
 			.ToAsyncBuffer(cancellationToken);
 		_ = (await buffer.Items).Count;
 	}
@@ -313,7 +312,7 @@ public static class AsyncBuffers
 		try
 		{
 			_ = Query(connectionFactory)
-				.UsePool(null!, clear: false);
+				.UsePool(null!, clearOnReturn: false);
 			return false;
 		}
 		catch (ArgumentNullException)
@@ -356,7 +355,7 @@ public static class AsyncBuffers
 		CancellationToken cancellationToken)
 	{
 		PooledBuffer<Post> buffer = Query(connectionFactory)
-			.UsePool(pool, clear: false)
+			.UsePool(pool, clearOnReturn: false)
 			.ToAsyncBuffer(cancellationToken);
 
 		// Cancels the read if it is still running, waits for the

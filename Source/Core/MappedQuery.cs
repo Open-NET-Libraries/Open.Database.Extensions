@@ -182,12 +182,12 @@ readonly struct MappedQueryCore<T>(
 	// Whether this query clears the used rows of the arrays it rents (see PoolClearing).
 	bool Clear => PoolClearing.Resolve<T>(_clear);
 
-	public MappedQueryCore<T> WithPool(MemoryPool<T> pool, bool clear)
+	public MappedQueryCore<T> WithPool(MemoryPool<T> pool, bool clearOnReturn)
 	{
 		if (pool is null) throw new ArgumentNullException(nameof(pool));
 		Contract.EndContractBlock();
 
-		return new(Command, _source, _skip, _take, _singleResult, _asyncReads, pool, clear);
+		return new(Command, _source, _skip, _take, _singleResult, _asyncReads, pool, clearOnReturn);
 	}
 
 	public MappedQueryCore<T> WithSkip(int count)
@@ -692,13 +692,13 @@ public readonly record struct MappedQuery<T>
 	/// <para>
 	/// Call it after <c>Map</c> (the pool is typed by the row).
 	/// Both arguments are required: there is no overload without
-	/// <paramref name="clear"/>, so the choice is always visible at the call,
+	/// <paramref name="clearOnReturn"/>, so the choice is always visible at the call,
 	/// and it is written by name,
-	/// <c>.UsePool(MemoryPool&lt;Post&gt;.Shared, clear: true)</c>.
-	/// <paramref name="clear"/> controls the rows that hold no references;
+	/// <c>.UsePool(MemoryPool&lt;Post&gt;.Shared, clearOnReturn: true)</c>.
+	/// <paramref name="clearOnReturn"/> controls the rows that hold no references;
 	/// rows that hold references are always cleared.
-	/// An explicit <c>clear: false</c> wins over the app-wide switch for this
-	/// query, and an explicit <c>clear: true</c> clears whatever the switch
+	/// An explicit <c>clearOnReturn: false</c> wins over the app-wide switch for this
+	/// query, and an explicit <c>clearOnReturn: true</c> clears whatever the switch
 	/// says.
 	/// </para>
 	/// <para>
@@ -717,15 +717,15 @@ public readonly record struct MappedQuery<T>
 	/// disposes it. <c>MemoryPool&lt;T&gt;.Shared</c> is recognised and
 	/// takes the same path as no pool at all (no owner object per rent).
 	/// </param>
-	/// <param name="clear">
+	/// <param name="clearOnReturn">
 	/// <see langword="true"/> clears the used rows of every array before it
 	/// goes back, value rows included; <see langword="false"/> does not clear
 	/// rows that hold no references, whatever the app-wide switch says.
 	/// </param>
 	/// <returns>The same query, renting from <paramref name="pool"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="pool"/> is <see langword="null"/>.</exception>
-	public MappedQuery<T> UsePool(MemoryPool<T> pool, bool clear)
-		=> new(_core.WithPool(pool, clear));
+	public MappedQuery<T> UsePool(MemoryPool<T> pool, bool clearOnReturn)
+		=> new(_core.WithPool(pool, clearOnReturn));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
@@ -1047,8 +1047,8 @@ public readonly record struct MappedQueryWithSkip<T>
 	public MappedQueryWithSkip<T> AsyncReads() => new(_core.WithAsyncReads());
 
 	/// <inheritdoc cref="MappedQuery{T}.UsePool(MemoryPool{T}, bool)"/>
-	public MappedQueryWithSkip<T> UsePool(MemoryPool<T> pool, bool clear)
-		=> new(_core.WithPool(pool, clear));
+	public MappedQueryWithSkip<T> UsePool(MemoryPool<T> pool, bool clearOnReturn)
+		=> new(_core.WithPool(pool, clearOnReturn));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
@@ -1160,8 +1160,8 @@ public readonly record struct MappedQueryWithTake<T>
 	public MappedQueryWithTake<T> AsyncReads() => new(_core.WithAsyncReads());
 
 	/// <inheritdoc cref="MappedQuery{T}.UsePool(MemoryPool{T}, bool)"/>
-	public MappedQueryWithTake<T> UsePool(MemoryPool<T> pool, bool clear)
-		=> new(_core.WithPool(pool, clear));
+	public MappedQueryWithTake<T> UsePool(MemoryPool<T> pool, bool clearOnReturn)
+		=> new(_core.WithPool(pool, clearOnReturn));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);

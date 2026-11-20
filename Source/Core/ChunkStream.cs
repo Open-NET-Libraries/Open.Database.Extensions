@@ -167,11 +167,11 @@ internal sealed class StreamTarget<T> : IChunkTarget<T>
 
 	int _disposed;
 
-	internal StreamTarget()
+	public StreamTarget()
 		=> _lastDoubling = ChunkSizing.Log2(
 			ChunkSizing.ResolveStreamMaxRows(_first) / _first);
 
-	internal ChannelReader<IMemoryOwner<T>> Reader
+	public ChannelReader<IMemoryOwner<T>> Reader
 		=> _channel.Reader;
 
 	bool IChunkTarget<T>.IsDisposed
@@ -191,11 +191,11 @@ internal sealed class StreamTarget<T> : IChunkTarget<T>
 	void IChunkTarget<T>.Finish(Exception? error)
 		=> _channel.Writer.TryComplete(error);
 
-	internal void Dispose()
+	public void Dispose()
 		=> Volatile.Write(ref _disposed, 1);
 
 	// Only after the producer ended: nothing can write any more.
-	internal void Drain()
+	public void Drain()
 	{
 		while (_channel.Reader.TryRead(out IMemoryOwner<T>? chunk))
 			chunk.Release();

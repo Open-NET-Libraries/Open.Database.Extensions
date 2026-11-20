@@ -18,9 +18,9 @@ namespace Open.Database.Extensions.Benchmarks;
 // (ToAsyncBuffer(clearOnDispose: false, ct) and
 // ToBufferedAsyncStream(clearOnReturn: false, ct)).
 // BytesPerCall and the work-item counts are measured by the PoolBinCostProbe
-// test; here the diagnosers only confirm them.
+// test; here the MemoryDiagnoser only confirms the bytes (the
+// ThreadingDiagnoser is refused by --inprocess, which bench-guard uses).
 [MemoryDiagnoser]
-[ThreadingDiagnoser]
 public class PoolBinCostBenchmarks
 {
 	public sealed class BinRow

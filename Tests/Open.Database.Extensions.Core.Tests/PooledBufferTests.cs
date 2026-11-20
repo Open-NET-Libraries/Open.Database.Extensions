@@ -640,14 +640,14 @@ public static class PooledBufferTests
 		{
 			case "buffer":
 				{
-					await using var buffer = view.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+					await using var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					rows = (await buffer.Items.Within()).Count;
 					break;
 				}
 
 			case "stream":
 				await foreach (var chunk in view
-					.UsePool(pool, clear: false).ToAsyncBufferStream(Ct))
+					.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 				{
 					rows += chunk.Length;
 				}
@@ -656,7 +656,7 @@ public static class PooledBufferTests
 
 			default:
 				await foreach (var _ in view
-					.UsePool(pool, clear: false).ToBufferedAsyncStream(Ct))
+					.UsePool(pool, clearOnReturn: false).ToBufferedAsyncStream(Ct))
 				{
 					++rows;
 				}
@@ -688,12 +688,12 @@ public static class PooledBufferTests
 
 		foreach (Action call in new Action[]
 		{
-			() => run.View.UsePool(none, clear: false).ToAsyncBuffer(Ct),
-			() => run.View.UsePool(none, clear: true).ToAsyncBuffer(Ct),
-			() => run.View.UsePool(none, clear: false).ToAsyncBufferStream(Ct),
-			() => run.View.UsePool(none, clear: true).ToAsyncBufferStream(Ct),
-			() => run.View.UsePool(none, clear: false).ToBufferedAsyncStream(Ct),
-			() => run.View.UsePool(none, clear: true).ToBufferedAsyncStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToAsyncBuffer(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToAsyncBuffer(Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToAsyncBufferStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToAsyncBufferStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToBufferedAsyncStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToBufferedAsyncStream(Ct),
 		})
 		{
 			var ex = Assert.Throws<ArgumentNullException>(call);
@@ -757,7 +757,7 @@ public static class PooledBufferTests
 		if (terminal == "stream")
 		{
 			await foreach (var chunk in run.View
-				.UsePool(pool, clear: false).ToAsyncBufferStream(Ct))
+				.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 			{
 				await Until(() => reader is { Stalled: true }, "the stall");
 				break;
@@ -766,7 +766,7 @@ public static class PooledBufferTests
 		else
 		{
 			await foreach (ChannelRow row in run.View
-				.UsePool(pool, clear: false).ToBufferedAsyncStream(Ct))
+				.UsePool(pool, clearOnReturn: false).ToBufferedAsyncStream(Ct))
 			{
 				if (row.Id != 5) continue;
 
@@ -789,7 +789,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		_ = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 
@@ -803,7 +803,7 @@ public static class PooledBufferTests
 		var run2 = Run.Create(
 			() => reader2 = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer2 = run2.View.UsePool(pool2, clear: false).ToAsyncBuffer(Ct);
+		var buffer2 = run2.View.UsePool(pool2, clearOnReturn: false).ToAsyncBuffer(Ct);
 		_ = buffer2.Items;
 		await Until(
 			() => reader2 is { Stalled: true },
@@ -873,7 +873,7 @@ public static class PooledBufferTests
 	{
 		var pool = new CountingPool<ChannelRow>();
 		var run = Rows100();
-		var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await items.Within();
@@ -992,7 +992,7 @@ public static class PooledBufferTests
 			() => reader = new StallingReader(100, 40, true),
 			asyncReads: true);
 		var e = run.View
-			.UsePool(pool, clear: false).ToAsyncBufferStream(Ct)
+			.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
 			.GetAsyncEnumerator(Ct);
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 		await Until(() => reader is { Stalled: true }, "the stall");
@@ -1159,7 +1159,7 @@ public static class PooledBufferTests
 		var pool = new CountingPool<ChannelRow> { RoundUp = true };
 		var run = Rows100();
 
-		await using (var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct))
+		await using (var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct))
 		{
 			PooledArray<ChannelRow> items = await buffer.Items.Within();
 			Assert.Equal(100, items.Count);
@@ -1182,7 +1182,7 @@ public static class PooledBufferTests
 		var run2 = Rows100();
 		List<int> sizes = [];
 		List<int> ids = [];
-		await foreach (var chunk in run2.View.UsePool(pool2, clear: false).ToAsyncBufferStream(Ct))
+		await foreach (var chunk in run2.View.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct))
 		{
 			sizes.Add(chunk.Length);
 			ids.AddRange(chunk.ToArray().Select(r => r.Id));
@@ -1197,7 +1197,7 @@ public static class PooledBufferTests
 	public static async Task Release_DoesNotClearRowsWithNoReferences_ByDefault()
 	{
 		var pool = new CountingPool<int>();
-		var buffer = Ints100().UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		await buffer.Items.Within();
 		await buffer.DisposeAsync();
 
@@ -1239,7 +1239,7 @@ public static class PooledBufferTests
 		var counting = new CountingPool<int>();
 		var pool = new ClearingPool<int>(counting);
 
-		var buffer = Ints100().UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		await buffer.Items.Within();
 		Assert.All(counting.Captured, a => Assert.NotEqual(0, a[0]));
 		await buffer.DisposeAsync();
@@ -1250,7 +1250,7 @@ public static class PooledBufferTests
 		var counting2 = new CountingPool<int>();
 		var pool2 = new ClearingPool<int>(counting2);
 		await foreach (var _ in Ints100()
-			.UsePool(pool2, clear: false).ToAsyncBufferStream(Ct)) { }
+			.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct)) { }
 
 		Assert.True(counting2.Rents > 0);
 		Assert.Equal(counting2.Rents, counting2.Returns);
@@ -1268,7 +1268,7 @@ public static class PooledBufferTests
 			() => new ChannelTestReader(100))
 			.Map<int>()
 			.AsyncReads();
-		var buffer = view.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		PooledArray<int> items = await buffer.Items.Within();
 		Assert.Equal(Enumerable.Range(1, 100), items);
 
@@ -1296,7 +1296,7 @@ public static class PooledBufferTests
 	public static async Task APoolWhoseReturnThrows_PropagatesFromDisposeAsync()
 	{
 		var pool = new CountingPool<int>();
-		var buffer = Ints100().UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		await buffer.Items.Within();
 		pool.ThrowOnReturn = true;
 
@@ -1361,7 +1361,7 @@ public static class PooledBufferTests
 
 		for (int i = 0; i < Iterations; ++i)
 		{
-			var buffer = view.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+			var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 			int round = i;
 			var touch = Task.Run(
 				async () =>
@@ -1430,7 +1430,7 @@ public static class PooledBufferTests
 			.Map<int>();
 		var pool = new CountingPool<int>();
 
-		await using var buffer = view.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		await using var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		PooledArray<int> items = await buffer.Items.Within();
 		Assert.Equal(rows, items.Count);
 
@@ -1468,7 +1468,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		await Record.ExceptionAsync(
@@ -1551,12 +1551,12 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					await buffer.Items.Within();
 				}
 				else
 				{
-					await foreach (var _ in run.View.UsePool(pool, clear: false).ToAsyncBufferStream(Ct)) { }
+					await foreach (var _ in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)) { }
 				}
 			});
 
@@ -1582,12 +1582,12 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					await buffer.Items.Within();
 				}
 				else
 				{
-					await foreach (var chunk in run.View.UsePool(pool, clear: false).ToAsyncBufferStream(Ct))
+					await foreach (var chunk in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 					{
 						seen.AddRange(chunk.ToArray().Select(r => r.Id));
 					}
@@ -1671,13 +1671,13 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					items = buffer.Items;
 					await items.Within();
 				}
 				else
 				{
-					await foreach (var _ in run.View.UsePool(pool, clear: false).ToAsyncBufferStream(Ct)) { }
+					await foreach (var _ in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)) { }
 				}
 			});
 
@@ -1699,7 +1699,7 @@ public static class PooledBufferTests
 
 		for (int i = 0; i < 1_000; ++i)
 		{
-			var buffer = view.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+			var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 			// Half the rounds dispose a finished buffer, half a filling one.
 			if (i % 2 == 0) await buffer.Items.Within();
@@ -1723,7 +1723,7 @@ public static class PooledBufferTests
 		var run = Run.Create(() => new ChannelTestReader(40, failAtRow: 30));
 
 		await using (var e = run.View
-			.UsePool(pool, clear: false).ToAsyncBufferStream(Ct)
+			.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
 			.GetAsyncEnumerator(Ct))
 		{
 			await Assert.ThrowsAsync<InvalidOperationException>(
@@ -1919,7 +1919,7 @@ public static class PooledBufferTests
 	{
 		var pool = new FlakyMemoryPool();
 		var run = Run.Create(() => new ChannelTestReader(5));
-		await using var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		await Until(() => run.Closed, "the read ended");
 		await Task.Delay(150, Ct);
 
@@ -1932,7 +1932,7 @@ public static class PooledBufferTests
 		int producer = await ProducerAccesses();
 		var pool = new FlakyMemoryPool { ThrowAfter = producer };
 		var run = Run.Create(() => new ChannelTestReader(5));
-		var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 		// The producer stays within its accesses; building the view is
 		// the next one, and it fails with something other than a dispose.
@@ -1954,7 +1954,7 @@ public static class PooledBufferTests
 		int producer = await ProducerAccesses();
 		var pool = new FlakyMemoryPool { ThrowAfter = producer };
 		var run = Run.Create(() => new ChannelTestReader(5));
-		var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 		// The owner is disposed under the builder's hands: its memory
 		// is refused, and the buffer disposed.
@@ -2035,7 +2035,7 @@ public static class PooledBufferTests
 		var pool = new MixedPool();
 		var run = Rows100();
 
-		await using (var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct))
+		await using (var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct))
 		{
 			PooledArray<ChannelRow> items = await buffer.Items.Within();
 			Assert.Equal(100, items.Count);
@@ -2060,7 +2060,7 @@ public static class PooledBufferTests
 		var pool2 = new MixedPool();
 		List<int> sizes = [];
 		List<int> ids = [];
-		await foreach (var chunk in run.View.UsePool(pool2, clear: false).ToAsyncBufferStream(Ct))
+		await foreach (var chunk in run.View.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct))
 		{
 			sizes.Add(chunk.Length);
 			ids.AddRange(chunk.ToArray().Select(r => r.Id));
@@ -2135,7 +2135,7 @@ public static class PooledBufferTests
 		var pool = new SlabPool();
 		var run = Rows100();
 
-		await using (var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct))
+		await using (var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct))
 		{
 			PooledArray<ChannelRow> items = await buffer.Items.Within();
 			foreach (int i in new[] { 0, 15, 16, 47, 48, 99 })
@@ -2153,7 +2153,7 @@ public static class PooledBufferTests
 
 		var pool2 = new SlabPool();
 		List<int> ids = [];
-		await foreach (var chunk in run.View.UsePool(pool2, clear: false).ToAsyncBufferStream(Ct))
+		await foreach (var chunk in run.View.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct))
 		{
 			ids.AddRange(chunk.ToArray().Select(r => r.Id));
 		}
@@ -2257,7 +2257,7 @@ public static class PooledBufferTests
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			async () =>
 			{
-				await foreach (var chunk in run.View.UsePool(pool, clear: false).ToAsyncBufferStream(Ct))
+				await foreach (var chunk in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 				{
 					chunks.Add(chunk.Length);
 				}
@@ -2276,7 +2276,7 @@ public static class PooledBufferTests
 	{
 		var pool = new FlakyMemoryPool { ThrowAfter = 0 };
 		var run = Rows100();
-		await using var buffer = run.View.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+		await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			() => buffer.Items.Within());

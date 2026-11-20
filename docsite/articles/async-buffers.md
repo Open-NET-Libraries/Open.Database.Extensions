@@ -209,11 +209,11 @@ Two settings raise that default for rows with no references, and the more specif
 
 Or in code, before the first query: `AppContext.SetSwitch("Open.Database.Extensions.ClearPooledArrays", true)`.
 
-**`UsePool(pool, clear)`** decides for one query. It goes after `Map`, and both arguments are required, so the choice is always visible at the call. Write the second by name:
+**`UsePool(pool, clearOnReturn)`** decides for one query. It goes after `Map`, and both arguments are required, so the choice is always visible at the call. Write the second by name:
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_clearing_shared)]
 
-An explicit `clear: true` clears value rows whatever the switch says. An explicit `clear: false` keeps them as they are, also when the switch is on: this is the opt-out, and it is per query. It cannot lower the floor: `clear` controls rows with no references, and rows that hold references are always cleared.
+An explicit `clearOnReturn: true` clears value rows whatever the switch says. An explicit `clearOnReturn: false` keeps them as they are, also when the switch is on: this is the opt-out, and it is per query. It cannot lower the floor: `clear` controls rows with no references, and rows that hold references are always cleared.
 
 ### Your own pool
 

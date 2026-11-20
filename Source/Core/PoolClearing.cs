@@ -7,8 +7,9 @@ namespace Open.Database.Extensions.Core;
 // 1. A row type that holds references is ALWAYS cleared: a pooled array
 //    must never keep a row alive. Nothing turns this off.
 // 2. Otherwise (plain value rows) the query decides when it says so:
-//    UsePool(pool, clear: true) clears, UsePool(pool, clear: false) does
-//    not, whatever the switch says.
+//    UsePool(pool, clearOnReturn: true) clears, and
+//    UsePool(pool, clearOnReturn: false) does not, whatever the switch
+//    says.
 // 3. Otherwise the app-wide switch decides (default: off).
 //
 // The switch is the AppContext setting named below. It is read ONCE, into

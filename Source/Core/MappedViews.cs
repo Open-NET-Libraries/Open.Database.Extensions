@@ -743,8 +743,8 @@ public readonly record struct MappedCommand<T>
 		=> new(_core.WithAsyncReads());
 
 	/// <inheritdoc cref="MappedQuery{T}.UsePool(MemoryPool{T}, bool)"/>
-	public MappedCommand<T> UsePool(MemoryPool<T> pool, bool clear)
-		=> new(_core.WithPool(pool, clear));
+	public MappedCommand<T> UsePool(MemoryPool<T> pool, bool clearOnReturn)
+		=> new(_core.WithPool(pool, clearOnReturn));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler)

@@ -214,7 +214,7 @@ public static class PooledBufferJourneyTests
 				case "buffer":
 					{
 						await using var buffer = j.View
-							.UsePool(j.Pool, clear: false).ToAsyncBuffer(token ?? Ct);
+							.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(token ?? Ct);
 						if (consumerLag > TimeSpan.Zero)
 							await Task.Delay(consumerLag, Ct);
 
@@ -225,7 +225,7 @@ public static class PooledBufferJourneyTests
 
 				case "stream":
 					await foreach (var chunk in j.View
-						.UsePool(j.Pool, clear: false).ToAsyncBufferStream(token ?? Ct))
+						.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(token ?? Ct))
 					{
 						foreach (ChannelRow row in chunk.ToArray())
 							ids.Add(row.Id);
@@ -241,7 +241,7 @@ public static class PooledBufferJourneyTests
 
 				default:
 					await foreach (ChannelRow row in j.View
-						.UsePool(j.Pool, clear: false).ToBufferedAsyncStream(token ?? Ct))
+						.UsePool(j.Pool, clearOnReturn: false).ToBufferedAsyncStream(token ?? Ct))
 					{
 						ids.Add(row.Id);
 						if (breakAfter > 0 && ids.Count >= breakAfter)
@@ -299,7 +299,7 @@ public static class PooledBufferJourneyTests
 	public static async Task J1_TheBufferedStream_IsLazy_AndSingleShot()
 	{
 		using var j = Journey.Rows(100);
-		var stream = j.View.UsePool(j.Pool, clear: false).ToBufferedAsyncStream(Ct);
+		var stream = j.View.UsePool(j.Pool, clearOnReturn: false).ToBufferedAsyncStream(Ct);
 
 		await Task.Delay(150, Ct);
 		Assert.Equal(0, j.Executes);
@@ -347,7 +347,7 @@ public static class PooledBufferJourneyTests
 		List<int> sizes = [];
 		List<int> ids = [];
 
-		await foreach (var chunk in j.View.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct))
+		await foreach (var chunk in j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 		{
 			sizes.Add(chunk.Length);
 			ids.AddRange(chunk.ToArray().Select(r => r.Id));
@@ -364,7 +364,7 @@ public static class PooledBufferJourneyTests
 	{
 		using var j = Journey.Rows(100);
 		await using var e = j.View
-			.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct)
+			.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
 			.GetAsyncEnumerator(Ct);
 
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
@@ -387,7 +387,7 @@ public static class PooledBufferJourneyTests
 	{
 		using var j = Journey.Rows(9000);
 		List<int> sizes = [];
-		await foreach (var chunk in j.View.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct))
+		await foreach (var chunk in j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 			sizes.Add(chunk.Length);
 
 		Assert.Equal(
@@ -403,7 +403,7 @@ public static class PooledBufferJourneyTests
 	{
 		const int N = 3500;
 		using var j = Journey.Rows(N);
-		var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		Assert.Equal(N, items.Count);
@@ -449,7 +449,7 @@ public static class PooledBufferJourneyTests
 	public static async Task J3_TheItems_HoldEveryRow_AtSegmentMultiples(int n)
 	{
 		using var j = Journey.Rows(n);
-		await using var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+		await using var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
@@ -575,8 +575,8 @@ public static class PooledBufferJourneyTests
 	{
 		using var j = Journey.Rows(500);
 		IAsyncEnumerator<object> e = terminal == "stream"
-			? new BoxedChunks(j.View.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct))
-			: new BoxedRows(j.View.UsePool(j.Pool, clear: false).ToBufferedAsyncStream(Ct));
+			? new BoxedChunks(j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
+			: new BoxedRows(j.View.UsePool(j.Pool, clearOnReturn: false).ToBufferedAsyncStream(Ct));
 
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 
@@ -698,8 +698,8 @@ public static class PooledBufferJourneyTests
 		using var j = new Journey(
 			() => new LagReader(500, TimeSpan.FromMilliseconds(5), 20));
 		IAsyncEnumerator<object> e = terminal == "stream"
-			? new BoxedChunks(j.View.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct))
-			: new BoxedRows(j.View.UsePool(j.Pool, clear: false).ToBufferedAsyncStream(Ct));
+			? new BoxedChunks(j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
+			: new BoxedRows(j.View.UsePool(j.Pool, clearOnReturn: false).ToBufferedAsyncStream(Ct));
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 		await Until(
 			() => j.Reader is LagReader { Reads: > 20 },
@@ -724,7 +724,7 @@ public static class PooledBufferJourneyTests
 	{
 		using var j = new Journey(
 			() => new LagReader(500, TimeSpan.FromMilliseconds(5), 20));
-		var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await Until(
 			() => j.Reader is LagReader { Reads: > 20 },
@@ -762,10 +762,10 @@ public static class PooledBufferJourneyTests
 		cts.Cancel();
 		IAsyncEnumerator<object> e = terminal == "stream"
 			? new BoxedChunks(
-				j.View.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct),
+				j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct),
 				cts.Token)
 			: new BoxedRows(
-				j.View.UsePool(j.Pool, clear: false).ToBufferedAsyncStream(Ct),
+				j.View.UsePool(j.Pool, clearOnReturn: false).ToBufferedAsyncStream(Ct),
 				cts.Token);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
@@ -822,7 +822,7 @@ public static class PooledBufferJourneyTests
 		if (terminal == "stream")
 		{
 			var e = j.View
-				.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct)
+				.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
 				.GetAsyncEnumerator(Ct);
 			Assert.True(await e.MoveNextAsync().AsTask().Within());
 			await Until(
@@ -832,7 +832,7 @@ public static class PooledBufferJourneyTests
 		}
 		else
 		{
-			var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+			var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 			await Until(
 				() => j.Reader is DeafReader { Stalled: true },
 				"the stall");
@@ -864,7 +864,7 @@ public static class PooledBufferJourneyTests
 			.CreateLinkedTokenSource(Ct);
 		using var j = new Journey(
 			() => new DeafReader(100, 20, TimeSpan.FromMilliseconds(300)));
-		await using var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(cts.Token);
+		await using var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(cts.Token);
 		await Until(
 			() => j.Reader is DeafReader { Stalled: true },
 			"the stall");
@@ -896,7 +896,7 @@ public static class PooledBufferJourneyTests
 		var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			async () =>
 			{
-				await foreach (var chunk in j.View.UsePool(j.Pool, clear: false).ToAsyncBufferStream(cts.Token))
+				await foreach (var chunk in j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(cts.Token))
 				{
 					ids.AddRange(chunk.ToArray().Select(r => r.Id));
 					if (ids.Count != 16) continue;
@@ -950,21 +950,21 @@ public static class PooledBufferJourneyTests
 		{
 			case "buffer":
 				{
-					await using var buffer = view.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+					await using var buffer = view.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					ids.AddRange(
 						(await buffer.Items.Within()).Select(r => r.Id));
 					break;
 				}
 
 			case "stream":
-				await foreach (var chunk in view.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct))
+				await foreach (var chunk in view.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 					ids.AddRange(chunk.ToArray().Select(r => r.Id));
 
 				break;
 
 			default:
 				await foreach (ChannelRow row in view
-					.UsePool(j.Pool, clear: false).ToBufferedAsyncStream(Ct))
+					.UsePool(j.Pool, clearOnReturn: false).ToBufferedAsyncStream(Ct))
 				{
 					ids.Add(row.Id);
 				}
@@ -995,21 +995,21 @@ public static class PooledBufferJourneyTests
 		{
 			case "buffer":
 				{
-					await using var buffer = view.UsePool(pool, clear: false).ToAsyncBuffer(Ct);
+					await using var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					ids.AddRange(
 						(await buffer.Items.Within()).Select(r => r.Id));
 					break;
 				}
 
 			case "stream":
-				await foreach (var chunk in view.UsePool(pool, clear: false).ToAsyncBufferStream(Ct))
+				await foreach (var chunk in view.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 					ids.AddRange(chunk.ToArray().Select(r => r.Id));
 
 				break;
 
 			default:
 				await foreach (ChannelRow row in view
-					.UsePool(pool, clear: false).ToBufferedAsyncStream(Ct))
+					.UsePool(pool, clearOnReturn: false).ToBufferedAsyncStream(Ct))
 				{
 					ids.Add(row.Id);
 				}
@@ -1058,8 +1058,8 @@ public static class PooledBufferJourneyTests
 	{
 		using var j = Journey.Rows(100);
 		IAsyncEnumerator<object> e = terminal == "stream"
-			? new BoxedChunks(j.View.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct))
-			: new BoxedRows(j.View.UsePool(j.Pool, clear: false).ToBufferedAsyncStream(Ct));
+			? new BoxedChunks(j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
+			: new BoxedRows(j.View.UsePool(j.Pool, clearOnReturn: false).ToBufferedAsyncStream(Ct));
 
 		await e.DisposeAsync().AsTask().Within();
 
@@ -1072,7 +1072,7 @@ public static class PooledBufferJourneyTests
 	public static async Task TheBuffer_AfterItsDispose_RefusesEverything()
 	{
 		using var j = Journey.Rows(100);
-		var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		ICollection<ChannelRow> collection = items;
 
@@ -1120,7 +1120,7 @@ public static class PooledBufferJourneyTests
 				n, TimeSpan.FromMilliseconds(15), Math.Max(1, n / 4)));
 		string json;
 
-		await using (var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct))
+		await using (var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct))
 		{
 			if (n >= 17) Assert.False(buffer.Items.IsCompleted);
 
@@ -1138,7 +1138,7 @@ public static class PooledBufferJourneyTests
 	public static async Task J6_ADisposeBeforeTheSerialization_ThrowsAndReadsNothing()
 	{
 		using var j = Journey.Rows(3500);
-		var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		var e = items.GetEnumerator();
 		for (int i = 0; i < 100; ++i) Assert.True(e.MoveNext());
@@ -1158,7 +1158,7 @@ public static class PooledBufferJourneyTests
 	{
 		using var j = new Journey(
 			() => new LagReader(100, TimeSpan.FromMilliseconds(15), 25));
-		await using var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+		await using var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 		Task<PooledArray<ChannelRow>> one = Task.Run(
 			async () => await buffer.Items, Ct);
@@ -1205,7 +1205,7 @@ public static class PooledBufferJourneyTests
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	static async Task ForgetABufferAsync(Journey j)
 	{
-		var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+		var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		var items = await buffer.Items.Within();
 		Assert.Equal(100, items.Count);
 
@@ -1218,14 +1218,14 @@ public static class PooledBufferJourneyTests
 		if (terminal == "stream")
 		{
 			var e = j.View
-				.UsePool(j.Pool, clear: false).ToAsyncBufferStream(Ct)
+				.UsePool(j.Pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
 				.GetAsyncEnumerator(Ct);
 			Assert.True(await e.MoveNextAsync().AsTask().Within());
 		}
 		else
 		{
 			var e = j.View
-				.UsePool(j.Pool, clear: false).ToBufferedAsyncStream(Ct)
+				.UsePool(j.Pool, clearOnReturn: false).ToBufferedAsyncStream(Ct)
 				.GetAsyncEnumerator(Ct);
 			Assert.True(await e.MoveNextAsync().AsTask().Within());
 		}
@@ -1288,7 +1288,7 @@ public static class PooledBufferJourneyTests
 	{
 		using var j = new Journey(
 			() => new LagReader(100, TimeSpan.FromMilliseconds(40), 25));
-		await using var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(Ct);
+		await using var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		Assert.False(items.IsCompleted);
@@ -1308,7 +1308,7 @@ public static class PooledBufferJourneyTests
 		using var cts = CancellationTokenSource.CreateLinkedTokenSource(Ct);
 		using var j = new Journey(
 			() => new LagReader(500, TimeSpan.FromMilliseconds(40), 25));
-		var buffer = j.View.UsePool(j.Pool, clear: false).ToAsyncBuffer(cts.Token);
+		var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToAsyncBuffer(cts.Token);
 
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await Until(

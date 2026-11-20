@@ -114,7 +114,7 @@ internal sealed class ChunkProducer<T>(
 	/// starts nothing: the target ends with that cancel.
 	/// </summary>
 	[SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary")]
-	internal Task Start()
+	public Task Start()
 	{
 		if (caller.IsCancellationRequested)
 		{
@@ -153,7 +153,7 @@ internal sealed class ChunkProducer<T>(
 	/// may be disposed already: the owner asked for the cancel, so
 	/// neither matters to it.
 	/// </remarks>
-	internal void Cancel()
+	public void Cancel()
 	{
 		if (Volatile.Read(ref _ended) != 0) return;
 
@@ -213,7 +213,7 @@ internal sealed class ChunkProducer<T>(
 	// is an array). No enumerator, no allocation: the same loop
 	// ToArrayAsync uses, with the buffer's bounds held in two fields.
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal void Add(T row)
+	public void Add(T row)
 	{
 		int next = _next;
 		if (next < _limit)
