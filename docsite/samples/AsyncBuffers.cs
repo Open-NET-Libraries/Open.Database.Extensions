@@ -401,7 +401,7 @@ public static class AsyncBuffers
 
 	// Waits (for a bounded time) until the background clear has handed
 	// every array back to the pool.
-	public static async Task SettleAsync(CountingPool<Post> pool)
+	public static async Task SettleAsync<T>(CountingPool<T> pool)
 	{
 		using CancellationTokenSource limit = new(TimeSpan.FromSeconds(10));
 		while (pool.Returned < pool.Rented)
