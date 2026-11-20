@@ -88,7 +88,7 @@ public static class ParameterNameMemoryTests
 	// ---- the four outcomes of a remembered list that went stale (the procedure changed, the five minutes have not passed) ----
 
 	[Fact]
-	public static void AStaleList_ANewOptionalParameter_IsNotSentByAddParams_AMemberTheNamesDoNotDeclareIsNotAReasonToReadAgain()
+	public static void AStaleList_ANewParameterForAnAddParamsMember_IsFoundByOneRead_AndSent()
 	{
 		var procedure = new Procedure("dbo.stale_optional");
 		var args = new { A = 1, B = 2 };
@@ -96,9 +96,48 @@ public static class ParameterNameMemoryTests
 		Assert.Equal(["@a"], procedure.Run(["@a"], c => c.AddParams(args)));
 		Assert.Equal(1, procedure.Lookups);
 
-		// The procedure now declares @b as well. A member that the remembered names do not declare is skipped, and skipping is not a mismatch: nothing is read again.
-		Assert.Equal(["@a"], procedure.Run(["@a", "@b"], c => c.AddParams(args)));
+		// The procedure now declares @b as well. The remembered names lack the member B, so before dropping it the names are read once more: B is found and sent,
+		// instead of the procedure silently using its default.
+		Assert.Equal(["@a", "@b"], procedure.Run(["@a", "@b"], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
+
+		// What was read is remembered as usual: nothing is read again.
+		Assert.Equal(["@a", "@b"], procedure.Run(["@a", "@b"], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
+	}
+
+	[Fact]
+	public static void AMemberTheProcedureNeverDeclares_CostsOneExtraRead_NotOneForEveryRun()
+	{
+		var procedure = new Procedure("dbo.extra_member");
+		var args = new { A = 1, Extra = 2 };
+
+		Assert.Equal(["@a"], procedure.Run(["@a"], c => c.AddParams(args)));
 		Assert.Equal(1, procedure.Lookups);
+
+		// The first run after the names were read looks once more for Extra, finds nothing, and drops it as before ...
+		Assert.Equal(["@a"], procedure.Run(["@a"], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
+
+		// ... and that read is remembered: a member the procedure does not take is not a reason to read on every run.
+		for (int i = 0; i < 5; i++) Assert.Equal(["@a"], procedure.Run(["@a"], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
+	}
+
+	[Fact]
+	public static async Task AStaleList_ANewParameterForAnAddParamsMember_OnTheAsyncPath_IsFoundByOneRead_AndSent()
+	{
+		var procedure = new AsyncProcedure("dbo.async_stale_optional");
+		var args = new { A = 1, B = 2 };
+
+		Assert.Equal(["@a"], await procedure.RunAsync(["@a"], c => c.AddParams(args)));
+		Assert.Equal(1, procedure.Lookups);
+
+		Assert.Equal(["@a", "@b"], await procedure.RunAsync(["@a", "@b"], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
+
+		Assert.Equal(["@a", "@b"], await procedure.RunAsync(["@a", "@b"], c => c.AddParams(args)));
+		Assert.Equal(2, procedure.Lookups);
 	}
 
 	[Fact]
