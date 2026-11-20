@@ -40,5 +40,3 @@ static Open.Database.Extensions.DbQuery.Procedure(string! name) -> Open.Database
 static Open.Database.Extensions.DbQuery.Text(string! sql) -> Open.Database.Extensions.DbQuery!
 static Open.Database.Extensions.DbQueryUsing.operator !=(Open.Database.Extensions.DbQueryUsing left, Open.Database.Extensions.DbQueryUsing right) -> bool
 static Open.Database.Extensions.DbQueryUsing.operator ==(Open.Database.Extensions.DbQueryUsing left, Open.Database.Extensions.DbQueryUsing right) -> bool
-Open.Database.Extensions.PooledArray<T>.ToArray() -> T[]!
-Open.Database.Extensions.PooledArray<T>.ToList() -> System.Collections.Generic.List<T>!
