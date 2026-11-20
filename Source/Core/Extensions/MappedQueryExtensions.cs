@@ -197,7 +197,7 @@ public static class MappedQueryExtensions
 	/// <remarks>
 	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
 	/// A result with rows is a new array, exactly as long as the number of rows, and nothing else refers to it: keep it, change it or hand it on.
-	/// <c>ToImmutableArrayAsync</c> wraps such an array without copying it. (An empty result is the shared empty array, which has nothing to change.)
+	/// <c>ToImmutableArrayAsync</c> wraps such an array without copying it on .NET 8 and later (the netstandard2.0 build copies it once). (An empty result is the shared empty array, which has nothing to change.)
 	/// </remarks>
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>

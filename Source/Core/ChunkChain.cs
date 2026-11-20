@@ -97,11 +97,11 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 		int size = _nextSize;
 		if (size == 0) size = ChunkSizing.ResolveCollectFirstRows();
-		_nextSize = ChunkSizing.NextCollectRows(size);
 
 		// Counted only once the rent has succeeded, so a failed rent leaves
 		// the chain as it was.
 		T[] next = _pool.Rent(size);
+		_nextSize = ChunkSizing.NextCollectRows(size);
 		chunks[_chunkCount++] = next;
 		_filled += _index;
 		_current = next;
@@ -170,7 +170,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		=> Count == 0 ? new Queue<T>() : new Queue<T>(this);
 
 	/// <summary>
-	/// The rows in a hash set sized for exactly that many (duplicates are
+	/// The rows in a hash set that never regrows (duplicates are
 	/// dropped, as a hash set does).
 	/// </summary>
 	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
@@ -195,7 +195,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>
-	/// The rows in a dictionary sized for exactly that many, keyed by
+	/// The rows in a dictionary that never regrows, keyed by
 	/// <paramref name="keySelector"/>. A duplicate key throws the
 	/// dictionary's own exception.
 	/// </summary>
