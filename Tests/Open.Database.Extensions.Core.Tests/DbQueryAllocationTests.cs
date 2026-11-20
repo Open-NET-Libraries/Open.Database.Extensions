@@ -31,11 +31,11 @@ public static class DbQueryAllocationTests
 		public int? Qty { get; set; }
 	}
 
-	readonly record struct Args1(int A);
+	readonly record struct Args1(int P0);
 
-	readonly record struct Args2(int A, long B);
+	readonly record struct Args2(int P0, long P1);
 
-	readonly record struct Args4(int A, long B, string C, int D);
+	readonly record struct Args4(int P0, long P1, string P2, int P3);
 
 	const int VA = 42;
 	const int VD = 7;

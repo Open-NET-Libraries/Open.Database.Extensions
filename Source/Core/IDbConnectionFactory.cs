@@ -36,6 +36,12 @@ public interface IDbConnectionFactory<out TConnection> : IDbConnectionFactory
 	new TConnection Create();
 }
 
+// What a pool made from a factory (AsPool) stands for: the factory object itself, which remembered names belong to.
+interface IConnectionIdentity
+{
+	object Identity { get; }
+}
+
 /// <summary>
 /// Extensions for presenting a connection factory as a pool or as a generic factory.
 /// </summary>
@@ -49,7 +55,7 @@ public static class DbConnectionFactoryExtensions
 	/// Nothing is pooled. This adapter lets code written against <see cref="IDbConnectionPool"/> accept a plain factory.
 	/// </remarks>
 	/// <seealso cref="AsPool(IDbConnectionFactory)"/>
-	public readonly struct ConnectionFactoryToPoolAdapter(Func<IDbConnection> factory) : IDbConnectionPool
+	public readonly struct ConnectionFactoryToPoolAdapter(Func<IDbConnection> factory) : IDbConnectionPool, IConnectionIdentity
 	{
 		/// <summary>
 		/// Constructs a <see cref="ConnectionFactoryToPoolAdapter"/> from a connection factory.
@@ -66,6 +72,8 @@ public static class DbConnectionFactoryExtensions
 		// See the typed adapter: the factory object that commands made from it share.
 		internal object Identity => factory.Target ?? factory;
 
+		object IConnectionIdentity.Identity => Identity;
+
 		/// <inheritdoc />
 		/// <remarks>Disposes <paramref name="connection"/>; nothing is retained for reuse.</remarks>
 		public void Give(IDbConnection connection)
@@ -81,7 +89,7 @@ public static class DbConnectionFactoryExtensions
 	/// Nothing is pooled. This adapter lets code written against <see cref="IDbConnectionPool{TConnection}"/> accept a plain factory.
 	/// </remarks>
 	/// <seealso cref="AsPool{TConnection}(IDbConnectionFactory{TConnection})"/>
-	public readonly struct ConnectionFactoryToPoolAdapter<TConnection>(Func<TConnection> factory) : IDbConnectionPool<TConnection>
+	public readonly struct ConnectionFactoryToPoolAdapter<TConnection>(Func<TConnection> factory) : IDbConnectionPool<TConnection>, IConnectionIdentity
 		where TConnection : IDbConnection
 	{
 		/// <summary>
@@ -99,6 +107,8 @@ public static class DbConnectionFactoryExtensions
 		// What stays the same from one command to the next: the factory object itself (the target of its Create method), which is what remembered
 		// procedure names belong to. A function with no target (a static lambda) has no such identity, and its own delegate is returned.
 		internal object Identity => factory.Target ?? factory;
+
+		object IConnectionIdentity.Identity => Identity;
 
 		IDbConnection IDbConnectionPool.Take()
 			=> Take();

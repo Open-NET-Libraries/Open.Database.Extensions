@@ -34,11 +34,37 @@ namespace Open.Database.Extensions;
 /// </remarks>
 public sealed class DbQuery : IEquatable<DbQuery>
 {
-	DbQuery(string text, CommandType kind, int timeout)
+	DbQuery(string text, CommandType kind, int timeout, NameSet? textNames)
 	{
 		CommandText = text;
 		Kind = kind;
 		Timeout = timeout;
+		TextNames = textNames;
+	}
+
+	// The @name markers of a text definition, found once when it is made (a definition
+	// is a static field), so a call that derives names scans nothing. null for a
+	// procedure, whose names are remembered per source (ProcedureNameCache).
+	// A set with no names means "not known": each argument is sent as written.
+	internal NameSet? TextNames { get; }
+
+	// What the members of a values type matched, once per definition, values type
+	// and set of names: the real name of each member in member order (null: the
+	// command does not take it). One slot; a definition used with another values
+	// type, or on another set of names, replaces it.
+	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved)
+	{
+		internal Type Type { get; } = type;
+
+		internal NameSet Names { get; } = names;
+
+		internal string?[] Resolved { get; } = resolved;
+	}
+
+	internal MemberMatch? Members
+	{
+		get => Volatile.Read(ref field);
+		set => Volatile.Write(ref field, value);
 	}
 
 	internal string CommandText { get; }
@@ -58,7 +84,11 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <paramref name="sql"/> is empty or white space.
 	/// </exception>
 	public static DbQuery Text(string sql)
-		=> new(Checked(sql, nameof(sql)), CommandType.Text, -1);
+		=> new(
+			Checked(sql, nameof(sql)),
+			CommandType.Text,
+			-1,
+			new NameSet(SqlTextParameters.Parse(sql)));
 
 	/// <summary>Defines a query that calls a stored procedure.</summary>
 	/// <param name="name">The name of the stored procedure.</param>
@@ -73,7 +103,8 @@ public sealed class DbQuery : IEquatable<DbQuery>
 		=> new(
 			Checked(name, nameof(name)),
 			CommandType.StoredProcedure,
-			-1);
+			-1,
+			null);
 
 	static string Checked(string text, string paramName)
 	{
@@ -97,7 +128,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// </param>
 	/// <returns>The new definition.</returns>
 	public DbQuery SetTimeout(ushort seconds)
-		=> new(CommandText, Kind, seconds);
+		=> new(CommandText, Kind, seconds, TextNames);
 
 	/// <summary>
 	/// Declares the type of the values: a <see langword="struct"/>
@@ -144,6 +175,13 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// Binds the query to a pool: each run takes a connection, opens it
 	/// if needed, and gives it back.
 	/// </summary>
+	/// <remarks>
+	/// The pool must hand out <typeparamref name="TConnection"/> connections,
+	/// which are <see cref="DbConnection"/>s. A pool made by
+	/// <c>AsGeneric()</c> is an <c>IDbConnectionPool&lt;IDbConnection&gt;</c> and does
+	/// not fit; use a pool of <see cref="DbConnection"/> (or of a provider's
+	/// connection type), or a factory.
+	/// </remarks>
 	/// <typeparam name="TConnection">The type of the connection.</typeparam>
 	/// <param name="pool">The pool to take connections from.</param>
 	/// <returns>The query, bound.</returns>

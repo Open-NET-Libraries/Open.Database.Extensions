@@ -151,7 +151,7 @@ public static class DbQueryTests
 
 		Assert.Equal([2, 4], Ids(posts));
 		Assert.Equal(
-			["authorId", "views"],
+			["@authorId", "@views"],
 			c.Commands[0].Parameters.Cast<DbParameter>().Select(static p => p.ParameterName));
 	}
 
@@ -228,7 +228,7 @@ public static class DbQueryTests
 
 		Assert.Equal([2, 4], Ids(posts));
 		Assert.Equal(
-			["AuthorId", "Views"],
+			["@AuthorId", "@Views"],
 			c.Commands[0].Parameters.Cast<DbParameter>().Select(static p => p.ParameterName));
 	}
 
@@ -290,6 +290,145 @@ public static class DbQueryTests
 		Assert.Equal(System.Data.DbType.Int32, p.DbType);
 	}
 
+	// ---- names are resolved against what the text declares, as on a command ----
+
+	static string[] SentNames(Tracked c)
+		=> [.. c.Commands[^1].Parameters.Cast<DbParameter>().Select(static p => p.ParameterName)];
+
+	[Fact]
+	public static async Task AdHoc_AVariableFindsItsParameter_IgnoringUnderscores()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+		int authorId = 7;
+		int views = 50;
+
+		List<Post> posts = await DbQuery
+			.Text("select Id, AuthorId, Title from Posts where AuthorId = @author_id and Views >= @views order by Id")
+			.Using(c)
+			.AddParam(authorId)
+			.AddParam(views)
+			.Map<Post>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+
+		Assert.Equal([2, 4], Ids(posts));
+		Assert.Equal(["@author_id", "@views"], SentNames(c));
+	}
+
+	[Fact]
+	public static async Task AdHoc_AVariableFindsItsParameter_WithoutAPrefix()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+		int author = 7;
+
+		List<Post> posts = await DbQuery
+			.Text("select Id, AuthorId, Title from Posts where AuthorId = @p_author and Views >= 50 order by Id")
+			.Using(c)
+			.AddParam(author)
+			.Map<Post>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+
+		Assert.Equal([2, 4], Ids(posts));
+		Assert.Equal(["@p_author"], SentNames(c));
+	}
+
+	// SQLite looks a parameter up by its exact name: only the name the text
+	// declares works, and the query sends it.
+	[Fact]
+	public static async Task AdHoc_TheCaseOfTheVariableDoesNotMatter_OnAProviderThatIsCaseSensitive()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+		int authorid = 7;
+		int VIEWS = 50;
+
+		List<Post> posts = await DbQuery
+			.Text(PostsTypedSql)
+			.Using(c)
+			.AddParam(authorid)
+			.AddParam(VIEWS)
+			.Map<Post>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+
+		Assert.Equal([2, 4], Ids(posts));
+		Assert.Equal(["@AuthorId", "@Views"], SentNames(c));
+	}
+
+	[Fact]
+	public static async Task Typed_TheMembersFindTheirParameters_AndAMemberTheTextLacksIsNotSent()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+		DbQuery<WithExtra> query = DbQuery
+			.Text("select Id, AuthorId, Title from Posts where AuthorId = @author_id and Views >= @views order by Id")
+			.Params<WithExtra>();
+
+		List<Post> posts = await query
+			.Using(c)
+			.AddParams(new(AuthorId: 7, Views: 50, Unused: 1))
+			.Map<Post>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+
+		Assert.Equal([2, 4], Ids(posts));
+		Assert.Equal(["@author_id", "@views"], SentNames(c));
+
+		// And again: the same members, matched once.
+		await query.Using(c).AddParams(new(7, 50, 2)).Map<Post>().ToListAsync(TestContext.Current.CancellationToken);
+		Assert.Equal(["@author_id", "@views"], SentNames(c));
+	}
+
+	readonly record struct WithExtra(int AuthorId, int Views, int Unused);
+
+	[Fact]
+	public static async Task AnArgumentThatMatchesNothing_SaysWhatTheTextDeclares()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+		int unknown = 1;
+
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Posts.Using(c).AddParam(unknown).Map<Post>()
+				.ToListAsync(TestContext.Current.CancellationToken));
+
+		Assert.Contains("'unknown'", ex.Message);
+		Assert.Contains("@authorId", ex.Message);
+		Assert.Equal(ConnectionState.Closed, c.State);
+	}
+
+	[Fact]
+	public static async Task TwoArgumentsThatResolveToOneParameter_AreRefused()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+		int authorId = 7;
+		int author_id = 8;
+
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await DbQuery
+				.Text("select Id from Posts where AuthorId = @author_id")
+				.Using(c)
+				.AddParam(authorId)
+				.AddParam(author_id)
+				.Map<int>()
+				.ToListAsync(TestContext.Current.CancellationToken));
+
+		Assert.Contains("Two parameters resolve to", ex.Message);
+	}
+
+	[Fact]
+	public static async Task ATextWithNoMarker_SendsEachArgumentAsWritten()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+		int number = 5;
+
+		await DbQuery.Text("select 1").Using(c).AddParam(number).Map<int>()
+			.ToListAsync(TestContext.Current.CancellationToken);
+
+		Assert.Equal(["number"], SentNames(c));
+	}
+
 	// ---- immutable ----
 
 	[Fact]
@@ -313,7 +452,7 @@ public static class DbQueryTests
 			async () => await held.Map<Post>().ToListAsync(TestContext.Current.CancellationToken));
 		// The first run was `low`: both values, in the order added.
 		Assert.Equal(
-			["authorId", "views"],
+			["@authorId", "views"],
 			c.Commands[0].Parameters.Cast<DbParameter>().Select(static p => p.ParameterName));
 		Assert.Single(c.Commands[2].Parameters);
 	}
@@ -366,7 +505,7 @@ public static class DbQueryTests
 			.ToListAsync(TestContext.Current.CancellationToken);
 
 		Assert.Equal(
-			["a", "b", "c"],
+			["a", "b", "@c"],
 			c.Commands[0].Parameters.Cast<DbParameter>().Select(static p => p.ParameterName));
 	}
 
@@ -413,6 +552,10 @@ public static class DbQueryTests
 
 		Assert.Same(tx, c.Commands.Single().Transaction);
 		Assert.Equal(ConnectionState.Open, c.State);
+		// The transaction's connection is the caller's: opened once by the test, never by the query, and never closed by it.
+		Assert.Equal(1, c.Opens);
+		Assert.Equal(0, c.Closes);
+		Assert.False(c.DisposeCalled);
 	}
 
 	[Fact]

@@ -110,10 +110,10 @@ public readonly struct DbQueryUsing
 	public DbQueryCall AddParam<T>(
 		T value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> DbQueryCall.NewRoot(
+		=> DbQueryCall.NewDerivedRoot(
 			Definition,
 			SourceOrThrow,
-			DbQueryCall.Derive(expression),
+			DbQueryCall.CheckedExpression(expression),
 			value);
 
 	/// <inheritdoc />

@@ -5,8 +5,8 @@ namespace Open.Database.Extensions.Tests;
 #nullable enable
 
 // The definition-first query on a real server: a stored procedure called with
-// derived names and with the typed form (SQL Server matches the names
-// without regard to case), a transaction, a factory, and a typed NULL.
+// derived names (@author_id found for authorId, @p_views for views) and with
+// the typed form, a transaction, a factory, and a typed NULL.
 // Skipped without LocalDB (see LocalDbFixture).
 [ExcludeFromCodeCoverage]
 public static class DbQueryLocalDbTests
@@ -19,14 +19,14 @@ public static class DbQueryLocalDbTests
 
 	static LocalDbFixture.Scratch CreateProcedure()
 		=> LocalDbFixture.CreateProcedure(
-			"@authorId int, @views int",
+			"@author_id int, @p_views int",
 			"ode_ds7");
 
 	// CreateProcedure's body selects 1: replace it with one that echoes the values.
 	static string Echo(LocalDbFixture.Scratch procedure)
 	{
 		LocalDbFixture.Execute(
-			$"alter procedure dbo.[{procedure.Name}] @authorId int, @views int as select @authorId as AuthorId, @views as Views");
+			$"alter procedure dbo.[{procedure.Name}] @author_id int, @p_views int as select @author_id as AuthorId, @p_views as Views");
 		return "dbo." + procedure.Name;
 	}
 
@@ -69,6 +69,31 @@ public static class DbQueryLocalDbTests
 			.ToListAsync(Token);
 
 		Assert.Equal([new Row(8, 60)], rows);
+	}
+
+	readonly record struct WithExtra(int AuthorId, int Views, int Unused);
+
+	// The second call finds the names remembered (no schema lookup), and a member
+	// the procedure does not declare is not sent.
+	[Fact]
+	public static async Task AProcedure_IsCalledAgain_FromTheRememberedNames()
+	{
+		LocalDbFixture.SkipUnlessAvailable();
+		using LocalDbFixture.Scratch procedure = CreateProcedure();
+		DbQuery<WithExtra> query
+			= DbQuery.Procedure(Echo(procedure)).Params<WithExtra>();
+		await using SqlConnection connection = LocalDbFixture.Create();
+
+		for (int i = 0; i < 3; i++)
+		{
+			List<Row> rows = await query
+				.Using(connection)
+				.AddParams(new(AuthorId: 7, Views: 50 + i, Unused: 9))
+				.Map<Row>()
+				.ToListAsync(Token);
+
+			Assert.Equal([new Row(7, 50 + i)], rows);
+		}
 	}
 
 	[Fact]

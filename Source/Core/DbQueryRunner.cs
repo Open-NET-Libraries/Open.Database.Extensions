@@ -71,7 +71,8 @@ static class DbQueryRunner
 		DbConnection connection,
 		DbTransaction? transaction,
 		DbQuery definition,
-		DbQueryCall? call)
+		DbQueryCall? call,
+		NameSet? names)
 	{
 		DbCommand command = connection.CreateCommand();
 		try
@@ -81,7 +82,7 @@ static class DbQueryRunner
 			command.CommandType = definition.Kind;
 			if (definition.Timeout >= 0)
 				command.CommandTimeout = definition.Timeout;
-			call?.BindAll(command);
+			call?.BindAll(command, definition, names);
 			return command;
 		}
 		catch
@@ -90,6 +91,111 @@ static class DbQueryRunner
 			throw;
 		}
 	}
+
+	// ---- the real names of derived parameters ----
+	// The same rules as a command (ExpressiveCommandBase): a text definition
+	// has the @name markers it found when it was made; a procedure's names
+	// are remembered per source (ProcedureNameCache) for five minutes, and are
+	// read again once when they do not fit what is asked of them, so a hit
+	// costs no schema lookup.
+
+	// Remembered names belong to the object connections come from: the factory
+	// or pool (not the adapter AsPool makes around a factory), or the
+	// connection itself.
+	static object NameCacheOwner(object source, DbConnection connection)
+		=> source switch
+		{
+			DbTransaction => connection,
+			IConnectionIdentity adapter => adapter.Identity,
+			_ => source,
+		};
+
+	// The server and the database are part of the key: one connection can be
+	// switched to another database, and one factory can hand out connections
+	// to different servers.
+	static ProcedureKey KeyOf(DbConnection connection, DbQuery definition)
+		=> new(connection.DataSource, connection.Database, definition.CommandText);
+
+	static NameSet? Remember(
+		object owner,
+		ProcedureKey key,
+		ImmutableArray<string> names,
+		bool afterMiss)
+		=> names.IsDefaultOrEmpty
+			? null
+			: ProcedureNameCache.Set(owner, key, names, afterMiss);
+
+	static NameSet? Resolve(
+		DbQuery definition,
+		object source,
+		DbConnection connection,
+		DbQueryCall call)
+	{
+		if (definition.Kind != CommandType.StoredProcedure)
+			return definition.TextNames;
+
+		object owner = NameCacheOwner(source, connection);
+		ProcedureKey key = KeyOf(connection, definition);
+		bool found = ProcedureNameCache.TryGet(owner, key, out NameSet? remembered);
+		if (found && Fits(remembered, call, definition)) return remembered;
+
+		// Nothing is remembered, or the remembered names did not fit: the
+		// procedure may have changed since they were read.
+		return Remember(
+			owner,
+			key,
+			ProcedureSchemaNames.Get(connection, definition.CommandText),
+			found);
+	}
+
+	// Not an async method itself: when the names are remembered (the usual
+	// case) it finishes without a state machine; only reading them is async.
+	static ValueTask<NameSet?> ResolveAsync(
+		DbQuery definition,
+		object source,
+		DbConnection connection,
+		DbQueryCall call,
+		CancellationToken cancellationToken)
+	{
+		if (definition.Kind != CommandType.StoredProcedure)
+			return new(definition.TextNames);
+
+		object owner = NameCacheOwner(source, connection);
+		ProcedureKey key = KeyOf(connection, definition);
+		bool found = ProcedureNameCache.TryGet(owner, key, out NameSet? remembered);
+		return found && Fits(remembered, call, definition)
+			? new(remembered)
+			: ReadNamesAsync(
+				owner,
+				key,
+				found,
+				connection,
+				definition,
+				cancellationToken);
+	}
+
+	static async ValueTask<NameSet?> ReadNamesAsync(
+		object owner,
+		ProcedureKey key,
+		bool afterMiss,
+		DbConnection connection,
+		DbQuery definition,
+		CancellationToken cancellationToken)
+		=> Remember(
+			owner,
+			key,
+			await ProcedureSchemaNames
+				.GetAsync(
+					connection,
+					definition.CommandText,
+					cancellationToken)
+				.ConfigureAwait(false),
+			afterMiss);
+
+	// "Not known" (no names) fits anything: each argument keeps its last
+	// member as written.
+	static bool Fits(NameSet? remembered, DbQueryCall call, DbQuery definition)
+		=> remembered is null || call.Fits(remembered, definition.CommandText);
 
 	// An open connection (the usual case) needs no awaiting at all.
 	static ValueTask<ConnectionState> OpenIfNeededAsync(
@@ -119,7 +225,10 @@ static class DbQueryRunner
 		try
 		{
 			connection.EnsureOpen();
-			using DbCommand command = Make(connection, tx, definition, call);
+			NameSet? names = call is { NeedsNames: true }
+				? Resolve(definition, source, connection, call)
+				: null;
+			using DbCommand command = Make(connection, tx, definition, call, names);
 			using DbDataReader reader = command.ExecuteReader(
 				before == ConnectionState.Closed
 					? behavior | CommandBehavior.CloseConnection
@@ -153,7 +262,16 @@ static class DbQueryRunner
 		{
 			await OpenIfNeededAsync(connection, cancellationToken)
 				.ConfigureAwait(false);
-			using DbCommand command = Make(connection, tx, definition, call);
+			NameSet? names = call is { NeedsNames: true }
+				? await ResolveAsync(
+						definition,
+						source,
+						connection,
+						call,
+						cancellationToken)
+					.ConfigureAwait(false)
+				: null;
+			using DbCommand command = Make(connection, tx, definition, call, names);
 			CommandBehavior b = before == ConnectionState.Closed
 				? behavior | CommandBehavior.CloseConnection
 				: behavior;
