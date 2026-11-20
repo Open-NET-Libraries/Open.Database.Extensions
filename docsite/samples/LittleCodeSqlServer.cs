@@ -31,9 +31,11 @@ public sealed class LittleCodeSqlServer : IAsyncDisposable
 		catch (Exception ex) when (ex is SqlException or InvalidOperationException or PlatformNotSupportedException or TimeoutException or ArgumentException)
 		{
 			if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(RequireVariable)))
+			{
 				throw new InvalidOperationException(
 					$"{RequireVariable} is set, so a missing SQL Server is a failure, not a skip.",
 					ex);
+			}
 
 			Console.WriteLine(
 				$"skipped - SQL Server LocalDB is not available ({ex.GetType().Name}): task 4 of How little code was compiled, not run");
