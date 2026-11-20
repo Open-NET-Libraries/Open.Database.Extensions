@@ -14,7 +14,6 @@ namespace Open.Database.Extensions.Tests;
 // the arrays' return to the pool cannot be observed from here.
 // Every wait is bounded.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
 public static class PooledBufferTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -633,7 +632,7 @@ public static class PooledBufferTests
 	static async Task<int> ReadAll(
 		string terminal,
 		MappedCommand<ChannelRow> view,
-		MemoryPool<ChannelRow> pool)
+		ArrayPool<ChannelRow> pool)
 	{
 		int rows = 0;
 		switch (terminal)
@@ -684,7 +683,7 @@ public static class PooledBufferTests
 	public static void ANullPool_ThrowsAtTheCall_OnEveryOverload()
 	{
 		var run = Rows100();
-		MemoryPool<ChannelRow> none = null!;
+		ArrayPool<ChannelRow> none = null!;
 
 		foreach (Action call in new Action[]
 		{
@@ -1091,68 +1090,6 @@ public static class PooledBufferTests
 
 	// ---- the memory pool and its owners -----------------------------------
 
-	static readonly Type Extensions = typeof(PooledBuffer<>).Assembly
-		.GetType("Open.Database.Extensions.Core.MemoryOwnerExtensions")!;
-
-	static IMemoryOwner<T> Slice<T>(IMemoryOwner<T> owner, int count)
-		=> (IMemoryOwner<T>)Extensions
-			.GetMethod(
-				"Slice",
-				BindingFlags.Static | BindingFlags.NonPublic)!
-			.MakeGenericMethod(typeof(T))
-			.Invoke(null, [owner, count])!;
-
-	static void Release<T>(IMemoryOwner<T> owner)
-		=> Extensions
-			.GetMethod(
-				"Release",
-				BindingFlags.Static | BindingFlags.NonPublic)!
-			.MakeGenericMethod(typeof(T))
-			.Invoke(null, [owner]);
-
-	[Fact]
-	public static void Slice_ReturnsTheSameOwner_WhenTheLengthMatches()
-	{
-		var pool = new CountingPool<int>();
-		IMemoryOwner<int> owner = pool.Rent(16);
-
-		Assert.Same(owner, Slice(owner, 16));
-	}
-
-	[Fact]
-	public static void Slice_WrapsAnOwnerWhoseMemoryIsLonger()
-	{
-		var pool = new CountingPool<int>();
-		IMemoryOwner<int> host = pool.Rent(16);
-
-		IMemoryOwner<int> sliced = Slice(host, 10);
-
-		Assert.NotSame(host, sliced);
-		Assert.Equal(10, sliced.Memory.Length);
-
-		// Disposing the wrapper disposes the host (the array goes back
-		// once); a second disposal is safe, and after it the memory is
-		// refused.
-		sliced.Dispose();
-		Assert.Equal(1, pool.Returns);
-		Assert.Null(Record.Exception(() => sliced.Dispose()));
-		Assert.Equal(1, pool.Returns);
-		Assert.Throws<ObjectDisposedException>(() => sliced.Memory);
-		Assert.Throws<ObjectDisposedException>(() => host.Memory);
-	}
-
-	[Fact]
-	public static void Slice_OfTheSharedPoolsOwner_IsSafeToDisposeTwice()
-	{
-		IMemoryOwner<int> host = MemoryPool<int>.Shared.Rent(10);
-		IMemoryOwner<int> sliced = Slice(host, 7);
-
-		Assert.Equal(7, sliced.Memory.Length);
-		sliced.Dispose();
-		Assert.Null(Record.Exception(() => sliced.Dispose()));
-		Assert.Throws<ObjectDisposedException>(() => sliced.Memory);
-	}
-
 	[Fact]
 	public static async Task APoolThatRoundsUp_StillYieldsExactMemoryEverywhere()
 	{
@@ -1207,58 +1144,6 @@ public static class PooledBufferTests
 		Assert.All(pool.Captured, a => Assert.NotEqual(0, a[0]));
 	}
 
-	// The recipe the pool parameter's docs give: a pool whose owners
-	// clear on Dispose scrubs the rows.
-	sealed class ClearingPool<T>(MemoryPool<T> inner) : MemoryPool<T>
-	{
-		public override int MaxBufferSize
-			=> inner.MaxBufferSize;
-
-		public override IMemoryOwner<T> Rent(int minBufferSize = -1)
-			=> new ClearingOwner(inner.Rent(minBufferSize));
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class ClearingOwner(IMemoryOwner<T> host)
-			: IMemoryOwner<T>
-		{
-			public Memory<T> Memory
-				=> host.Memory;
-
-			public void Dispose()
-			{
-				host.Memory.Span.Clear();
-				host.Dispose();
-			}
-		}
-	}
-
-	[Fact]
-	public static async Task AClearingPool_ScrubsTheRows_OnEveryPath()
-	{
-		var counting = new CountingPool<int>();
-		var pool = new ClearingPool<int>(counting);
-
-		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
-		await buffer.Items.Within();
-		Assert.All(counting.Captured, a => Assert.NotEqual(0, a[0]));
-		await buffer.DisposeAsync();
-		Assert.All(
-			counting.Captured,
-			a => Assert.All(a, r => Assert.Equal(0, r)));
-
-		var counting2 = new CountingPool<int>();
-		var pool2 = new ClearingPool<int>(counting2);
-		await foreach (var _ in Ints100()
-			.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct)) { }
-
-		Assert.True(counting2.Rents > 0);
-		Assert.Equal(counting2.Rents, counting2.Returns);
-		Assert.All(
-			counting2.Captured,
-			a => Assert.All(a, r => Assert.Equal(0, r)));
-	}
-
 	[Fact]
 	public static async Task Release_DoesNotClear_AValueType()
 	{
@@ -1277,19 +1162,6 @@ public static class PooledBufferTests
 		// Nothing to keep alive: the rows are left as they were.
 		Assert.Equal(1, pool.Captured[0][0]);
 		Assert.Equal(pool.Rents, pool.Returns);
-	}
-
-	[Fact]
-	public static void Release_JustDisposesTheOwner()
-	{
-		var pool = new CountingPool<string>();
-		IMemoryOwner<string> owner = pool.Rent(4);
-		owner.Memory.Span[0] = "a";
-
-		Release(owner);
-
-		Assert.Equal("a", pool.Captured[0][0]);
-		Assert.Equal(1, pool.Returns);
 	}
 
 	[Fact]
@@ -1479,71 +1351,16 @@ public static class PooledBufferTests
 		Assert.Equal(0, pool.Unmatched);
 	}
 
-	// A pool that hands back HALF of what was asked for, over one shared
-	// array: the other half of every rent belongs to a neighbour.
-	sealed class ShortPool : MemoryPool<ChannelRow>
-	{
-		public ChannelRow[] Backing { get; } = [.. Enumerable
-			.Range(0, 1 << 14)
-			.Select(_ => new ChannelRow(-1))];
-
-		readonly List<(int Start, int Length)> _given = [];
-		int _next;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public int Rents => _given.Count;
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			int size = Math.Max(minBufferSize, 1);
-			int start = _next;
-			_next += size;
-			_given.Add((start, size / 2));
-			return new Owner(this, new Memory<ChannelRow>(
-				Backing, start, size / 2));
-		}
-
-		// Every cell that was written is inside memory that was given.
-		public bool NeighboursUntouched()
-		{
-			for (int i = 0; i < Backing.Length; ++i)
-			{
-				if (Backing[i] is { Id: not -1 }
-					&& !_given.Any(g => i >= g.Start
-						&& i < g.Start + g.Length))
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class Owner(ShortPool pool, Memory<ChannelRow> memory)
-			: IMemoryOwner<ChannelRow>
-		{
-			public Memory<ChannelRow> Memory => memory;
-
-			public void Dispose()
-				=> Interlocked.Increment(ref pool._disposes);
-		}
-	}
-
+	// A pool that gives a shorter array than asked for breaks its contract:
+	// the read fails with an InvalidOperationException, and that array goes
+	// back to the pool at once.
 	[Theory]
 	[InlineData("buffer")]
 	[InlineData("stream")]
-	public static async Task APoolThatGivesLessMemory_FailsTheRead_AndWritesNothingElse(
+	public static async Task APoolThatGivesLessMemory_FailsTheRead_AndReturnsTheArray(
 		string terminal)
 	{
-		var pool = new ShortPool();
+		var pool = new CountingPool<ChannelRow> { Exact = true, Shortfall = 1 };
 		var run = Rows100();
 
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -1561,11 +1378,11 @@ public static class PooledBufferTests
 			});
 
 		Assert.Contains("less memory", ex.Message);
-		Assert.True(pool.NeighboursUntouched());
-		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
-		Assert.Equal(pool.Rents, pool.Disposes);
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.Equal(1, pool.Rents);
+		Assert.Equal(1, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
 	}
-
 	[Theory]
 	[InlineData("buffer")]
 	[InlineData("stream")]
@@ -1844,326 +1661,6 @@ public static class PooledBufferTests
 		Assert.Equal(20, e.Current!.Id);
 	}
 
-	// ---- the delta review: the view is built from owners that may fail -----
-
-	// A pool whose owners count every access to their Memory, and fail
-	// from a given access on (a pool that breaks its contract).
-	sealed class FlakyMemoryPool : MemoryPool<ChannelRow>
-	{
-		readonly ArrayPool<ChannelRow> _inner = ArrayPool<ChannelRow>.Create();
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _accesses;
-#pragma warning restore IDE0032
-		int _rents;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public int ThrowAfter { get; set; } = int.MaxValue;
-
-		public Func<Exception> Failure { get; set; }
-			= static () => new InvalidOperationException("memory failed");
-
-		public Action? OnFailure { get; set; }
-
-		public int Accesses => Volatile.Read(ref _accesses);
-
-		public int Rents => Volatile.Read(ref _rents);
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			Interlocked.Increment(ref _rents);
-			int size = Math.Max(minBufferSize, 1);
-			return new Owner(this, _inner.Rent(size), size);
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class Owner(FlakyMemoryPool pool, ChannelRow[] array, int size)
-			: IMemoryOwner<ChannelRow>
-		{
-			int _disposed;
-
-			public Memory<ChannelRow> Memory
-			{
-				get
-				{
-					if (Interlocked.Increment(ref pool._accesses)
-						> pool.ThrowAfter)
-					{
-						pool.OnFailure?.Invoke();
-						throw pool.Failure();
-					}
-
-					return new Memory<ChannelRow>(array, 0, size);
-				}
-			}
-
-			public void Dispose()
-			{
-				if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-
-				Interlocked.Increment(ref pool._disposes);
-				pool._inner.Return(array);
-			}
-		}
-	}
-
-	// How many times the producer asks the owners for their Memory when
-	// it reads 5 rows (the view is not built: Items is never asked).
-	static async Task<int> ProducerAccesses()
-	{
-		var pool = new FlakyMemoryPool();
-		var run = Run.Create(() => new ChannelTestReader(5));
-		await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
-		await Until(() => run.Closed, "the read ended");
-		await Task.Delay(150, Ct);
-
-		return pool.Accesses;
-	}
-
-	[Fact]
-	public static async Task AnOwnerThatFailsWhenTheViewIsBuilt_FailsItems_NotHangsIt()
-	{
-		int producer = await ProducerAccesses();
-		var pool = new FlakyMemoryPool { ThrowAfter = producer };
-		var run = Run.Create(() => new ChannelTestReader(5));
-		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
-
-		// The producer stays within its accesses; building the view is
-		// the next one, and it fails with something other than a dispose.
-		Task<PooledArray<ChannelRow>> items = buffer.Items;
-		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-			() => items.Within());
-
-		Assert.Equal("memory failed", ex.Message);
-		Assert.Same(items, buffer.Items);
-
-		await buffer.DisposeAsync().AsTask().Within();
-		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
-		Assert.Equal(pool.Rents, pool.Disposes);
-	}
-
-	[Fact]
-	public static async Task ADisposeWhileTheViewIsBuilt_CancelsItems()
-	{
-		int producer = await ProducerAccesses();
-		var pool = new FlakyMemoryPool { ThrowAfter = producer };
-		var run = Run.Create(() => new ChannelTestReader(5));
-		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
-
-		// The owner is disposed under the builder's hands: its memory
-		// is refused, and the buffer disposed.
-		pool.Failure = static () => new ObjectDisposedException("owner");
-		pool.OnFailure = buffer.Dispose;
-
-		Task<PooledArray<ChannelRow>> items = buffer.Items;
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			() => items.Within());
-		Assert.True(items.IsCanceled);
-
-		await buffer.DisposeAsync().AsTask().Within();
-		await Until(() => pool.Rents == pool.Disposes, "the owners released");
-		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
-		Assert.Equal(pool.Rents, pool.Disposes);
-	}
-
-	// ---- memory that is not what the fast path expects ---------------------
-
-	// A pool whose odd rents are NOT array-backed (a MemoryManager) and
-	// whose even rents are, so one read mixes both kinds of chunk.
-	sealed class MixedPool : MemoryPool<ChannelRow>
-	{
-		int _rents;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public int Rents => Volatile.Read(ref _rents);
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			int size = Math.Max(minBufferSize, 1);
-			return Interlocked.Increment(ref _rents) % 2 == 1
-				? new ManagerOwner(this, size)
-				: new ArrayOwner(this, size);
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class ManagerOwner(MixedPool pool, int size)
-			: MemoryManager<ChannelRow>
-		{
-			readonly ChannelRow[] _array = new ChannelRow[size];
-
-			public override Span<ChannelRow> GetSpan() => _array;
-
-			public override MemoryHandle Pin(int elementIndex = 0)
-				=> throw new NotSupportedException();
-
-			public override void Unpin() { }
-
-			protected override void Dispose(bool disposing)
-			{
-				if (disposing) Interlocked.Increment(ref pool._disposes);
-			}
-		}
-
-		sealed class ArrayOwner(MixedPool pool, int size)
-			: IMemoryOwner<ChannelRow>
-		{
-			readonly ChannelRow[] _array = new ChannelRow[size];
-
-			public Memory<ChannelRow> Memory => _array;
-
-			public void Dispose()
-				=> Interlocked.Increment(ref pool._disposes);
-		}
-	}
-
-	[Fact]
-	public static async Task AMixedPool_ArrayBackedAndNot_GivesTheRightRows_OnEveryPath()
-	{
-		var pool = new MixedPool();
-		var run = Rows100();
-
-		await using (var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct))
-		{
-			PooledArray<ChannelRow> items = await buffer.Items.Within();
-			Assert.Equal(100, items.Count);
-			foreach (int i in new[] { 0, 15, 16, 47, 48, 99 })
-				Assert.Equal(i + 1, items[i].Id);
-
-			List<int> viaForeach = [];
-			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
-
-			Assert.Equal(Ids(100), viaForeach);
-			var copy = new ChannelRow[100];
-			items.CopyTo(copy);
-			Assert.Equal(Ids(100), copy.Select(r => r.Id).ToList());
-			Assert.Equal(
-				Ids(100),
-				items.ToArray().Select(r => r.Id).ToList());
-		}
-
-		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
-		Assert.Equal(pool.Rents, pool.Disposes);
-
-		var pool2 = new MixedPool();
-		List<int> sizes = [];
-		List<int> ids = [];
-		await foreach (var chunk in run.View.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct))
-		{
-			sizes.Add(chunk.Length);
-			ids.AddRange(chunk.ToArray().Select(r => r.Id));
-		}
-
-		Assert.Equal([16, 32, 52], sizes);
-		Assert.Equal(Ids(100), ids);
-		SpinWait.SpinUntil(() => pool2.Rents == pool2.Disposes, 30_000);
-		Assert.Equal(pool2.Rents, pool2.Disposes);
-	}
-
-	// A slab pool: one backing array, every rent an array-backed slice of
-	// it at a NON-ZERO offset, with gaps between the slices.
-	sealed class SlabPool : MemoryPool<ChannelRow>
-	{
-		readonly List<(int Start, int Length)> _given = [];
-		int _next = 5;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public ChannelRow[] Backing { get; } = [.. Enumerable
-			.Range(0, 1 << 12)
-			.Select(_ => new ChannelRow(-1))];
-
-		public int Rents => _given.Count;
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			int size = Math.Max(minBufferSize, 1);
-			int start = _next;
-			_next += size + 3;
-			_given.Add((start, size));
-			return new Owner(this, new Memory<ChannelRow>(Backing, start, size));
-		}
-
-		// Every cell that holds a row lies inside a slice that was given.
-		public bool GapsUntouched()
-		{
-			for (int i = 0; i < Backing.Length; ++i)
-			{
-				if (Backing[i] is { Id: not -1 }
-					&& !_given.Any(g => i >= g.Start
-						&& i < g.Start + g.Length))
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class Owner(SlabPool pool, Memory<ChannelRow> memory)
-			: IMemoryOwner<ChannelRow>
-		{
-			public Memory<ChannelRow> Memory => memory;
-
-			public void Dispose()
-				=> Interlocked.Increment(ref pool._disposes);
-		}
-	}
-
-	[Fact]
-	public static async Task ASlabPool_ArrayMemoryAtANonZeroOffset_GivesTheRightRows()
-	{
-		var pool = new SlabPool();
-		var run = Rows100();
-
-		await using (var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct))
-		{
-			PooledArray<ChannelRow> items = await buffer.Items.Within();
-			foreach (int i in new[] { 0, 15, 16, 47, 48, 99 })
-				Assert.Equal(i + 1, items[i].Id);
-
-			List<int> viaForeach = [];
-			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
-
-			Assert.Equal(Ids(100), viaForeach);
-		}
-
-		Assert.True(pool.GapsUntouched());
-		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
-		Assert.Equal(pool.Rents, pool.Disposes);
-
-		var pool2 = new SlabPool();
-		List<int> ids = [];
-		await foreach (var chunk in run.View.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct))
-		{
-			ids.AddRange(chunk.ToArray().Select(r => r.Id));
-		}
-
-		Assert.Equal(Ids(100), ids);
-		Assert.True(pool2.GapsUntouched());
-		SpinWait.SpinUntil(() => pool2.Rents == pool2.Disposes, 30_000);
-		Assert.Equal(pool2.Rents, pool2.Disposes);
-	}
-
 	[Fact]
 	public static async Task TheEnumeratorCopies_AreIndependent()
 	{
@@ -2201,91 +1698,6 @@ public static class PooledBufferTests
 			default(PooledArray<ChannelRow>.Enumerator);
 		Assert.False(boxed.MoveNext());
 		Assert.Null(boxed.Current);
-	}
-
-	// A pool whose memory cannot be written through its span (a manager
-	// whose GetSpan fails), so the first row of a buffer cannot be stored.
-	sealed class FailingSpanPool : MemoryPool<ChannelRow>
-	{
-		int _rents;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public int Rents => Volatile.Read(ref _rents);
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			Interlocked.Increment(ref _rents);
-			return new Manager(this, Math.Max(minBufferSize, 1));
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class Manager(FailingSpanPool pool, int size)
-			: MemoryManager<ChannelRow>
-		{
-			public override Memory<ChannelRow> Memory
-				=> CreateMemory(size);
-
-			public override Span<ChannelRow> GetSpan()
-				=> throw new InvalidOperationException("span failed");
-
-			public override MemoryHandle Pin(int elementIndex = 0)
-				=> throw new NotSupportedException();
-
-			public override void Unpin() { }
-
-			protected override void Dispose(bool disposing)
-			{
-				if (disposing) Interlocked.Increment(ref pool._disposes);
-			}
-		}
-	}
-
-	[Fact]
-	public static async Task ABufferThatCouldNotStoreItsFirstRow_IsNeverPublishedEmpty()
-	{
-		var pool = new FailingSpanPool();
-		var run = Rows100();
-		List<int> chunks = [];
-
-		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-			async () =>
-			{
-				await foreach (var chunk in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
-				{
-					chunks.Add(chunk.Length);
-				}
-			});
-
-		// The read fails with the pool's error (the first one), no empty
-		// chunk reached the consumer, and the owner was released.
-		Assert.Equal("span failed", ex.Message);
-		Assert.Empty(chunks);
-		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
-		Assert.Equal(pool.Rents, pool.Disposes);
-	}
-
-	[Fact]
-	public static async Task AnOwnerWhoseMemoryThrowsRightAfterTheRent_IsDisposed()
-	{
-		var pool = new FlakyMemoryPool { ThrowAfter = 0 };
-		var run = Rows100();
-		await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
-
-		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-			() => buffer.Items.Within());
-
-		Assert.Equal("memory failed", ex.Message);
-		await buffer.DisposeAsync();
-		Assert.True(pool.Rents > 0);
-		SpinWait.SpinUntil(() => pool.Rents == pool.Disposes, 30_000);
-		Assert.Equal(pool.Rents, pool.Disposes);
 	}
 
 	[Fact]

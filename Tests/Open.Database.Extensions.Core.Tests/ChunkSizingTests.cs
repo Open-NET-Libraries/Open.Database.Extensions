@@ -1,75 +1,52 @@
-using System.Reflection;
+using Open.Database.Extensions.Core;
 using static Open.Database.Extensions.Tests.ChannelWait;
 
 #nullable enable
 
 namespace Open.Database.Extensions.Tests;
 
-// The chunk sizes are internal static fields a benchmark sets by
-// reflection. They are process-wide, so every test class that reads rows
-// through the buffer terminals is in the one "ChunkSizing" collection
-// (xUnit runs a collection's classes one after the other): a changed size
-// here can never reach a read elsewhere.
+// The chunk sizes are a configuration object (ChunkSizes): the shipped
+// values are ChunkSizes.Default, and a test gives a query its own through a
+// ChunkConfig, so nothing is global and nothing is set and put back.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
 public static class ChunkSizingTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-	static readonly Type Sizing = typeof(PooledBuffer<>).Assembly
-		.GetType("Open.Database.Extensions.Core.ChunkSizing")!;
-
-	const BindingFlags Internal
-		= BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-
-	static FieldInfo Field(string name)
-		=> Sizing.GetField(name, Internal)!;
-
-	static async Task<T> WithSizes<T>(
-		int first,
-		int streamMax,
-		Func<Task<T>> body)
+	static MappedCommand<ChannelRow> Rows(int n, ChunkSizes? sizes = null)
 	{
-		FieldInfo firstRows = Field("_firstRows");
-		FieldInfo streamMaxRows = Field("_streamMaxRows");
-		object? oldFirst = firstRows.GetValue(null);
-		object? oldMax = streamMaxRows.GetValue(null);
-		firstRows.SetValue(null, first);
-		streamMaxRows.SetValue(null, streamMax);
-		try
-		{
-			return await body();
-		}
-		finally
-		{
-			firstRows.SetValue(null, oldFirst);
-			streamMaxRows.SetValue(null, oldMax);
-		}
-	}
-
-	static MappedCommand<ChannelRow> Rows(int n)
-		=> new FakeDbCommand(
+		MappedCommand<ChannelRow> view = new FakeDbCommand(
 			new FakeDbConnection(),
 			() => new ChannelTestReader(n))
 			.Map<ChannelRow>();
 
-	static async Task<List<int>> StreamSizes(int rows)
-	{
-		List<int> sizes = [];
-		await foreach (var chunk in Rows(rows)
-			.ToAsyncBufferStream(Ct))
-		{
-			sizes.Add(chunk.Length);
-		}
+		return sizes is null
+			? view
+			: view.WithConfig(
+				new ChunkConfig<ChannelRow>(
+					null,
+					PoolClearing.Resolve<ChannelRow>(null),
+					sizes));
+	}
 
-		return sizes;
+	static async Task<List<int>> StreamSizes(int rows, ChunkSizes? sizes = null)
+	{
+		List<int> chunks = [];
+		await foreach (var chunk in Rows(rows, sizes).ToAsyncBufferStream(Ct))
+			chunks.Add(chunk.Length);
+
+		return chunks;
 	}
 
 	[Fact]
 	public static void TheDefaults_AreTheShippedSizes()
 	{
-		Assert.Equal(16, Field("_firstRows").GetValue(null));
-		Assert.Equal(4096, Field("_streamMaxRows").GetValue(null));
+		ChunkSizes sizes = ChunkSizes.Default;
+		Assert.Equal(16, sizes.FirstRows);
+		Assert.Equal(4096, sizes.StreamMaxRows);
+		Assert.Equal(16, sizes.CollectFirstRows);
+		Assert.Equal(1, sizes.CollectShift);
+		Assert.Equal(8192, sizes.CollectMaxRows);
 	}
 
 	[Fact]
@@ -88,26 +65,22 @@ public static class ChunkSizingTests
 	}
 
 	[Fact]
-	public static async Task TheKnobs_ChangeTheSizes_AndTheIndexerStillAgrees()
+	public static async Task TheSizes_ChangeTheChunks_AndTheIndexerStillAgrees()
 	{
 		// First 4, stream stops doubling at 32: 4, 8, 16, 32, 32, ...
-		List<int> sizes = await WithSizes(4, 32, () => StreamSizes(100));
-		Assert.Equal([4, 8, 16, 32, 32, 8], sizes);
+		var sizes = new ChunkSizes(firstRows: 4, streamMaxRows: 32);
+		Assert.Equal([4, 8, 16, 32, 32, 8], await StreamSizes(100, sizes));
 
 		// The buffer doubles from 4 without a stop: 4, 8, 16, 32, 64.
 		int[] checkedAt = [0, 3, 4, 11, 12, 27, 28, 59, 60, 99];
-		await WithSizes(4, 32, async () =>
-		{
-			await using var buffer = Rows(100).ToAsyncBuffer(Ct);
-			PooledArray<ChannelRow> items = await buffer.Items.Within();
-			Assert.Equal(100, items.Count);
-			foreach (int i in checkedAt) Assert.Equal(i + 1, items[i].Id);
+		await using var buffer = Rows(100, sizes).ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		Assert.Equal(100, items.Count);
+		foreach (int i in checkedAt) Assert.Equal(i + 1, items[i].Id);
 
-			Assert.Equal(
-				Enumerable.Range(1, 100),
-				items.Select(r => r.Id));
-			return 0;
-		});
+		Assert.Equal(
+			Enumerable.Range(1, 100),
+			items.Select(r => r.Id));
 	}
 
 	[Theory]
@@ -115,40 +88,69 @@ public static class ChunkSizingTests
 	[InlineData(2)]
 	public static async Task TheSmallestFirstSizes_KeepTheIndexerAndTheEnumeratorRight(
 		int first)
-		=> await WithSizes(first, 4096, async () =>
-		{
-			await using var buffer = Rows(100).ToAsyncBuffer(Ct);
-			PooledArray<ChannelRow> items = await buffer.Items.Within();
-			Assert.Equal(100, items.Count);
-			for (int i = 0; i < 100; ++i)
-				Assert.Equal(i + 1, items[i].Id);
+	{
+		var sizes = new ChunkSizes(firstRows: first);
+		await using var buffer = Rows(100, sizes).ToAsyncBuffer(Ct);
+		PooledArray<ChannelRow> items = await buffer.Items.Within();
+		Assert.Equal(100, items.Count);
+		for (int i = 0; i < 100; ++i)
+			Assert.Equal(i + 1, items[i].Id);
 
-			List<int> viaForeach = [];
-			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
+		List<int> viaForeach = [];
+		foreach (ChannelRow row in items) viaForeach.Add(row.Id);
 
-			Assert.Equal(Enumerable.Range(1, 100), viaForeach);
-			return 0;
-		});
+		Assert.Equal(Enumerable.Range(1, 100), viaForeach);
+	}
 
 	[Fact]
 	public static async Task AStreamWithNoDoubling_HasEqualChunks()
 	{
 		// StreamMaxRows equal to FirstRows: every chunk is the same size.
-		List<int> sizes = await WithSizes(2, 2, () => StreamSizes(10));
+		var sizes = new ChunkSizes(firstRows: 2, streamMaxRows: 2);
 
-		Assert.Equal([2, 2, 2, 2, 2], sizes);
+		Assert.Equal([2, 2, 2, 2, 2], await StreamSizes(10, sizes));
 	}
 
 	[Fact]
-	public static async Task AKnobThatDoesNotFit_IsIgnored()
+	public static async Task AValueThatDoesNotFit_IsIgnored()
 	{
 		// 3 is not a power of two, and 5 is not one either: both are
 		// ignored and the defaults are used.
-		List<int> sizes = await WithSizes(3, 5, () => StreamSizes(100));
+		var sizes = new ChunkSizes(firstRows: 3, streamMaxRows: 5);
 
-		Assert.Equal([16, 32, 52], sizes);
+		Assert.Equal(16, sizes.FirstRows);
+		Assert.Equal(4096, sizes.StreamMaxRows);
+		Assert.Equal([16, 32, 52], await StreamSizes(100, sizes));
+	}
 
-		// And the knobs were put back.
-		Assert.Equal(16, Field("_firstRows").GetValue(null));
+	[Theory]
+	[InlineData(16, 1, 8192, 16, 32)]
+	[InlineData(32, 1, 8192, 4096, 8192)]
+	[InlineData(4096, 1, 8192, 8192, 8192)]
+	[InlineData(16, 2, 8192, 16, 64)]
+	[InlineData(1024, 2, 16_384, 4096, 16_384)]
+	public static void TheCollectSchedule_GrowsByTheShift_UpToTheMax(
+		int first,
+		int shift,
+		int max,
+		int from,
+		int expected)
+	{
+		var sizes = new ChunkSizes(
+			collectFirstRows: first,
+			collectShift: shift,
+			collectMaxRows: max);
+
+		Assert.Equal(first, sizes.CollectFirstRows);
+		Assert.Equal(expected, sizes.NextCollectRows(from));
+	}
+
+	[Fact]
+	public static void ACollectShiftOrMaxThatDoesNotFit_IsIgnored()
+	{
+		var sizes = new ChunkSizes(collectShift: 9, collectMaxRows: 1000);
+
+		Assert.Equal(1, sizes.CollectShift);
+		Assert.Equal(8192, sizes.CollectMaxRows);
 	}
 }

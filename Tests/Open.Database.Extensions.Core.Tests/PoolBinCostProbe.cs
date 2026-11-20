@@ -31,7 +31,7 @@ namespace Open.Database.Extensions.Tests;
 //   --filter FullyQualifiedName~PoolBinCostProbe
 // The probe is Explicit (CI never runs it) and prints a table.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
+[Collection("Heap measurements")]
 public sealed class PoolBinCostProbe(ITestOutputHelper output)
 {
 	public sealed class ClassRow

@@ -10,17 +10,15 @@
     <para>
       Pooled memory: the rows are held in arrays rented from a pool and given
       back when the call, the buffer or the stream is done.
-      By default that pool is <c>MemoryPool&lt;T&gt;.Shared</c> (backed by
-      <c>ArrayPool&lt;T&gt;.Shared</c>).
+      By default that pool is <c>ArrayPool&lt;T&gt;.Shared</c>.
       To use your own, call <c>.UsePool(pool, clearOnReturn: ...)</c> after
       <c>Map</c>: the pool is yours, ODX rents from it and gives back to it,
       and never disposes it.
-      The pool decides what its memory is backed by and how much it gives:
-      ODX uses all of what it was given, writes only inside it, and clears
-      only the rows it wrote.
-      It may hand out more than was asked for; a pool that hands out less
-      makes the read throw <see cref="System.InvalidOperationException"/>.
-      Disposing a rented owner must not throw.
+      The arrays it hands out may be longer than asked for: ODX uses the rows
+      it wrote and clears only those.
+      A pool that hands out a shorter array than asked for makes the read
+      throw <see cref="System.InvalidOperationException"/>.
+      Returning an array must not throw.
     </para>
     <para>
       Clearing: rows that hold references (a class, a string, a struct that

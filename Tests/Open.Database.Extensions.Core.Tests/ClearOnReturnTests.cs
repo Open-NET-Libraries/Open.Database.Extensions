@@ -1,21 +1,19 @@
 using System.Buffers;
-using System.Linq.Expressions;
-using System.Reflection;
+using Open.Database.Extensions.Core;
 using static Open.Database.Extensions.Tests.ChannelWait;
 
 #nullable enable
 
 namespace Open.Database.Extensions.Tests;
 
-// clearOnDispose (ToAsyncBuffer) and clearOnReturn (the two streams):
-// the rows are cleared as each buffer goes back to the pool, off the
-// read path, through the internal recycle bin.
-// All the tests that opt in live in this one class: they share the bin
-// (a process-wide static), one of them blocks it, and some of them set
-// its test hook, so they must not run beside each other. Everything else
-// in the suite passes false and never touches the bin.
+// The rows of a chunk are cleared as it goes back to the pool, off the
+// read path: a chunk of ChunkConfig.DeferFromRows rows or more through the
+// recycle bin, a smaller one where it is released. These tests give every
+// query its own configuration, with deferFromRows of 1 so that every chunk
+// goes through a bin the test owns (a counting, full or throwing one):
+// nothing is global, so they can run beside everything else.
+// The immediate path (small chunks) is in ArrayLeaseTests.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
 public static class ClearOnReturnTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -23,62 +21,20 @@ public static class ClearOnReturnTests
 	public static TheoryData<string> Terminals
 		=> ["buffer", "stream", "buffered"];
 
-	// ---- reaching the internal bin (no InternalsVisibleTo) ----------------
-
-	static readonly Type Bin = typeof(PooledBuffer<>).Assembly
-		.GetType("Open.Database.Extensions.Core.RecycleBin")!;
-
-	const BindingFlags Internal
-		= BindingFlags.Static | BindingFlags.NonPublic;
-
-	static int _hookCalls;
-
-	internal static void CountPost()
-		=> Interlocked.Increment(ref _hookCalls);
-
-	static void Post(Action action)
-		=> Bin.GetMethod("Post", Internal)!.Invoke(null, [action]);
-
-	// Makes the bin answer every post with "Full", or throw ("Throw"),
-	// or count the posts and answer "Full" ("Count"), or back to normal
-	// with null.
-	static void SetHook(string? result)
-	{
-		FieldInfo field = Bin.GetField("_hook", Internal)!;
-		if (result is null)
-		{
-			field.SetValue(null, null);
-			return;
-		}
-
-		Type outcome = Bin.GetNestedType(
-			"PostResult",
-			BindingFlags.NonPublic)!;
-		Type hookType = typeof(Func<,>)
-			.MakeGenericType(typeof(Action), outcome);
-		ParameterExpression action = Expression.Parameter(typeof(Action));
-		Expression full = Expression.Constant(
-			Enum.Parse(outcome, "Full"), outcome);
-		Expression body = result switch
-		{
-			"Throw" => Expression.Block(
-				outcome,
-				Expression.Throw(
-					Expression.New(typeof(InvalidOperationException))),
-				full),
-			"Count" => Expression.Block(
-				Expression.Call(
-					typeof(ClearOnReturnTests)
-						.GetMethod(
-							nameof(CountPost),
-							Internal)!),
-				full),
-			_ => full,
-		};
-		field.SetValue(
-			null,
-			Expression.Lambda(hookType, body, action).Compile());
-	}
+	// The query, renting from the pool, clearing as asked, and sending every
+	// chunk to the bin (deferFromRows 1).
+	static MappedCommand<T> Pooled<T>(
+		MappedCommand<T> view,
+		ArrayPool<T> pool,
+		bool clearOnReturn,
+		RecycleBin? bin = null)
+		=> view.WithConfig(
+			new ChunkConfig<T>(
+				pool,
+				PoolClearing.Resolve<T>(clearOnReturn),
+				null,
+				bin,
+				deferFromRows: 1));
 
 	// ---- rigs ---------------------------------------------------------------
 
@@ -108,21 +64,23 @@ public static class ClearOnReturnTests
 	static async Task<int> ReadAll<T>(
 		string terminal,
 		MappedCommand<T> view,
-		MemoryPool<T> pool,
-		bool clearOnReturn)
+		ArrayPool<T> pool,
+		bool clearOnReturn,
+		RecycleBin? bin = null)
 	{
+		MappedCommand<T> pooled = Pooled(view, pool, clearOnReturn, bin);
 		int rows = 0;
 		switch (terminal)
 		{
 			case "buffer":
 				{
-					await using var buffer = view.UsePool(pool, clearOnReturn: clearOnReturn).ToAsyncBuffer(Ct);
+					await using var buffer = pooled.ToAsyncBuffer(Ct);
 					rows = (await buffer.Items.Within()).Count;
 					break;
 				}
 
 			case "stream":
-				await foreach (var chunk in view.UsePool(pool, clearOnReturn: clearOnReturn).ToAsyncBufferStream(Ct))
+				await foreach (var chunk in pooled.ToAsyncBufferStream(Ct))
 				{
 					rows += chunk.Length;
 				}
@@ -130,7 +88,7 @@ public static class ClearOnReturnTests
 				break;
 
 			default:
-				await foreach (var _ in view.UsePool(pool, clearOnReturn: clearOnReturn).ToBufferedAsyncStream(Ct))
+				await foreach (var _ in pooled.ToBufferedAsyncStream(Ct))
 				{
 					++rows;
 				}
@@ -149,57 +107,40 @@ public static class ClearOnReturnTests
 		Assert.Equal(0, pool.Outstanding);
 	}
 
-	// ---- the default path never starts the bin -----------------------------
+	// ---- a read that clears nothing never posts to the bin ------------------
 
 	[Theory, MemberData(nameof(Terminals))]
-	public static async Task TheDefaultPath_NeverPostsToTheBin(string terminal)
+	public static async Task AReadThatClearsNothing_NeverPostsToTheBin(
+		string terminal)
 	{
-		// Rows with no references: the default path never clears them.
+		// Rows with no references, clearOnReturn false: nothing to clear,
+		// so every array goes straight back.
 		var pool = new CountingPool<int>();
-		int before = Volatile.Read(ref _hookCalls);
-		SetHook("Count");
-		try
-		{
-			Assert.Equal(
-				100,
-				await ReadAll(terminal, Ints(100), pool, clearOnReturn: false));
-			Assert.Equal(
-				100,
-				await ReadAll(
-					terminal,
-					Ints(100),
-					MemoryPool<int>.Shared,
-					false));
-		}
-		finally
-		{
-			SetHook(null);
-		}
+		var bin = new TestBin();
+
+		Assert.Equal(
+			100,
+			await ReadAll(terminal, Ints(100), pool, false, bin));
 
 		AssertBalanced(pool);
-		Assert.Equal(before, Volatile.Read(ref _hookCalls));
+		Assert.Equal(0, bin.Posts);
 	}
 
-	// The counting hook does count: an opt-in read posts to the bin.
+	// The counting bin does count: an opt-in read posts to it.
 	[Fact]
-	public static async Task TheCountingHook_SeesAnOptInRead()
+	public static async Task TheCountingBin_SeesAnOptInRead()
 	{
 		var pool = RowPool();
-		int before = Volatile.Read(ref _hookCalls);
-		SetHook("Count");
-		try
-		{
-			await ReadAll("stream", Rows(100), pool, true);
-		}
-		finally
-		{
-			SetHook(null);
-		}
+		var bin = new TestBin { Mode = "Full" };
 
-		Assert.True(Volatile.Read(ref _hookCalls) > before);
+		await ReadAll("stream", Rows(100), pool, true, bin);
 
-		// "Count" answers Full: the owners were discarded, not returned.
-		Assert.Equal(0, pool.Returns);
+		Assert.True(bin.Posts > 0);
+
+		// "Full" refuses: the arrays were cleared where they were released,
+		// and returned clean.
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		AssertBalanced(pool);
 		Assert.Equal(0, pool.DirtyReturns);
 	}
 
@@ -217,8 +158,8 @@ public static class ClearOnReturnTests
 		AssertBalanced(pool);
 		Assert.Equal(0, pool.DirtyReturns);
 
-		// Only the used slice is cleared: the sentinel in the unused
-		// tail of every (larger) array is untouched.
+		// Only the used rows are cleared: the sentinel in the unused
+		// tail of every (longer) array is untouched.
 		ChannelRow?[][] arrays = pool.Captured;
 		int total = arrays.Sum(a => a.Length);
 		Assert.Equal(100, arrays.Sum(a => a.Count(r => r is null)));
@@ -245,7 +186,7 @@ public static class ClearOnReturnTests
 		Assert.Equal(0, pool.DirtyReturns);
 
 		// Every type is cleared, value types included, and only the used
-		// slice (the unused tail keeps its -1).
+		// rows (the unused tail keeps its -1).
 		int[][] arrays = pool.Captured;
 		int total = arrays.Sum(a => a.Length);
 		Assert.Equal(100, arrays.Sum(a => a.Count(v => v == 0)));
@@ -257,15 +198,18 @@ public static class ClearOnReturnTests
 	[Fact]
 	public static async Task TheConsumer_DoesNotWaitForTheClear()
 	{
+		using var started = new ManualResetEventSlim(false);
 		using var gate = new ManualResetEventSlim(false);
+		var bin = new TestBin();
 		var pool = RowPool();
 		try
 		{
 			// The bin's single loop is busy with this, and the clears
 			// queue up behind it.
-			Post(() => gate.Wait(TimeSpan.FromSeconds(30)));
+			bin.Post(TestBin.Item(new TestBin.GateRunner(started, gate)));
+			Assert.True(started.Wait(TimeSpan.FromSeconds(10), Ct));
 
-			int rows = await ReadAll("stream", Rows(100), pool, true)
+			int rows = await ReadAll("stream", Rows(100), pool, true, bin)
 				.Within();
 
 			// The stream completed, and returned nothing: the consumer
@@ -286,75 +230,55 @@ public static class ClearOnReturnTests
 
 	// ---- a full bin discards ------------------------------------------------
 
-	static long Discarded()
-		=> (long)Bin.GetProperty("Discarded", Internal)!.GetValue(null)!;
-
-	// A bin that is full means something is wrong: the owners are
-	// neither cleared nor returned (never dirty to a pool), they are left
-	// to the GC, and the refusals are counted.
+	// A bin that is full or broken does not lose the array: the code that
+	// releases it clears it and returns it, as it does for a small chunk. A
+	// dirty array never reaches a pool, and none is left behind with its rows.
 	[Theory, MemberData(nameof(Terminals))]
-	public static async Task AFullBin_DiscardsTheOwners(string terminal)
-	{
-		var pool = RowPool();
-		long before = Discarded();
-		SetHook("Full");
-		try
-		{
-			Assert.Equal(
-				100,
-				await ReadAll(terminal, Rows(100), pool, true));
-
-			Assert.True(pool.Rents > 0, "nothing was rented");
-			Assert.Equal(0, pool.Returns);
-			Assert.Equal(0, pool.DirtyReturns);
-			Assert.True(Discarded() > before);
-
-			// Discarded, not cleared: the rows are still in the arrays.
-			Assert.Equal(
-				0,
-				pool.Captured.Sum(a => a.Count(r => r is null)));
-		}
-		finally
-		{
-			SetHook(null);
-		}
-	}
-
-	// Whatever goes wrong posting, the owner is discarded.
-	[Theory, MemberData(nameof(Terminals))]
-	public static async Task ABinThatThrows_DiscardsTheOwners(
+	public static async Task AFullBin_ClearsInline_AndReturnsTheArrays(
 		string terminal)
 	{
 		var pool = RowPool();
-		long before = Discarded();
-		SetHook("Throw");
-		try
-		{
-			Assert.Equal(
-				100,
-				await ReadAll(terminal, Rows(100), pool, true));
-		}
-		finally
-		{
-			SetHook(null);
-		}
+		var bin = new TestBin { Mode = "Full" };
 
-		Assert.True(pool.Rents > 0, "nothing was rented");
-		Assert.Equal(0, pool.Returns);
+		Assert.Equal(
+			100,
+			await ReadAll(terminal, Rows(100), pool, true, bin));
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		AssertBalanced(pool);
 		Assert.Equal(0, pool.DirtyReturns);
-		Assert.True(Discarded() > before);
+		Assert.True(bin.Overflowed > 0);
 	}
 
-	// ---- the bin survives bad actions ---------------------------------------
+	// Whatever goes wrong posting, the array is cleared and returned here.
+	[Theory, MemberData(nameof(Terminals))]
+	public static async Task ABinThatThrows_ClearsInline_AndReturnsTheArrays(
+		string terminal)
+	{
+		var pool = RowPool();
+		var bin = new TestBin { Mode = "Throw" };
+
+		Assert.Equal(
+			100,
+			await ReadAll(terminal, Rows(100), pool, true, bin));
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		AssertBalanced(pool);
+		Assert.Equal(0, pool.DirtyReturns);
+		Assert.True(bin.Overflowed > 0);
+	}
+	// ---- the bin survives bad work ------------------------------------------
 
 	[Fact]
-	public static async Task TheBin_SurvivesAnActionThatThrows()
+	public static async Task TheBin_SurvivesAnItemThatThrows()
 	{
-		Post(() => throw new InvalidOperationException("a bad action"));
+		var bin = new TestBin();
+		bin.Post(TestBin.Item(new TestBin.ActionRunner(
+			() => throw new InvalidOperationException("a bad item"))));
 
 		TaskCompletionSource ran = new(
 			TaskCreationOptions.RunContinuationsAsynchronously);
-		Post(() => ran.TrySetResult());
+		bin.Post(TestBin.Item(new TestBin.ActionRunner(() => ran.TrySetResult())));
 
 		// The next item still runs.
 		await ran.Task.Within();
@@ -363,15 +287,16 @@ public static class ClearOnReturnTests
 	[Fact]
 	public static async Task TheBin_SurvivesAPoolWhoseReturnThrows()
 	{
+		var bin = new TestBin();
 		var broken = new CountingPool<ChannelRow> { ThrowOnReturn = true };
 
-		// The dispose posts the clear; the pool's failure stays in the
+		// The release posts the clear; the pool's failure stays in the
 		// bin, and never reaches the caller.
-		await ReadAll("buffer", Rows(100), broken, true);
+		await ReadAll("buffer", Rows(100), broken, true, bin);
 		await Until(() => broken.Returns > 0, "the bin ran");
 
 		var pool = RowPool();
-		Assert.Equal(100, await ReadAll("stream", Rows(100), pool, true));
+		Assert.Equal(100, await ReadAll("stream", Rows(100), pool, true, bin));
 		await Until(() => pool.Outstanding == 0, "the arrays back");
 		AssertBalanced(pool);
 		Assert.Equal(0, pool.DirtyReturns);
@@ -421,7 +346,7 @@ public static class ClearOnReturnTests
 		var view = Stalling(r => reader = r);
 		var pool = RowPool();
 
-		await foreach (var chunk in view.UsePool(pool, clearOnReturn: true).ToAsyncBufferStream(Ct))
+		await foreach (var chunk in Pooled(view, pool, true).ToAsyncBufferStream(Ct))
 		{
 			// The partial chunk after the cancel is queued behind this
 			// one: it holds rows, and is released by the drain.
@@ -440,7 +365,7 @@ public static class ClearOnReturnTests
 		StallReader? reader = null;
 		var view = Stalling(r => reader = r);
 		var pool = RowPool();
-		var buffer = view.UsePool(pool, clearOnReturn: true).ToAsyncBuffer(Ct);
+		var buffer = Pooled(view, pool, true).ToAsyncBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		// The published chunk is kept; the partial one is sealed after
@@ -492,25 +417,19 @@ public static class ClearOnReturnTests
 		int chunks)
 	{
 		var pool = RowPool();
-		int before = Volatile.Read(ref _hookCalls);
-		SetHook("Count");
-		try
-		{
-			Assert.Equal(
-				rows,
-				await ReadAll(terminal, Rows(rows), pool, true));
-		}
-		finally
-		{
-			SetHook(null);
-		}
+		var bin = new TestBin { Mode = "Full" };
 
-		Assert.Equal(chunks, Volatile.Read(ref _hookCalls) - before);
+		Assert.Equal(
+			rows,
+			await ReadAll(terminal, Rows(rows), pool, true, bin));
+
+		Assert.Equal(chunks, bin.Posts);
 		Assert.Equal(chunks, pool.Rents);
-		Assert.Equal(0, pool.DirtyReturns);
 
-		// "Count" answers Full, so every owner was discarded.
-		Assert.Equal(0, pool.Returns);
+		// "Full" refuses, so every array was cleared and returned here.
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.Equal(chunks, pool.Returns);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	[Fact]
@@ -523,7 +442,6 @@ public static class ClearOnReturnTests
 
 		Assert.Equal(0, pool.Rents);
 	}
-
 	// ---- the overloads bind -------------------------------------------------
 
 	static async Task<int> Count(PooledBuffer<ChannelRow> buffer)

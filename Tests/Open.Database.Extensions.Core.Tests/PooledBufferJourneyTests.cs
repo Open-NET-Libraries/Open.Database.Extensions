@@ -17,7 +17,6 @@ namespace Open.Database.Extensions.Tests;
 // closed once, that no task was left unobserved, and it never waits
 // without a limit.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
 public static class PooledBufferJourneyTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;

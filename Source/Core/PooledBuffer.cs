@@ -86,23 +86,20 @@ namespace Open.Database.Extensions;
 /// <c>ToAsyncBufferStream()</c> or <c>ToBufferedAsyncStream()</c>.
 /// </para>
 /// <para>
-/// The rows live in buffers rented from the pool the caller passed
-/// (<see cref="MemoryPool{T}.Shared"/> when none was),
-/// each an <see cref="IMemoryOwner{T}"/> of that pool.
-/// There is no finalizer: a forgotten owner of the shared pool is
+/// The rows live in arrays rented from the pool the caller passed
+/// (<see cref="ArrayPool{T}.Shared"/> when none was).
+/// There is no finalizer: arrays of a buffer that is never disposed are
 /// just garbage-collected.
-/// Disposing an owner rented from a custom pool must not throw. If it does,
-/// the exception propagates from <see cref="DisposeAsync"/>, and
+/// Returning an array to a custom pool must not throw. If it does,
+/// every other array is still returned, and the first exception
+/// propagates from <see cref="DisposeAsync"/>, and
 /// from <see cref="Dispose"/> when the read had already finished;
 /// from <see cref="Dispose"/> while the read is still running it
 /// ends in the producer's task, which nobody observes.
-/// Without clearing, in every case the arrays not yet returned stay
-/// with the garbage collector.
-/// With clearing on, a disposal that throws inside the
-/// background queue is swallowed there and costs only that array. When
-/// the queue is full the
-/// buffer is discarded instead (never cleared, never returned), so a
-/// custom pool must tolerate an owner that is never disposed.
+/// With clearing on, a large array of rows that hold references is cleared and
+/// returned by an internal background queue, where a return that throws is
+/// swallowed and costs only that array. When the queue is full the array is
+/// cleared and returned by the caller that releases it instead.
 /// While an array sits in the pool, or in a buffer that is not
 /// disposed, every reference-type row in it stays reachable.
 /// They are returned to the pool when the buffer is disposed,
@@ -118,9 +115,11 @@ namespace Open.Database.Extensions;
 /// When the rows are to be cleared (see UsePool), they
 /// are cleared as the arrays go back to the pool, and that happens
 /// when the buffer, or the <see cref="PooledArray{T}"/> view of it,
-/// is disposed (not when the read completes). The clear is off the
-/// caller's path, on an internal background queue. (If that queue is
-/// ever full, the buffer is discarded instead.)
+/// is disposed (not when the read completes). Only the rows that were
+/// written are cleared. A small array, and any array of rows with no
+/// references, is cleared where it is released; a large array of rows that
+/// hold references is cleared off the caller's path, on an internal background
+/// queue. (If that queue is ever full, it is cleared where it is released.)
 /// </para>
 /// <para>
 /// Disposing the buffer while it is still reading cancels the query,
@@ -139,13 +138,13 @@ public sealed class PooledBuffer<T>
 	// The first array holds FirstRows rows (a power of two, 16 unless a
 	// test changed it: see ChunkSizing); each next one doubles. So row i
 	// is in array floor(log2(i / FirstRows + 1)): O(1).
-	readonly int _firstRows = ChunkSizing.ResolveFirstRows();
+	readonly int _firstRows;
 
 	readonly ChunkProducer<T> _producer;
 	readonly Task _producerTask;
 
 	// Producer only, until _done; then read-only. Null once released.
-	List<IMemoryOwner<T>>? _chunks = [];
+	List<ArrayLease<T>>? _chunks = [];
 	TaskCompletionSource<PooledArray<T>>? _items;
 	Exception? _error;
 	int _total;
@@ -154,12 +153,13 @@ public sealed class PooledBuffer<T>
 
 	internal PooledBuffer(
 		MappedQueryCore<T> query,
-		MemoryPool<T> pool,
-		bool clearOnReturn,
+		ChunkConfig<T> config,
 		CancellationToken cancellationToken)
 	{
+		_firstRows = config.Sizes.FirstRows;
+
 		// The read starts now, whether or not anyone reads yet.
-		_producer = new(query, this, pool, clearOnReturn, cancellationToken);
+		_producer = new(query, this, config, cancellationToken);
 		_producerTask = _producer.Start();
 	}
 
@@ -218,8 +218,7 @@ public sealed class PooledBuffer<T>
 	/// <remarks>
 	/// Does not throw and does not wait: the producer returns the
 	/// arrays to the pool when it exits.
-	/// For a pool whose owners throw when disposed, see the remarks of the
-	/// class.
+	/// For a pool whose Return throws, see the remarks of the class.
 	/// Use <see cref="DisposeAsync"/> to wait for that.
 	/// Calling it again does nothing.
 	/// After it, <see cref="Items"/> throws
@@ -237,9 +236,9 @@ public sealed class PooledBuffer<T>
 	/// progress returns, so a provider that ignores cancellation
 	/// delays it by that call.
 	/// Does not throw for a well-behaved pool; for a pool whose
-	/// owners throw when disposed, see the remarks of the class.
+	/// Return throws, see the remarks of the class.
 	/// Calling it again does nothing (it throws again if a pool's
-	/// disposal threw the first time).
+	/// Return threw the first time).
 	/// After it, <see cref="Items"/> throws
 	/// <see cref="ObjectDisposedException"/>.
 	/// </remarks>
@@ -277,13 +276,24 @@ public sealed class PooledBuffer<T>
 		return _producerTask;
 	}
 
+	// Every chunk is released, once (the list is taken with an exchange).
+	// A release that throws (a pool whose Return throws) does not stop the
+	// others: the first exception is thrown after the last.
 	void ReleaseAll()
 	{
-		List<IMemoryOwner<T>>? chunks
+		List<ArrayLease<T>>? chunks
 			= Interlocked.Exchange(ref _chunks, null);
 		if (chunks is null) return;
 
-		foreach (IMemoryOwner<T> chunk in chunks) chunk.Release();
+		Exception? first = null;
+		foreach (ArrayLease<T> chunk in chunks)
+		{
+			try { chunk.Release(); }
+			catch (Exception ex) { first ??= ex; }
+		}
+
+		if (first is not null)
+			System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(first).Throw();
 	}
 
 	// Completes the Items source from the finished read. Idempotent
@@ -292,7 +302,7 @@ public sealed class PooledBuffer<T>
 	{
 		if (items.Task.IsCompleted) return;
 
-		List<IMemoryOwner<T>>? chunks = Volatile.Read(ref _chunks);
+		List<ArrayLease<T>>? chunks = Volatile.Read(ref _chunks);
 		if (Volatile.Read(ref _disposed) != 0 || chunks is null)
 		{
 			items.TrySetCanceled();
@@ -309,24 +319,9 @@ public sealed class PooledBuffer<T>
 		}
 		else
 		{
-			try
-			{
-				items.TrySetResult(
-					new(this, [.. chunks], _total, _firstRows));
-			}
-			catch (ObjectDisposedException)
-			{
-				// A dispose landed while the view was being built (it asks
-				// each owner for its memory).
-				items.TrySetCanceled();
-			}
-			catch (Exception ex)
-			{
-				// An owner that fails when asked for its memory (a pool that
-				// breaks its contract): the view cannot be built, and Items
-				// fails with that, observed, instead of staying pending.
-				if (items.TrySetException(ex)) _ = items.Task.Exception;
-			}
+			// The view takes a snapshot of the leases: nothing is asked of
+			// the arrays, so building it cannot fail.
+			items.TrySetResult(new(this, [.. chunks], _total, _firstRows));
 		}
 	}
 
@@ -340,12 +335,12 @@ public sealed class PooledBuffer<T>
 				"A buffer cannot hold more rows than an int counts.");
 
 	// Producer thread only, before Finish.
-	bool IChunkTarget<T>.Publish(IMemoryOwner<T> chunk)
+	bool IChunkTarget<T>.Publish(ArrayLease<T> chunk)
 	{
 		if (Volatile.Read(ref _disposed) != 0) return false;
 
 		_chunks!.Add(chunk);
-		_total += chunk.Memory.Length;
+		_total += chunk.Used;
 		return true;
 	}
 

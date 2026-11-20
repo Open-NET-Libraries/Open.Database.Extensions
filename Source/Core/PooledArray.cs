@@ -5,7 +5,7 @@ namespace Open.Database.Extensions;
 
 // How this works (notes for a reader of the code; not the contract).
 //
-// The view holds a snapshot of the buffer's owners, taken once when
+// The view holds a snapshot of the buffer's array leases, taken once when
 // the read completed, and the row count. It owns nothing: the buffer
 // does, and every member first asks the buffer whether it is disposed
 // (ThrowIfDisposed), so the view never reads an array that went back to
@@ -18,10 +18,9 @@ namespace Open.Database.Extensions;
 // full, so array k starts at row F * (2^k - 1). Row i is therefore in
 // array k = floor(log2(i/F + 1)), at offset i - (F * 2^k - F): one
 // shift-and-log, no search. That
-// relies on every non-last owner's memory being exactly its row count,
-// which the producer guarantees by slicing each buffer to its rows
-// (MemoryOwnerExtensions.Slice), even for a pool that hands out more
-// than it was asked for.
+// relies on every non-last chunk holding exactly its planned number of
+// rows, which the producer guarantees (each lease's Used is that number),
+// even for a pool that hands out longer arrays than it was asked for.
 //
 // Why it is a read-only ICollection<T> too: LINQ's ToArray and ToList
 // and the List constructor look for ICollection<T>, and then know the
@@ -59,17 +58,9 @@ public sealed class PooledArray<T>
 	: IReadOnlyList<T>, ICollection<T>, IDisposable
 {
 	readonly PooledBuffer<T> _owner;
-	readonly IMemoryOwner<T>[] _chunks;
 
-	// Per chunk, found once when the view is built: the array behind its
-	// memory and where the rows start in it (null: the memory is not
-	// array-backed, and the chunk is read through its span), and its row
-	// count. So an array-backed row read or step does not ask the owner
-	// for its Memory again (a chunk that is not array-backed still does,
-	// and so do CopyTo and the ICollection members).
-	readonly T[]?[] _arrays;
-	readonly int[] _offsets;
-	readonly int[] _lengths;
+	// Per chunk: the pooled array and how many of its slots hold rows.
+	readonly ArrayLease<T>[] _chunks;
 	readonly int _count;
 
 	// The rows of the first chunk (a power of two) and its log2: the
@@ -79,7 +70,7 @@ public sealed class PooledArray<T>
 
 	internal PooledArray(
 		PooledBuffer<T> owner,
-		IMemoryOwner<T>[] chunks,
+		ArrayLease<T>[] chunks,
 		int count,
 		int firstRows)
 	{
@@ -88,22 +79,6 @@ public sealed class PooledArray<T>
 		_count = count;
 		_first = firstRows;
 		_shift = ChunkSizing.Log2(firstRows);
-
-		_arrays = new T[chunks.Length][];
-		_offsets = new int[chunks.Length];
-		_lengths = new int[chunks.Length];
-		for (int i = 0; i < chunks.Length; ++i)
-		{
-			Memory<T> memory = chunks[i].Memory;
-			_lengths[i] = memory.Length;
-			if (MemoryMarshal.TryGetArray<T>(
-				memory, out ArraySegment<T> segment)
-				&& segment.Array is not null)
-			{
-				_arrays[i] = segment.Array;
-				_offsets[i] = segment.Offset;
-			}
-		}
 	}
 
 	/// <summary>The number of rows.</summary>
@@ -136,10 +111,7 @@ public sealed class PooledArray<T>
 
 			int segment = ChunkSizing.Log2((index >> _shift) + 1);
 			int at = index - ((_first << segment) - _first);
-			T[]? array = _arrays[segment];
-			return array is not null
-				? array[_offsets[segment] + at]
-				: _chunks[segment].Memory.Span[at];
+			return _chunks[segment].Array[at];
 		}
 	}
 
@@ -167,11 +139,10 @@ public sealed class PooledArray<T>
 				nameof(destination));
 		}
 
-		foreach (IMemoryOwner<T> chunk in _chunks)
+		foreach (ArrayLease<T> chunk in _chunks)
 		{
-			Span<T> rows = chunk.Memory.Span;
-			rows.CopyTo(destination);
-			destination = destination[rows.Length..];
+			chunk.Span.CopyTo(destination);
+			destination = destination[chunk.Used..];
 		}
 	}
 
@@ -221,19 +192,8 @@ public sealed class PooledArray<T>
 		CollectionsMarshal.SetCount(list, count);
 		CopyTo(CollectionsMarshal.AsSpan(list));
 #else
-		for (int i = 0; i < _chunks.Length; ++i)
-		{
-			T[]? array = _arrays[i];
-			if (array is not null)
-			{
-				list.AddRange(
-					new ArraySegment<T>(array, _offsets[i], _lengths[i]));
-			}
-			else
-			{
-				foreach (T row in _chunks[i].Memory.Span) list.Add(row);
-			}
-		}
+		foreach (ArrayLease<T> chunk in _chunks)
+			list.AddRange(new ArraySegment<T>(chunk.Array, 0, chunk.Used));
 #endif
 
 		return list;
@@ -274,8 +234,7 @@ public sealed class PooledArray<T>
 	{
 		readonly PooledArray<T> _view;
 		int _segment;      // the next chunk to enter
-		T[]? _array;       // the current chunk's array, when array-backed
-		Memory<T> _memory; // the current chunk's memory, when it is not
+		T[]? _array;       // the current chunk's array
 		int _index;        // the next element of the current chunk
 		int _end;          // one past its last element
 
@@ -284,7 +243,6 @@ public sealed class PooledArray<T>
 			_view = view;
 			_segment = 0;
 			_array = null;
-			_memory = default;
 			_index = 0;
 			_end = 0;
 			Current = default!;
@@ -321,7 +279,7 @@ public sealed class PooledArray<T>
 			return MoveNextSlow();
 		}
 
-		// A chunk that is not array-backed, or the end of a chunk.
+		// The end of a chunk.
 		bool MoveNextSlow()
 		{
 			// default(Enumerator): no view, nothing to walk.
@@ -337,41 +295,19 @@ public sealed class PooledArray<T>
 					return false;
 				}
 
-				LoadSegment(_segment++);
+				ArrayLease<T> chunk = _view._chunks[_segment++];
+				_array = chunk.Array;
+				_index = 0;
+				_end = chunk.Used;
 
 				// A loaded chunk is never empty: nothing publishes an
-				// empty one (Seal hands on a buffer only if it has rows),
-				// and a pool that gave less memory fails the read.
+				// empty one (Seal hands on a buffer only if it has rows).
 				Debug.Assert(_end > _index);
 			}
 
-			Current = _array is not null
-				? _array[_index]
-				: _memory.Span[_index];
+			Current = _array![_index];
 			++_index;
 			return true;
-		}
-
-		// Enters a chunk: its array and offset, or its memory when it is
-		// not array-backed.
-		void LoadSegment(int segment)
-		{
-			int length = _view._lengths[segment];
-			T[]? array = _view._arrays[segment];
-			if (array is not null)
-			{
-				_array = array;
-				_memory = default;
-				_index = _view._offsets[segment];
-				_end = _index + length;
-			}
-			else
-			{
-				_array = null;
-				_memory = _view._chunks[segment].Memory;
-				_index = 0;
-				_end = length;
-			}
 		}
 
 		void IEnumerator.Reset()
@@ -381,7 +317,6 @@ public sealed class PooledArray<T>
 			_view._owner.ThrowIfDisposed();
 			_segment = 0;
 			_array = null;
-			_memory = default;
 			_index = 0;
 			_end = 0;
 			Current = default!;
@@ -423,9 +358,9 @@ public sealed class PooledArray<T>
 	{
 		_owner.ThrowIfDisposed();
 		EqualityComparer<T> comparer = EqualityComparer<T>.Default;
-		foreach (IMemoryOwner<T> chunk in _chunks)
+		foreach (ArrayLease<T> chunk in _chunks)
 		{
-			ReadOnlySpan<T> rows = chunk.Memory.Span;
+			ReadOnlySpan<T> rows = chunk.Span;
 			for (int i = 0; i < rows.Length; ++i)
 			{
 				if (comparer.Equals(rows[i], item)) return true;
@@ -454,11 +389,10 @@ public sealed class PooledArray<T>
 				"The destination is too small.", nameof(array));
 		}
 
-		foreach (IMemoryOwner<T> chunk in _chunks)
+		foreach (ArrayLease<T> chunk in _chunks)
 		{
-			Span<T> rows = chunk.Memory.Span;
-			rows.CopyTo(array.AsSpan(arrayIndex));
-			arrayIndex += rows.Length;
+			chunk.Span.CopyTo(array.AsSpan(arrayIndex));
+			arrayIndex += chunk.Used;
 		}
 	}
 

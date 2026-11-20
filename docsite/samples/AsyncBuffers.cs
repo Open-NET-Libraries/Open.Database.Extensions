@@ -227,7 +227,7 @@ public static class AsyncBuffers
 
 	public static async Task<int[]> OverloadsAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		MemoryPool<Post> pool,
+		ArrayPool<Post> pool,
 		CancellationToken cancellationToken)
 	{
 		// The shared pool is the default.
@@ -256,7 +256,7 @@ public static class AsyncBuffers
 	#region buffers_clearing
 	public static async Task ClearingAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		MemoryPool<int> pool,
+		ArrayPool<int> pool,
 		bool clearOnReturn,
 		CancellationToken cancellationToken)
 	{
@@ -285,7 +285,7 @@ public static class AsyncBuffers
 		await using PooledBuffer<int> buffer = connectionFactory
 			.Command("select id from posts order by id")
 			.Map<int>()
-			.UsePool(MemoryPool<int>.Shared, clearOnReturn: true)
+			.UsePool(ArrayPool<int>.Shared, clearOnReturn: true)
 			.ToAsyncBuffer(cancellationToken);
 
 		return (await buffer.Items).Count;
@@ -296,7 +296,7 @@ public static class AsyncBuffers
 	// cleared whatever the clear argument says.
 	public static async Task ReferenceRowsAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		MemoryPool<Post> pool,
+		ArrayPool<Post> pool,
 		CancellationToken cancellationToken)
 	{
 		await using PooledBuffer<Post> buffer = Query(connectionFactory)
@@ -351,7 +351,7 @@ public static class AsyncBuffers
 	#region buffers_dispose_early
 	public static async Task<bool> DisposeEarlyAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		MemoryPool<Post> pool,
+		ArrayPool<Post> pool,
 		CancellationToken cancellationToken)
 	{
 		PooledBuffer<Post> buffer = Query(connectionFactory)
@@ -411,7 +411,7 @@ public static class AsyncBuffers
 #region buffers_counting_pool
 // A pool of your own. This one counts what it rents and what comes
 // back, and how many returned arrays still held rows.
-public sealed class CountingPool<T> : MemoryPool<T>
+public sealed class CountingPool<T> : ArrayPool<T>
 {
 	int _rented;
 	int _returned;
@@ -421,18 +421,17 @@ public sealed class CountingPool<T> : MemoryPool<T>
 	public int Returned => Volatile.Read(ref _returned);
 	public int Dirty => Volatile.Read(ref _dirty);
 
-	public override int MaxBufferSize => Array.MaxLength;
-
-	public override IMemoryOwner<T> Rent(int minBufferSize = -1)
+	public override T[] Rent(int minimumLength)
 	{
 		Interlocked.Increment(ref _rented);
-		return new Owner(this, new T[Math.Max(minBufferSize, 1)]);
+		return new T[Math.Max(minimumLength, 1)];
 	}
 
-	protected override void Dispose(bool disposing) { }
-
-	void Return(T[] array)
+	public override void Return(T[] array, bool clearArray = false)
 	{
+		// What a pool does with the flag.
+		if (clearArray) Array.Clear(array);
+
 		if (Array.Exists(
 			array,
 			static item => !EqualityComparer<T>.Default.Equals(item, default!)))
@@ -441,20 +440,6 @@ public sealed class CountingPool<T> : MemoryPool<T>
 		}
 
 		Interlocked.Increment(ref _returned);
-	}
-
-	sealed class Owner(CountingPool<T> pool, T[] array) : IMemoryOwner<T>
-	{
-		T[]? _array = array;
-
-		public Memory<T> Memory
-			=> _array ?? throw new ObjectDisposedException(nameof(Owner));
-
-		public void Dispose()
-		{
-			T[]? taken = Interlocked.Exchange(ref _array, null);
-			if (taken is not null) pool.Return(taken);
-		}
 	}
 }
 #endregion

@@ -60,7 +60,7 @@ The connection was released when the read ended, however long the serialization 
 
 `Items` faults with the read's exception. It is cancelled when the read ended with an `OperationCanceledException` of any origin, or when the buffer was disposed first. Reading `Items` after the buffer is disposed throws `ObjectDisposedException`; a task you already hold that is still pending is cancelled. See [Cancellation and disposal](#cancellation-and-disposal).
 
-The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool (a full cleanup queue discards them instead: see [Pooled memory](#pooled-memory)). After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included. Disposing again does nothing. Disposing the buffer while the read is still running cancels the query.
+The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool (a large clear goes to the cleanup queue, and a full queue clears them where they are released: see [Pooled memory](#pooled-memory)). After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included. Disposing again does nothing. Disposing the buffer while the read is still running cancels the query.
 
 ## Lifetime and ownership
 
@@ -188,7 +188,7 @@ Always dispose the enumerator, which `await foreach` does. An enumerator that is
 
 ## Pooled memory
 
-The rows of a buffer or a stream, and the chunks a collector (`ToListAsync`, `ToArrayAsync` and the rest) reads into before it copies the result once, live in arrays rented from a pool. By default the pool is `MemoryPool<T>.Shared`, which is backed by `ArrayPool<T>.Shared`. An array goes back to its pool when the call, the buffer or the stream is done, and what is in it then is the question this section answers.
+The rows of a buffer or a stream, and the chunks a collector (`ToListAsync`, `ToArrayAsync` and the rest) reads into before it copies the result once, live in arrays rented from a pool. By default the pool is `ArrayPool<T>.Shared`. An array goes back to its pool when the call, the buffer or the stream is done, and what is in it then is the question this section answers.
 
 ### What is cleared
 
@@ -217,17 +217,16 @@ An explicit `clearOnReturn: true` clears value rows whatever the switch says. An
 
 ### Your own pool
 
-`UsePool` takes any `MemoryPool<T>`. Every pooling terminal of that query rents from it: the collectors and the three buffer terminals. `MemoryPool<T>.Shared` is recognised and takes the same path as no pool at all.
+`UsePool` takes any `ArrayPool<T>`. Every pooling terminal of that query rents from it: the collectors and the three buffer terminals. `ArrayPool<T>.Shared` is what a query without `UsePool` uses.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_overloads)]
 
 The rules of a pool of your own:
 
 - **It is yours.** ODX rents from it and gives back to it, and never disposes it. A null pool throws `ArgumentNullException` at the call.
-- **It decides what the memory is.** ODX takes what the pool gives: a normal array, a view of part of a larger array, or memory that is not an array at all. It uses all of that memory, writes only inside it, and clears only the rows it wrote, not the rest. A pool that gives less memory than was asked for makes the read throw `InvalidOperationException`; that rent, and every rent before it, is given back.
-- **It may round up.** A pool that returns more than asked for is fine; the extra room is used, and only the rows are copied.
-- **Disposing a rented owner must not throw.** Without clearing, an exception stops the release, and the arrays not yet returned stay with the garbage collector.
-
+- **It decides how long its arrays are.** ODX takes what the pool gives, uses the whole array, writes only the rows it has, and clears only those, not the rest. A pool that gives a shorter array than was asked for makes the read throw `InvalidOperationException`; that array, and every array before it, is given back.
+- **It may round up.** A pool that returns a longer array than asked for is fine, as `ArrayPool<T>.Shared` does; the extra room is used, and only the rows are copied.
+- **Returning an array must not throw.** If it does, every other array is still returned, and the first exception is thrown after the last. In the cleanup queue (below) a return that throws is swallowed and costs only that array.
 This pool counts what it hands out and what comes back, and the samples use it to check the claims on this page:
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_counting_pool)]
@@ -236,18 +235,18 @@ This pool counts what it hands out and what comes back, and the samples use it t
 
 ### When the clear happens
 
-- What is cleared is the rows the buffer holds, never the rest of a larger array.
+- What is cleared is the rows that were written, never the rest of a longer array. When every slot of an array was written, the pool is asked to clear it (`Return(array, clearArray: true)`); otherwise only the written slots are cleared and the array goes back without the flag.
 - For a buffer, the clear takes effect when the buffer, or its `PooledArray<T>` view, is disposed. For a stream, as each chunk goes back: at the next step, or when the enumeration ends or is disposed. For a collector, when the call ends, after the result is built.
-- For a buffer or a stream the clear runs on one background loop, off the read path. Neither the read nor the consumer waits for it.
-- If 10,240 clears are ever waiting (a stalled custom pool, or an extreme burst), the arrays of further chunks are discarded to the garbage collector: not cleared, and not returned to the pool. A dirty array never reaches a pool. For the shared pool a discard costs one array, which it allocates again. No public API reports a discard.
-- A custom pool must therefore tolerate an owner that is never disposed. A `Dispose` that blocks stalls the loop shared by every pool, and every later array is discarded. A pool whose owners hold native memory or a fixed number of slots would lose them for good when an owner is discarded.
+- A chunk is cleared where it is released, which costs about as much as handing it over for rows with no references and for chunks under 4,096 rows. A chunk of 4,096 rows or more of rows that hold references is cleared on one background loop instead, off the read path, and the loop also returns the array to the pool: neither the read nor the consumer waits for either.
+- If 10,240 clears are ever waiting (a stalled custom pool, or an extreme burst), the next chunk is cleared and returned by the code that releases it, as a small one is. A dirty array never reaches a pool, and none is left behind with its rows.
+- A custom pool's `Return` that blocks stalls the loop shared by every pool; the chunks that then pile up are cleared and returned by the code that releases them.
 
 ## Cancellation and disposal
 
 - **Two sources, one token.** The caller's token and the dispose are combined, so either one cancels the database read itself, not only the loop around it.
 - **Our own cancel is swallowed.** A cancel caused by disposing the buffer, or the stream's enumerator, is not reported: you asked for it. The read ends quietly, and an `Items` task you were already awaiting is cancelled.
 - **Yours is delivered.** The caller's own cancel, or a fault in the read, is delivered: to a stream after the rows that were already read, and to a buffer through `Items`. A stream's next step throws it after the chunks that were already delivered. `Items` is cancelled or faulted instead of producing a view.
-- **`DisposeAsync` waits for the producer, with no timeout.** It cancels a running read, waits until the producer has stopped, and returns the arrays (when they are to be cleared it hands them to the cleanup queue, so they are back in the pool shortly after `DisposeAsync` completes). A provider that ignores cancellation delays it by the call in progress. After that, the producer stops at the next chunk boundary at the latest. The synchronous `Dispose` does not wait. It cancels and returns at once. If the read is still running, the producer returns the arrays when it exits; if it had finished, `Dispose` returns them itself.
+- **`DisposeAsync` waits for the producer, with no timeout.** It cancels a running read, waits until the producer has stopped, and returns the arrays (a large chunk that is to be cleared goes to the cleanup queue, so it is back in the pool shortly after `DisposeAsync` completes). A provider that ignores cancellation delays it by the call in progress. After that, the producer stops at the next chunk boundary at the latest. The synchronous `Dispose` does not wait. It cancels and returns at once. If the read is still running, the producer returns the arrays when it exits; if it had finished, `Dispose` returns them itself.
 - **No finalizer.** A buffer that is never disposed is not a leak: it holds its arrays until the garbage collector takes it, and the pool does not get them back.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_cancel)]

@@ -47,6 +47,10 @@ internal static class PoolClearing
 	public static bool Resolve<T>(bool? clear, bool all)
 		=> (clear ?? all) || Holds<T>.References;
 
+	/// <summary>Whether a row of <typeparamref name="T"/> is, or contains, a reference.</summary>
+	public static bool HoldsReferences<T>()
+		=> Holds<T>.References;
+
 	// The floor: a row type that is, or contains, a reference. The
 	// per-type value is a JIT constant on the shipped runtimes; where
 	// the helper is absent (netstandard2.0) every type is treated as

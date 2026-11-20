@@ -75,8 +75,7 @@ namespace Open.Database.Extensions.Core;
 // (await foreach does).
 internal sealed class ChunkStream<T>(
 	MappedQueryCore<T> query,
-	MemoryPool<T> pool,
-	bool clearOnReturn,
+	ChunkConfig<T> config,
 	CancellationToken caller)
 	: IAsyncEnumerable<ReadOnlyMemory<T>>
 {
@@ -105,13 +104,13 @@ internal sealed class ChunkStream<T>(
 		// producer, so no command and no connection.
 		cancellationToken.ThrowIfCancellationRequested();
 
-		StreamTarget<T> target = new();
+		StreamTarget<T> target = new(config.Sizes);
 		ChunkProducer<T> producer = new(
-			query, target, pool, clearOnReturn, caller);
+			query, target, config, caller);
 		Task producerTask = producer.Start();
 		try
 		{
-			ChannelReader<IMemoryOwner<T>> reader = target.Reader;
+			ChannelReader<ArrayLease<T>> reader = target.Reader;
 			do
 			{
 				// Drain what is ready without awaiting. The token is
@@ -120,7 +119,7 @@ internal sealed class ChunkStream<T>(
 				// enumeration even when chunks are ready.
 				while (
 					!cancellationToken.IsCancellationRequested
-					&& reader.TryRead(out IMemoryOwner<T>? chunk))
+					&& reader.TryRead(out ArrayLease<T> chunk))
 				{
 					// The array goes back at the next step.
 					try { yield return chunk.Memory; }
@@ -155,10 +154,10 @@ internal sealed class ChunkStream<T>(
 // The stream's side of the producer: an unbounded channel with one
 // writer (the producer) and one reader (the consumer), and the flag
 // the consumer sets when it is done.
-internal sealed class StreamTarget<T> : IChunkTarget<T>
+internal sealed class StreamTarget<T>(ChunkSizes sizes) : IChunkTarget<T>
 {
-	readonly Channel<IMemoryOwner<T>> _channel
-		= Channel.CreateUnbounded<IMemoryOwner<T>>(
+	readonly Channel<ArrayLease<T>> _channel
+		= Channel.CreateUnbounded<ArrayLease<T>>(
 			new UnboundedChannelOptions
 			{
 				SingleWriter = true,
@@ -167,11 +166,7 @@ internal sealed class StreamTarget<T> : IChunkTarget<T>
 
 	int _disposed;
 
-	public StreamTarget()
-		=> _lastDoubling = ChunkSizing.Log2(
-			ChunkSizing.ResolveStreamMaxRows(_first) / _first);
-
-	public ChannelReader<IMemoryOwner<T>> Reader
+	public ChannelReader<ArrayLease<T>> Reader
 		=> _channel.Reader;
 
 	bool IChunkTarget<T>.IsDisposed
@@ -179,13 +174,13 @@ internal sealed class StreamTarget<T> : IChunkTarget<T>
 
 	// FirstRows, twice that ... StreamMaxRows rows (16, 32 ... 4096), then
 	// the maximum again. Read once, when the stream is made.
-	readonly int _first = ChunkSizing.ResolveFirstRows();
-	readonly int _lastDoubling;
+	readonly int _first = sizes.FirstRows;
+	readonly int _lastDoubling = sizes.LastStreamDoubling;
 
 	int IChunkTarget<T>.CapacityOf(int index)
 		=> _first << Math.Min(index, _lastDoubling);
 
-	bool IChunkTarget<T>.Publish(IMemoryOwner<T> chunk)
+	bool IChunkTarget<T>.Publish(ArrayLease<T> chunk)
 		=> _channel.Writer.TryWrite(chunk);
 
 	void IChunkTarget<T>.Finish(Exception? error)
@@ -197,7 +192,17 @@ internal sealed class StreamTarget<T> : IChunkTarget<T>
 	// Only after the producer ended: nothing can write any more.
 	public void Drain()
 	{
-		while (_channel.Reader.TryRead(out IMemoryOwner<T>? chunk))
-			chunk.Release();
+		// A release that throws (a pool whose Return throws) does not stop
+		// the others: every chunk is released, and the first exception is
+		// thrown after the last.
+		Exception? first = null;
+		while (_channel.Reader.TryRead(out ArrayLease<T> chunk))
+		{
+			try { chunk.Release(); }
+			catch (Exception ex) { first ??= ex; }
+		}
+
+		if (first is not null)
+			System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(first).Throw();
 	}
 }

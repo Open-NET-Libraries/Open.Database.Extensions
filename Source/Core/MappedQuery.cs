@@ -110,8 +110,7 @@ readonly struct MappedQueryCore<T>(
 	int take,
 	bool singleResult,
 	bool asyncReads = false,
-	MemoryPool<T>? pool = null,
-	bool? clear = null)
+	ChunkConfig<T>? config = null)
 	: IEquatable<MappedQueryCore<T>>
 {
 	// Generated mappings read each column once, in order, so the provider may stream the row.
@@ -123,8 +122,7 @@ readonly struct MappedQueryCore<T>(
 	readonly int _take = take; // -1 == unbounded.
 	readonly bool _singleResult = singleResult; // SingleResult() was called: stop after the first result set and do not read through the rest.
 	readonly bool _asyncReads = asyncReads; // AsyncReads() was called: the rows of an async terminal are read with ReadAsync (the default is Read).
-	readonly MemoryPool<T>? _pool = pool; // UsePool() was called: the pool every pooling terminal rents from (null: the shared one).
-	readonly bool? _clear = clear; // UsePool() was called: its clear argument (null: the AppContext switch decides).
+	readonly ChunkConfig<T>? _config = config; // UsePool() was called: the pool every pooling terminal rents from and whether it clears (null: the shared pool, and the AppContext switch decides).
 
 	// A default struct has no command: any use of it says so,
 	// the same way for every type of the family.
@@ -144,8 +142,7 @@ readonly struct MappedQueryCore<T>(
 		&& _take == other._take
 		&& _singleResult == other._singleResult
 		&& _asyncReads == other._asyncReads
-		&& ReferenceEquals(_pool, other._pool)
-		&& _clear == other._clear;
+		&& ReferenceEquals(_config, other._config);
 
 	public override bool Equals(object? obj)
 		=> obj is MappedQueryCore<T> other && Equals(other);
@@ -161,8 +158,7 @@ readonly struct MappedQueryCore<T>(
 			return (h * 31)
 				+ (_singleResult ? 2 : 0)
 				+ (_asyncReads ? 1 : 0)
-				+ (_clear is { } c ? (c ? 4 : 8) : 0)
-				+ (_pool?.GetHashCode() ?? 0);
+				+ (_config?.GetHashCode() ?? 0);
 		}
 	}
 
@@ -171,33 +167,35 @@ readonly struct MappedQueryCore<T>(
 		? (_source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping)
 		: (_source is SelectorSource<T> ? CommandBehavior.Default : CommandBehavior.SequentialAccess);
 
-	public MappedQueryCore<T> WithSingleResult() => new(Command, _source, _skip, _take, true, _asyncReads, _pool, _clear);
+	public MappedQueryCore<T> WithSingleResult() => new(Command, _source, _skip, _take, true, _asyncReads, _config);
 
-	public MappedQueryCore<T> WithAsyncReads() => new(Command, _source, _skip, _take, _singleResult, true, _pool, _clear);
+	public MappedQueryCore<T> WithAsyncReads() => new(Command, _source, _skip, _take, _singleResult, true, _config);
 
-	// What UsePool set (the shared pool, and the switch, by default). A pool of the
-	// caller is never disposed by ODX.
-	MemoryPool<T> Pool => _pool ?? MemoryPool<T>.Shared;
+	// What UsePool set: the pool, and whether the rows are cleared. Without it, the
+	// shared array pool, and the rule of PoolClearing (the switch). A pool of the
+	// caller is never touched by ODX but to rent from and return to.
+	ChunkConfig<T> Config => _config ?? ChunkConfig<T>.For(PoolClearing.Resolve<T>(null));
 
-	// Whether this query clears the used rows of the arrays it rents (see PoolClearing).
-	bool Clear => PoolClearing.Resolve<T>(_clear);
-
-	public MappedQueryCore<T> WithPool(MemoryPool<T> pool, bool clearOnReturn)
+	public MappedQueryCore<T> WithPool(ArrayPool<T> pool, bool clearOnReturn)
 	{
 		if (pool is null) throw new ArgumentNullException(nameof(pool));
 		Contract.EndContractBlock();
 
-		return new(Command, _source, _skip, _take, _singleResult, _asyncReads, pool, clearOnReturn);
+		return WithConfig(new ChunkConfig<T>(pool, PoolClearing.Resolve<T>(clearOnReturn)));
 	}
 
+	// A whole configuration (the pool, the clear, the chunk sizes, the bin).
+	public MappedQueryCore<T> WithConfig(ChunkConfig<T> config)
+		=> new(Command, _source, _skip, _take, _singleResult, _asyncReads, config);
+
 	public MappedQueryCore<T> WithSkip(int count)
-		=> count >= 0 ? new(Command, _source, _skip + count, _take, _singleResult, _asyncReads, _pool, _clear)
+		=> count >= 0 ? new(Command, _source, _skip + count, _take, _singleResult, _asyncReads, _config)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// Take is set exactly once (the staging structs only expose it before any take exists), so this
 	// just records the limit; it applies after the skip, i.e. Enumerable.Skip(a).Take(b).
 	public MappedQueryCore<T> WithTake(int count)
-		=> count >= 0 ? new(Command, _source, _skip, count, _singleResult, _asyncReads, _pool, _clear)
+		=> count >= 0 ? new(Command, _source, _skip, count, _singleResult, _asyncReads, _config)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// One token governs a whole call: the one passed to the terminal together with the command's own (either cancels), for the connection open, the name lookup, the execute and the reads.
@@ -290,8 +288,8 @@ readonly struct MappedQueryCore<T>(
 			=> RowReader.ToList(s._source, reader, s._skip, s._take), Behavior);
 
 	public T[] ToArray()
-		=> Run((_source, _skip, _take, _pool, Clear), static (reader, s)
-			=> RowReader.ToArray(s._source, reader, s._skip, s._take, s._pool, s.Clear), Behavior);
+		=> Run((_source, _skip, _take, Config), static (reader, s)
+			=> RowReader.ToArray(s._source, reader, s._skip, s._take, s.Config), Behavior);
 
 	public T? FirstOrDefault()
 		=> Run((_source, _skip, _take), static (reader, s)
@@ -351,24 +349,24 @@ readonly struct MappedQueryCore<T>(
 		CancellationToken token = Combine(
 			cancellationToken, out CancellationTokenSource? linked);
 		return RunAsync(
-			(_source, _skip, _take, _asyncReads, _pool, Clear, token, build),
+			(_source, _skip, _take, _asyncReads, Config, token, build),
 			static (reader, s) => reader is DbDataReader db
 				? RowReader.CollectAsync<T, TBuild, TResult>(
 					s._source, db, s._skip, s._take, s._asyncReads,
-					s.build, s._pool, s.Clear, s.token)
+					s.build, s.Config, s.token)
 				: new ValueTask<TResult>(RowReader.Collect<T, TBuild, TResult>(
 					s._source, reader, s._skip, s._take, s.build,
-					s._pool, s.Clear, s.token)),
+					s.Config, s.token)),
 			Behavior, linked, token);
 	}
 
 	public TResult Collect<TBuild, TResult>(TBuild build)
 		where TBuild : struct, IChainBuild<T, TResult>
 		=> Run(
-			(_source, _skip, _take, _pool, Clear, build),
+			(_source, _skip, _take, Config, build),
 			static (reader, s) => RowReader.Collect<T, TBuild, TResult>(
 				s._source, reader, s._skip, s._take, s.build,
-				s._pool, s.Clear),
+				s.Config),
 			Behavior);
 
 	public ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken)
@@ -590,20 +588,20 @@ readonly struct MappedQueryCore<T>(
 	// starts at the call; the two streams start at the first
 	// MoveNextAsync. A default struct is refused here, at the call,
 	// as everywhere else.
-	// They rent from the pool of UsePool (the shared pool when there was
-	// none) and clear by the rule of PoolClearing.
+	// They rent from the pool of UsePool (the shared array pool when there
+	// was none) and clear by the rule of PoolClearing.
 	public PooledBuffer<T> ToAsyncBuffer(
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new(this, Pool, Clear, cancellationToken);
+		return new(this, Config, cancellationToken);
 	}
 
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
 		CancellationToken cancellationToken)
 	{
 		_ = Command;
-		return new ChunkStream<T>(this, Pool, Clear, cancellationToken);
+		return new ChunkStream<T>(this, Config, cancellationToken);
 	}
 
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
@@ -613,7 +611,7 @@ readonly struct MappedQueryCore<T>(
 		// The stream carries the caller's token; the token Flatten takes is
 		// the enumeration's own (WithCancellation), so none is passed here.
 		return Flatten(
-			new ChunkStream<T>(this, Pool, Clear, cancellationToken),
+			new ChunkStream<T>(this, Config, cancellationToken),
 			CancellationToken.None);
 	}
 
@@ -694,7 +692,7 @@ public readonly record struct MappedQuery<T>
 	/// Both arguments are required: there is no overload without
 	/// <paramref name="clearOnReturn"/>, so the choice is always visible at the call,
 	/// and it is written by name,
-	/// <c>.UsePool(MemoryPool&lt;Post&gt;.Shared, clearOnReturn: true)</c>.
+	/// <c>.UsePool(ArrayPool&lt;Post&gt;.Shared, clearOnReturn: true)</c>.
 	/// <paramref name="clearOnReturn"/> controls the rows that hold no references;
 	/// rows that hold references are always cleared.
 	/// An explicit <c>clearOnReturn: false</c> wins over the app-wide switch for this
@@ -714,8 +712,8 @@ public readonly record struct MappedQuery<T>
 	/// </remarks>
 	/// <param name="pool">
 	/// The pool to rent from and give back to. It is yours: ODX never
-	/// disposes it. <c>MemoryPool&lt;T&gt;.Shared</c> is recognised and
-	/// takes the same path as no pool at all (no owner object per rent).
+	/// disposes it. <c>ArrayPool&lt;T&gt;.Shared</c> is what a query without
+	/// <c>UsePool</c> uses.
 	/// </param>
 	/// <param name="clearOnReturn">
 	/// <see langword="true"/> clears the used rows of every array before it
@@ -724,8 +722,12 @@ public readonly record struct MappedQuery<T>
 	/// </param>
 	/// <returns>The same query, renting from <paramref name="pool"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="pool"/> is <see langword="null"/>.</exception>
-	public MappedQuery<T> UsePool(MemoryPool<T> pool, bool clearOnReturn)
+	public MappedQuery<T> UsePool(ArrayPool<T> pool, bool clearOnReturn)
 		=> new(_core.WithPool(pool, clearOnReturn));
+
+	// A whole configuration, for a test or a benchmark (pool, clear, chunk sizes, bin).
+	internal MappedQuery<T> WithConfig(ChunkConfig<T> config)
+		=> new(_core.WithConfig(config));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
@@ -883,13 +885,12 @@ public readonly record struct MappedQuery<T>
 	/// <para>
 	/// Here the clearing happens when the buffer, or the
 	/// <see cref="PooledArray{T}"/> view of it, is disposed (the buffer
-	/// keeps its arrays until then). It is off the read path, handed to an
-	/// internal background queue, so the read and the consumer do not wait
-	/// for it. If the queue is full (10,240 waiting), or cannot take the
-	/// work, the buffer is discarded: neither cleared nor returned, it is
-	/// left to the garbage collector, so a dirty array never reaches the
-	/// pool (a pool of your own must tolerate an owner that is never
-	/// disposed).
+	/// keeps its arrays until then). A large array of rows that hold
+	/// references is handed to an internal background queue, so the read and
+	/// the consumer do not wait for it; anything else is cleared where it is
+	/// released. If the queue is full (10,240 waiting), or cannot take the
+	/// work, the array is cleared where it is released too, so a dirty array
+	/// never reaches the pool.
 	/// </para>
 	/// </remarks>
 	/// <param name="cancellationToken">
@@ -948,13 +949,12 @@ public readonly record struct MappedQuery<T>
 	/// <para>
 	/// Here the clearing happens as each chunk goes back, once the consumer
 	/// is done with it (at the next <c>MoveNextAsync</c>, or when the
-	/// enumeration ends or is disposed). It is off the read path, handed to
-	/// an internal background queue, so the read and the consumer do not
-	/// wait for it. If the queue is full (10,240 waiting), or cannot take
-	/// the work, the chunk is discarded: neither cleared nor returned, it is
-	/// left to the garbage collector, so a dirty array never reaches the
-	/// pool (a pool of your own must tolerate an owner that is never
-	/// disposed).
+	/// enumeration ends or is disposed). A large chunk of rows that hold
+	/// references is handed to an internal background queue, so the read and
+	/// the consumer do not wait for it; anything else is cleared where it is
+	/// released. If the queue is full (10,240 waiting), or cannot take the
+	/// work, the chunk is cleared where it is released too, so a dirty array
+	/// never reaches the pool.
 	/// </para>
 	/// </remarks>
 	/// <param name="cancellationToken">
@@ -1001,13 +1001,12 @@ public readonly record struct MappedQuery<T>
 	/// <para>
 	/// Here the clearing happens as each chunk goes back, once the consumer
 	/// is done with its elements (the chunk is released at the next chunk
-	/// step, or when the enumeration ends or is disposed). It is off the read
-	/// path, handed to an internal background queue, so the read and the
-	/// consumer do not wait for it. If the queue is full (10,240 waiting), or
-	/// cannot take the work, the chunk is discarded: neither cleared nor
-	/// returned, it is left to the garbage collector, so a dirty array never
-	/// reaches the pool (a pool of your own must tolerate an owner that is
-	/// never disposed).
+	/// step, or when the enumeration ends or is disposed). A large chunk of
+	/// rows that hold references is handed to an internal background queue, so
+	/// the read and the consumer do not wait for it; anything else is cleared
+	/// where it is released. If the queue is full (10,240 waiting), or cannot
+	/// take the work, the chunk is cleared where it is released too, so a
+	/// dirty array never reaches the pool.
 	/// </para>
 	/// </remarks>
 	/// <param name="cancellationToken">
@@ -1046,9 +1045,13 @@ public readonly record struct MappedQueryWithSkip<T>
 	/// <inheritdoc cref="MappedQuery{T}.AsyncReads"/>
 	public MappedQueryWithSkip<T> AsyncReads() => new(_core.WithAsyncReads());
 
-	/// <inheritdoc cref="MappedQuery{T}.UsePool(MemoryPool{T}, bool)"/>
-	public MappedQueryWithSkip<T> UsePool(MemoryPool<T> pool, bool clearOnReturn)
+	/// <inheritdoc cref="MappedQuery{T}.UsePool(ArrayPool{T}, bool)"/>
+	public MappedQueryWithSkip<T> UsePool(ArrayPool<T> pool, bool clearOnReturn)
 		=> new(_core.WithPool(pool, clearOnReturn));
+
+	// A whole configuration, for a test or a benchmark (pool, clear, chunk sizes, bin).
+	internal MappedQueryWithSkip<T> WithConfig(ChunkConfig<T> config)
+		=> new(_core.WithConfig(config));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
@@ -1159,9 +1162,13 @@ public readonly record struct MappedQueryWithTake<T>
 	/// <inheritdoc cref="MappedQuery{T}.AsyncReads"/>
 	public MappedQueryWithTake<T> AsyncReads() => new(_core.WithAsyncReads());
 
-	/// <inheritdoc cref="MappedQuery{T}.UsePool(MemoryPool{T}, bool)"/>
-	public MappedQueryWithTake<T> UsePool(MemoryPool<T> pool, bool clearOnReturn)
+	/// <inheritdoc cref="MappedQuery{T}.UsePool(ArrayPool{T}, bool)"/>
+	public MappedQueryWithTake<T> UsePool(ArrayPool<T> pool, bool clearOnReturn)
 		=> new(_core.WithPool(pool, clearOnReturn));
+
+	// A whole configuration, for a test or a benchmark (pool, clear, chunk sizes, bin).
+	internal MappedQueryWithTake<T> WithConfig(ChunkConfig<T> config)
+		=> new(_core.WithConfig(config));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);

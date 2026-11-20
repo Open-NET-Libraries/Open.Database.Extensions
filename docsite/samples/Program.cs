@@ -282,7 +282,7 @@ Check(
 
 Check(
 	await AsyncBuffers.ClearingSharedAsync(factory, CancellationToken.None) == 5,
-	"UsePool(MemoryPool<int>.Shared, clearOnReturn: true) reads the five rows");
+	"UsePool(ArrayPool<int>.Shared, clearOnReturn: true) reads the five rows");
 
 CountingPool<Post> referencePool = new();
 await AsyncBuffers.ReferenceRowsAsync(

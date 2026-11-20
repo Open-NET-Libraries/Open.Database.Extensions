@@ -102,20 +102,21 @@ internal static class RowReader
 	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
 		=> Collect<T, QueueBuild<T>, Queue<T>>(
 			source, reader, skip, take, default,
-			null, PoolClearing.Resolve<T>(null));
+			ChunkConfig<T>.For(PoolClearing.Resolve<T>(null)));
 
 	// The collecting terminals' one sync shape: the rows go into a chain of
-	// pooled arrays (from pool: null is the shared array pool), then build
-	// makes the result from the chain (the copy happens right after the last
-	// row), and the chain is disposed however the call ends. clear is what
-	// PoolClearing decided for this call.
+	// pooled arrays (from the pool of config: the shared array pool by
+	// default), then build makes the result from the chain (the copy happens
+	// right after the last row), and the chain is disposed however the call
+	// ends. config says, among other things, what PoolClearing decided for
+	// this call.
 	public static TResult Collect<T, TBuild, TResult>(
 		IRowSource<T> source, IDataReader reader, int skip, int take,
-		TBuild build, MemoryPool<T>? pool, bool clearOnReturn,
+		TBuild build, ChunkConfig<T> config,
 		CancellationToken token = default)
 		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		using var chain = ChunkChain<T>.Rent(pool, clearOnReturn);
+		using var chain = ChunkChain<T>.Rent(config);
 		var sink = new ChainSink<T>(chain);
 		Fill(source, reader, skip, take, ref sink, token);
 		return build.Build(chain);
@@ -123,7 +124,7 @@ internal static class RowReader
 
 	public static T[] ToArray<T>(
 		IRowSource<T> source, IDataReader reader, int skip, int take,
-		MemoryPool<T>? pool, bool clearOnReturn, CancellationToken token = default)
+		ChunkConfig<T> config, CancellationToken token = default)
 	{
 		// A bare IDataReader has no DbDataReader fast path: Stream reads it (and
 		// treats take 0 the same way as the line below), then ToArray copies.
@@ -133,7 +134,7 @@ internal static class RowReader
 		if (take == 0 || !SkipRows(db, skip) || !db.Read()) return [];
 
 		Func<DbDataReader, T> map = source.Mapper(db);
-		var buffer = new MemorySink<T>(pool, clearOnReturn);
+		var buffer = new ArraySink<T>(config);
 		try
 		{
 			int n = 0;
@@ -310,7 +311,7 @@ internal static class RowReader
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
 		=> CollectAsync<T, QueueBuild<T>, Queue<T>>(
 			source, reader, skip, take, useReadAsync, default,
-			null, PoolClearing.Resolve<T>(null),
+			ChunkConfig<T>.For(PoolClearing.Resolve<T>(null)),
 			cancellationToken);
 
 	// ONE async method for every collecting terminal (ToList, ToArray, ToQueue,
@@ -322,11 +323,11 @@ internal static class RowReader
 	// last row.
 	public static async ValueTask<TResult> CollectAsync<T, TBuild, TResult>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync,
-		TBuild build, MemoryPool<T>? pool, bool clearOnReturn,
+		TBuild build, ChunkConfig<T> config,
 		CancellationToken cancellationToken)
 		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		using var chain = ChunkChain<T>.Rent(pool, clearOnReturn);
+		using var chain = ChunkChain<T>.Rent(config);
 		if (take != 0
 			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 			&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
@@ -513,90 +514,62 @@ internal readonly struct DictionaryValueBuild<T, TKey, TValue>(
 /// A pooled, growable buffer so an exact-size array can be produced without the garbage a growing list leaves behind.
 /// </summary>
 /// <remarks>
-/// The memory comes from the shared array pool, or from a caller's own <see cref="MemoryPool{T}"/> (see <see cref="PoolRent"/>), and is whatever the pool gives: the sink uses all of it and writes only inside it. When the memory is backed by an array (the shared pool's always is) a row is stored with a plain array write; otherwise it is written through the memory's span. <c>clearOnReturn</c> is what <see cref="PoolClearing"/> decided: the rows that were written are cleared before the memory goes back, and nothing else.
-/// The default value of the struct uses the shared array pool and clears nothing.
+/// The arrays come from the pool of the <see cref="ChunkConfig{T}"/> (the shared array pool by default) and are as long as the pool makes them: the sink uses all of the array it holds and grows by renting one twice as long. A row is one array store. <see cref="ChunkConfig{T}.ClearOnReturn"/> is what <see cref="PoolClearing"/> decided: the rows that were written are cleared before an array goes back, and nothing else (an array it outgrew is released the same way, since the rows were copied out of it).
 /// </remarks>
-internal struct MemorySink<T>(MemoryPool<T>? pool, bool clearOnReturn) : IRowSink<T>
+internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 {
-	// The caller's own pool, or null for ArrayPool<T>.Shared.
-	readonly MemoryPool<T>? _custom = pool is null
-		|| ReferenceEquals(pool, MemoryPool<T>.Shared)
-		? null
-		: pool;
-	readonly bool _clear = clearOnReturn;
-	IMemoryOwner<T>? _owner;
-
-	// The memory being written; the array behind it and the memory's offset
-	// in that array (null when it is not backed by an array); its length;
-	// how many rows are written.
-	Memory<T> _memory;
-	T[]? _array;
-	int _offset;
-	int _capacity;
+	T[]? _items;
 	int _count;
 
 	public void Add(T item)
 	{
+		T[]? items = _items;
 		int count = _count;
-		if ((uint)count < (uint)_capacity)
+		if (items is not null && (uint)count < (uint)items.Length)
 		{
-			if (_array is { } array) array[_offset + count] = item;
-			else _memory.Span[count] = item;
-
+			items[count] = item;
 			_count = count + 1;
 			return;
 		}
 
-		Grow();
-		Add(item);
+		AddSlow(item);
 	}
 
 	// A rent that fails (or is refused) leaves the sink as it was: the
-	// memory and its owner are kept only once the rent has succeeded.
-	void Grow()
+	// array is kept only once the rent has succeeded.
+	void AddSlow(T item)
 	{
-		int size = _capacity == 0 ? 16 : _capacity * 2;
-		Memory<T> bigger = PoolRent.Rent(_custom, size, out IMemoryOwner<T>? owner);
-		if (_capacity != 0)
-			_memory.Span[.._count].CopyTo(bigger.Span);
-
-		// The rows were copied: the old memory goes back, and the rows it
-		// still holds are cleared first when the rule says so (they are
-		// alive in the new memory, so the old must not keep them).
-		if (_capacity != 0)
-			PoolRent.Return(_memory, _owner, _count, _clear);
-
-		_memory = bigger;
-		_owner = owner;
-		_capacity = bigger.Length;
-		if (System.Runtime.InteropServices.MemoryMarshal.TryGetArray<T>(bigger, out ArraySegment<T> segment)
-			&& segment.Array is { } array)
+		T[]? old = _items;
+		T[] bigger = config.Rent(old is null ? 16 : old.Length * 2);
+		if (old is not null)
 		{
-			_array = array;
-			_offset = segment.Offset;
+			Array.Copy(old, bigger, _count);
+
+			// The rows were copied: the old array goes back, its rows
+			// cleared first when the rule says so (they are alive in the
+			// new one, so the old must not keep them).
+			config.Seal(old, _count).Release();
 		}
-		else
-		{
-			_array = null;
-			_offset = 0;
-		}
+
+		_items = bigger;
+		bigger[_count++] = item;
 	}
 
 	public readonly T[] ToArray()
-		=> _count == 0 ? [] : _memory.Span[.._count].ToArray();
+	{
+		if (_count == 0) return [];
+
+		var result = new T[_count];
+		Array.Copy(_items!, result, _count);
+		return result;
+	}
 
 	public void Dispose()
 	{
-		if (_capacity == 0) return;
+		T[]? items = _items;
+		if (items is null) return;
 
-		Memory<T> memory = _memory;
-		IMemoryOwner<T>? owner = _owner;
-		int count = _count;
-		_memory = default;
-		_owner = null;
-		_array = null;
-		_capacity = 0;
-		_count = 0;
-		PoolRent.Return(memory, owner, count, _clear);
+		_items = null;
+		config.Seal(items, _count).Release();
 	}
 }

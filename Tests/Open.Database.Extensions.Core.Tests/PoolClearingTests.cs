@@ -1,5 +1,5 @@
 using System.Buffers;
-using System.Reflection;
+using Open.Database.Extensions.Core;
 using static Open.Database.Extensions.Tests.ChannelWait;
 
 #nullable enable
@@ -25,16 +25,6 @@ internal readonly record struct PoolValue(int Id);
 public static class PoolClearingTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
-
-	static readonly Assembly Core = typeof(PooledBuffer<>).Assembly;
-
-	const BindingFlags Internal
-		= BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-
-	// ---- the seams, reached by reflection (no InternalsVisibleTo) ----------
-
-	static Type Clearing
-		=> Core.GetType("Open.Database.Extensions.Core.PoolClearing")!;
 
 	// ---- rigs ---------------------------------------------------------------
 
@@ -117,13 +107,6 @@ public static class PoolClearingTests
 	// pure method that takes the switch as an argument, and it is checked
 	// here for every combination. A caller's own pool (below) shows what the
 	// decision does to the arrays.
-	static bool Resolve<T>(bool? clear, bool all)
-		=> (bool)Clearing
-			.GetMethods(BindingFlags.Public | BindingFlags.Static)
-			.Single(static m => m.Name == "Resolve" && m.GetParameters().Length == 2)
-			.MakeGenericMethod(typeof(T))
-			.Invoke(null, [clear, all])!;
-
 	[Theory]
 	[InlineData(null, false, false)]
 	[InlineData(null, true, true)]
@@ -135,7 +118,7 @@ public static class PoolClearingTests
 		bool? clear,
 		bool all,
 		bool expected)
-		=> Assert.Equal(expected, Resolve<PoolValue>(clear, all));
+		=> Assert.Equal(expected, PoolClearing.Resolve<PoolValue>(clear, all));
 
 	[Theory]
 	[InlineData(null, false)]
@@ -145,7 +128,7 @@ public static class PoolClearingTests
 	[InlineData(true, false)]
 	[InlineData(true, true)]
 	public static void ReferenceRows_AreAlwaysCleared(bool? clear, bool all)
-		=> Assert.True(Resolve<PoolRow>(clear, all));
+		=> Assert.True(PoolClearing.Resolve<PoolRow>(clear, all));
 	// ---- a caller's own pool -------------------------------------------------
 
 	static CountingPool<int> IntPool()
@@ -267,29 +250,26 @@ public static class PoolClearingTests
 	[Fact]
 	public static void TheSwitch_IsReadByItsDocumentedName()
 	{
-		const string Name = "Open.Database.Extensions.ClearPooledArrays";
-		Assert.Equal(
-			Name,
-			(string)Clearing
-				.GetField("SwitchName", BindingFlags.Public | BindingFlags.Static)!
-				.GetRawConstantValue()!);
+		// The cache is filled (with the switch as the process has it) before
+		// the switch is changed here, so nothing else can read a changed one.
+		_ = PoolClearing.All;
 
-		MethodInfo read = Clearing.GetMethod(
-			"ReadSwitch",
-			BindingFlags.Public | BindingFlags.Static)!;
+		const string Name = "Open.Database.Extensions.ClearPooledArrays";
+		Assert.Equal(Name, PoolClearing.SwitchName);
+
 		bool had = AppContext.TryGetSwitch(Name, out bool before);
 		try
 		{
 			AppContext.SetSwitch(Name, true);
-			Assert.True((bool)read.Invoke(null, null)!);
+			Assert.True(PoolClearing.ReadSwitch());
 
 			AppContext.SetSwitch(Name, false);
-			Assert.False((bool)read.Invoke(null, null)!);
+			Assert.False(PoolClearing.ReadSwitch());
 
 			// Another name changes nothing.
 			AppContext.SetSwitch(Name, false);
 			AppContext.SetSwitch(Name + "X", true);
-			Assert.False((bool)read.Invoke(null, null)!);
+			Assert.False(PoolClearing.ReadSwitch());
 		}
 		finally
 		{
@@ -297,169 +277,19 @@ public static class PoolClearingTests
 			AppContext.SetSwitch(Name + "X", false);
 		}
 	}
+	// ---- a pool decides how long its arrays are ------------------------------
 
-	// ---- a pool decides what it hands out ------------------------------------
+	public static TheoryData<string> Collectors
+		=> ["ToListAsync", "ToArrayAsync", "ToArray", "ToHashSetAsync"];
 
-	enum Shape
+	// A pool may give longer arrays than asked for (the shared pool rounds
+	// up to a power of two): ODX uses all of what it was given, the rows
+	// come back in order, and every array goes back exactly once.
+	[Theory, MemberData(nameof(Collectors))]
+	public static async Task APoolThatRoundsUp_GivesTheRightRows(
+		string collector)
 	{
-		// The whole array (the memory is the array).
-		Whole,
-
-		// A larger array than asked for, the memory all of it.
-		WholeAndLarger,
-
-		// Memory that is not backed by an array.
-		Opaque,
-
-		// A view that starts after the first element of its array.
-		Offset,
-
-		// A view of the first elements of a longer array.
-		Partial,
-
-		// Less memory than was asked for.
-		Short,
-	}
-
-	// A pool: the first `good` rents are whole arrays, every later one has
-	// the shape given. It sees every dispose: once, and only once.
-	sealed class ShapedPool(int good, Shape bad) : MemoryPool<int>
-	{
-		int _rents;
-		int _disposed;
-		int _disposedTwice;
-		int _outstanding;
-
-		public int Rents => Volatile.Read(ref _rents);
-		public int Disposed => Volatile.Read(ref _disposed);
-		public int DisposedTwice => Volatile.Read(ref _disposedTwice);
-		public int Outstanding => Volatile.Read(ref _outstanding);
-
-		public override int MaxBufferSize => Array.MaxLength;
-
-		public override IMemoryOwner<int> Rent(int minBufferSize = -1)
-		{
-			int size = Math.Max(minBufferSize, 1);
-			int number = Interlocked.Increment(ref _rents);
-			Interlocked.Increment(ref _outstanding);
-			Shape shape = number <= good ? Shape.Whole : bad;
-			return shape switch
-			{
-				Shape.Opaque => new OpaqueOwner(this, size),
-				Shape.Offset => new ArrayOwner(
-					this,
-					new int[size + 1],
-					1,
-					size),
-				Shape.Partial => new ArrayOwner(
-					this,
-					new int[size + 8],
-					0,
-					size),
-				Shape.WholeAndLarger => new ArrayOwner(
-					this,
-					new int[size + 7],
-					0,
-					size + 7),
-				Shape.Short => new ArrayOwner(this, new int[size], 0, size - 1),
-				_ => new ArrayOwner(this, new int[size], 0, size),
-			};
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		void Count(bool first)
-		{
-			if (first)
-			{
-				Interlocked.Increment(ref _disposed);
-				Interlocked.Decrement(ref _outstanding);
-			}
-			else
-			{
-				Interlocked.Increment(ref _disposedTwice);
-			}
-		}
-
-		sealed class ArrayOwner(
-			ShapedPool pool,
-			int[] array,
-			int offset,
-			int count)
-			: IMemoryOwner<int>
-		{
-			bool _done;
-
-			public Memory<int> Memory => new(array, offset, count);
-
-			public void Dispose()
-			{
-				pool.Count(!_done);
-				_done = true;
-			}
-		}
-
-		// Memory made by a manager reports no array to TryGetArray.
-		sealed class OpaqueOwner(ShapedPool pool, int length)
-			: MemoryManager<int>
-		{
-			readonly int[] _store = new int[length];
-			bool _done;
-
-			public override Span<int> GetSpan() => _store;
-
-			public override MemoryHandle Pin(int elementIndex = 0)
-				=> throw new NotSupportedException();
-
-			public override void Unpin() { }
-
-			protected override void Dispose(bool disposing)
-			{
-				pool.Count(!_done);
-				_done = true;
-			}
-		}
-	}
-
-	public static TheoryData<string, string> AnyShape
-	{
-		get
-		{
-			var data = new TheoryData<string, string>();
-			foreach (string collector in new[]
-			{
-				"ToListAsync",
-				"ToArrayAsync",
-				"ToArray",
-				"ToHashSetAsync",
-			})
-			{
-				foreach (Shape shape in new[]
-				{
-					Shape.Whole,
-					Shape.WholeAndLarger,
-					Shape.Opaque,
-					Shape.Offset,
-					Shape.Partial,
-				})
-				{
-					data.Add(collector, shape.ToString());
-				}
-			}
-
-			return data;
-		}
-	}
-
-	// The pool decides what the memory is backed by and how much it gives:
-	// the collectors use what they were given, and write only inside it.
-	// Every rent is disposed exactly once.
-	[Theory, MemberData(nameof(AnyShape))]
-	public static async Task AnyKindOfMemory_GivesTheRightRows_AndEveryRentIsDisposedOnce(
-		string collector,
-		string shape)
-	{
-		var pool = new ShapedPool(0, Enum.Parse<Shape>(shape));
+		CountingPool<int> pool = IntPool();
 
 		Assert.Equal(
 			10_000,
@@ -468,20 +298,15 @@ public static class PoolClearingTests
 				Rows<int>(10_000).UsePool(pool, clearOnReturn: true),
 				static r => r));
 
+		await AssertBack(pool);
 		Assert.True(pool.Rents > 1);
-		Assert.Equal(pool.Rents, pool.Disposed);
-		Assert.Equal(0, pool.DisposedTwice);
-		Assert.Equal(0, pool.Outstanding);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
-	[Theory]
-	[InlineData(nameof(Shape.Opaque))]
-	[InlineData(nameof(Shape.Offset))]
-	[InlineData(nameof(Shape.Partial))]
-	public static async Task AViewOrMemoryThatIsNotAnArray_KeepsTheRowsInOrder(
-		string shape)
+	[Fact]
+	public static async Task APoolThatRoundsUp_KeepsTheRowsInOrder()
 	{
-		var pool = new ShapedPool(0, Enum.Parse<Shape>(shape));
+		CountingPool<int> pool = IntPool();
 
 		int[] array = await Rows<int>(10_000)
 			.UsePool(pool, clearOnReturn: false)
@@ -497,20 +322,18 @@ public static class PoolClearingTests
 		Assert.Equal(Enumerable.Range(1, 10_000), list);
 		Assert.Equal(Enumerable.Range(1, 10_000), sync);
 		Assert.Equal(0, pool.Outstanding);
-		Assert.Equal(0, pool.DisposedTwice);
+		Assert.Equal(0, pool.Unmatched);
 	}
 
-	public static TheoryData<string> Collectors
-		=> ["ToListAsync", "ToArrayAsync", "ToArray", "ToHashSetAsync"];
-
 	// A pool that gives less than was asked for cannot be written to
-	// safely: the read fails, that rent is disposed at once, and the chain's
-	// own disposal gives back every rent before it.
+	// safely: the read fails, that array goes back at once, and the chain's
+	// own disposal gives back every array before it.
 	[Theory, MemberData(nameof(Collectors))]
-	public static async Task AShortRent_Throws_AndEveryRentIsDisposed(
+	public static async Task AShortRent_Throws_AndEveryArrayGoesBack(
 		string collector)
 	{
-		var pool = new ShapedPool(2, Shape.Short);
+		// The first two rents are whole; every one after is one slot short.
+		var pool = new ShortAfterPool(good: 2);
 
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			() => Run(
@@ -520,56 +343,16 @@ public static class PoolClearingTests
 
 		Assert.Contains("less memory", ex.Message);
 		Assert.Equal(3, pool.Rents);
-		Assert.Equal(3, pool.Disposed);
-		Assert.Equal(0, pool.DisposedTwice);
+		Assert.Equal(3, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
 		Assert.Equal(0, pool.Outstanding);
-	}
-	// A pool may round up: the chain uses the array's real length, and only
-	// the used part of the last chunk is copied.
-	[Theory, MemberData(nameof(Collectors))]
-	public static async Task APoolThatRoundsUp_GivesTheRightRows(
-		string collector)
-	{
-		var pool = new ShapedPool(0, Shape.WholeAndLarger);
-
-		Assert.Equal(
-			1_000,
-			await Run(
-				collector,
-				Rows<int>(1_000).UsePool(pool, clearOnReturn: true),
-				static r => r));
-
-		Assert.True(pool.Rents > 1);
-		Assert.Equal(pool.Rents, pool.Disposed);
-		Assert.Equal(0, pool.DisposedTwice);
-		Assert.Equal(0, pool.Outstanding);
-	}
-
-	[Fact]
-	public static async Task APoolThatRoundsUp_KeepsTheRowsInOrder()
-	{
-		var pool = new ShapedPool(0, Shape.WholeAndLarger);
-
-		int[] rows = await Rows<int>(1_000)
-			.UsePool(pool, clearOnReturn: false)
-			.ToArrayAsync(Ct);
-
-		Assert.Equal(Enumerable.Range(1, 1_000), rows);
-
-		List<int> list = await Rows<int>(1_000)
-			.UsePool(pool, clearOnReturn: false)
-			.ToListAsync(Ct);
-
-		Assert.Equal(Enumerable.Range(1, 1_000), list);
-		Assert.Equal(pool.Rents, pool.Disposed);
-		Assert.Equal(0, pool.DisposedTwice);
 	}
 
 	// A refused read does not break the next one: the spare chain is clean.
 	[Fact]
 	public static async Task AfterARefusedRent_TheNextCallWorks()
 	{
-		var bad = new ShapedPool(1, Shape.Short);
+		var bad = new ShortAfterPool(good: 1);
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			() => Rows<int>(1_000)
 				.UsePool(bad, clearOnReturn: true)
@@ -579,11 +362,46 @@ public static class PoolClearingTests
 		List<int> rows = await Rows<int>(1_000).ToListAsync(Ct);
 		Assert.Equal(Enumerable.Range(1, 1_000), rows);
 
-		var good = new ShapedPool(0, Shape.Whole);
+		CountingPool<int> good = IntPool();
 		List<int> again = await Rows<int>(1_000)
 			.UsePool(good, clearOnReturn: true)
 			.ToListAsync(Ct);
 		Assert.Equal(Enumerable.Range(1, 1_000), again);
-		Assert.Equal(good.Rents, good.Disposed);
+		Assert.Equal(good.Rents, good.Returns);
+	}
+
+	// The first `good` rents are whole; every later one is one slot short.
+	sealed class ShortAfterPool(int good) : ArrayPool<int>
+	{
+		readonly System.Collections.Concurrent.ConcurrentDictionary<int[], int> _out
+			= new(ReferenceEqualityComparer.Instance);
+
+		int _rents;
+		int _returns;
+		int _unmatched;
+
+		public int Rents => Volatile.Read(ref _rents);
+		public int Returns => Volatile.Read(ref _returns);
+		public int Unmatched => Volatile.Read(ref _unmatched);
+		public int Outstanding => _out.Count;
+
+		public override int[] Rent(int minimumLength)
+		{
+			int number = Interlocked.Increment(ref _rents);
+			var array = new int[number <= good ? minimumLength : minimumLength - 1];
+			_out[array] = 0;
+			return array;
+		}
+
+		public override void Return(int[] array, bool clearArray = false)
+		{
+			if (!_out.TryRemove(array, out _))
+			{
+				Interlocked.Increment(ref _unmatched);
+				return;
+			}
+
+			Interlocked.Increment(ref _returns);
+		}
 	}
 }
