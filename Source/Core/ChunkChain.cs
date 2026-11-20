@@ -24,9 +24,27 @@ namespace Open.Database.Extensions.Core;
 // using declaration (the chain is IDisposable): after that it belongs to
 // the spare slot, and no reference to it is used again.
 //
-// Clearing: a chunk that may hold references is cleared before it goes
-// back (the used part only), so a pooled array never keeps a row alive.
-// A chunk of plain values is returned as it is.
+// Where the arrays come from.
+// By default (and for MemoryPool<T>.Shared, which is recognised by
+// reference) the chunks are rented from ArrayPool<T>.Shared directly: no
+// owner object is made, so a rent costs what it always did. A caller's own
+// MemoryPool<T> (UsePool) hands out an IMemoryOwner<T> per chunk (24 bytes
+// each, measured: PoolSpikeProbe); the chain keeps it beside the chunk and
+// disposes it when the chunk is released, AFTER the clearing rule. The
+// chain never disposes the pool itself: it is the caller's.
+// The chain sizes its chunks by their real Length, so a pool may round a
+// request up; but a chunk MUST be the whole array behind the memory it
+// handed out (TryGetArray, Offset 0, Count equal to the array's Length).
+// A shorter view over a larger shared array would let the chain write past
+// the memory it was given, into another renter's data, so anything else
+// is refused (NotSupportedException) at the rent, and that rent is
+// disposed.
+//
+// Clearing: whether the used part of every chunk is cleared before it
+// goes back is decided once per call (PoolClearing: the floor for row
+// types that hold references, then the query's explicit choice, then the
+// app-wide switch). Plain value rows are returned as they are when it is
+// not asked for.
 internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 {
 	// The one spare chain of this T.
@@ -36,14 +54,15 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	// returns, then put back. Per T.
 	internal static ArrayPool<T> _pool = ArrayPool<T>.Shared;
 
-#if NETSTANDARD2_0
-	const bool MustClear = true;
-#else
-	static readonly bool MustClear
-		= RuntimeHelpers.IsReferenceOrContainsReferences<T>();
-#endif
-
 	T[][] _chunks = new T[4][];
+
+	// The owners of the chunks, in step with _chunks, only for a caller's
+	// own pool (null otherwise). Kept by the spare chain between uses.
+	IMemoryOwner<T>?[]? _owners;
+
+	// The caller's own pool of this call, or null for ArrayPool<T>.Shared.
+	MemoryPool<T>? _custom;
+	bool _clear;
 	bool _parked;
 	int _chunkCount;
 	T[] _current = [];
@@ -51,13 +70,23 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	int _filled; // rows in the chunks before the current one
 	int _nextSize;
 
-	/// <summary>An empty chain: the spare one if there is one.</summary>
-	internal static ChunkChain<T> Rent()
+	/// <summary>
+	/// An empty chain: the spare one if there is one. The chunks come from
+	/// <paramref name="pool"/>, or from the shared array pool when it is
+	/// null or <see cref="MemoryPool{T}.Shared"/>; <paramref name="clear"/>
+	/// is what <c>PoolClearing.Resolve</c> decided.
+	/// </summary>
+	internal static ChunkChain<T> Rent(MemoryPool<T>? pool, bool clear)
 	{
 		ChunkChain<T>? chain = Interlocked.Exchange(ref _spare, null);
-		if (chain is null) return new ChunkChain<T>();
+		chain ??= new ChunkChain<T>();
 
 		chain._parked = false;
+		chain._clear = clear;
+		chain._custom = pool is null
+			|| ReferenceEquals(pool, MemoryPool<T>.Shared)
+			? null
+			: pool;
 		return chain;
 	}
 
@@ -90,6 +119,8 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		{
 			Array.Resize(ref chunks, chunks.Length * 2);
 			_chunks = chunks;
+			if (_owners is not null)
+				Array.Resize(ref _owners, chunks.Length);
 		}
 
 		int size = _nextSize;
@@ -97,7 +128,18 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 		// Counted only once the rent has succeeded, so a failed rent leaves
 		// the chain as it was.
-		T[] next = _pool.Rent(size);
+		T[] next;
+		if (_custom is null)
+		{
+			next = _pool.Rent(size);
+		}
+		else
+		{
+			next = PoolRent.Rent(_custom, size, out IMemoryOwner<T> owner);
+			(_owners ??= new IMemoryOwner<T>?[chunks.Length])
+				[_chunkCount] = owner;
+		}
+
 		_nextSize = ChunkSizing.NextCollectRows(size);
 		chunks[_chunkCount++] = next;
 		_filled += _index;
@@ -260,12 +302,12 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>
-	/// Clears what may hold references, returns every array to the pool
-	/// and parks the chain as the spare. Call it once, from the finally of
-	/// the call that rented the chain, which a using declaration on the
-	/// rented chain does (a second call, before the chain is rented again,
-	/// does nothing). Public only because the interface requires it: the
-	/// class is internal.
+	/// Clears what is to be cleared (see the notes at the top), gives every
+	/// array back to its pool and parks the chain as the spare. Call it
+	/// once, from the finally of the call that rented the chain, which a
+	/// using declaration on the rented chain does (a second call, before
+	/// the chain is rented again, does nothing). Public only because the
+	/// interface requires it: the class is internal.
 	/// </summary>
 	public void Dispose()
 	{
@@ -273,17 +315,28 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 		_parked = true;
 		T[][] chunks = _chunks;
+		IMemoryOwner<T>?[]? owners = _owners;
+		bool clear = _clear;
 		_current = [];
+		_custom = null;
 		int last = _chunkCount - 1;
 		for (int i = 0; i <= last; ++i)
 		{
 			T[] chunk = chunks[i];
-			if (MustClear)
+			if (clear)
 			{
 				Array.Clear(chunk, 0, i == last ? _index : chunk.Length);
 			}
 
-			_pool.Return(chunk, clearArray: false);
+			if (owners is not null && owners[i] is { } owner)
+			{
+				owners[i] = null;
+				owner.Dispose();
+			}
+			else
+			{
+				_pool.Return(chunk, clearArray: false);
+			}
 		}
 
 		Array.Clear(chunks, 0, _chunkCount);

@@ -743,7 +743,7 @@ public static class MappedQueryExtensions
 		CancellationToken token)
 	{
 		// A struct that owns a rented buffer: it goes back to the pool however the call ends.
-		var sink = new ArraySink<T>();
+		var sink = new ArraySink<T>(null, PoolClearing.Resolve<T>(null));
 		try
 		{
 			await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
