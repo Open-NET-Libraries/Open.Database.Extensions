@@ -101,6 +101,15 @@ public static class DerivedNameCostTests
 			_db.Sent.Clear();
 		}
 
+		// Runs the command and returns the names it sent.
+		public string[] RunAndRead(ExpressiveDbCommand command)
+		{
+			command.ExecuteNonQuery();
+			string[] sent = Sent;
+			_db.Sent.Clear();
+			return sent;
+		}
+
 		public void RunThroughAsyncApi(ExpressiveDbCommand command)
 		{
 			command.ExecuteNonQueryAsync().AsTask().GetAwaiter().GetResult();
@@ -166,22 +175,64 @@ public static class DerivedNameCostTests
 		AssertWithinBudget("text command, literal SQL", derived, explicitName);
 	}
 
-	// The SQL text is a new string object on every call (same characters). Nothing is asserted about the cost beyond "it works": it is reported.
-	// A weak-table entry also costs a GC handle, which the allocated bytes do not show.
-	[Fact]
-	public static void Text_SqlBuiltOnEveryCall_Works_AndTheCostIsReported()
+	// The SQL text is a new string object on every call (same characters), as when a query is put together at run time.
+	// A derived name must cost no more than the hand-written one there too: the names of a text are remembered by its content, not only by its object.
+	// (Both versions build the text each call, so the difference is the cost of the names alone.)
+	[Theory]
+	[InlineData(1)]
+	[InlineData(2)]
+	[InlineData(4)]
+	public static void Text_SqlBuiltOnEveryCall_DerivedCostsNoMoreThanExplicit(int count)
 	{
 		var rig = new Rig(CommandType.Text);
-		const int orderId = 5, customerId = 7;
-		var startDate = new DateTime(2026, 1, 2);
+		string sql = BuiltSql(count);
+		int p0 = 42, p2 = 7, p3 = 9;
+		long p1 = 1234567890123L;
 
-		long derived = BytesPerCall(() => rig.Run(rig.Command(new string(Sql.AsSpan())).AddParam(orderId).AddParam(customerId).AddParam(startDate)));
-		long explicitName = BytesPerCall(() => rig.Run(rig.Command(new string(Sql.AsSpan())).AddParam("@order_id", orderId).AddParam("@customer_id", customerId).AddParam("@start_date", startDate)));
-		Report("text command, SQL built on every call", derived, explicitName);
+		void Derived()
+		{
+			ExpressiveDbCommand command = rig.Command(new string(sql.AsSpan())).AddParam(p0);
+			if (count >= 2) command.AddParam(p1);
+			if (count >= 4) command.AddParam(p2).AddParam(p3);
+			rig.Run(command);
+		}
 
-		ExpressiveDbCommand command = rig.Command(new string(Sql.AsSpan())).AddParam(orderId).AddParam(customerId).AddParam(startDate);
-		command.ExecuteNonQuery();
-		Assert.Equal(["@order_id", "@customer_id", "@start_date"], rig.Sent);
+		void Explicit()
+		{
+			ExpressiveDbCommand command = rig.Command(new string(sql.AsSpan())).AddParam("@p0", p0);
+			if (count >= 2) command.AddParam("@p1", p1);
+			if (count >= 4) command.AddParam("@p2", p2).AddParam("@p3", p3);
+			rig.Run(command);
+		}
+
+		AssertWithinBudget($"text command, SQL built on every call, {count} parameters", BytesPerCall(Derived), BytesPerCall(Explicit));
+
+		ExpressiveDbCommand check = rig.Command(new string(sql.AsSpan())).AddParam(p0);
+		if (count >= 2) check.AddParam(p1);
+		if (count >= 4) check.AddParam(p2).AddParam(p3);
+		string[] sent = rig.RunAndRead(check);
+		Assert.Equal(Enumerable.Range(0, count).Select(i => "@p" + i), sent);
+	}
+
+	static string BuiltSql(int count)
+	{
+		string sql = "select * from t where @p0 > 0";
+		for (int i = 1; i < count; i++) sql += " and @p" + i + " > 0";
+		return sql;
+	}
+
+	// Many different texts (a query with a changing filter list, or with values written into it) are each resolved correctly,
+	// however many there are: what is remembered by content is bounded, and a text that was forgotten is simply parsed again.
+	[Fact]
+	public static void Text_ManyDistinctTexts_EachResolvesItsOwnNames()
+	{
+		var rig = new Rig(CommandType.Text);
+		const int orderId = 5;
+		for (int i = 0; i < 3000; i++)
+		{
+			ExpressiveDbCommand command = rig.Command($"select * from t{i} where order_id = @order_id").AddParam(orderId);
+			Assert.Equal(["@order_id"], rig.RunAndRead(command));
+		}
 	}
 
 	// ---- the asynchronous twins (the fake completes synchronously, so the per-thread counter sees all of it) ----
@@ -469,14 +520,15 @@ public static class DerivedNameCostTests
 	{
 		var db = new DerivedParameterNameTests.RecordingDbCommand();
 		var connection = new DerivedParameterNameTests.OpenDbConnection(db);
-		string sql = new("select * from t where order_id = @order_id and x = @leak_check_marker".AsSpan());
+		// Longer than what is remembered by content (see TextNameCache), which keeps the texts it holds.
+		string sql = new(("select * from t where order_id = @order_id and x = @leak_check_marker" + new string(' ', 5000)).AsSpan());
 		const int orderId = 1;
 		new ExpressiveDbCommand(connection, CommandType.Text, sql).AddParam(orderId).ExecuteNonQuery();
 		Assert.Equal(["@order_id"], db.Sent.Select(p => p.ParameterName));
 		return new WeakReference(sql);
 	}
 
-	// What is remembered about a text command does not keep its text alive.
+	// What is remembered about a long text command does not keep its text alive (a short one is remembered by content, bounded in count and length).
 	[Fact]
 	public static void ATextCommandsSql_IsNotKeptAliveByWhatIsRemembered()
 	{

@@ -1294,12 +1294,45 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	static bool IsFractional(Type t) => t == typeof(float) || t == typeof(double) || t == typeof(decimal);
 
 	// Direct typed conversions only where they cannot silently change the value: integer to integer/enum is
-	// range-checked (throws on overflow), integers and floating point widen to a fractional type. Anything
-	// else (fractional to integer, which must round, text, etc.) takes the general path.
+	// range-checked (throws on overflow), integers and floating point widen to a fractional type. Three more
+	// are the exact call the general path makes, without boxing the result: an integer to bool (not zero),
+	// text to DateTime and text to decimal (parsed with the invariant culture). Anything else (fractional
+	// to integer, which must round, other text, etc.) takes the general path.
 	static Expression? TryConvert(Expression value, Type target)
 	{
 		Type source = value.Type;
 		if (source == target) return value;
+
+		if (target == typeof(bool) && IsIntegral(source))
+			return Expression.NotEqual(value, Expression.Default(source));
+
+		if (source == typeof(string))
+		{
+			if (target == typeof(DateTime))
+			{
+				return Expression.Call(
+					typeof(DateTime).GetMethod(
+						nameof(DateTime.Parse),
+						[typeof(string), typeof(IFormatProvider)])!,
+					value,
+					Expression.Constant(
+						CultureInfo.InvariantCulture,
+						typeof(IFormatProvider)));
+			}
+
+			if (target == typeof(decimal))
+			{
+				return Expression.Call(
+					typeof(decimal).GetMethod(
+						nameof(decimal.Parse),
+						[typeof(string), typeof(NumberStyles), typeof(IFormatProvider)])!,
+					value,
+					Expression.Constant(NumberStyles.Number),
+					Expression.Constant(
+						CultureInfo.InvariantCulture,
+						typeof(IFormatProvider)));
+			}
+		}
 
 		Type t = target.IsEnum ? Enum.GetUnderlyingType(target) : target;
 		try
