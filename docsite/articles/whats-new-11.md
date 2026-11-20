@@ -5,6 +5,73 @@
 
 Version 11 is a performance release and a tidy-up release. Result mapping is rewritten around a cached, typed row reader, column mapping is declared once, NULL and error handling follow simple rules, and stored-procedure parameters can be named from the arguments you already have. See [Performance](performance.md) for what the speed-up does and does not buy you. Coming from 10.x? Read "Upgrading from 10.x" below first.
 
+## Start here
+
+This is for anyone moving to 11, from 10.x or from an earlier 11 release candidate, whether a person or a coding agent. Read "Start here", then "Upgrading from 10.x", then "Deprecated in 11.0"; the "Changes since" sections are history.
+
+### The new way, in one example
+
+A command, a parameter named from its argument, a typed map, and an async terminal with a token:
+
+```cs
+const int author = 42;
+
+List<Post> posts = await connectionFactory
+	.Command("select * from posts where author = @author")
+	.AddParam(author) // the name "author" comes from the variable
+	.Map<Post>()
+	.ToListAsync(cancellationToken);
+```
+
+When a column is named differently, declare the map once and pass it to every query:
+
+```cs
+public static RowMap<Post> PostMap => field ??= [
+	new(nameof(Post.Id), "post_id"),
+	new(nameof(Post.Author), "author_id"),
+];
+
+List<Post> posts = await connectionFactory
+	.Command("select * from posts where author_id = @author")
+	.AddParam(author)
+	.Map(PostMap)
+	.ToListAsync(cancellationToken);
+```
+
+### What is new, and how to use it
+
+- **`Map<T>()` and its terminals.** `command.Map<Post>().ToListAsync(cancellationToken)`; `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `ToDictionaryAsync`, `FirstOrDefaultAsync` and `SingleOrDefaultAsync` work the same way, and `Skip` and `Take` come before the terminal. It is better because the terminals read straight from the reader through a mapping that is compiled once and cached, with no boxing on the common path. In the library's in-memory benchmark, 100 or more rows into a list take 0.36 to 0.42 times Dapper's time; against SQL Server the database dominates and the times are within the noise. See [Performance](performance.md).
+- **`RowMap<T>`, declared once.** `.Map(PostMap)` (shown above); `RowMap<T>.From(static (int id, string title) => new PostSummary(id, title))` builds one from a delegate, and `map.Convert<long, string>(nameof(Order.OrderNum), static n => n.ToString("D6"))` converts a column on its way to a member. It is better because a map built at the call site costs about 0.43 ms and 29.5 KB for 12 properties each time, and a declared one is built once. With no map, a column matches a property exactly, else ignoring case, else ignoring case and underscores (`first_name` fills `FirstName`). See [Mapping rows to objects](mapping.md).
+- **Parameter names from the arguments.** `.AddParam(author)`, `.AddParamIf(condition, author)` and `.AddParams(search)` take the name from the variable or member chain and match it to the stored procedure's real name: exactly, ignoring case, ignoring case and underscores, then without a prefix such as `p_` or `in_`. `AddParams` sends only the members the procedure or the `@name` markers declare. It is better because you do not spell a name twice, and a name you pass yourself, `AddParam("name", value)`, always wins. See [Parameters](expressive-commands.md#name-a-parameter-from-its-argument).
+- **Later result sets are read; `.SingleResult()` opts out.** `command.SingleResult().Map<Post>().ToListAsync(cancellationToken)` reads only the first set. It is better because a failure in a later statement is thrown, not lost. See [Results, and a failure after the first one](mapping.md#results-and-a-failure-after-the-first-one).
+- **Row reads are synchronous by default; `AsyncReads()` opts in.** `command.AsyncReads().Map<Post>()` reads rows with `ReadAsync()`. The command still executes, and the connection still opens, asynchronously. It is better because a `Read()` costs less CPU, and about 40% less memory on the `Map(Func)` path, for the same wall time over a real network link. See [AsyncReads()](async-reads.md).
+- **`First` and `Single` throw on no rows.** `await command.Map<long>().SingleAsync(cancellationToken)` (or `command.SingleAsync<long>(cancellationToken)`) throws `InvalidOperationException` for no row, and `Single` also for more than one; `FirstOrDefaultAsync` and `SingleOrDefaultAsync` return `default` instead. It is better because an insert that returns its new id needs no handler to check the row count. See [Terminals](mapping.md#terminals).
+- **`ExecuteScalar<T>()` converts.** `await command.ExecuteScalarAsync<int>(cancellationToken)` converts a `bigint` to `int` with a range check, the way `Map<T>()` does, where 10.x threw `InvalidCastException`. NULL and no row give `default(T)`.
+- **A typed NULL parameter.** `AddParam("@id", (long?)null)` is sent with the database type of its overload, so SQL Server sees the type you meant. It is better because a NULL with no type could change the parameter type and the query plan.
+- **Buffers that release the connection early.** `Map<Post>().ToAsyncBuffer(clearOnDispose, cancellationToken)` returns a `PooledBuffer<Post>`; `await buffer.Items` gives a read-only `PooledArray<Post>`; dispose the buffer to return the arrays to the pool. `ToAsyncBufferStream` (chunks) and `ToBufferedAsyncStream` (elements) are lazy streams with the same overloads. It is better because a background producer reads the query and the connection is released as soon as the last row is read, however slowly the consumer works. See [Async buffers and streams](async-buffers.md).
+- **NULL rules.** A nullable member gets `null`; a non-nullable value type keeps its initializer, else its default; a constructor parameter gets its declared default. Nothing throws, and a NULL never overwrites a member that the C# type declares non-nullable. See [NULL in a non-nullable column](mapping.md#null-in-a-non-nullable-column).
+- **`ValueMappingException`.** A value that cannot be mapped throws it, a `DataException` that names the property, the column and the target type; it replaces `InvalidOperationException` for that case. Provider exceptions are not wrapped.
+- **Constructor binding, `required` and `init`.** Positional records and classes with one public constructor are built through it, and a `required` property that no column feeds throws on the first row. See [Records and constructors](mapping.md#records-and-constructors).
+- **Packages.** Use `Open.Database.Extensions.MSSqlClient` (on `Microsoft.Data.SqlClient`) for SQL Server. The `SqlClient` package, on the older `System.Data.SqlClient`, is deprecated, and every type in it has its twin in `MSSqlClient`.
+
+### Instead of ... use ...
+
+The old calls still work in 11 with a compile warning (CS0618) and are removed in 12. Each warning names the new call.
+
+| Instead of | Use |
+|---|---|
+| `Results<T>(IExecuteReader)` | `.Map<T>().ToListAsync(cancellationToken)` |
+| `ExpressiveDbCommand.ResultsAsync<T>` | `.Map<T>().ToListAsync(cancellationToken)` |
+| `FirstOrDefault(selector)` on an `IExecuteReader` | `.Map(selector).FirstOrDefaultAsync(cancellationToken)` |
+| `cmd.Retrieve().DequeueAs<T>()` | `cmd.Map<T>().ToListAsync(cancellationToken)` |
+| `ToListAsync(selector)` on a command | `.Map(selector).ToListAsync(cancellationToken)` |
+| Types of `Open.Database.Extensions.SqlClient` | The same types in `Open.Database.Extensions.MSSqlClient` |
+
+The rest, with what changes in each, is in [Deprecated in 11.0](#deprecated-in-110).
+
+> [!WARNING]
+> Streaming members (`Read`, `ReadAsync`, `ForEach` and the like) hold the connection while your code runs for each row, so they are not the recommended way to read rows. Buffer with `ToListAsync`, or use the buffer and stream terminals above. See [Streaming holds the connection](mapping.md#streaming-holds-the-connection).
+
 ## Changes since rc.9
 
 - **An unreadable procedure is looked up once in 15 seconds, not once per run, and a stale list no longer outlives an empty answer.** When the provider reported no parameter names for a stored procedure (the login cannot see it, it does not exist, or it declares no parameters), nothing was remembered, so every run read the names again: one extra schema query per execute while the connection was open. And when such an answer came after an older list, the older list stayed for the full five minutes, so a procedure that had lost its parameters was still sent the old ones. An empty answer now replaces the older list and is remembered for 15 seconds (a fraction of the five minutes for known names, so a procedure that is created or changed shows up soon). Derived names are sent as written until then. No API changes.
