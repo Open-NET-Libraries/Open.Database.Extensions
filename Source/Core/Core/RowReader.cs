@@ -86,11 +86,24 @@ internal static class RowReader
 	}
 
 	// Buffers mapped rows in a queue so a caller can drain it: each item is released to the GC as it is dequeued.
+	// The rows are collected in a chain of pooled arrays and the queue is made from the exact count in one block copy (no growth copies, no slack).
 	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
+		=> Collect<T, QueueBuild<T>, Queue<T>>(
+			source, reader, skip, take, default);
+
+	// The collecting terminals' one sync shape: the rows go into a chain of
+	// pooled arrays, then build makes the result from the chain (the copy
+	// happens right after the last row), and the chain is disposed however
+	// the call ends.
+	public static TResult Collect<T, TBuild, TResult>(
+		IRowSource<T> source, IDataReader reader, int skip, int take,
+		TBuild build, CancellationToken token = default)
+		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		var sink = new QueueSink<T>(new Queue<T>());
-		Fill(source, reader, skip, take, ref sink);
-		return sink.Queue;
+		using ChunkChain<T> chain = ChunkChain<T>.Rent();
+		var sink = new ChainSink<T>(chain);
+		Fill(source, reader, skip, take, ref sink, token);
+		return build.Build(chain);
 	}
 
 	public static T[] ToArray<T>(IRowSource<T> source, IDataReader reader, int skip, int take, CancellationToken token = default)
@@ -274,43 +287,40 @@ internal static class RowReader
 		return sink;
 	}
 
-	public static async ValueTask<List<T>> ToListAsync<T>(
+	public static ValueTask<Queue<T>> ToQueueAsync<T>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
-		=> (await FillAsync(source, reader, skip, take, useReadAsync, new ListSink<T>([]), cancellationToken).ConfigureAwait(false)).List;
+		=> CollectAsync<T, QueueBuild<T>, Queue<T>>(
+			source, reader, skip, take, useReadAsync, default,
+			cancellationToken);
 
-	public static async ValueTask<Queue<T>> ToQueueAsync<T>(
-		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
-		=> (await FillAsync(source, reader, skip, take, useReadAsync, new QueueSink<T>(new Queue<T>()), cancellationToken).ConfigureAwait(false)).Queue;
-
-	public static async ValueTask<T[]> ToArrayAsync<T>(
-		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
+	// ONE async method for every collecting terminal (ToList, ToArray, ToQueue,
+	// ToHashSet, ToDictionary): the read loop and the build share a single
+	// state machine, so a read that really suspends boxes one machine, not a
+	// wrapper around another. The rows go into a chain of pooled arrays; build
+	// (a struct, so what it carries rides in the machine, not in a delegate
+	// and a state object) makes the result from the chain right after the
+	// last row.
+	public static async ValueTask<TResult> CollectAsync<T, TBuild, TResult>(
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync,
+		TBuild build, CancellationToken cancellationToken)
+		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		// The sink is a struct that owns a rented buffer: it stays in this method (FillAsync would work on a copy, which is lost
-		// when the read fails) so that the buffer goes back to the pool however the call ends.
-		var sink = new ArraySink<T>();
-		try
+		using ChunkChain<T> chain = ChunkChain<T>.Rent();
+		if (take != 0
+			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
+			&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 		{
-			if (take == 0
-				|| !await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
-				|| !await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
-			{
-				return sink.ToArray();
-			}
-
 			Func<DbDataReader, T> map = source.Mapper(reader);
 			int n = 0;
 			do
 			{
-				sink.Add(map(reader));
+				chain.Add(map(reader));
 				if (++n == take) break;
 			}
 			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
-			return sink.ToArray();
 		}
-		finally
-		{
-			sink.Dispose();
-		}
+
+		return build.Build(chain);
 	}
 
 	public static async ValueTask<(bool Found, T? Item)> TryFirstAsync<T>(
@@ -403,36 +413,79 @@ internal static class RowReader
 	#endregion
 }
 
-internal readonly struct QueueSink<T>(Queue<T> queue) : IRowSink<T>
-{
-	public Queue<T> Queue { get; } = queue;
-	public void Add(T item) => Queue.Enqueue(item);
-}
-
 internal readonly struct ListSink<T>(List<T> list) : IRowSink<T>
 {
 	public List<T> List { get; } = list;
 	public void Add(T item) => List.Add(item);
 }
 
-internal readonly struct DictionarySink<T, TKey>(Dictionary<TKey, T> dictionary, Func<T, TKey> keySelector) : IRowSink<T>
-	where TKey : notnull
+/// <summary>
+/// Makes the result of a collecting terminal from the rows in a chain.
+/// Implemented by structs so the collecting methods are specialized per
+/// result and carry no delegate or state object.
+/// </summary>
+internal interface IChainBuild<T, out TResult>
 {
-	public Dictionary<TKey, T> Dictionary { get; } = dictionary;
-	public void Add(T item) => Dictionary.Add(keySelector(item), item);
+	TResult Build(ChunkChain<T> chain);
 }
 
-internal readonly struct DictionarySink<T, TKey, TValue>(Dictionary<TKey, TValue> dictionary, Func<T, TKey> keySelector, Func<T, TValue> valueSelector) : IRowSink<T>
-	where TKey : notnull
+internal readonly struct ListBuild<T> : IChainBuild<T, List<T>>
 {
-	public Dictionary<TKey, TValue> Dictionary { get; } = dictionary;
-	public void Add(T item) => Dictionary.Add(keySelector(item), valueSelector(item));
+	public List<T> Build(ChunkChain<T> chain) => chain.ToList();
 }
 
-internal readonly struct HashSetSink<T>(HashSet<T> set) : IRowSink<T>
+internal readonly struct ArrayBuild<T> : IChainBuild<T, T[]>
 {
-	public HashSet<T> Set { get; } = set;
-	public void Add(T item) => Set.Add(item);
+	public T[] Build(ChunkChain<T> chain) => chain.ToArray();
+}
+
+/// <summary>The array of ToArray, wrapped (not copied) as an immutable array.</summary>
+internal readonly struct ImmutableArrayBuild<T> : IChainBuild<T, ImmutableArray<T>>
+{
+	public ImmutableArray<T> Build(ChunkChain<T> chain)
+	{
+		T[] array = chain.ToArray();
+#if NET8_0_OR_GREATER
+		return System.Runtime.InteropServices.ImmutableCollectionsMarshal.AsImmutableArray(array);
+#else
+		return ImmutableArray.Create(array);
+#endif
+	}
+}
+
+internal readonly struct QueueBuild<T> : IChainBuild<T, Queue<T>>
+{
+	public Queue<T> Build(ChunkChain<T> chain) => chain.ToQueue();
+}
+
+internal readonly struct HashSetBuild<T>(IEqualityComparer<T>? comparer)
+	: IChainBuild<T, HashSet<T>>
+{
+	public HashSet<T> Build(ChunkChain<T> chain)
+		=> chain.ToHashSet(comparer);
+}
+
+/// <summary>A ToDictionary that keeps the row.</summary>
+internal readonly struct DictionaryBuild<T, TKey>(
+	Func<T, TKey> keySelector,
+	IEqualityComparer<TKey>? comparer)
+	: IChainBuild<T, Dictionary<TKey, T>>
+	where TKey : notnull
+{
+	public Dictionary<TKey, T> Build(ChunkChain<T> chain)
+		=> chain.ToDictionary(keySelector, comparer);
+}
+
+/// <summary>A ToDictionary with a value selector.</summary>
+internal readonly struct DictionaryValueBuild<T, TKey, TValue>(
+	Func<T, TKey> keySelector,
+	Func<T, TValue> valueSelector,
+	IEqualityComparer<TKey>? comparer)
+	: IChainBuild<T, Dictionary<TKey, TValue>>
+	where TKey : notnull
+{
+	public Dictionary<TKey, TValue> Build(ChunkChain<T> chain)
+		=> chain.ToDictionary(keySelector, valueSelector, comparer);
 }
 
 /// <summary>

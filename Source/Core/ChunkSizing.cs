@@ -49,6 +49,40 @@ internal static class ChunkSizing
 			: Math.Max(DefaultStreamMaxRows, first);
 	}
 
+	// The chain that ToArrayAsync and ToListAsync collect rows in (see
+	// ChunkChain): no consumer works beside the read, so the schedule
+	// is its own. The first chunk, the shift (1 doubles, 2 quadruples)
+	// and the largest chunk are set by reflection as "_collectFirstRows",
+	// "_collectShift" and "_collectMaxRows".
+	const int DefaultCollectFirstRows = 16;
+	const int DefaultCollectShift = 1;
+	const int DefaultCollectMaxRows = 8192;
+
+	internal static int _collectFirstRows = DefaultCollectFirstRows;
+	internal static int _collectShift = DefaultCollectShift;
+	internal static int _collectMaxRows = DefaultCollectMaxRows;
+
+	internal static int ResolveCollectFirstRows()
+	{
+		int first = Volatile.Read(ref _collectFirstRows);
+		return IsPowerOfTwo(first) && first <= 1 << 20
+			? first
+			: DefaultCollectFirstRows;
+	}
+
+	// The size of the chunk after one of this size.
+	internal static int NextCollectRows(int size)
+	{
+		int max = Volatile.Read(ref _collectMaxRows);
+		if (!IsPowerOfTwo(max) || max > 1 << 26) max = DefaultCollectMaxRows;
+
+		int shift = Volatile.Read(ref _collectShift);
+		if ((uint)(shift - 1) > 3u) shift = DefaultCollectShift;
+
+		long next = (long)size << shift;
+		return (int)Math.Min(next, Math.Max(max, size));
+	}
+
 	static bool IsPowerOfTwo(int value)
 		=> value > 0 && (value & (value - 1)) == 0;
 

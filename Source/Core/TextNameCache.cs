@@ -3,64 +3,64 @@ using System.Runtime.CompilerServices;
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// Remembers the <c>@name</c> markers of SQL texts, and what is worked out
-/// from them, so a command with derived parameter names reads its text once,
-/// not on every execution.
+/// Finds the real names of the derived arguments of a text command in the <c>@name</c> markers of its SQL text.
 /// </summary>
 /// <remarks>
-/// A text is found by its object first (a literal or a kept string is the same
-/// object on every call, so that costs nothing), then by its content, so a
-/// text put together at run time, a new string with the same characters on
-/// every call, is not read again either. What is remembered by content is
-/// bounded in count and in length, and the entry of a text that was forgotten
-/// is simply made again.
+/// A text that is an interned string (a literal or a <see langword="const"/>: the same object on every call, and as many as the code has literals) is read once into a
+/// <see cref="NameSet"/> remembered by the text object (weakly: the entry goes when the string is released).
+/// Any other text, such as one put together at run time (a new string with the same characters on every call), is scanned for each argument on every run and
+/// nothing about it is remembered: the scan allocates nothing, so such a text costs no more than a literal one, and no table gains an entry per call or holds a text.
 /// </remarks>
 static class TextNameCache
 {
-	// How many texts are remembered by content.
-	const int MaxTexts = 1024;
-
-	// A longer text is remembered by its object only, so the content table
-	// cannot hold more than MaxTexts * MaxLength characters.
-	const int MaxLength = 4096;
-
-	// By the text object itself: an entry goes when its string is released.
+	// Only interned texts, by the text object itself: an entry goes when its string is released.
 	static readonly ConditionalWeakTable<string, NameSet> ByReference = new();
 
-	// By the characters of the text. A text with no marker has a set with no
-	// names, which means "not known".
-	static readonly Dictionary<string, NameSet> ByContent
-		= new(StringComparer.Ordinal);
+	/// <summary>
+	/// The remembered set of an interned text, made on first use; <see langword="null"/> for a text that is not interned, which is scanned.
+	/// </summary>
+	/// <remarks>
+	/// The text itself must be the interned object: a string built at run time with the characters of a literal is another object, and is scanned.
+	/// Looking it up allocates nothing.
+	/// </remarks>
+	internal static NameSet? Get(string text)
+		=> ByReference.TryGetValue(text, out NameSet? known)
+			? known
+			: ReferenceEquals(string.IsInterned(text), text)
+				? ByReference.GetValue(text, static t => new NameSet(SqlTextParameters.Parse(t)))
+				: null;
 
-	internal static NameSet Get(string text)
+	/// <summary>True when the text has at least one marker (otherwise its parameter names are not known).</summary>
+	internal static bool HasMarkers(string text)
 	{
-		if (ByReference.TryGetValue(text, out NameSet? known)) return known;
-
-		if (text.Length > MaxLength)
-			return ByReference.GetValue(text, static t => Make(t));
-
-		lock (ByContent)
-		{
-			if (ByContent.TryGetValue(text, out known)) return known;
-		}
-
-		return Remember(text);
+		int position = 0;
+		return SqlTextParameters.NextMarker(text, ref position, out _, out _);
 	}
 
-	// Apart from Get so that the closure it needs is made only here:
-	// a repeat call allocates nothing.
-	static NameSet Remember(string text)
-	{
-		// Two threads may both read the text and store: the sets are equal.
-		NameSet made = Make(text);
-		lock (ByContent)
-		{
-			if (ByContent.Count >= MaxTexts) ByContent.Clear();
-			ByContent[text] = made;
-		}
+	/// <summary>The distinct markers of the text, for a message.</summary>
+	internal static ImmutableArray<string> Names(string text) => SqlTextParameters.Parse(text);
 
-		return ByReference.GetValue(text, _ => made);
+	/// <summary>
+	/// The marker (with its <c>@</c>) that the argument expression stands for, as the text spells it, or <see langword="null"/> when none fits:
+	/// the answer <see cref="NameSet.Match"/> gives over the parsed tokens, found without parsing.
+	/// Allocates nothing once the expression has been seen and its marker was found before.
+	/// </summary>
+	/// <exception cref="InvalidOperationException">The expression fits more than one marker equally well.</exception>
+	internal static string? Scan(string text, string expression)
+	{
+		// An expression that is not derivable (or none the cache described) takes the slow way, which gives its own errors.
+		if (ParameterNames.Describe(expression) is not { } described)
+			return Slow(text, expression);
+
+		// An ambiguity throws with the names the text declares in its message: the parsed way makes it.
+		return ParameterNames.Scan(text, described.Candidates, out ReadOnlySpan<char> real) switch
+		{
+			ParameterNames.ScanResult.Found => described.Real(real),
+			ParameterNames.ScanResult.None => null,
+			_ => Slow(text, expression),
+		};
 	}
 
-	static NameSet Make(string text) => new(SqlTextParameters.Parse(text));
+	static string? Slow(string text, string expression)
+		=> new NameSet(SqlTextParameters.Parse(text)).Match(expression, text);
 }

@@ -79,7 +79,7 @@ The same four tasks, written with Open.Database.Extensions (ODX), Dapper, EF Cor
 | 3. The rows of one author in memory, then LINQ | 15 | 15 | 13 | 26 |
 | 4. A stored procedure with two parameters | 11 | 14 | 12 | 29 |
 
-Outside the count: ODX takes a connection factory created once per application (one to three lines), and EF Core takes a `DbContext` that maps the model (five lines). Dapper and plain ADO.NET create their own connection inside the method, and that line is counted. ODX is not the smallest in every row: EF Core is shorter than ODX in every row once its context exists. Where ODX needs less is the plumbing, the connection and the column copying. The ODX versions (`AllPostsSql` is `"select * from posts order by id"`, `AuthorPostsSql` adds `where author = @author`, and `Headline` formats a post in C#):
+Outside the count: ODX takes a connection factory created once per application (one to three lines), and EF Core takes a `DbContext` that maps the model (five lines). Dapper and plain ADO.NET create their own connection inside the method, and that line is counted. ODX is not the smallest in every row: once its context exists, EF Core is shorter than ODX in tasks 1 to 3 (by 1, 2 and 2 lines), and ODX is shorter in task 4 (by 1). Where ODX needs less is the plumbing, the connection and the column copying. The ODX versions (`AllPostsSql` is `"select * from posts order by id"`, `AuthorPostsSql` adds `where author = @author`, and `Headline` formats a post in C#):
 
 **1. Rows to a list**
 
@@ -165,7 +165,7 @@ dotnet add package Microsoft.Data.Sqlite
 | `Open.Database.Extensions.SqlClient` | The same API on the older `System.Data.SqlClient`. Deprecated: use `MSSqlClient`. |
 | `Open.Database.Extensions` | Discontinued. It only referenced Core: use `Open.Database.Extensions.Core`. The last published version is 9.0.3. |
 
-Targets: `netstandard2.0`, `netstandard2.1`, `net10.0` and `net11.0` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Version 11 is a release candidate (`11.0.0-rc.9`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
+Targets: `netstandard2.0`, `netstandard2.1`, `net10.0` and `net11.0` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Version 11 is a release candidate (`11.0.0-rc.10`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
 
 Publishing trimmed or native AOT? See [Trimming and native AOT](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Source/Core/README.md#trimming-and-native-aot).
 

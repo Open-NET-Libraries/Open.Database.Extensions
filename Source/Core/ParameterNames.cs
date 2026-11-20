@@ -32,6 +32,19 @@ static class ParameterNames
 	{
 		internal string LastMember { get; } = lastMember;
 		internal ImmutableArray<string> Candidates { get; } = candidates;
+
+		// The last real name this expression resolved to in a SQL text, so a repeat scan hands back the same string (the names are almost always the same):
+		// it belongs to the expression, which the call site holds, not to any text. One slot; a thread that loses a race only makes one more string.
+		string? _real;
+
+		/// <summary>The string for a marker found by a scan (with its <c>@</c>): the one remembered when it is the same characters, else a new one, which is remembered.</summary>
+		internal string Real(ReadOnlySpan<char> marker)
+		{
+			string? known = _real;
+			if (known is not null && marker.SequenceEqual(known.AsSpan())) return known;
+
+			return _real = marker.ToString();
+		}
 	}
 
 	// By the expression string itself: the text of an argument comes from [CallerArgumentExpression], a literal at the call site, so it is the same object on every call.
@@ -246,7 +259,7 @@ static class ParameterNames
 			string? found = null;
 			for (int i = 0; i < parameterNames.Length; i++)
 			{
-				if (!Same(candidate, bareNames[i], tier)) continue;
+				if (!Same(candidate, bareNames[i].AsSpan(), tier)) continue;
 				string real = parameterNames[i];
 				if (found is not null)
 				{
@@ -280,11 +293,11 @@ static class ParameterNames
 		return bare is null ? names : ImmutableCollectionsMarshal.AsImmutableArray(bare);
 	}
 
-	static bool Same(string a, string b, int tier) => tier switch
+	static bool Same(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int tier) => tier switch
 	{
-		1 => string.Equals(a, b, StringComparison.Ordinal),
-		2 => string.Equals(a, b, StringComparison.OrdinalIgnoreCase),
-		3 => EqualIgnoringCaseAndUnderscores(a, b, 0),
+		1 => a.SequenceEqual(b),
+		2 => a.Equals(b, StringComparison.OrdinalIgnoreCase),
+		3 => EqualIgnoringCaseAndUnderscores(a, b),
 		_ => EqualWithoutParameterPrefix(a, b),
 	};
 
@@ -292,11 +305,11 @@ static class ParameterNames
 	static readonly string[] ParameterPrefixes = ["p_", "in_", "i_", "prm_", "par_", "v_"];
 
 	// The length of the parameter prefix at the start of a real name (a leading @ already removed), or 0. A lone lower-case p counts only before an upper-case letter: pAuthor, never pages.
-	static int ParameterPrefixLength(string name)
+	static int ParameterPrefixLength(ReadOnlySpan<char> name)
 	{
 		foreach (string prefix in ParameterPrefixes)
 		{
-			if (name.Length > prefix.Length && string.Compare(name, 0, prefix, 0, prefix.Length, StringComparison.OrdinalIgnoreCase) == 0)
+			if (name.Length > prefix.Length && name[..prefix.Length].Equals(prefix.AsSpan(), StringComparison.OrdinalIgnoreCase))
 				return prefix.Length;
 		}
 
@@ -304,16 +317,16 @@ static class ParameterNames
 	}
 
 	// Tier 4: the candidate against the real name once one parameter prefix is removed, ignoring case and underscores.
-	static bool EqualWithoutParameterPrefix(string candidate, string real)
+	static bool EqualWithoutParameterPrefix(ReadOnlySpan<char> candidate, ReadOnlySpan<char> real)
 	{
 		int prefix = ParameterPrefixLength(real);
-		return prefix > 0 && EqualIgnoringCaseAndUnderscores(candidate, real, prefix);
+		return prefix > 0 && EqualIgnoringCaseAndUnderscores(candidate, real[prefix..]);
 	}
 
-	// Compares a with b from index bStart, ignoring case and underscores.
-	static bool EqualIgnoringCaseAndUnderscores(string a, string b, int bStart)
+	// Compares a with b, ignoring case and underscores.
+	static bool EqualIgnoringCaseAndUnderscores(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
 	{
-		int i = 0, j = bStart;
+		int i = 0, j = 0;
 		while (true)
 		{
 			while (i < a.Length && a[i] == '_') i++;
@@ -323,5 +336,73 @@ static class ParameterNames
 			i++;
 			j++;
 		}
+	}
+
+	/// <summary>How a scan of a SQL text for a name ended.</summary>
+	internal enum ScanResult
+	{
+		/// <summary>No candidate fits any marker of the text.</summary>
+		None,
+
+		/// <summary>One marker fits.</summary>
+		Found,
+
+		/// <summary>A candidate fits more than one marker at the same tier (the caller makes the message).</summary>
+		Ambiguous,
+	}
+
+	/// <summary>
+	/// Finds the marker of a SQL text that the candidates stand for, scanning the text itself: the same answer as <see cref="MatchBare"/> over the tokens of <see cref="SqlTextParameters.Parse"/>
+	/// (the same candidates in the same order, the same four tiers, a marker repeated in another case being one name, as first written), and allocates nothing.
+	/// </summary>
+	/// <param name="text">The SQL text.</param>
+	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
+	/// <param name="real">The marker as the text spells it, with its <c>@</c>, when <see cref="ScanResult.Found"/>.</param>
+	internal static ScanResult Scan(string text, ImmutableArray<string> candidates, out ReadOnlySpan<char> real)
+	{
+		foreach (string candidate in candidates)
+		{
+			for (int tier = 1; tier <= 4; tier++)
+			{
+				ReadOnlySpan<char> found = default;
+				int position = 0;
+				while (SqlTextParameters.NextMarker(text, ref position, out int start, out int stop))
+				{
+					if (!Same(candidate, text.AsSpan(start + 1, stop - start - 1), tier)) continue;
+
+					// A marker written again in another case is the same name: only its first writing counts.
+					if (!IsFirst(text, start, stop)) continue;
+					if (!found.IsEmpty)
+					{
+						real = default;
+						return ScanResult.Ambiguous;
+					}
+
+					found = text.AsSpan(start, stop - start);
+				}
+
+				if (!found.IsEmpty)
+				{
+					real = found;
+					return ScanResult.Found;
+				}
+			}
+		}
+
+		real = default;
+		return ScanResult.None;
+	}
+
+	// True when no earlier marker of the text is the same name (ignoring case) as the one at start..stop.
+	static bool IsFirst(string text, int start, int stop)
+	{
+		ReadOnlySpan<char> marker = text.AsSpan(start, stop - start);
+		int position = 0;
+		while (SqlTextParameters.NextMarker(text, ref position, out int earlier, out int earlierStop) && earlier < start)
+		{
+			if (text.AsSpan(earlier, earlierStop - earlier).Equals(marker, StringComparison.OrdinalIgnoreCase)) return false;
+		}
+
+		return true;
 	}
 }
