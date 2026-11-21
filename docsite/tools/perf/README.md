@@ -1,6 +1,6 @@
 # The performance charts
 
-The charts and tables on the Performance page are generated. Nothing on that page is drawn or typed by hand,
+The charts and tables on the Benchmarks pages are generated. Nothing on those pages is drawn or typed by hand,
 except the sentences that quote a number (see step 4 below).
 
 | Path | What it is |
@@ -8,9 +8,9 @@ except the sentences that quote a number (see step 4 below).
 | `docsite/perf-data/*.csv` | The numbers behind every chart, one CSV per data set (units in the column names). |
 | `docsite/perf-data/*.source.txt` | Beside each CSV: the benchmark, the build, the run date, the machine, the conditions and the BenchmarkDotNet result file of every number. |
 | `docsite/tools/perf/Extract-PerfData.ps1` | Reads BenchmarkDotNet's own `*-report.csv` and `*-report-github.md` files of a run and writes the CSVs and the source files. |
-| `docsite/tools/perf/New-PerfCharts.ps1` | Reads the CSVs and writes the SVG charts (`docsite/images/perf/`) and the data page (`docsite/articles/performance-data.md`). |
+| `docsite/tools/perf/New-PerfCharts.ps1` | Reads the CSVs and writes the SVG charts (`docsite/images/perf/`) and the tables the benchmark pages include (`docsite/includes/perf/*.md`). |
 
-Regenerate every chart and the data page from the committed CSVs, with one command:
+Regenerate every chart and the tables from the committed CSVs, with one command:
 
 ```sh
 pwsh -NoProfile -File docsite/tools/perf/New-PerfCharts.ps1
@@ -24,7 +24,7 @@ Each SVG follows the operating system's light or dark setting and draws its own 
 Do this after a release candidate, or when a change moves performance. The numbers published on the site are
 meant to come from the current `master`: a pull request that changes the charts is reviewed on whatever
 results exist, and it merges only with data from a fresh run on current `master`. The run date, the build
-(the commit of the benchmark project that ran) and the machine are shown on the data page, so a reader can
+(the commit of the benchmark project that ran) and the machine are shown on the [data files](../../articles/performance-data.md) page, so a reader can
 see how fresh the data is.
 
 1. **Run the benchmarks** on a quiet machine: nothing else running, one benchmark at a time. Use a build of
@@ -67,12 +67,12 @@ see how fresh the data is.
    The builds are the commit of the benchmark project that ran (`git rev-parse --short HEAD`). The run date,
    the machine and the runtime come from the files themselves.
 
-3. **Build the charts and the data page**: the one command at the top of this file.
+3. **Build the charts and the tables**: the one command at the top of this file.
 
-4. **Re-read the sentences that quote a number.** The explanation under each chart in
-   `docsite/articles/performance.md` names the winner and the margin in words, and the SVG alt text lists
-   the ranking; both are typed, not generated. Compare each against the new data page and fix what moved.
-   The data page and the SVGs need no editing.
+4. **Re-read the sentences that quote a number.** The text under each chart on the pages in
+   `docsite/articles/benchmarks/` and on `docsite/articles/performance.md` names the winner and the margin in words, and the SVG alt text lists
+   the ranking; both are typed, not generated. Compare each against the new tables and fix what moved.
+   The tables and the SVGs need no editing.
 
 5. **Check and commit**: build the docs (`dotnet docfx docsite/docfx.json`), look at the charts in light and
    dark, and commit the CSVs, the source files, the SVGs and the pages together. In the pull request, state

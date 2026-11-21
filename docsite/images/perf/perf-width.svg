@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 380" role="img" aria-labelledby="width-title width-desc">
   <title id="width-title">Cost grows with the number of columns</title>
-  <desc id="width-desc">A line chart of total time per call, in microseconds, against 1 to 20 columns, 1,000 rows, five approaches with labels at the line ends; the axis starts at zero. Hand-written selector: 1 columns 10.7 µs, 3 columns 11.9 µs, 5 columns 16.8 µs, 10 columns 31.2 µs, 20 columns 47.0 µs. RowMap plan: 1 columns 12.4 µs, 3 columns 18.3 µs, 5 columns 25.2 µs, 10 columns 49.1 µs, 20 columns 81.7 µs. Row class + Select: 1 columns 28.3 µs, 3 columns 32.4 µs, 5 columns 41.4 µs, 10 columns 67.2 µs, 20 columns 106.7 µs. object[] rows: 1 columns 9.5 µs, 3 columns 20.0 µs, 5 columns 35.9 µs, 10 columns 75.7 µs, 20 columns 178.5 µs. Dapper: 1 columns 18.5 µs, 3 columns 31.1 µs, 5 columns 44.6 µs, 10 columns 96.2 µs, 20 columns 202.7 µs.</desc>
+  <desc id="width-desc">A line chart of total time per call, in microseconds, against 1 to 20 columns, 1,000 rows, five approaches with labels at the line ends; the axis starts at zero. Hand-written selector: 1 columns 10.7 µs, 3 columns 11.9 µs, 5 columns 16.8 µs, 10 columns 31.2 µs, 20 columns 47.0 µs. Map&lt;T&gt;(): 1 columns 12.4 µs, 3 columns 18.3 µs, 5 columns 25.2 µs, 10 columns 49.1 µs, 20 columns 81.7 µs. Row class + Select: 1 columns 28.3 µs, 3 columns 32.4 µs, 5 columns 41.4 µs, 10 columns 67.2 µs, 20 columns 106.7 µs. object[] rows: 1 columns 9.5 µs, 3 columns 20.0 µs, 5 columns 35.9 µs, 10 columns 75.7 µs, 20 columns 178.5 µs. Dapper: 1 columns 18.5 µs, 3 columns 31.1 µs, 5 columns 44.6 µs, 10 columns 96.2 µs, 20 columns 202.7 µs.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -86,11 +86,11 @@
   <circle class="m-one" cx="222.63" cy="290.51" r="4.5"><title>Hand-written selector, 10 columns: 31.2 µs per call</title></circle>
   <circle class="m-one" cx="410" cy="274.67" r="4.5"><title>Hand-written selector, 20 columns: 47.0 µs per call</title></circle>
   <polyline class="l-one" points="54,309.5 91.47,303.57 128.95,296.64 222.63,272.54 410,239.62"/>
-  <circle class="m-one" cx="54" cy="309.5" r="4.5"><title>RowMap plan, 1 columns: 12.4 µs per call</title></circle>
-  <circle class="m-one" cx="91.47" cy="303.57" r="4.5"><title>RowMap plan, 3 columns: 18.3 µs per call</title></circle>
-  <circle class="m-one" cx="128.95" cy="296.64" r="4.5"><title>RowMap plan, 5 columns: 25.2 µs per call</title></circle>
-  <circle class="m-one" cx="222.63" cy="272.54" r="4.5"><title>RowMap plan, 10 columns: 49.1 µs per call</title></circle>
-  <circle class="m-one" cx="410" cy="239.62" r="4.5"><title>RowMap plan, 20 columns: 81.7 µs per call</title></circle>
+  <circle class="m-one" cx="54" cy="309.5" r="4.5"><title>Map&lt;T&gt;(), 1 columns: 12.4 µs per call</title></circle>
+  <circle class="m-one" cx="91.47" cy="303.57" r="4.5"><title>Map&lt;T&gt;(), 3 columns: 18.3 µs per call</title></circle>
+  <circle class="m-one" cx="128.95" cy="296.64" r="4.5"><title>Map&lt;T&gt;(), 5 columns: 25.2 µs per call</title></circle>
+  <circle class="m-one" cx="222.63" cy="272.54" r="4.5"><title>Map&lt;T&gt;(), 10 columns: 49.1 µs per call</title></circle>
+  <circle class="m-one" cx="410" cy="239.62" r="4.5"><title>Map&lt;T&gt;(), 20 columns: 81.7 µs per call</title></circle>
   <polyline class="l-select" points="54,293.49 91.47,289.37 128.95,280.28 222.63,254.3 410,214.49"/>
   <circle class="m-select" cx="54" cy="293.49" r="4.5"><title>Row class + Select, 1 columns: 28.3 µs per call</title></circle>
   <circle class="m-select" cx="91.47" cy="289.37" r="4.5"><title>Row class + Select, 3 columns: 32.4 µs per call</title></circle>
@@ -112,7 +112,7 @@
   <text x="420" y="121.72">Dapper</text>
   <text x="420" y="146.08">object[] rows</text>
   <text x="420" y="218.49">Row class + Select</text>
-  <text x="420" y="243.62">RowMap plan</text>
+  <text x="420" y="243.62">Map&lt;T&gt;()</text>
   <text x="420" y="278.67">Hand-written selector</text>
   <text class="muted small" x="16" y="368">Build b27a02f, 2026-11-14, one run per case. Numbers: width-sweep.csv</text>
 </svg>

@@ -25,4 +25,4 @@
 /* Performance charts (docsite/articles/performance.md): each SVG draws its own background card and is 560 units wide.
    On a narrow screen the chart keeps that width and scrolls sideways, so its text never shrinks below about 11px. */
 .perf-chart { overflow-x: auto; margin: 1rem 0; }
-.perf-chart img { display: block; width: 100%; min-width: 560px; height: auto; }
+.perf-chart img { display: block; width: 100%; min-width: 480px; height: auto; }

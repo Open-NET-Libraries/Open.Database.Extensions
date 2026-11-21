@@ -1,0 +1,5 @@
+scenario,scenario_description,variant,family,wall_ms,source_run
+S2,"10,000 rows, 20 columns","ODX Map<T>().ToList(), sync read",rd-sync,537.510,p456
+S2,"10,000 rows, 20 columns","Raw SqlClient, Default, ReadAsync, sync getters",raw,540.727,p456
+S3,"10,000 rows, 8,000-byte Body column","ODX Map<T>().ToList(), sync read",rd-sync,6759.722,p456
+S3,"10,000 rows, 8,000-byte Body column","Raw SqlClient, Default, ReadAsync, sync getters",raw,6757.411,p456

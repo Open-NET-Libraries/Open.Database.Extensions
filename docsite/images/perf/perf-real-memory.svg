@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 534" role="img" aria-labelledby="real-memory-title real-memory-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 542" role="img" aria-labelledby="real-memory-title real-memory-desc">
   <title id="real-memory-title">Real databases: memory per call</title>
-  <desc id="real-memory-desc">Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; bars are ranked best first inside each panel. Every bar starts at zero. SQL Server LocalDB: Hand loop (reference) 9.48 MB; Map&lt;T&gt;(), the RowMap plan 9.48 MB; Map(selector), hand-written 9.48 MB; Row class, inline Select 11.54 MB; Dapper Query&lt;T&gt; 12.27 MB. SQLite file: Hand loop (reference) 11.96 MB; Map(selector), hand-written 11.96 MB; Map&lt;T&gt;(), the RowMap plan 14.11 MB; Dapper Query&lt;T&gt; 14.79 MB; Row class, inline Select 16.17 MB.</desc>
+  <desc id="real-memory-desc">Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; bars are ranked best first inside each panel. Every bar starts at zero. SQL Server LocalDB: Hand loop (reference) 9.48 MB; Map&lt;T&gt;() 9.48 MB; Map(selector), hand-written 9.48 MB; Row class, inline Select 11.54 MB; Dapper Query&lt;T&gt; 12.27 MB. SQLite file: Hand loop (reference) 11.96 MB; Map(selector), hand-written 11.96 MB; Map&lt;T&gt;() 14.11 MB; Dapper Query&lt;T&gt; 14.79 MB; Row class, inline Select 16.17 MB.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -56,7 +56,7 @@
     .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
     .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
   </style>
-  <rect class="frame" x="0.5" y="0.5" width="559" height="533" rx="8"/>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="541" rx="8"/>
   <text class="title" x="16" y="28">Real databases: memory per call</text>
   <text class="muted" x="16" y="48">Smaller is better. 20 columns, 10,000 rows, one scale for both panels.</text>
   <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
@@ -86,9 +86,9 @@
     <text class="val" x="340.42" y="155">9.48 MB</text>
   </g>
   <g>
-    <title>Map&lt;T&gt;(), the RowMap plan: The cached, compiled typed plan. SQL Server LocalDB, 20 columns, 10,000 rows: 25.9 ms per call, 9.48 MB allocated.</title>
+    <title>Map&lt;T&gt;(): The cached, compiled typed plan. SQL Server LocalDB, 20 columns, 10,000 rows: 25.9 ms per call, 9.48 MB allocated.</title>
     <rect class="hit" x="0" y="164" width="560" height="26"/>
-    <text class="name" x="186" y="181">Map&lt;T&gt;(), the RowMap plan</text>
+    <text class="name" x="186" y="181">Map&lt;T&gt;()</text>
     <path class="one" d="M196,169 h134.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-134.42 z"/>
     <text class="val" x="340.42" y="181">9.48 MB</text>
   </g>
@@ -140,9 +140,9 @@
     <text class="val" x="376.67" y="373">11.96 MB</text>
   </g>
   <g>
-    <title>Map&lt;T&gt;(), the RowMap plan: The cached, compiled typed plan. SQLite file, 20 columns, 10,000 rows: 31.3 ms per call, 14.11 MB allocated.</title>
+    <title>Map&lt;T&gt;(): The cached, compiled typed plan. SQLite file, 20 columns, 10,000 rows: 31.3 ms per call, 14.11 MB allocated.</title>
     <rect class="hit" x="0" y="382" width="560" height="26"/>
-    <text class="name" x="186" y="399">Map&lt;T&gt;(), the RowMap plan</text>
+    <text class="name" x="186" y="399">Map&lt;T&gt;()</text>
     <path class="one" d="M196,387 h202 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-202 z"/>
     <text class="val" x="408" y="399">14.11 MB</text>
   </g>

@@ -1,0 +1,8 @@
+Benchmark build: not recorded (Benchmarks/RESULTS.md, "Other features", before 11.0.0-rc.8, when the channel terminals left the typed views of Core)
+Run date: 2026-11-07 and earlier (the Dataflow rows were re-measured on 2026-11-07; the date of the ToChannel rows is not recorded)
+Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10; 4 cores at BelowNormal priority under a watchdog
+Runtime: .NET 10
+Harness: BenchmarkDotNet 0.15.8, --inprocess, short job (5 warm-up and 12 measured iterations), in-memory provider; the plain loop is a hand-written single-stage loop over the same rows
+Benchmark: ChannelBenchmarks and DataflowBenchmarks (ToChannel and a BufferBlock against a hand-written loop)
+Columns: loop_us = the hand-written loop; odx_us = ToChannel or a BufferBlock fed by ODX; time_ratio and alloc_ratio = ODX over the loop, as printed in RESULTS.md
+Source: the numbers are copied from the table "Other features" in Benchmarks/RESULTS.md. The run folders are not in the repository.

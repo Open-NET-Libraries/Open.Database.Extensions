@@ -9,6 +9,15 @@
 - href: async-buffers.md
 - href: performance.md
   items:
+  - href: benchmarks/library-comparison.md
+  - href: benchmarks/mapping-variants.md
+  - href: benchmarks/real-databases.md
+  - href: benchmarks/cost-per-column.md
+  - href: benchmarks/map-cost.md
+  - href: benchmarks/sync-vs-async.md
+  - href: benchmarks/slow-links-and-large-values.md
+  - href: benchmarks/pipelines.md
+  - href: benchmarks/how-we-measure.md
   - href: performance-data.md
   - name: Interactive ranking (snapshot)
     href: ../benchmarks/ranking.html

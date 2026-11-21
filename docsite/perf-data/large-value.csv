@@ -1,0 +1,7 @@
+variant,family,seconds,peak_working_set_mb,note,source_run
+"Raw SqlClient, Default, sync Read",raw,8.863,254.1,,s4
+"Raw SqlClient, Default, ReadAsync",raw,48.015,369.5,,s4
+"Raw SqlClient, SequentialAccess, ReadAsync",raw,8.861,,,s4
+"Raw SqlClient, Default, ReadAsync, both SqlClient switches off",raw,8.873,383.7,,s4-switches
+"ODX Map<T>(), AsyncReads()",rd-async,8.862,,"Map<T>() opens its reader with SequentialAccess",s4
+"ODX Map(Func), AsyncReads()",rd-async,,,"Not measured. Map(Func) opens its reader with Default, so the raw Default and ReadAsync cell is the one that applies to it.",

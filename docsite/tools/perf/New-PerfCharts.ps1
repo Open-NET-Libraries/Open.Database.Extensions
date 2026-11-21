@@ -1,12 +1,13 @@
 <#
 .SYNOPSIS
-  Generates the performance charts (SVG) and the data page (markdown) from the CSV files in docsite/perf-data.
+  Generates the benchmark charts (SVG) and the data tables (markdown includes) from the CSV files in docsite/perf-data.
 
 .DESCRIPTION
   One command regenerates everything:  pwsh -NoProfile -File docsite/tools/perf/New-PerfCharts.ps1
 
   Reads  docsite/perf-data/*.csv and *.source.txt
-  Writes docsite/images/perf/*.svg and docsite/articles/performance-data.md
+  Writes docsite/images/perf/*.svg and docsite/includes/perf/*.md (one table per section of a benchmark
+  page; the pages pull them in with [!include])
 
   The output is deterministic (invariant culture, LF line endings, UTF-8 without a BOM), so a second run
   over the same CSV files gives byte-identical files. Each SVG follows the operating system's light or
@@ -16,14 +17,15 @@
 param(
   [string]$DataDir = (Join-Path $PSScriptRoot '../../perf-data'),
   [string]$ImageDir = (Join-Path $PSScriptRoot '../../images/perf'),
-  [string]$DataPage = (Join-Path $PSScriptRoot '../../articles/performance-data.md')
+  [string]$IncludeDir = (Join-Path $PSScriptRoot '../../includes/perf')
 )
 $ErrorActionPreference = 'Stop'
 $inv = [Globalization.CultureInfo]::InvariantCulture
 $DataDir = [IO.Path]::GetFullPath($DataDir)
 $ImageDir = [IO.Path]::GetFullPath($ImageDir)
-$DataPage = [IO.Path]::GetFullPath($DataPage)
+$IncludeDir = [IO.Path]::GetFullPath($IncludeDir)
 New-Item -ItemType Directory -Force -Path $ImageDir | Out-Null
+New-Item -ItemType Directory -Force -Path $IncludeDir | Out-Null
 
 $mu = [string][char]0xB5          # micro sign, for markdown
 $times = [string][char]0xD7       # multiplication sign
@@ -44,8 +46,8 @@ function Read-Source([string]$name) {
   [pscustomobject]@{
     Build = ($lines | Where-Object { $_ -like 'Benchmark build:*' } | Select-Object -First 1).Substring(16).Trim()
     Date = ($lines | Where-Object { $_ -like 'Run date:*' } | Select-Object -First 1).Substring(9).Trim()
-    Machine = $lines[[array]::IndexOf(@($lines | ForEach-Object { $_ -like 'BenchmarkDotNet v*' }), $true) + 1].Trim()
-    Runtime = ($lines | Where-Object { $_ -match '\[Host\]' } | Select-Object -First 1).Trim()
+    Machine = $(if ($lines | Where-Object { $_ -like 'Machine:*' }) { (($lines | Where-Object { $_ -like 'Machine:*' } | Select-Object -First 1).Substring(8)).Trim() } else { $lines[[array]::IndexOf(@($lines | ForEach-Object { $_ -like 'BenchmarkDotNet v*' }), $true) + 1].Trim() })
+    Runtime = $(if ($lines | Where-Object { $_ -like 'Runtime:*' }) { (($lines | Where-Object { $_ -like 'Runtime:*' } | Select-Object -First 1).Substring(8)).Trim() } else { ($lines | Where-Object { $_ -match '\[Host\]' } | Select-Object -First 1).Trim() })
   }
 }
 function Get-NiceStep([double]$max, [int]$parts) {
@@ -67,9 +69,9 @@ function Get-Words([string]$text, [int]$max) {
 }
 
 # Family key -> CSS class, legend text, legend order.
-$famClass = @{ 'odx-one' = 'one'; 'odx-select' = 'select'; 'odx-raw' = 'grey'; 'reference' = 'grey'; 'dapper' = 'dapper' }
-$famName = @{ 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89' }
-$famOrder = 'odx-one', 'odx-select', 'odx-raw', 'reference', 'dapper'
+$famClass = @{ 'loop' = 'grey'; 'odx' = 'one'; 'rd-sync' = 'one'; 'rd-async' = 'select'; 'raw' = 'grey'; 'odx-one' = 'one'; 'odx-select' = 'select'; 'odx-raw' = 'grey'; 'reference' = 'grey'; 'dapper' = 'dapper' }
+$famName = @{ 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89' }
+$famOrder = 'loop', 'odx', 'rd-sync', 'rd-async', 'raw', 'odx-one', 'odx-select', 'odx-raw', 'reference', 'dapper'
 
 $css = @'
     :root {
@@ -159,8 +161,8 @@ function New-Legend([string[]]$fams, [int]$y, [int]$w) {
 # Ranked horizontal bars. Panels: @{ Title; Rows = @(@{ Name; Fam; Value; Detail }) }, rows already in display order.
 # Scale: 'shared' (one axis for all panels), 'panel' (each panel its own, no ticks).
 function New-BarSvg([string]$id, [string]$title, [string]$subtitle, $panels, [scriptblock]$format, [string]$axisCaption,
-  [string]$footer, [string]$scale, [int]$left, [string]$descIntro) {
-  $W = 560; $rowH = 26; $plotW = $W - $left - 72
+  [string]$footer, [string]$scale, [int]$left, [string]$descIntro, [int]$W = 560) {
+  $rowH = 26; $plotW = $W - $left - 72
   $allMax = ($panels | ForEach-Object { $_.Rows } | ForEach-Object { $_.Value } | Measure-Object -Maximum).Maximum
   $fams = @($panels | ForEach-Object { $_.Rows } | ForEach-Object { $_.Fam } | Where-Object { $_ } | Select-Object -Unique)
   $legend = if ($fams.Count -gt 1 -or $fams -contains 'reference') { New-Legend $fams 72 $W } else { $null }
@@ -171,6 +173,7 @@ function New-BarSvg([string]$id, [string]$title, [string]$subtitle, $panels, [sc
   if ($legend) { [void]$sb.Append($legend.Svg) }
   $descParts = @()
   foreach ($p in $panels) {
+    $fmtP = if ($p.Format) { $p.Format } else { $format }
     $max = if ($scale -eq 'shared') { $allMax } else { ($p.Rows | ForEach-Object { $_.Value } | Measure-Object -Maximum).Maximum }
     $ticks = $scale -eq 'shared'
     $step = Get-NiceStep $max 5
@@ -195,20 +198,20 @@ function New-BarSvg([string]$id, [string]$title, [string]$subtitle, $panels, [sc
       [void]$sb.AppendLine("    <text class=""name"" x=""$($left - 10)"" y=""$($ry + 17)"">$(X $r.Name)</text>")
       $rr = [math]::Min(4.0, $bw / 2); $y0 = $ry + 5
       [void]$sb.AppendLine("    <path class=""$($famClass[$r.Fam])"" d=""M$(N $left),$y0 h$(N ($bw - $rr)) a$(N $rr),$(N $rr) 0 0 1 $(N $rr),$(N $rr) v$(N (16 - 2 * $rr)) a$(N $rr),$(N $rr) 0 0 1 -$(N $rr),$(N $rr) h-$(N ($bw - $rr)) z""/>")
-      [void]$sb.AppendLine("    <text class=""val"" x=""$(N ($left + $bw + 6))"" y=""$($ry + 17)"">$(X (& $format $r.Value))</text>")
+      [void]$sb.AppendLine("    <text class=""val"" x=""$(N ($left + $bw + 6))"" y=""$($ry + 17)"">$(X (& $fmtP $r.Value))</text>")
       [void]$sb.AppendLine("  </g>")
       $i++
     }
     [void]$sb.AppendLine("  <line class=""axis"" x1=""$left"" y1=""$top"" x2=""$left"" y2=""$bottom""/>")
     $prefix = if ($p.Title) { "$($p.Title): " } else { '' }
-    $descParts += ($prefix + (($p.Rows | ForEach-Object { "$($_.Name) $(& $format $_.Value)" }) -join '; '))
+    $descParts += ($prefix + (($p.Rows | ForEach-Object { "$($_.Name) $(& $fmtP $_.Value)" }) -join "; "))
     $y = $bottom + $(if ($ticks) { 24 } else { 0 }) + 14
   }
   if ($scale -eq 'shared' -and $axisCaption) {
     [void]$sb.AppendLine("  <text class=""muted small mid"" x=""$(N ($left + $plotW / 2))"" y=""$($y - 6)"">$(X $axisCaption)</text>"); $y += 14
   }
-  [void]$sb.AppendLine("  <text class=""muted small"" x=""16"" y=""$($y + 8)"">$(X $footer)</text>")
-  $H = $y + 22
+  foreach ($fl in $footer.Split('|')) { [void]$sb.AppendLine("  <text class=""muted small"" x=""16"" y=""$($y + 8)"">$(X $fl)</text>"); $y += 16 }
+  $H = $y + 14
   $desc = "$descIntro Every bar starts at zero. " + ($descParts -join '. ') + '.'
   New-Svg $id $title $desc $W $H $sb.ToString()
 }
@@ -222,32 +225,23 @@ $sa = Read-Data 'sync-async';          $saSrc = Read-Source 'sync-async'
 function Footer($src, [string]$csv) { "Build $($src.Build), $($src.Date), one run per case. Numbers: $csv.csv" }
 function Pick($rows, [string]$id) { $rows | Where-Object { $_.variant_id -eq $id } | Select-Object -First 1 }
 
-# ---------- 1. headline tiles ----------
+# One plain name for the compiled mapping everywhere, whatever the source CSV calls it.
+foreach ($set in $syn, $swp, $rp) { foreach ($r in $set) { if ($r.variant_id -eq 'V1') { $r.variant = 'Map<T>()' } } }
+
+# ---------- 1. the summary chart ----------
+# Four ways to read the same 20 columns and 1,000 rows from the synthetic reader. Two panels, each on its own scale.
 $v1 = Pick $syn 'V1'; $v2 = Pick $syn 'V2'; $v0 = Pick $syn 'V0'; $dap = Pick $syn 'V7_V1'
-$tiles = @(
-  @{ Big = (F ([double]$dap.reader_open_us / [double]$v1.reader_open_us) 2) + $timesX; Text = 'less reader-open time than Dapper, for the RowMap plan'; Tip = "Dapper $(F ([double]$dap.reader_open_us) 1) $muX`s against the RowMap plan $(F ([double]$v1.reader_open_us) 1) ${muX}s" },
-  @{ Big = (F ([double]$dap.allocated_kb / [double]$v1.allocated_kb) 2) + $timesX; Text = 'fewer bytes allocated than Dapper'; Tip = "Dapper $(F ([double]$dap.allocated_kb) 1) KB against the RowMap plan $(F ([double]$v1.allocated_kb) 1) KB" },
-  @{ Big = (F ([double]$v0.reader_open_us / [double]$v1.reader_open_us) 2) + $timesX; Text = 'faster than dumping every row into object[]'; Tip = "object[] rows $(F ([double]$v0.reader_open_us) 1) ${muX}s against the RowMap plan $(F ([double]$v1.reader_open_us) 1) ${muX}s" },
-  @{ Big = (F ([double]$v1.reader_open_us / [double]$v2.reader_open_us) 2) + $timesX; Text = 'how much slower the plan is than a hand-written selector'; Tip = "RowMap plan $(F ([double]$v1.reader_open_us) 1) ${muX}s against the hand-written selector $(F ([double]$v2.reader_open_us) 1) ${muX}s" }
-)
-$sb = New-Object Text.StringBuilder
-[void]$sb.AppendLine('  <text class="title" x="16" y="28">The RowMap plan against Dapper and hand-written code</text>')
-[void]$sb.AppendLine('  <text class="muted" x="16" y="48">20 columns, 1,000 rows, synthetic reader. Reader-open time and allocation.</text>')
-$tw = 260; $th = 96
-for ($i = 0; $i -lt 4; $i++) {
-  $tx = 16 + ($i % 2) * ($tw + 8); $ty = 64 + [math]::Floor($i / 2) * ($th + 8)
-  [void]$sb.AppendLine("  <g>")
-  [void]$sb.AppendLine("    <title>$(X $tiles[$i].Tip)</title>")
-  [void]$sb.AppendLine("    <rect class=""tile"" x=""$tx"" y=""$ty"" width=""$tw"" height=""$th"" rx=""8""/>")
-  [void]$sb.AppendLine("    <text class=""big"" x=""$($tx + 14)"" y=""$($ty + 42)"">$($tiles[$i].Big)</text>")
-  $ly = $ty + 64
-  foreach ($line in (Get-Words $tiles[$i].Text 34)) { [void]$sb.AppendLine("    <text class=""muted"" x=""$($tx + 14)"" y=""$ly"">$(X $line)</text>"); $ly += 17 }
-  [void]$sb.AppendLine("  </g>")
+$sumNames = @{ 'V2' = 'Hand-written selector'; 'V1' = 'Map<T>()'; 'V0' = 'object[] rows'; 'V7_V1' = 'Dapper Query<T>' }
+function Get-SumPanel([string]$title, [string]$col, [scriptblock]$fmt) {
+  $rows = @('V2', 'V1', 'V0', 'V7_V1' | ForEach-Object { Pick $syn $_ } | Sort-Object { [double]$_.$col } -Stable | ForEach-Object {
+    [pscustomobject]@{ Name = $sumNames[$_.variant_id]; Fam = $_.family; Value = [double]$_.$col
+      Detail = "$($sumNames[$_.variant_id]): connection held $(Format-Micro ([double]$_.reader_open_us)), $(F ([double]$_.allocated_kb) 1) KB allocated per call." } })
+  @{ Title = $title; Rows = $rows; Format = $fmt }
 }
-$fy = 64 + 2 * ($th + 8) + 14
-[void]$sb.AppendLine("  <text class=""muted small"" x=""16"" y=""$fy"">$(X (Footer $synSrc 'synthetic-overhead'))</text>")
-$descSummary = "Four headline ratios from the RowMap plan, in the synthetic runs. " + (($tiles | ForEach-Object { "$($_.Big) $($_.Text)" }) -join '. ') + '.'
-Write-Lf (Join-Path $ImageDir 'perf-summary.svg') (New-Svg 'summary' 'The RowMap plan against Dapper and hand-written code' $descSummary 560 ($fy + 18) $sb.ToString())
+$sumPanels = @(
+  (Get-SumPanel 'Connection held open (shorter is better)' 'reader_open_us' { param($v) Format-MicroX $v }),
+  (Get-SumPanel 'Memory allocated (smaller is better)' 'allocated_kb' { param($v) (F $v 1) + ' KB' }))
+Write-Lf (Join-Path $ImageDir 'perf-summary.svg') (New-BarSvg 'summary' 'Map<T>() against Dapper and hand-written code' 'One call reads 20 columns and 1,000 rows from a synthetic reader.' $sumPanels { param($v) "$v" } '' (Footer $synSrc 'synthetic-overhead') 'panel' 150 'Two panels of four bars each, each panel on its own scale: how long the connection is held open, and how much memory is allocated, for four ways of reading 20 columns and 1,000 rows from a synthetic in-memory reader.' 520)
 
 # ---------- 2. synthetic bars: reader-open, total, memory ----------
 function Get-SynRows([string]$col, [scriptblock]$fmt) {
@@ -262,7 +256,7 @@ Write-Lf (Join-Path $ImageDir 'perf-synthetic-total.svg') (New-BarSvg 'syn-total
 Write-Lf (Join-Path $ImageDir 'perf-synthetic-memory.svg') (New-BarSvg 'syn-memory' 'Memory allocated per call' 'Smaller is better.' @(@{ Title = ''; Rows = (Get-SynRows 'allocated_kb') }) { param($v) (F $v 1) + ' KB' } 'kilobytes allocated per call' (Footer $synSrc 'synthetic-overhead') 'shared' 232 $synIntro)
 
 # ---------- 3. cost grows with columns: a line chart ----------
-$short = @{ 'V2' = 'Hand-written selector'; 'V1' = 'RowMap plan'; 'V3' = 'Row class + Select'; 'V0' = 'object[] rows'; 'V7_V1' = 'Dapper' }
+$short = @{ 'V2' = 'Hand-written selector'; 'V1' = 'Map<T>()'; 'V3' = 'Row class + Select'; 'V0' = 'object[] rows'; 'V7_V1' = 'Dapper' }
 $ids = @($swp | ForEach-Object { $_.variant_id } | Select-Object -Unique)
 $widths = @($swp | ForEach-Object { [int]$_.columns } | Select-Object -Unique | Sort-Object)
 $maxUs = ($swp | ForEach-Object { [double]$_.total_us } | Measure-Object -Maximum).Maximum
@@ -342,139 +336,151 @@ foreach ($cond in @($sa | ForEach-Object { $_.condition } | Select-Object -Uniqu
       Detail = "$cond, $($_.path): reader open $(Format-Micro ([double]$_.reader_open_us)), $(F ([double]$_.reader_open_us / [double]$syncRow.reader_open_us) 2)$timesX the sync read; $(F ([double]$_.allocated_kb) 1) KB allocated." } })
   $saPanels += @{ Title = $cond; Rows = $rows }
 }
-Write-Lf (Join-Path $ImageDir 'perf-sync-async.svg') (New-BarSvg 'sync-async' 'Sync reads against async reads' 'Reader-open time, RowMap plan, 20 columns, 1,000 rows. Each panel has its own scale.' $saPanels { param($v) Format-MicroX $v } '' (Footer $saSrc 'sync-async') 'panel' 110 'Four panels of three bars each, one panel per condition, each on its own scale: sync, async execute, and async read.')
+Write-Lf (Join-Path $ImageDir 'perf-sync-async.svg') (New-BarSvg 'sync-async' 'Sync reads against async reads' 'Reader-open time, Map<T>(), 20 columns, 1,000 rows. Each panel has its own scale.' $saPanels { param($v) Format-MicroX $v } '' (Footer $saSrc 'sync-async') 'panel' 110 'Four panels of three bars each, one panel per condition, each on its own scale: sync, async execute, and async read.')
 
-# ---------- the data page ----------
-function Link-Data([string]$name) { "[$name.csv](../perf-data/$name.csv) ([source and conditions](../perf-data/$name.source.txt))" }
-function Rank-Table($rows, [string]$valueHeader, [scriptblock]$valueText, [string]$col, [bool]$withFamily) {
-  $sorted = @($rows | Sort-Object { [double]$_.$col } -Stable)
-  $best = [double]$sorted[0].$col
-  $out = @(); $r = 0
-  $out += "| Rank | Variant | $(if ($withFamily) { 'Family | ' })$valueHeader | Against the best |"
-  $out += "|---:|---|$(if ($withFamily) { '---|' })---:|---:|"
-  foreach ($x in $sorted) { $r++; $out += "| $r | $(M $x.variant) | $(if ($withFamily) { (M $famName[$x.family]) + ' | ' })$(& $valueText ([double]$x.$col)) | $(Format-Pct ([double]$x.$col) $best) |" }
-  $out -join "`n"
+# ---------- 7. slow link and large values (the hand-recorded probe runs) ----------
+$lt = Read-Data 'link-time';   $ltSrc = Read-Source 'link-time'
+$lm = Read-Data 'link-memory'; $lmSrc = Read-Source 'link-memory'
+$lv = Read-Data 'large-value'; $lvSrc = Read-Source 'large-value'
+function Link-Footer($src, [string]$csv) { "Run $($src.Date), one run per case. Numbers: $csv.csv" }
+
+$ltPanels = @()
+foreach ($sc in @($lt | ForEach-Object { $_.scenario } | Select-Object -Unique)) {
+  $rows = @($lt | Where-Object { $_.scenario -eq $sc } | ForEach-Object {
+    [pscustomobject]@{ Name = $(if ($_.family -eq 'raw') { 'Raw SqlClient, no ODX' } else { 'ODX Map<T>(), sync read' }); Fam = $_.family; Value = [double]$_.wall_ms
+      Detail = "$($_.variant): $(F ([double]$_.wall_ms) 1) ms per operation, $($_.scenario_description)." } })
+  $ltPanels += @{ Title = "$sc, $(($lt | Where-Object { $_.scenario -eq $sc } | Select-Object -First 1).scenario_description)"; Rows = $rows }
 }
-$md = New-Object Text.StringBuilder
-function Add([string]$s) { [void]$md.AppendLine($s) }
-Add '<!-- Generated by docsite/tools/perf/New-PerfCharts.ps1 from docsite/perf-data/*.csv. Do not edit by hand. -->'
-Add '# Performance data'
-Add ''
-Add "The numbers behind every chart on [Performance](performance.md), as tables. Each section gives the same numbers as the CSV file next to it, which you can download, and a source file that names the benchmark, the build, the date, the machine and the conditions, and the result file each number came from. The tables and the charts are generated from the CSV files by one script, so nothing here is typed by hand."
-Add ''
+Write-Lf (Join-Path $ImageDir 'perf-link-time.svg') (New-BarSvg 'link-time' 'Time over a slow link' 'Shorter is better. 5 ms delay, 100 Mbit, SQL Server, 10,000 rows.' $ltPanels { param($v) (F $v 1) + ' ms' } '' (Link-Footer $ltSrc 'link-time') 'panel' 170 'Two panels of two bars each, each panel on its own scale: the time of one operation over a simulated 5 ms, 100 Mbit link, for the ODX sync read and for raw SqlClient with ReadAsync.' 520)
 
-Add '## How fresh the data is'
-Add ''
-Add 'Each data set comes from one BenchmarkDotNet run (or a few runs of the same build). The build is the commit of the benchmark project that was run; the date is when the run finished.'
-Add ''
-Add '| Data | Charts | Build | Run date | Machine | Runtime |'
-Add '|---|---|---|---|---|---|'
-foreach ($p in @(
-    @('synthetic-overhead', 'headline ratios, reader-open time, total time, memory', $synSrc),
-    @('width-sweep', 'cost grows with columns', $swpSrc),
-    @('map-cost', 'what building a map costs', $mapSrc),
-    @('real-providers', 'real databases', $rpSrc),
-    @('sync-async', 'sync against async reads', $saSrc))) {
-  Add "| ``$($p[0]).csv`` | $($p[1]) | ``$($p[2].Build)`` | $($p[2].Date) | $(M $p[2].Machine) | $(M $p[2].Runtime.Replace('[Host] : ', '')) |"
+$lmPanels = @()
+foreach ($sh in @($lm | ForEach-Object { $_.shape } | Select-Object -Unique)) {
+  $rows = @($lm | Where-Object { $_.shape -eq $sh } | ForEach-Object {
+    [pscustomobject]@{ Name = $_.read_path; Fam = $_.family; Value = [double]$_.allocated_kb
+      Detail = "$sh, $($_.read_path): $(F ([double]$_.allocated_kb) 0) KB allocated per operation, $(F ([double]$_.wall_ms) 1) ms, $($_.incomplete_readasync_calls) of 10,001 ReadAsync calls incomplete." } })
+  $lmPanels += @{ Title = $sh; Rows = $rows }
 }
-Add ''
-Add '<a id="headline"></a>'
-Add '## Headline ratios'
-Add ''
-Add "[Back to the chart](performance.md#headline). Each ratio divides two numbers of the table [Reader-open time](#open-time) or [Memory allocated](#memory)."
-Add ''
-Add '| Ratio | Value | Computed from |'
-Add '|---|---:|---|'
-Add "| Dapper reader-open time over the RowMap plan | $(F ([double]$dap.reader_open_us / [double]$v1.reader_open_us) 2)$times | $(F ([double]$dap.reader_open_us) 1) $($mu)s / $(F ([double]$v1.reader_open_us) 1) $($mu)s |"
-Add "| Dapper allocation over the RowMap plan | $(F ([double]$dap.allocated_kb / [double]$v1.allocated_kb) 2)$times | $(F ([double]$dap.allocated_kb) 1) KB / $(F ([double]$v1.allocated_kb) 1) KB |"
-Add "| object[] rows reader-open time over the RowMap plan | $(F ([double]$v0.reader_open_us / [double]$v1.reader_open_us) 2)$times | $(F ([double]$v0.reader_open_us) 1) $($mu)s / $(F ([double]$v1.reader_open_us) 1) $($mu)s |"
-Add "| RowMap plan reader-open time over the hand-written selector | $(F ([double]$v1.reader_open_us / [double]$v2.reader_open_us) 2)$times | $(F ([double]$v1.reader_open_us) 1) $($mu)s / $(F ([double]$v2.reader_open_us) 1) $($mu)s |"
-Add ''
-Add "Data: $(Link-Data 'synthetic-overhead')."
-Add ''
+Write-Lf (Join-Path $ImageDir 'perf-link-memory.svg') (New-BarSvg 'link-memory' 'Memory with the sync read and with AsyncReads()' 'Smaller is better. SQL Server, 5 ms, 100 Mbit link, 10,000 rows, 20 columns.' $lmPanels { param($v) (F $v 0) + ' KB' } 'kilobytes allocated per operation' (Link-Footer $lmSrc 'link-memory') 'shared' 170 'Two panels on one scale, memory allocated per operation over a simulated slow link, for the sync read and for AsyncReads().' 520)
 
-$sections = @(
-  @{ Id = 'open-time'; Title = 'Reader-open time'; Col = 'reader_open_us'; Head = "Reader open ($mu`s)"; Text = { param($v) F $v 1 }; Note = 'Mean time from ExecuteReader until the reader closes, 20 columns, 1,000 rows, synthetic reader.' },
-  @{ Id = 'total-time'; Title = 'Total time per call'; Col = 'total_us'; Head = "Total ($mu`s)"; Text = { param($v) F $v 1 }; Note = 'Mean time of the whole call, same runs as above.' },
-  @{ Id = 'memory'; Title = 'Memory allocated per call'; Col = 'allocated_kb'; Head = 'Allocated (KB)'; Text = { param($v) F $v 1 }; Note = 'Bytes allocated per call divided by 1,024, same runs as above.' }
-)
-foreach ($s in $sections) {
-  Add "<a id=""$($s.Id)""></a>"
-  Add "## $($s.Title)"
-  Add ''
-  Add "[Back to the chart](performance.md#$($s.Id)). $($s.Note) Build $($synSrc.Build), $($synSrc.Date)."
-  Add ''
-  Add (Rank-Table $syn $s.Head $s.Text $s.Col $true)
-  Add ''
-  Add "Data: $(Link-Data 'synthetic-overhead')."
-  Add ''
+$lvRows = @($lv | Where-Object { $_.seconds } | ForEach-Object {
+  [pscustomobject]@{ Name = ($_.variant -replace 'Raw SqlClient, ', 'Raw, ' -replace 'both SqlClient switches off', 'switches off'); Fam = $_.family; Value = [double]$_.seconds
+    Detail = "$($_.variant): $(F ([double]$_.seconds) 2) s for one 100 MB value$(if ($_.peak_working_set_mb) { ", peak working set $($_.peak_working_set_mb) MB" })." } })
+$lvDesc = 'Horizontal bars in seconds for one 100 MB value over a simulated 5 ms, 100 Mbit link, SQL Server. Every bar starts at zero. ' + (($lvRows | ForEach-Object { "$($_.Name) $(F $_.Value 2)" }) -join '; ') + '. ODX Map(Func) with AsyncReads() was not measured.'
+Write-Lf (Join-Path $ImageDir 'perf-large-value.svg') (New-BarSvg 'large-value' 'One 100 MB value over a slow link' 'Shorter is better. SQL Server, 5 ms delay, 100 Mbit link.' @(@{ Title = ''; Rows = $lvRows }) { param($v) (F $v 2) + ' s' } 'seconds for one operation' ("ODX Map(Func) with AsyncReads() was not measured.|" + (Link-Footer $lvSrc 'large-value')) 'shared' 262 $lvDesc 560)
+
+# ---------- 8. channels and dataflow (hand-copied from Benchmarks/RESULTS.md) ----------
+$ch = Read-Data 'channels'; $chSrc = Read-Source 'channels'
+$chPanels = @()
+foreach ($feat in @($ch | ForEach-Object { $_.feature } | Select-Object -Unique)) {
+  $r = $ch | Where-Object { $_.feature -eq $feat -and $_.rows -eq '1000' } | Select-Object -First 1
+  $short = $feat.Split(' ')[0]
+  $rows = @(
+    [pscustomobject]@{ Name = 'Plain loop'; Fam = 'loop'; Value = [double]$r.loop_us; Detail = "A hand-written loop over 1,000 rows: $(F ([double]$r.loop_us) 0) $muX`s." },
+    [pscustomobject]@{ Name = $short; Fam = 'odx'; Value = [double]$r.odx_us; Detail = "$feat over 1,000 rows: $(F ([double]$r.odx_us) 0) $muX`s, $($r.time_ratio)$timesX the loop." })
+  $chPanels += @{ Title = $feat; Rows = $rows }
 }
+Write-Lf (Join-Path $ImageDir 'perf-channels.svg') (New-BarSvg 'channels' 'Draining 1,000 rows: a plain loop against ODX' 'Shorter is better. In-memory provider.' $chPanels { param($v) Format-MicroX $v } '' "Older run, before 11.0.0-rc.8. Numbers: channels.csv" 'panel' 100 'Two panels of two bars each, each panel on its own scale: the time to drain 1,000 rows with a hand-written loop and with ODX, for a channel and for a BufferBlock.' 520)
 
-Add '<a id="width"></a>'
-Add '## Cost grows with the number of columns'
-Add ''
-Add "[Back to the chart](performance.md#width). Total time per call ($($mu)s) at 1,000 rows. The last column is the cost of one more cell: the time at the widest result minus the time at the narrowest, divided by the cells added. Build $($swpSrc.Build), $($swpSrc.Date)."
-Add ''
-Add ("| Approach | " + (($widths | ForEach-Object { "$_ columns" }) -join ' | ') + " | Per added cell (ns) |")
-Add ("|---|" + (($widths | ForEach-Object { '---:' }) -join '|') + "|---:|")
+# ---------- the tables (markdown includes) ----------
+# Each file is one table, with no links (a page links to the CSV and the source file itself), so it reads the same
+# wherever it is included.
+$genNote = '<!-- Generated by docsite/tools/perf/New-PerfCharts.ps1 from docsite/perf-data/*.csv. Do not edit by hand. -->'
+function Write-Table([string]$name, [string[]]$lines) { Write-Lf (Join-Path $IncludeDir "$name.md") ($genNote + "`n`n" + ($lines -join "`n")) }
+function Fmt-Ratio([double]$v, [double]$base) { (F ($v / $base) 2) + $times }
+
+# The summary table: the four approaches of the summary chart, ranked by the time the connection is held.
+$t = @("| Approach | Connection held open | Memory allocated | Time against ``Map<T>()`` | Memory against ``Map<T>()`` |", '|---|---:|---:|---:|---:|')
+foreach ($r in @('V2', 'V1', 'V0', 'V7_V1' | ForEach-Object { Pick $syn $_ } | Sort-Object { [double]$_.reader_open_us } -Stable)) {
+  $t += "| $(M $sumNames[$r.variant_id]) | $(Format-Micro ([double]$r.reader_open_us)) | $(F ([double]$r.allocated_kb) 1) KB | $(Fmt-Ratio ([double]$r.reader_open_us) ([double]$v1.reader_open_us)) | $(Fmt-Ratio ([double]$r.allocated_kb) ([double]$v1.allocated_kb)) |"
+}
+Write-Table 'summary' $t
+
+# All 16 variants, ranked by the time the connection is held.
+$t = @("| Rank | Variant | What it does | Connection held ($($mu)s) | Whole call ($($mu)s) | Allocated (KB) |", '|---:|---|---|---:|---:|---:|')
+$rank = 0
+foreach ($r in ($syn | Sort-Object { [double]$_.reader_open_us } -Stable)) {
+  $rank++
+  $t += "| $rank | $(M $r.variant) | $(M $r.description) | $(F ([double]$r.reader_open_us) 1) | $(F ([double]$r.total_us) 1) | $(F ([double]$r.allocated_kb) 1) |"
+}
+Write-Table 'variants' $t
+
+# Cost per column.
+$t = @(("| Approach | " + (($widths | ForEach-Object { if ($_ -eq 1) { "1 column" } else { "$_ columns" } }) -join ' | ') + " | Cost of one more cell (ns) |"), ("|---|" + (($widths | ForEach-Object { '---:' }) -join '|') + "|---:|"))
 foreach ($id in $ids) {
   $pts = @($swp | Where-Object { $_.variant_id -eq $id } | Sort-Object { [int]$_.columns })
   $cell = ($widths | ForEach-Object { $c = $_; (F ([double]($pts | Where-Object { [int]$_.columns -eq $c }).total_us) 1) }) -join ' | '
   $rowsN = [double]$pts[0].rows
   $perCell = ([double]$pts[-1].total_us - [double]$pts[0].total_us) * 1000 / (([int]$pts[-1].columns - [int]$pts[0].columns) * $rowsN)
-  Add "| $(M $pts[0].variant) | $cell | $(F $perCell 2) |"
+  $t += "| $(M $pts[0].variant) | $cell | $(F $perCell 2) |"
 }
-Add ''
-Add "Data: $(Link-Data 'width-sweep')."
-Add ''
+Write-Table 'width' $t
 
-Add '<a id="map-cost"></a>'
-Add '## What building a map costs'
-Add ''
-Add "[Back to the chart](performance.md#map-cost). One row per call. The one-time cost is the time (and memory) of a call that builds and compiles a new map, minus a call that reuses the cached one. Build $($mapSrc.Build), $($mapSrc.Date)."
-Add ''
-Add "| Columns | Reused map ($($mu)s) | Map built every call (ms) | One-time cost (ms) | Reused map (KB) | Built every call (KB) | One-time memory (KB) |"
-Add '|---:|---:|---:|---:|---:|---:|---:|'
+# What building a map costs.
+$t = @("| Columns | Reused map, one-row call ($($mu)s) | Map built on every call (ms) | One-time cost (ms) | One-time memory (KB) |", '|---:|---:|---:|---:|---:|')
 foreach ($m in ($map | Sort-Object { [int]$_.columns })) {
-  Add "| $($m.columns) | $(F ([double]$m.reused_total_us) 2) | $(F ([double]$m.built_every_call_total_us / 1000) 2) | $(F (([double]$m.built_every_call_total_us - [double]$m.reused_total_us) / 1000) 2) | $(F ([double]$m.reused_allocated_kb) 2) | $(F ([double]$m.built_every_call_allocated_kb) 1) | $(F ([double]$m.built_every_call_allocated_kb - [double]$m.reused_allocated_kb) 1) |"
+  $t += "| $($m.columns) | $(F ([double]$m.reused_total_us) 2) | $(F ([double]$m.built_every_call_total_us / 1000) 2) | $(F (([double]$m.built_every_call_total_us - [double]$m.reused_total_us) / 1000) 2) | $(F ([double]$m.built_every_call_allocated_kb - [double]$m.reused_allocated_kb) 1) |"
 }
-Add ''
-Add "Data: $(Link-Data 'map-cost')."
-Add ''
+Write-Table 'map-cost' $t
 
-foreach ($s in @(
-    @{ Id = 'real-time'; Title = 'Real databases: time per call'; Col = 'total_us'; Head = 'Time (ms)'; Text = { param($v) F ($v / 1000) 2 } },
-    @{ Id = 'real-memory'; Title = 'Real databases: memory per call'; Col = 'allocated_kb'; Head = 'Allocated (KB)'; Text = { param($v) F $v 1 } })) {
-  Add "<a id=""$($s.Id)""></a>"
-  Add "## $($s.Title)"
-  Add ''
-  Add "[Back to the chart](performance.md#$($s.Id)). 20 columns, 10,000 rows. The CSV also holds the 5-column runs of the same benchmark. Build $($rpSrc.Build), $($rpSrc.Date)."
-  Add ''
-  foreach ($prov in ($provOrder | Where-Object { $rp.provider -contains $_ })) {
-    Add "### $prov"
-    Add ''
-    Add (Rank-Table @($rp | Where-Object { $_.provider -eq $prov -and $_.columns -eq '20' }) $s.Head $s.Text $s.Col $true)
-    Add ''
-  }
-  Add "Data: $(Link-Data 'real-providers')."
-  Add ''
+# Real databases: one table per provider, time and memory side by side.
+foreach ($pair in @(@('SQL Server LocalDB', 'real-sqlserver', '20'), @('SQLite file', 'real-sqlite', '20'), @('SQL Server LocalDB', 'real-sqlserver-w5', '5'), @('SQLite file', 'real-sqlite-w5', '5'))) {
+  $rows = @($rp | Where-Object { $_.provider -eq $pair[0] -and $_.columns -eq $pair[2] } | Sort-Object { [double]$_.total_us } -Stable)
+  if ($rows.Count -eq 0) { continue }
+  $bestT = [double]$rows[0].total_us
+  $bestM = ($rows | ForEach-Object { [double]$_.allocated_kb } | Measure-Object -Minimum).Minimum
+  $t = @("| Rank | Variant | Time per call (ms) | Against the best | Memory per call (MB) | Against the least |", '|---:|---|---:|---:|---:|---:|')
+  $rank = 0
+  foreach ($r in $rows) { $rank++; $t += "| $rank | $(M $r.variant) | $(F ([double]$r.total_us / 1000) 2) | $(Format-Pct ([double]$r.total_us) $bestT) | $(F ([double]$r.allocated_kb / 1024) 2) | $(Format-Pct ([double]$r.allocated_kb) $bestM) |" }
+  Write-Table $pair[1] $t
 }
 
-Add '<a id="sync-async"></a>'
-Add '## Sync reads against async reads'
-Add ''
-Add "[Back to the chart](performance.md#sync-async). Reader-open time ($($mu)s), RowMap plan, 20 columns, 1,000 rows. Buffer refills: every 100 rows the reader waits 20 $($mu)s. Busy pool: 8 work items kept queued on the thread pool. Build $($saSrc.Build), $($saSrc.Date)."
-Add ''
-Add '| Condition | Sync | Async execute | Async read | Async read against sync |'
-Add '|---|---:|---:|---:|---:|'
+# Sync against async.
+$t = @('| Condition | Sync | Async execute | Async read | Async read against sync |', '|---|---:|---:|---:|---:|')
 foreach ($cond in @($sa | ForEach-Object { $_.condition } | Select-Object -Unique)) {
   $g = @($sa | Where-Object { $_.condition -eq $cond })
   $a = [double]($g | Where-Object { $_.path -eq 'Sync' }).reader_open_us
   $b = [double]($g | Where-Object { $_.path -eq 'Async execute' }).reader_open_us
   $c = [double]($g | Where-Object { $_.path -eq 'Async read' }).reader_open_us
-  Add "| $cond | $(Format-Micro $a) | $(Format-Micro $b) | $(Format-Micro $c) | $(F ($c / $a) 2)$times |"
+  $t += "| $cond | $(Format-Micro $a) | $(Format-Micro $b) | $(Format-Micro $c) | $(F ($c / $a) 2)$times |"
 }
-Add ''
-Add "Data: $(Link-Data 'sync-async')."
-Write-Lf $DataPage $md.ToString()
-"wrote charts to $ImageDir and the data page to $DataPage"
+Write-Table 'sync-async' $t
+
+# The slow-link tables.
+$t = @('| Scenario | Variant | Time per operation (ms) |', '|---|---|---:|')
+foreach ($r in $lt) { $t += "| $(M "$($r.scenario): $($r.scenario_description)") | $(M $r.variant) | $(F ([double]$r.wall_ms) 1) |" }
+Write-Table 'link-time' $t
+
+$t = @('| Shape | Read path | Memory per operation (KB) | Time (ms) | ReadAsync calls that did not complete at once (of 10,001) |', '|---|---|---:|---:|---:|')
+foreach ($r in $lm) { $t += "| $(M $r.shape) | $(M $r.read_path) | $(F ([double]$r.allocated_kb) 0) | $(F ([double]$r.wall_ms) 1) | $(([double]$r.incomplete_readasync_calls).ToString("0.#", $inv)) |" }
+Write-Table 'link-memory' $t
+
+$syncSeconds = [double](($lv | Where-Object { $_.variant -like '*sync Read' } | Select-Object -First 1).seconds)
+$t = @('| Variant | Time (s) | Against the sync read | Peak working set (MB) |', '|---|---:|---:|---:|')
+foreach ($r in $lv) {
+  if ($r.seconds) { $t += "| $(M $r.variant) | $(F ([double]$r.seconds) 2) | $(Fmt-Ratio ([double]$r.seconds) $syncSeconds) | $(if ($r.peak_working_set_mb) { $r.peak_working_set_mb } else { 'not recorded' }) |" }
+  else { $t += "| $(M $r.variant) | not measured | not measured | not measured |" }
+}
+Write-Table 'large-value' $t
+
+$t = @('| Feature | Rows | Plain loop | ODX | ODX time against the loop | ODX memory against the loop |', '|---|---:|---:|---:|---:|---:|')
+foreach ($r in $ch) { $t += "| $(M $r.feature) | $(F ([double]$r.rows) 0) | $(Format-Micro ([double]$r.loop_us)) | $(Format-Micro ([double]$r.odx_us)) | $($r.time_ratio)$times | $(F ([double]$r.alloc_ratio) 2)$times |" }
+Write-Table 'channels' $t
+
+# How fresh each data set is.
+$t = @('| Data file | Used on | Build | Run date | Machine | Runtime |', '|---|---|---|---|---|---|')
+foreach ($p in @(
+    @('synthetic-overhead', 'library comparison, all variants, the summary', $synSrc),
+    @('width-sweep', 'cost per column', $swpSrc),
+    @('map-cost', 'cost of building a map', $mapSrc),
+    @('real-providers', 'real databases, library comparison', $rpSrc),
+    @('sync-async', 'sync reads against async reads', $saSrc),
+    @('link-time', 'slow links and large values', $ltSrc),
+    @('link-memory', 'slow links and large values', $lmSrc),
+    @('large-value', 'slow links and large values', $lvSrc),
+    @('channels', 'channels and Dataflow', $chSrc))) {
+  $bld = ($p[2].Build -split ' \(')[0]
+  $t += "| ``$($p[0]).csv`` | $($p[1]) | ``$bld`` | $($p[2].Date) | $(M $p[2].Machine) | $(M $p[2].Runtime.Replace('[Host] : ', '')) |"
+}
+Write-Table 'freshness' $t
+
+"wrote charts to $ImageDir and tables to $IncludeDir"

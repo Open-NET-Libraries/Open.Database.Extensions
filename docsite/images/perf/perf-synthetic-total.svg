@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 604" role="img" aria-labelledby="syn-total-title syn-total-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 612" role="img" aria-labelledby="syn-total-title syn-total-desc">
   <title id="syn-total-title">Total time per call</title>
-  <desc id="syn-total-desc">Ranked horizontal bars, shortest first, one per way of reading 20 columns and 1,000 rows from a synthetic in-memory reader, colored by family. Every bar starts at zero. Map(selector), hand-written 47.0 µs; Selector, reused row, Select 59.0 µs; Selector, pooled row, Select 63.1 µs; Shaping inside the selector 67.8 µs; Map&lt;T&gt;(), the RowMap plan 81.7 µs; Row class, close, then Select 97.8 µs; Row class, inline Select 106.7 µs; Row class, shaping after close 134.5 µs; Row class, shaping in Select 139.2 µs; object[] rows (baseline) 178.5 µs; Dapper Query&lt;T&gt; 202.7 µs; Dapper, inline Select 214.3 µs; Dapper, then Select after 217.1 µs; object[] rows, objects later 221.0 µs; Dapper, shaping after 256.2 µs; Dapper, shaping in Select 257.9 µs.</desc>
+  <desc id="syn-total-desc">Ranked horizontal bars, shortest first, one per way of reading 20 columns and 1,000 rows from a synthetic in-memory reader, colored by family. Every bar starts at zero. Map(selector), hand-written 47.0 µs; Selector, reused row, Select 59.0 µs; Selector, pooled row, Select 63.1 µs; Shaping inside the selector 67.8 µs; Map&lt;T&gt;() 81.7 µs; Row class, close, then Select 97.8 µs; Row class, inline Select 106.7 µs; Row class, shaping after close 134.5 µs; Row class, shaping in Select 139.2 µs; object[] rows (baseline) 178.5 µs; Dapper Query&lt;T&gt; 202.7 µs; Dapper, inline Select 214.3 µs; Dapper, then Select after 217.1 µs; object[] rows, objects later 221.0 µs; Dapper, shaping after 256.2 µs; Dapper, shaping in Select 257.9 µs.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -56,7 +56,7 @@
     .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
     .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
   </style>
-  <rect class="frame" x="0.5" y="0.5" width="559" height="603" rx="8"/>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="611" rx="8"/>
   <text class="title" x="16" y="28">Total time per call</text>
   <text class="muted" x="16" y="48">Shorter is better. Where it is far above reader-open time, work happens after the reader closes.</text>
   <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
@@ -104,9 +104,9 @@
     <text class="val" x="295.83" y="209">67.8 µs</text>
   </g>
   <g>
-    <title>Map&lt;T&gt;(), the RowMap plan (V1): The cached, compiled typed plan. Reader open 81.6 µs, total 81.7 µs, 227.4 KB allocated.</title>
+    <title>Map&lt;T&gt;() (V1): The cached, compiled typed plan. Reader open 81.6 µs, total 81.7 µs, 227.4 KB allocated.</title>
     <rect class="hit" x="0" y="218" width="560" height="26"/>
-    <text class="name" x="222" y="235">Map&lt;T&gt;(), the RowMap plan</text>
+    <text class="name" x="222" y="235">Map&lt;T&gt;()</text>
     <path class="one" d="M232,223 h65.74 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-65.74 z"/>
     <text class="val" x="307.74" y="235">81.7 µs</text>
   </g>

@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 322" role="img" aria-labelledby="large-value-title large-value-desc">
+  <title id="large-value-title">One 100 MB value over a slow link</title>
+  <desc id="large-value-desc">Horizontal bars in seconds for one 100 MB value over a simulated 5 ms, 100 Mbit link, SQL Server. Every bar starts at zero. Raw, Default, sync Read 8.86; Raw, Default, ReadAsync 48.02; Raw, SequentialAccess, ReadAsync 8.86; Raw, Default, ReadAsync, switches off 8.87; ODX Map&lt;T&gt;(), AsyncReads() 8.86. ODX Map(Func) with AsyncReads() was not measured. Every bar starts at zero. Raw, Default, sync Read 8.86 s; Raw, Default, ReadAsync 48.02 s; Raw, SequentialAccess, ReadAsync 8.86 s; Raw, Default, ReadAsync, switches off 8.87 s; ODX Map&lt;T&gt;(), AsyncReads() 8.86 s.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="321" rx="8"/>
+  <text class="title" x="16" y="28">One 100 MB value over a slow link</text>
+  <text class="muted" x="16" y="48">Shorter is better. SQL Server, 5 ms delay, 100 Mbit link.</text>
+  <rect class="select" x="16" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="72">ODX with AsyncReads() (opt-in)</text>
+  <rect class="grey" x="246" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="264" y="72">Raw SqlClient, no ODX</text>
+  <line class="grid" x1="262" y1="94" x2="262" y2="224"/>
+  <text class="muted small mid" x="262" y="240">0</text>
+  <line class="grid" x1="307.2" y1="94" x2="307.2" y2="224"/>
+  <text class="muted small mid" x="307.2" y="240">10</text>
+  <line class="grid" x1="352.4" y1="94" x2="352.4" y2="224"/>
+  <text class="muted small mid" x="352.4" y="240">20</text>
+  <line class="grid" x1="397.6" y1="94" x2="397.6" y2="224"/>
+  <text class="muted small mid" x="397.6" y="240">30</text>
+  <line class="grid" x1="442.8" y1="94" x2="442.8" y2="224"/>
+  <text class="muted small mid" x="442.8" y="240">40</text>
+  <line class="grid" x1="488" y1="94" x2="488" y2="224"/>
+  <text class="muted small mid" x="488" y="240">50</text>
+  <g>
+    <title>Raw SqlClient, Default, sync Read: 8.86 s for one 100 MB value, peak working set 254.1 MB.</title>
+    <rect class="hit" x="0" y="94" width="560" height="26"/>
+    <text class="name" x="252" y="111">Raw, Default, sync Read</text>
+    <path class="grey" d="M262,99 h36.06 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-36.06 z"/>
+    <text class="val" x="308.06" y="111">8.86 s</text>
+  </g>
+  <g>
+    <title>Raw SqlClient, Default, ReadAsync: 48.02 s for one 100 MB value, peak working set 369.5 MB.</title>
+    <rect class="hit" x="0" y="120" width="560" height="26"/>
+    <text class="name" x="252" y="137">Raw, Default, ReadAsync</text>
+    <path class="grey" d="M262,125 h213.03 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-213.03 z"/>
+    <text class="val" x="485.03" y="137">48.02 s</text>
+  </g>
+  <g>
+    <title>Raw SqlClient, SequentialAccess, ReadAsync: 8.86 s for one 100 MB value.</title>
+    <rect class="hit" x="0" y="146" width="560" height="26"/>
+    <text class="name" x="252" y="163">Raw, SequentialAccess, ReadAsync</text>
+    <path class="grey" d="M262,151 h36.05 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-36.05 z"/>
+    <text class="val" x="308.05" y="163">8.86 s</text>
+  </g>
+  <g>
+    <title>Raw SqlClient, Default, ReadAsync, both SqlClient switches off: 8.87 s for one 100 MB value, peak working set 383.7 MB.</title>
+    <rect class="hit" x="0" y="172" width="560" height="26"/>
+    <text class="name" x="252" y="189">Raw, Default, ReadAsync, switches off</text>
+    <path class="grey" d="M262,177 h36.11 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-36.11 z"/>
+    <text class="val" x="308.11" y="189">8.87 s</text>
+  </g>
+  <g>
+    <title>ODX Map&lt;T&gt;(), AsyncReads(): 8.86 s for one 100 MB value.</title>
+    <rect class="hit" x="0" y="198" width="560" height="26"/>
+    <text class="name" x="252" y="215">ODX Map&lt;T&gt;(), AsyncReads()</text>
+    <path class="select" d="M262,203 h36.06 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-36.06 z"/>
+    <text class="val" x="308.06" y="215">8.86 s</text>
+  </g>
+  <line class="axis" x1="262" y1="94" x2="262" y2="224"/>
+  <text class="muted small mid" x="375" y="256">seconds for one operation</text>
+  <text class="muted small" x="16" y="284">ODX Map(Func) with AsyncReads() was not measured.</text>
+  <text class="muted small" x="16" y="300">Run 2026-11-15, one run per case. Numbers: large-value.csv</text>
+</svg>

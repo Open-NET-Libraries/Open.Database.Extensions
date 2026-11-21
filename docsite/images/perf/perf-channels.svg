@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 304" role="img" aria-labelledby="channels-title channels-desc">
+  <title id="channels-title">Draining 1,000 rows: a plain loop against ODX</title>
+  <desc id="channels-desc">Two panels of two bars each, each panel on its own scale: the time to drain 1,000 rows with a hand-written loop and with ODX, for a channel and for a BufferBlock. Every bar starts at zero. ToChannel (drain a channel): Plain loop 284.0 µs; ToChannel 359.0 µs. Dataflow (BufferBlock): Plain loop 156.0 µs; Dataflow 325.0 µs.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="519" height="303" rx="8"/>
+  <text class="title" x="16" y="28">Draining 1,000 rows: a plain loop against ODX</text>
+  <text class="muted" x="16" y="48">Shorter is better. In-memory provider.</text>
+  <rect class="grey" x="16" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="72">Plain loop (hand-written)</text>
+  <rect class="one" x="213" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="231" y="72">ODX</text>
+  <text class="head" x="16" y="108">ToChannel (drain a channel)</text>
+  <g>
+    <title>A hand-written loop over 1,000 rows: 284 µs.</title>
+    <rect class="hit" x="0" y="118" width="520" height="26"/>
+    <text class="name" x="90" y="135">Plain loop</text>
+    <path class="grey" d="M100,123 h271.3 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-271.3 z"/>
+    <text class="val" x="381.3" y="135">284.0 µs</text>
+  </g>
+  <g>
+    <title>ToChannel (drain a channel) over 1,000 rows: 359 µs, 1.26× the loop.</title>
+    <rect class="hit" x="0" y="144" width="520" height="26"/>
+    <text class="name" x="90" y="161">ToChannel</text>
+    <path class="one" d="M100,149 h344 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-344 z"/>
+    <text class="val" x="454" y="161">359.0 µs</text>
+  </g>
+  <line class="axis" x1="100" y1="118" x2="100" y2="170"/>
+  <text class="head" x="16" y="198">Dataflow (BufferBlock)</text>
+  <g>
+    <title>A hand-written loop over 1,000 rows: 156 µs.</title>
+    <rect class="hit" x="0" y="208" width="520" height="26"/>
+    <text class="name" x="90" y="225">Plain loop</text>
+    <path class="grey" d="M100,213 h163.04 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-163.04 z"/>
+    <text class="val" x="273.04" y="225">156.0 µs</text>
+  </g>
+  <g>
+    <title>Dataflow (BufferBlock) over 1,000 rows: 325 µs, 2.1× the loop.</title>
+    <rect class="hit" x="0" y="234" width="520" height="26"/>
+    <text class="name" x="90" y="251">Dataflow</text>
+    <path class="one" d="M100,239 h344 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-344 z"/>
+    <text class="val" x="454" y="251">325.0 µs</text>
+  </g>
+  <line class="axis" x1="100" y1="208" x2="100" y2="260"/>
+  <text class="muted small" x="16" y="282">Older run, before 11.0.0-rc.8. Numbers: channels.csv</text>
+</svg>
