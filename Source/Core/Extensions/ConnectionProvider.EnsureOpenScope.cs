@@ -1,6 +1,6 @@
 namespace Open.Database.Extensions;
 
-// OpenScope / OpenScopeAsync: the factory and pool forms of Open / OpenAsync, handing back the
+// EnsureOpenScope / EnsureOpenScopeAsync: the factory and pool forms of Open / OpenAsync, handing back the
 // connection and how it ends instead of taking a callback. They follow the callbacks exactly:
 // a factory's connection is created, opened if needed, and disposed; a pool's is taken, opened
 // if needed, and given back (the pool decides what that means). If the open throws or is
@@ -76,13 +76,13 @@ public static partial class ConnectionExtensions
 	/// <remarks>
 	/// The scope form of <see cref="Open{T}(IDbConnectionFactory, Func{IDbConnection, T})"/>: the same
 	/// create, open if needed, dispose, without the callback. Prefer
-	/// <see cref="OpenScopeAsync(IDbConnectionFactory, CancellationToken)"/>. If opening throws the
+	/// <see cref="EnsureOpenScopeAsync(IDbConnectionFactory, CancellationToken)"/>. If opening throws the
 	/// connection is disposed before the exception propagates.
 	/// </remarks>
 	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
-	public static ConnectionScope<IDbConnection> OpenScope(this IDbConnectionFactory connectionFactory)
+	public static ConnectionScope<IDbConnection> EnsureOpenScope(this IDbConnectionFactory connectionFactory)
 	{
 		if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
 		Contract.EndContractBlock();
@@ -95,11 +95,11 @@ public static partial class ConnectionExtensions
 	/// <see cref="ConnectionScope{TConnection}"/> that disposes it when the scope is disposed.
 	/// </summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <inheritdoc cref="OpenScope(IDbConnectionFactory)" path="/remarks"/>
+	/// <inheritdoc cref="EnsureOpenScope(IDbConnectionFactory)" path="/remarks"/>
 	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
-	public static ConnectionScope<TConnection> OpenScope<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
+	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
 	{
 		if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -114,7 +114,7 @@ public static partial class ConnectionExtensions
 	/// </summary>
 	/// <remarks>
 	/// <code>
-	/// await using var scope = await factory.OpenScopeAsync(cancellationToken);
+	/// await using var scope = await factory.EnsureOpenScopeAsync(cancellationToken);
 	/// var connection = scope.Connection;
 	/// </code>
 	/// The scope form of <see cref="OpenAsync{T}(IDbConnectionFactory, Func{IDbConnection, ValueTask{T}}, CancellationToken)"/>.
@@ -127,7 +127,7 @@ public static partial class ConnectionExtensions
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled while the connection was being opened.</exception>
-	public static async ValueTask<ConnectionScope<IDbConnection>> OpenScopeAsync(
+	public static async ValueTask<ConnectionScope<IDbConnection>> EnsureOpenScopeAsync(
 		this IDbConnectionFactory connectionFactory,
 		CancellationToken cancellationToken = default)
 	{
@@ -143,13 +143,13 @@ public static partial class ConnectionExtensions
 	/// <see cref="ConnectionScope{TConnection}"/> that disposes it when the scope is disposed.
 	/// </summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <inheritdoc cref="OpenScopeAsync(IDbConnectionFactory, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="EnsureOpenScopeAsync(IDbConnectionFactory, CancellationToken)" path="/remarks"/>
 	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
 	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled while the connection was being opened.</exception>
-	public static async ValueTask<ConnectionScope<TConnection>> OpenScopeAsync<TConnection>(
+	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
 		this IDbConnectionFactory<TConnection> connectionFactory,
 		CancellationToken cancellationToken = default)
 		where TConnection : IDbConnection
@@ -168,13 +168,13 @@ public static partial class ConnectionExtensions
 	/// <remarks>
 	/// The scope form of <see cref="Open{T}(IDbConnectionPool, Func{IDbConnection, ConnectionState, T})"/>: the same
 	/// take, open if needed, give back, without the callback. Giving back is the pool's: it may close the
-	/// connection, keep it, or dispose it. Prefer <see cref="OpenScopeAsync(IDbConnectionPool, CancellationToken)"/>.
+	/// connection, keep it, or dispose it. Prefer <see cref="EnsureOpenScopeAsync(IDbConnectionPool, CancellationToken)"/>.
 	/// If opening throws the connection is given back before the exception propagates.
 	/// </remarks>
 	/// <param name="connectionPool">The connection pool to take the connection from.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>.</exception>
-	public static ConnectionScope<IDbConnection> OpenScope(this IDbConnectionPool connectionPool)
+	public static ConnectionScope<IDbConnection> EnsureOpenScope(this IDbConnectionPool connectionPool)
 	{
 		if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
 		Contract.EndContractBlock();
@@ -187,11 +187,11 @@ public static partial class ConnectionExtensions
 	/// <see cref="ConnectionScope{TConnection}"/> that gives it back to the pool when the scope is disposed.
 	/// </summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <inheritdoc cref="OpenScope(IDbConnectionPool)" path="/remarks"/>
+	/// <inheritdoc cref="EnsureOpenScope(IDbConnectionPool)" path="/remarks"/>
 	/// <param name="connectionPool">The connection pool to take the connection from.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>.</exception>
-	public static ConnectionScope<TConnection> OpenScope<TConnection>(this IDbConnectionPool<TConnection> connectionPool)
+	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(this IDbConnectionPool<TConnection> connectionPool)
 		where TConnection : IDbConnection
 	{
 		if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
@@ -206,7 +206,7 @@ public static partial class ConnectionExtensions
 	/// </summary>
 	/// <remarks>
 	/// <code>
-	/// await using var scope = await pool.OpenScopeAsync(cancellationToken);
+	/// await using var scope = await pool.EnsureOpenScopeAsync(cancellationToken);
 	/// var connection = scope.Connection;
 	/// </code>
 	/// The scope form of <see cref="OpenAsync{T}(IDbConnectionPool, Func{IDbConnection, ConnectionState, ValueTask{T}}, CancellationToken)"/>.
@@ -218,7 +218,7 @@ public static partial class ConnectionExtensions
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled while the connection was being opened.</exception>
-	public static async ValueTask<ConnectionScope<IDbConnection>> OpenScopeAsync(
+	public static async ValueTask<ConnectionScope<IDbConnection>> EnsureOpenScopeAsync(
 		this IDbConnectionPool connectionPool,
 		CancellationToken cancellationToken = default)
 	{
@@ -234,13 +234,13 @@ public static partial class ConnectionExtensions
 	/// <see cref="ConnectionScope{TConnection}"/> that gives it back to the pool when the scope is disposed.
 	/// </summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <inheritdoc cref="OpenScopeAsync(IDbConnectionPool, CancellationToken)" path="/remarks"/>
+	/// <inheritdoc cref="EnsureOpenScopeAsync(IDbConnectionPool, CancellationToken)" path="/remarks"/>
 	/// <param name="connectionPool">The connection pool to take the connection from.</param>
 	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled while the connection was being opened.</exception>
-	public static async ValueTask<ConnectionScope<TConnection>> OpenScopeAsync<TConnection>(
+	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
 		this IDbConnectionPool<TConnection> connectionPool,
 		CancellationToken cancellationToken = default)
 		where TConnection : IDbConnection

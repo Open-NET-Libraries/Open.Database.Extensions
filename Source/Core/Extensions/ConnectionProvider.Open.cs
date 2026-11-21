@@ -20,7 +20,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var scope = connectionFactory.OpenScope();
+		using var scope = connectionFactory.EnsureOpenScope();
 		return action(scope.Connection);
 	}
 
@@ -39,7 +39,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var scope = connectionFactory.OpenScope();
+		using var scope = connectionFactory.EnsureOpenScope();
 		action(scope.Connection);
 	}
 
@@ -62,7 +62,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var scope = connectionFactory.OpenScope();
+		using var scope = connectionFactory.EnsureOpenScope();
 		return action(scope.Connection);
 	}
 
@@ -83,7 +83,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var scope = connectionFactory.OpenScope();
+		using var scope = connectionFactory.EnsureOpenScope();
 		action(scope.Connection);
 	}
 
@@ -104,7 +104,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var scope = connectionPool.OpenScope();
+		using var scope = connectionPool.EnsureOpenScope();
 		return action(scope.Connection, scope.PriorState);
 	}
 
@@ -123,7 +123,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var scope = connectionPool.OpenScope();
+		using var scope = connectionPool.EnsureOpenScope();
 		action(scope.Connection, scope.PriorState);
 	}
 
@@ -146,7 +146,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var scope = connectionPool.OpenScope();
+		using var scope = connectionPool.EnsureOpenScope();
 		return action(scope.Connection, scope.PriorState);
 	}
 
@@ -167,7 +167,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var scope = connectionPool.OpenScope();
+		using var scope = connectionPool.EnsureOpenScope();
 		action(scope.Connection, scope.PriorState);
 	}
 
@@ -236,7 +236,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionFactory.OpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionFactory.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		return await action(scope.Connection).ConfigureAwait(false);
 	}
@@ -262,7 +262,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionFactory.OpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionFactory.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		await action(scope.Connection).ConfigureAwait(false);
 	}
@@ -291,7 +291,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionFactory.OpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionFactory.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		return await action(scope.Connection).ConfigureAwait(false);
 	}
@@ -319,7 +319,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionFactory.OpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionFactory.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		await action(scope.Connection).ConfigureAwait(false);
 	}
@@ -343,7 +343,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionPool.OpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionPool.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		return await action(scope.Connection, scope.PriorState).ConfigureAwait(false);
 	}
@@ -366,7 +366,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionPool.OpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionPool.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		await action(scope.Connection, scope.PriorState).ConfigureAwait(false);
 	}
@@ -395,7 +395,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionPool.OpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionPool.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		return await action(scope.Connection, scope.PriorState).ConfigureAwait(false);
 	}
@@ -420,7 +420,7 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionPool.OpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionPool.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		await action(scope.Connection, scope.PriorState).ConfigureAwait(false);
 	}

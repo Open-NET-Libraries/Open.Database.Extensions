@@ -913,7 +913,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		// Take, open if needed, give back when done (the pool decides what that means).
 		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
-		using var lent = pool.OpenScope();
+		using var lent = pool.EnsureOpenScope();
 		using TCommand cmd = PrepareResolved(lent.Connection);
 		return func(cmd, lent.PriorState, state);
 	}
@@ -943,7 +943,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (_poolOrConnection is TConnection single)
 		{
 			using Busy busy = EnterDirect();
-			var direct = await OpenScopeIfNeededAsync(single, null, cancellationToken).ConfigureAwait(false);
+			var direct = await EnsureOpenScopeUnlessOpenAsync(single, null, cancellationToken).ConfigureAwait(false);
 			await using var directDisposal = direct.ConfigureAwait(false);
 			NameSet? names = null;
 			if (_hasDerivedParams)
@@ -961,7 +961,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 
 		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
-		var lent = await OpenScopeIfNeededAsync(pool.Take(), pool, cancellationToken).ConfigureAwait(false);
+		var lent = await EnsureOpenScopeUnlessOpenAsync(pool.Take(), pool, cancellationToken).ConfigureAwait(false);
 		await using var lentDisposal = lent.ConfigureAwait(false);
 		NameSet? lentNames = null;
 		if (_hasDerivedParams)
@@ -978,7 +978,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 	// The scope of a connection taken from a pool (given back when it is disposed) or, with no pool, the
 	// caller's own (closed again if it was opened here). An open connection (the usual case) needs no awaiting at all.
-	static ValueTask<ConnectionScope<TConnection>> OpenScopeIfNeededAsync(
+	static ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeUnlessOpenAsync(
 		TConnection connection,
 		IDbConnectionPool<TConnection>? pool,
 		CancellationToken cancellationToken)

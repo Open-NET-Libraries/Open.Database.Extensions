@@ -2,7 +2,7 @@ namespace Open.Database.Extensions.Tests;
 
 #nullable enable
 
-// OpenScope / OpenScopeAsync on a factory and on a pool follow the Open / OpenAsync
+// EnsureOpenScope / EnsureOpenScopeAsync on a factory and on a pool follow the Open / OpenAsync
 // callbacks: a factory's connection is created, opened if needed, and disposed; a
 // pool's is taken, opened if needed, and given back, and the pool decides what that
 // means. If the open fails the connection is released the same way first.
@@ -63,7 +63,7 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.ScopeConnection();
 		var factory = new CountingFactory(connection);
 
-		using (var scope = factory.OpenScope())
+		using (var scope = factory.EnsureOpenScope())
 		{
 			Assert.Same(connection, scope.Connection);
 			Assert.Equal(ConnectionState.Open, connection.State);
@@ -81,7 +81,7 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.ScopeConnection();
 		var factory = new CountingFactory(connection);
 
-		await using (var scope = await factory.OpenScopeAsync(Ct))
+		await using (var scope = await factory.EnsureOpenScopeAsync(Ct))
 		{
 			Assert.Same(connection, scope.Connection);
 			Assert.Equal(ConnectionState.Open, connection.State);
@@ -97,13 +97,13 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.ScopeConnection();
 		IDbConnectionFactory factory = new CountingFactory(connection);
 
-		using (ConnectionScope<IDbConnection> scope = factory.OpenScope())
+		using (ConnectionScope<IDbConnection> scope = factory.EnsureOpenScope())
 			Assert.Same(connection, scope.Connection);
 
 		// The fake keeps its state when disposed; a real connection would not be open.
 		connection.SetState(ConnectionState.Closed);
 
-		await using (ConnectionScope<IDbConnection> scope = await factory.OpenScopeAsync(Ct))
+		await using (ConnectionScope<IDbConnection> scope = await factory.EnsureOpenScopeAsync(Ct))
 			Assert.Same(connection, scope.Connection);
 
 		Assert.Equal(["open", "dispose", "openAsync", "disposeAsync"], connection.Log);
@@ -115,7 +115,7 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.ScopeConnection();
 		connection.SetState(ConnectionState.Open);
 
-		using (var scope = new CountingFactory(connection).OpenScope())
+		using (var scope = new CountingFactory(connection).EnsureOpenScope())
 			Assert.Equal(ConnectionState.Open, scope.PriorState);
 
 		// The factory's connection is the scope's to dispose, however it was found.
@@ -128,7 +128,7 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.PlainConnection();
 		var factory = new DbConnectionFactory<ConnectionScopeTests.PlainConnection>(() => connection);
 
-		await using (await factory.OpenScopeAsync(Ct)) { }
+		await using (await factory.EnsureOpenScopeAsync(Ct)) { }
 
 		Assert.Equal(["open"], connection.Log);
 		Assert.True(connection.WasDisposed);
@@ -145,8 +145,8 @@ public static class ConnectionSourceScopeTests
 
 		var ex = async
 			? await Assert.ThrowsAsync<InvalidOperationException>(
-				async () => await factory.OpenScopeAsync(Ct))
-			: Assert.Throws<InvalidOperationException>(() => factory.OpenScope());
+				async () => await factory.EnsureOpenScopeAsync(Ct))
+			: Assert.Throws<InvalidOperationException>(() => factory.EnsureOpenScope());
 
 		Assert.Equal("open failed", ex.Message);
 		Assert.Equal(1, factory.Creates);
@@ -163,7 +163,7 @@ public static class ConnectionSourceScopeTests
 		cts.Cancel();
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			async () => await factory.OpenScopeAsync(cts.Token));
+			async () => await factory.EnsureOpenScopeAsync(cts.Token));
 
 		Assert.Equal(["disposeAsync"], connection.Log);
 		Assert.Equal(ConnectionState.Closed, connection.State);
@@ -177,7 +177,7 @@ public static class ConnectionSourceScopeTests
 		var factory = new CountingFactory(connection);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			async () => await factory.OpenScopeAsync(cts.Token));
+			async () => await factory.EnsureOpenScopeAsync(cts.Token));
 
 		// Opened, then closed by EnsureOpenAsync, then disposed by the scope: not left open.
 		Assert.Equal(["openAsync", "close", "disposeAsync"], connection.Log);
@@ -189,7 +189,7 @@ public static class ConnectionSourceScopeTests
 	{
 		// The documented hazard of a readonly struct: pinned so a change is deliberate.
 		var connection = new ConnectionScopeTests.ScopeConnection();
-		var scope = new CountingFactory(connection).OpenScope();
+		var scope = new CountingFactory(connection).EnsureOpenScope();
 		var copy = scope;
 
 		scope.Dispose();
@@ -206,7 +206,7 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.ScopeConnection();
 		var pool = new CountingPool(connection);
 
-		using (var scope = pool.OpenScope())
+		using (var scope = pool.EnsureOpenScope())
 		{
 			Assert.Same(connection, scope.Connection);
 			Assert.Equal(ConnectionState.Open, connection.State);
@@ -228,7 +228,7 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.ScopeConnection();
 		var pool = new CountingPool(connection);
 
-		await using (var scope = await pool.OpenScopeAsync(Ct))
+		await using (var scope = await pool.EnsureOpenScopeAsync(Ct))
 			Assert.Same(connection, scope.Connection);
 
 		Assert.Equal(1, pool.Takes);
@@ -243,10 +243,10 @@ public static class ConnectionSourceScopeTests
 		var counting = new CountingPool(connection);
 		IDbConnectionPool pool = counting;
 
-		using (ConnectionScope<IDbConnection> scope = pool.OpenScope())
+		using (ConnectionScope<IDbConnection> scope = pool.EnsureOpenScope())
 			Assert.Same(connection, scope.Connection);
 
-		await using (ConnectionScope<IDbConnection> scope = await pool.OpenScopeAsync(Ct))
+		await using (ConnectionScope<IDbConnection> scope = await pool.EnsureOpenScopeAsync(Ct))
 			Assert.Same(connection, scope.Connection);
 
 		Assert.Equal(2, counting.Gives);
@@ -259,7 +259,7 @@ public static class ConnectionSourceScopeTests
 		connection.SetState(ConnectionState.Open);
 		var pool = new CountingPool(connection);
 
-		using (var scope = pool.OpenScope())
+		using (var scope = pool.EnsureOpenScope())
 			Assert.Equal(ConnectionState.Open, scope.PriorState);
 
 		Assert.Equal(["give"], connection.Log);
@@ -273,7 +273,7 @@ public static class ConnectionSourceScopeTests
 		var closed = new ConnectionScopeTests.ScopeConnection();
 		var pool = Open.Database.Extensions.Core.DbConnectionProvider.Create(closed);
 
-		using (pool.OpenScope())
+		using (pool.EnsureOpenScope())
 			Assert.Equal(ConnectionState.Open, closed.State);
 
 		Assert.Equal(ConnectionState.Closed, closed.State);
@@ -282,7 +282,7 @@ public static class ConnectionSourceScopeTests
 		open.SetState(ConnectionState.Open);
 		pool = Open.Database.Extensions.Core.DbConnectionProvider.Create(open);
 
-		await using (await pool.OpenScopeAsync(Ct)) { }
+		await using (await pool.EnsureOpenScopeAsync(Ct)) { }
 
 		Assert.Equal(ConnectionState.Open, open.State);
 		Assert.Equal(["open", "close"], closed.Log);
@@ -300,8 +300,8 @@ public static class ConnectionSourceScopeTests
 
 		var ex = async
 			? await Assert.ThrowsAsync<InvalidOperationException>(
-				async () => await pool.OpenScopeAsync(Ct))
-			: Assert.Throws<InvalidOperationException>(() => pool.OpenScope());
+				async () => await pool.EnsureOpenScopeAsync(Ct))
+			: Assert.Throws<InvalidOperationException>(() => pool.EnsureOpenScope());
 
 		Assert.Equal("open failed", ex.Message);
 		Assert.Equal(1, pool.Takes);
@@ -318,7 +318,7 @@ public static class ConnectionSourceScopeTests
 		cts.Cancel();
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			async () => await pool.OpenScopeAsync(cts.Token));
+			async () => await pool.EnsureOpenScopeAsync(cts.Token));
 
 		Assert.Equal(1, pool.Takes);
 		Assert.Equal(1, pool.Gives);
@@ -333,7 +333,7 @@ public static class ConnectionSourceScopeTests
 		var pool = new CountingPool(connection);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			async () => await pool.OpenScopeAsync(cts.Token));
+			async () => await pool.EnsureOpenScopeAsync(cts.Token));
 
 		Assert.Equal(1, pool.Takes);
 		Assert.Equal(1, pool.Gives);
@@ -345,7 +345,7 @@ public static class ConnectionSourceScopeTests
 	{
 		// The documented hazard of a readonly struct: pinned so a change is deliberate.
 		var pool = new CountingPool(new ConnectionScopeTests.ScopeConnection());
-		var scope = pool.OpenScope();
+		var scope = pool.EnsureOpenScope();
 		var copy = scope;
 
 		scope.Dispose();
@@ -463,6 +463,54 @@ public static class ConnectionSourceScopeTests
 		Assert.Equal(3, pool.Gives);
 		Assert.Equal(["give", "give", "give"], connection.Log);
 	}
+	// ---- one name for a connection, a factory and a pool --------------------------------
+
+	[Fact]
+	public static async Task EnsureOpenScope_BindsToTheRightSource_ForEveryReceiver()
+	{
+		var connection = new ConnectionScopeTests.ScopeConnection();
+
+		// A connection (the generic form keeps its type) ...
+		ConnectionScope<ConnectionScopeTests.ScopeConnection> ofConnection = connection.EnsureOpenScope();
+		ofConnection.Dispose();
+
+		// ... a factory, typed and not ...
+		var factory = new CountingFactory(connection);
+		connection.SetState(ConnectionState.Closed);
+		ConnectionScope<ConnectionScopeTests.ScopeConnection> ofFactory = factory.EnsureOpenScope();
+		ofFactory.Dispose();
+		IDbConnectionFactory untypedFactory = factory;
+		connection.SetState(ConnectionState.Closed);
+		ConnectionScope<IDbConnection> ofUntypedFactory = untypedFactory.EnsureOpenScope();
+		ofUntypedFactory.Dispose();
+		connection.SetState(ConnectionState.Closed);
+		var adapterPool = new DbConnectionFactory<ConnectionScopeTests.ScopeConnection>(() => connection).AsPool();
+		ConnectionScope<ConnectionScopeTests.ScopeConnection> ofAdapter = adapterPool.EnsureOpenScope();
+		ofAdapter.Dispose();
+
+		// ... and a pool, typed and not.
+		var pool = new CountingPool(connection);
+		connection.SetState(ConnectionState.Closed);
+		ConnectionScope<ConnectionScopeTests.ScopeConnection> ofPool = pool.EnsureOpenScope();
+		ofPool.Dispose();
+		IDbConnectionPool untypedPool = pool;
+		connection.SetState(ConnectionState.Closed);
+		ConnectionScope<IDbConnection> ofUntypedPool = await untypedPool.EnsureOpenScopeAsync(Ct);
+		await ofUntypedPool.DisposeAsync();
+
+		// Each ended the way its source calls for: closed (the caller's connection),
+		// disposed (a factory's), or given back (a pool's).
+		Assert.Equal(
+			[
+				"open", "close",
+				"open", "dispose",
+				"open", "dispose",
+				"open", "dispose",
+				"open", "give",
+				"openAsync", "give",
+			],
+			connection.Log);
+	}
 	// ---- shared ------------------------------------------------------------------------
 
 	[Fact]
@@ -471,12 +519,12 @@ public static class ConnectionSourceScopeTests
 		IDbConnectionFactory factory = null!;
 		IDbConnectionPool pool = null!;
 
-		Assert.Throws<ArgumentNullException>(() => factory.OpenScope());
-		Assert.Throws<ArgumentNullException>(() => pool.OpenScope());
+		Assert.Throws<ArgumentNullException>(() => factory.EnsureOpenScope());
+		Assert.Throws<ArgumentNullException>(() => pool.EnsureOpenScope());
 		await Assert.ThrowsAsync<ArgumentNullException>(
-			async () => await factory.OpenScopeAsync(Ct));
+			async () => await factory.EnsureOpenScopeAsync(Ct));
 		await Assert.ThrowsAsync<ArgumentNullException>(
-			async () => await pool.OpenScopeAsync(Ct));
+			async () => await pool.EnsureOpenScopeAsync(Ct));
 	}
 
 	[Fact]

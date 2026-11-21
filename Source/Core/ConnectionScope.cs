@@ -34,14 +34,14 @@ enum ScopeEnd : byte
 /// Never disposes it.</description>
 /// </item>
 /// <item>
-/// <term><see cref="ConnectionExtensions.OpenScope(IDbConnectionFactory)"/> /
-/// <see cref="ConnectionExtensions.OpenScopeAsync(IDbConnectionFactory, CancellationToken)"/> (on a factory)</term>
+/// <term><see cref="ConnectionExtensions.EnsureOpenScope(IDbConnectionFactory)"/> /
+/// <see cref="ConnectionExtensions.EnsureOpenScopeAsync(IDbConnectionFactory, CancellationToken)"/> (on a factory)</term>
 /// <description>The factory created it, so it is yours; disposes it: <c>Dispose</c>, as
 /// <c>factory.Open(...)</c> does, and <c>DisposeAsync</c> from <see cref="DisposeAsync"/> when the connection has one.</description>
 /// </item>
 /// <item>
-/// <term><see cref="ConnectionExtensions.OpenScope(IDbConnectionPool)"/> /
-/// <see cref="ConnectionExtensions.OpenScopeAsync(IDbConnectionPool, CancellationToken)"/> (on a pool)</term>
+/// <term><see cref="ConnectionExtensions.EnsureOpenScope(IDbConnectionPool)"/> /
+/// <see cref="ConnectionExtensions.EnsureOpenScopeAsync(IDbConnectionPool, CancellationToken)"/> (on a pool)</term>
 /// <description>The pool lent it; gives it back with <see cref="IDbConnectionPool.Give(IDbConnection)"/>, as
 /// <c>pool.Open(...)</c> does. What giving back means (close it, keep it, dispose it) is the pool's.</description>
 /// </item>
@@ -57,7 +57,7 @@ enum ScopeEnd : byte
 /// When the connection came from a factory or a pool the scope is how you get it:
 /// </para>
 /// <code>
-/// await using var scope = await factory.OpenScopeAsync(cancellationToken);
+/// await using var scope = await factory.EnsureOpenScopeAsync(cancellationToken);
 /// var connection = scope.Connection;
 /// </code>
 /// <para>
@@ -123,7 +123,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> scope.</exception>
 	public TConnection Connection
 		=> _connection ?? throw new InvalidOperationException(
-			"This scope was not created by an OpenScope or EnsureOpenScope call; a default value has no connection.");
+			"This scope was not created by an EnsureOpenScope call; a default value has no connection.");
 
 	/// <summary>
 	/// The state the connection was in when the scope was made (not its state now):
