@@ -59,6 +59,7 @@ public static class Mapping
 				""")
 			.Map<Person>(PersonMaps.PersonNamesOnlyMap)
 			.ToArrayAsync(cancellationToken);
+
 	public static async Task<DecoratedPost[]> MapDecoratedAsync(
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
@@ -84,12 +85,14 @@ public static class Mapping
 		{
 			// title is where id is declared: a hard instruction that is not
 			// true throws, naming the member, the ordinal and what is there.
-			await connection
+			// The check runs when the row reader is built, so the first row
+			// is enough to see it.
+			DecoratedPost? first = await connection
 				.Command("select title, id, author from posts order by id")
 				.Map<DecoratedPost>()
-				.ToArrayAsync(cancellationToken);
+				.FirstOrDefaultAsync(cancellationToken);
 
-			return "no exception";
+			return $"no exception (first id: {first?.Id})";
 		}
 		catch (ValueMappingException ex)
 		{

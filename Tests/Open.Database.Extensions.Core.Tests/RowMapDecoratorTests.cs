@@ -84,6 +84,50 @@ public static class RowMapDecoratorTests
 		public int B { get; set; }
 	}
 
+	// A declaration that is not valid is a hard rule that cannot be honoured: the type cannot be mapped (the attribute itself refuses these values).
+	public sealed class EmptyName
+	{
+		[Column("")]
+		public int A { get; set; }
+	}
+
+	public sealed class BlankName
+	{
+		[Column("  ")]
+		public int A { get; set; }
+	}
+
+	public sealed class NegativeOrder
+	{
+		[Column(Order = -1)]
+		public int A { get; set; }
+	}
+
+	// Declarations that are ignored, not errors: on the class, and on a field (fields are never mapped).
+	[NotMapped]
+	public sealed class OnTheClass
+	{
+		public int Id { get; set; }
+	}
+
+	public sealed class OnAField
+	{
+		[Column("zzz", Order = 5)]
+		public int Field;
+
+		public int Id { get; set; }
+	}
+
+	// [SetsRequiredMembers] lifts the rule that a required member must be fed, so [NotMapped] is fine on it.
+	[method: SetsRequiredMembers]
+	public sealed class LiftedRequired()
+	{
+		[NotMapped]
+		public required int A { get; set; }
+
+		public int B { get; set; }
+	}
+
 	static FakeExecuteReader Cmd(ImmutableArray<ColumnDef> columns, params object?[][] rows)
 		=> new(() => TypedReader.Create(columns, rows));
 
@@ -132,8 +176,8 @@ public static class RowMapDecoratorTests
 	[Fact]
 	public static void AnUndecoratedMember_StillReadsByName_NextToADecoratedOne()
 	{
-		// Title is undecorated: tier three (ignoring underscores) still finds it.
-		var command = Cmd(Columns(("post_id", typeof(int)), ("TITLE", typeof(string))), [1, "t"]);
+		// Title is undecorated: tier three (ignoring case and underscores) still finds ti_tle.
+		var command = Cmd(Columns(("post_id", typeof(int)), ("ti_tle", typeof(string))), [1, "t"]);
 
 		Named row = Assert.Single(command.Map<Named>().ToList());
 
@@ -184,8 +228,14 @@ public static class RowMapDecoratorTests
 		var async = await Assert.ThrowsAsync<ValueMappingException>(
 			async () => await command.Map<Ordered>().ToListAsync(Ct));
 
-		Assert.Contains("the result has 1 column", sync.Message);
-		Assert.Contains("column 1", async.Message);
+		foreach (ValueMappingException ex in new[] { sync, async })
+		{
+			// The member, the ordinal and what the result has: all on both paths.
+			Assert.Equal("Title", ex.PropertyName);
+			Assert.Contains("'Title'", ex.Message);
+			Assert.Contains("column 1", ex.Message);
+			Assert.Contains("the result has 1 column", ex.Message);
+		}
 	}
 
 	[Theory]
@@ -242,7 +292,9 @@ public static class RowMapDecoratorTests
 	[Fact]
 	public static void ANotMappedMember_IsNeverRead_EvenWhenAColumnLooksLikeIt()
 	{
-		var command = Cmd(Columns(("Id", typeof(int)), ("Note", typeof(string)), ("NOTE", typeof(string)), ("no_te", typeof(string))), [1, "a", "b", "c"]);
+		var command = Cmd(
+			Columns(("Id", typeof(int)), ("Note", typeof(string)), ("NOTE", typeof(string)), ("no_te", typeof(string))),
+			[1, "a", "b", "c"]);
 
 		Skipped row = Assert.Single(command.Map<Skipped>().ToList());
 
@@ -267,7 +319,16 @@ public static class RowMapDecoratorTests
 	}
 
 	public static TheoryData<Type> ContradictoryTypes
-		=> [typeof(BothAttributes), typeof(NotMappedRequired), typeof(NotMappedButConstructed), typeof(SameOrder), typeof(SameName)];
+		=> [
+			typeof(BothAttributes),
+			typeof(NotMappedRequired),
+			typeof(NotMappedButConstructed),
+			typeof(SameOrder),
+			typeof(SameName),
+			typeof(EmptyName),
+			typeof(BlankName),
+			typeof(NegativeOrder),
+		];
 
 	[Theory]
 	[MemberData(nameof(ContradictoryTypes))]
@@ -280,14 +341,55 @@ public static class RowMapDecoratorTests
 		Assert.Contains("cannot be mapped", ex.Message);
 	}
 
+	// A pair does not rescue a type error: the type is judged before any pair is read.
+	[Theory]
+	[MemberData(nameof(ContradictoryTypes))]
+	public static void AContradiction_IsATypeError_EvenWhenAPairNamesTheMember(Type type)
+	{
+		var pairs = new List<KeyValuePair<string, string?>> { new("A", "x") };
+
+		var ex = Assert.Throws<InvalidOperationException>(() => NewMap(type, pairs));
+
+		Assert.Contains("cannot be mapped", ex.Message);
+	}
+
+	static void NewMap(Type type, List<KeyValuePair<string, string?>> pairs)
+	{
+		try
+		{
+			Activator.CreateInstance(typeof(RowMap<>).MakeGenericType(type), pairs);
+		}
+		catch (System.Reflection.TargetInvocationException ex)
+		{
+			throw ex.InnerException!;
+		}
+	}
+
 	[Fact]
 	public static void TheTypeErrors_NameTheMembers()
 	{
-		Assert.Contains("[NotMapped] and [Column]", Assert.Throws<InvalidOperationException>(() => RowMap<BothAttributes>.Default).Message);
-		Assert.Contains("required", Assert.Throws<InvalidOperationException>(() => RowMap<NotMappedRequired>.Default).Message);
-		Assert.Contains("constructor parameter", Assert.Throws<InvalidOperationException>(() => RowMap<NotMappedButConstructed>.Default).Message);
+		Assert.Contains("property 'A' is both [NotMapped] and [Column]", Assert.Throws<InvalidOperationException>(() => RowMap<BothAttributes>.Default).Message);
+		Assert.Contains("property 'A' is [NotMapped] and required", Assert.Throws<InvalidOperationException>(() => RowMap<NotMappedRequired>.Default).Message);
+		Assert.Contains("property 'A' is [NotMapped], but constructor parameter", Assert.Throws<InvalidOperationException>(() => RowMap<NotMappedButConstructed>.Default).Message);
 		Assert.Contains("Order = 0", Assert.Throws<InvalidOperationException>(() => RowMap<SameOrder>.Default).Message);
 		Assert.Contains("\"x\"", Assert.Throws<InvalidOperationException>(() => RowMap<SameName>.Default).Message);
+		Assert.Contains("property 'A' has a [Column] with an empty name", Assert.Throws<InvalidOperationException>(() => RowMap<EmptyName>.Default).Message);
+		Assert.Contains("property 'A' has a [Column] with an empty name", Assert.Throws<InvalidOperationException>(() => RowMap<BlankName>.Default).Message);
+		Assert.Contains("property 'A' has a negative [Column(Order = -1)]", Assert.Throws<InvalidOperationException>(() => RowMap<NegativeOrder>.Default).Message);
+	}
+
+	[Fact]
+	public static void ADeclarationOnTheClassOrOnAField_IsIgnored_AndSetsRequiredMembersLiftsTheRequiredRule()
+	{
+		var plain = Cmd(Columns(("Id", typeof(int))), [3]);
+		Assert.Equal(3, Assert.Single(plain.Map<OnTheClass>().ToList()).Id);
+		Assert.Equal(3, Assert.Single(plain.Map<OnAField>().ToList()).Id);
+
+		var lifted = Cmd(Columns(("A", typeof(int)), ("B", typeof(int))), [1, 2]);
+		LiftedRequired row = Assert.Single(lifted.Map<LiftedRequired>().ToList());
+
+		// A is [NotMapped]: the A column is not read. B is.
+		Assert.Equal((0, 2), (row.A, row.B));
 	}
 
 	static void Map(Type type, FakeExecuteReader command)
