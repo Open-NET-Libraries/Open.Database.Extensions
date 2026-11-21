@@ -40,8 +40,8 @@ namespace Open.Database.Extensions;
 /// <c>[Column("name")]</c> reads that column (exactly, else ignoring case; never inferred), and none in the result throws <see cref="ValueMappingException"/>;
 /// <c>[Column(Order = n)]</c> says column <c>n</c> is the member's (its declared name, else its own name, exactly or ignoring case, never ignoring underscores), and another column there, or too few columns, throws <see cref="ValueMappingException"/> naming the member, the ordinal and what is there;
 /// <c>[NotMapped]</c> leaves the member out (no column feeds it, whatever its name, unless a pair names it). These are checked once per result set, when the row reader is built, never per row, and a result set that fails is checked again the next time it comes back.
-/// A <c>[NotMapped]</c> member that is also <c>[Column]</c>, required, or set by a constructor parameter, and two members that declare the same ordinal or name, are a type error (<see cref="InvalidOperationException"/>).
-/// A pair that names a declared member overrides its declarations for that map (it reads the pair's column, a <see langword="null"/> column leaves it unread, and a <c>[NotMapped]</c> member it names is mapped), and nothing throws for it; the other members keep theirs. A NULL follows the rules below, declared or not.
+/// A <c>[NotMapped]</c> member that is also <c>[Column]</c>, required, or set by a constructor parameter, two members that declare the same ordinal or name, and a declaration with an empty name or a negative ordinal are a type error (<see cref="InvalidOperationException"/>).
+/// A pair that names a declared member overrides its declarations for that map (it reads the pair's column, a <see langword="null"/> column leaves it unread, and a <c>[NotMapped]</c> member it names is mapped), and its own Name and Order checks do not apply; a type error above still throws whatever the map says; the other members keep theirs. A NULL follows the rules below, declared or not.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
 /// Declare it with the collection syntax, <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>, or with the constructor, from one pair or several; a map enumerates the pairs it was declared with.
 /// A column that needs a trim, a parse or a format on its way to a member has a converter:
@@ -393,7 +393,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			if (p.GetIndexParameters().Length != 0 || p.GetSetMethod() is not { } setter || !seen.Add(p.Name)) continue;
 
 			Decoration declared = Decoration.Of(p);
-			if (declared.NotMapped) error ??= NotMappedError(p, declared, null);
+			if (declared.NotMapped || declared.Invalid is not null) error ??= DeclarationError(p, declared, null);
 
 			list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p), NullAnnotations.IsNonNullableReference(p), declared.Column, declared.Order, declared.NotMapped));
 		}
@@ -439,17 +439,20 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			Debug.Assert(added, "A slot name is unique: a parameter takes the name of a property or its own, and the exact name was matched first.");
 
 			Decoration declared = matches[i] is { } property ? Decoration.Of(property) : Decoration.None;
-			if (declared.NotMapped) error ??= NotMappedError(matches[i]!, declared, parameter);
+			if (declared.NotMapped || declared.Invalid is not null) error ??= DeclarationError(matches[i]!, declared, parameter);
 
 			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter), matches[i] is { } required && MustHaveColumn(required), NullAnnotations.IsNonNullableReference(parameter), declared.Column, declared.Order));
 		}
 	}
 
-	// A [NotMapped] member that cannot simply be left out of the map, so the type cannot be mapped: it is also a [Column], it is required (no column could feed it),
-	// or a constructor parameter sets it. Null when it is plain, the property is left out.
-	static string? NotMappedError(PropertyInfo property, Decoration declared, ParameterInfo? parameter)
+	// A declaration that cannot be honoured, so the type cannot be mapped: it is not valid (an empty name, a negative ordinal), or it is [NotMapped] and also a [Column],
+	// required (no column could feed it), or set by a constructor parameter. Null when it is a plain [NotMapped], which leaves the property out.
+	static string? DeclarationError(PropertyInfo property, Decoration declared, ParameterInfo? parameter)
 	{
 		string type = Shape.TypeName(typeof(T));
+		if (declared.Invalid is { } invalid)
+			return $"'{type}' cannot be mapped: property '{property.Name}' has {invalid}. A declaration is a hard rule, so it has to be valid.";
+
 		if (declared.HasColumnAttribute)
 			return $"'{type}' cannot be mapped: property '{property.Name}' is both [NotMapped] and [Column]. A member is mapped or it is not.";
 
@@ -1872,7 +1875,7 @@ static class NullAnnotations
 // What a model property declares for the map, read as data by the full name of the attributes (a consumer's own copy counts, and no package is needed):
 // [Column(Name)] and [Column(Order = n)] (System.ComponentModel.DataAnnotations.Schema.ColumnAttribute; TypeName is ignored) and [NotMapped].
 // This runs once per model type, when the slots are built, never per row.
-readonly struct Decoration(string? column, int order, bool hasColumnAttribute, bool notMapped)
+readonly struct Decoration(string? column, int order, bool hasColumnAttribute, bool notMapped, string? invalid)
 {
 	const string ColumnAttributeName = "System.ComponentModel.DataAnnotations.Schema.ColumnAttribute";
 	const string NotMappedAttributeName = "System.ComponentModel.DataAnnotations.Schema.NotMappedAttribute";
@@ -1888,8 +1891,12 @@ readonly struct Decoration(string? column, int order, bool hasColumnAttribute, b
 
 	public bool NotMapped => notMapped;
 
+	// Why a declaration is not valid (an empty or white-space name, a negative ordinal: values the attribute itself refuses), or null. A declaration is a hard rule,
+	// so it is never read as no declaration: it makes the type unmappable.
+	public string? Invalid => invalid;
+
 	// A member that declares nothing (the default value of the struct would claim ordinal 0).
-	public static Decoration None => new(null, -1, false, false);
+	public static Decoration None => new(null, -1, false, false, null);
 
 	public static Decoration Of(PropertyInfo property)
 	{
@@ -1897,6 +1904,7 @@ readonly struct Decoration(string? column, int order, bool hasColumnAttribute, b
 		int order = -1;
 		bool hasColumn = false;
 		bool notMapped = false;
+		string? invalid = null;
 		foreach (CustomAttributeData attribute in CustomAttributeData.GetCustomAttributes(property))
 		{
 			string? name = attribute.AttributeType.FullName;
@@ -1907,18 +1915,27 @@ readonly struct Decoration(string? column, int order, bool hasColumnAttribute, b
 			else if (name == ColumnAttributeName)
 			{
 				hasColumn = true;
-				if (attribute.ConstructorArguments.Count > 0 && attribute.ConstructorArguments[0].Value is string { Length: > 0 } given)
-					column = given;
+				if (attribute.ConstructorArguments.Count > 0)
+				{
+					if (attribute.ConstructorArguments[0].Value is string given && !string.IsNullOrWhiteSpace(given))
+						column = given;
+					else
+						invalid ??= "a [Column] with an empty name";
+				}
 
 				foreach (CustomAttributeNamedArgument named in attribute.NamedArguments)
 				{
-					if (named.MemberName == "Order" && named.TypedValue.Value is int value && value >= 0)
+					if (named.MemberName != "Order" || named.TypedValue.Value is not int value) continue;
+
+					if (value >= 0)
 						order = value;
+					else
+						invalid ??= $"a negative [Column(Order = {value})]";
 				}
 			}
 		}
 
-		return new(column, order, hasColumn, notMapped);
+		return new(column, order, hasColumn, notMapped, invalid);
 	}
 }
 
