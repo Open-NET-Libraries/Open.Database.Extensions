@@ -17,7 +17,7 @@ public static partial class ConnectionExtensions
 		: new(connection, priorState, pool);
 
 	// Opens a connection that is not the caller's, and releases it if that fails.
-	static ConnectionScope<TConnection> OpenOwned<TConnection>(
+	internal static ConnectionScope<TConnection> OpenOwned<TConnection>(
 		TConnection connection,
 		IDbConnectionPool? pool)
 		where TConnection : IDbConnection
@@ -34,7 +34,7 @@ public static partial class ConnectionExtensions
 		}
 	}
 
-	static async ValueTask<ConnectionScope<TConnection>> OpenOwnedAsync<TConnection>(
+	internal static async ValueTask<ConnectionScope<TConnection>> OpenOwnedAsync<TConnection>(
 		TConnection connection,
 		IDbConnectionPool? pool,
 		CancellationToken cancellationToken)

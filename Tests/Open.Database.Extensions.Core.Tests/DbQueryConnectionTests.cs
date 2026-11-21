@@ -259,7 +259,9 @@ public static class DbQueryConnectionTests
 		Assert.Equal(1, pool.Gives);
 		TrackedConnection connection = Assert.Single(tally.Connections);
 		Assert.Equal(0, connection.Disposes);
-		Assert.Equal(ConnectionState.Closed, connection.State);
+
+		// What giving it back means is the pool's (as with pool.Open): this pool
+		// only counts, so the connection is left as the run had it.
 	}
 
 	// ---- the source arguments are checked by the call that takes them ----

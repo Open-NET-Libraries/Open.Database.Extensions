@@ -443,22 +443,17 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior = CommandBehavior.Default)
 	{
-		IDbConnection? connection = command.Connection;
-		ConnectionState before
-			= connection?.State ?? ConnectionState.Closed;
-		try
-		{
-			connection?.EnsureOpen();
-			using IDataReader reader = command.ExecuteReader(
-				ConnectionExtensions.NeedsOpen(before)
-					? behavior | CommandBehavior.CloseConnection
-					: behavior);
-			return transform(reader, state);
-		}
-		finally
-		{
-			if (ConnectionExtensions.NeedsOpen(before)) connection?.Close();
-		}
+		// No connection: nothing to open, and the command says so itself (the
+		// provider throws InvalidOperationException), as it always has.
+		using ConnectionScope<IDbConnection> scope
+			= command.Connection is { } connection
+				? connection.EnsureOpenScope()
+				: default;
+		using IDataReader reader = command.ExecuteReader(
+			ConnectionExtensions.NeedsOpen(scope.PriorState)
+				? behavior | CommandBehavior.CloseConnection
+				: behavior);
+		return transform(reader, state);
 	}
 
 	public override async ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(
@@ -469,41 +464,36 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		IDbConnection? connection = command.Connection;
-		ConnectionState before
-			= connection?.State ?? ConnectionState.Closed;
-		try
+		// No connection: nothing to open, and the command says so itself (the
+		// provider throws InvalidOperationException), as it always has.
+		await using ConnectionScope<IDbConnection> scope
+			= command.Connection is { } connection
+				? await connection
+					.EnsureOpenScopeAsync(cancellationToken)
+					.ConfigureAwait(false)
+				: default;
+
+		CommandBehavior b = ConnectionExtensions.NeedsOpen(scope.PriorState)
+			? behavior | CommandBehavior.CloseConnection
+			: behavior;
+
+		if (command is DbCommand dbCommand)
 		{
-			// An open connection (the usual case) needs no awaiting at all.
-			if (connection is not null && ConnectionExtensions.NeedsOpen(before))
-				await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-
-			CommandBehavior b = ConnectionExtensions.NeedsOpen(before)
-				? behavior | CommandBehavior.CloseConnection
-				: behavior;
-
-			if (command is DbCommand dbCommand)
-			{
 #if NETSTANDARD2_0
-				using DbDataReader dbReader = await dbCommand
-					.ExecuteReaderAsync(b, cancellationToken)
-					.ConfigureAwait(false);
+			using DbDataReader dbReader = await dbCommand
+				.ExecuteReaderAsync(b, cancellationToken)
+				.ConfigureAwait(false);
 #else
-				DbDataReader dbReader = await dbCommand
-					.ExecuteReaderAsync(b, cancellationToken)
-					.ConfigureAwait(false);
-				await using var dbReaderDisposal = dbReader.ConfigureAwait(false);
+			DbDataReader dbReader = await dbCommand
+				.ExecuteReaderAsync(b, cancellationToken)
+				.ConfigureAwait(false);
+			await using var dbReaderDisposal = dbReader.ConfigureAwait(false);
 #endif
-				return await transform(dbReader, state).ConfigureAwait(false);
-			}
+			return await transform(dbReader, state).ConfigureAwait(false);
+		}
 
-			using IDataReader reader = command.ExecuteReader(b);
-			return await transform(reader, state).ConfigureAwait(false);
-		}
-		finally
-		{
-			if (ConnectionExtensions.NeedsOpen(before)) connection?.Close();
-		}
+		using IDataReader reader = command.ExecuteReader(b);
+		return await transform(reader, state).ConfigureAwait(false);
 	}
 }
 

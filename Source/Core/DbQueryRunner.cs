@@ -14,66 +14,118 @@ static class DbQueryRunner
 		=> new("This query was not created by Using(...); a default value cannot be used.");
 
 	// What one run holds: the connection, and what is owed when the run ends,
-	// which Dispose does (so a run is `using Lease lease = Lease.Take(...)`).
-	// A connection or a transaction is the caller's: it is neither disposed nor
-	// given back. A transaction's connection is also never opened or closed
-	// here. A connection that needed opening (it was closed, or broken) is
-	// closed again, even when the run throws; one from a factory is disposed
-	// and one from a pool is given back, after that.
-	public readonly struct Lease : IDisposable
+	// which Dispose does (so a run is `using Lease lease = Lease.Open(...)`).
+	// It is a ConnectionScope, so it ends the way the source calls for: a
+	// connection of the caller's is closed again if the run opened it (and is
+	// never disposed), one from a factory is disposed, one from a pool is given
+	// back (and what that means is the pool's, as in pool.Open). A transaction's
+	// connection is the transaction's: it is never opened, closed or given back
+	// here. All of this holds when the run throws.
+	public readonly struct Lease : IDisposable, IAsyncDisposable
 	{
-		readonly object _source;
+		readonly ConnectionScope<DbConnection> _scope;
 		readonly bool _opened;
 
 		Lease(
-			object source,
+			ConnectionScope<DbConnection> scope,
 			DbConnection connection,
-			DbTransaction? transaction,
-			bool opened)
+			DbTransaction? transaction)
 		{
-			_source = source;
+			_scope = scope;
 			Connection = connection;
 			Transaction = transaction;
-			_opened = opened;
+
+			// Set for a connection the run opened (it was closed, or broken).
+			_opened = transaction is null
+				&& ConnectionExtensions.NeedsOpen(scope.PriorState);
 		}
 
 		public DbConnection Connection { get; }
 
 		public DbTransaction? Transaction { get; }
 
-		public static Lease Take(object source)
+		// What a source supplies, before anything is opened.
+		readonly struct Taken(
+			DbConnection connection,
+			DbTransaction? transaction,
+			ScopeEnd end,
+			IDbConnectionPool? pool)
+		{
+			public DbConnection Connection => connection;
+
+			public DbTransaction? Transaction => transaction;
+
+			public ScopeEnd End => end;
+
+			public IDbConnectionPool? Pool => pool;
+		}
+
+		public static Lease Open(object source)
+		{
+			Taken taken = Take(source);
+			return taken.Transaction is { } transaction
+				? new(default, taken.Connection, transaction)
+				: Of(Open(taken), taken);
+		}
+
+		public static async ValueTask<Lease> OpenAsync(
+			object source,
+			CancellationToken cancellationToken)
+		{
+			Taken taken = Take(source);
+			return taken.Transaction is { } transaction
+				? new(default, taken.Connection, transaction)
+				: Of(
+					await OpenAsync(taken, cancellationToken).ConfigureAwait(false),
+					taken);
+		}
+
+		static Lease Of(ConnectionScope<DbConnection> scope, Taken taken)
+			=> new(scope, taken.Connection, null);
+
+		// Opened if it needs to be, after the supplied type is known to be right:
+		// a source that gave the wrong kind of connection never has it opened.
+		static ConnectionScope<DbConnection> Open(Taken taken)
+			=> taken.End == ScopeEnd.Close
+				? taken.Connection.EnsureOpenScope()
+				: ConnectionExtensions.OpenOwned(taken.Connection, taken.Pool);
+
+		static ValueTask<ConnectionScope<DbConnection>> OpenAsync(
+			Taken taken,
+			CancellationToken cancellationToken)
+			=> taken.End == ScopeEnd.Close
+				? taken.Connection.EnsureOpenScopeAsync(cancellationToken)
+				: ConnectionExtensions.OpenOwnedAsync(
+					taken.Connection,
+					taken.Pool,
+					cancellationToken);
+
+		static Taken Take(object source)
 		{
 			Debug.Assert(source is not null);
 			DbConnection? connection;
 			switch (source)
 			{
 				case DbConnection direct:
-					return new(
-						source,
-						direct,
-						null,
-						ConnectionExtensions.NeedsOpen(direct.State));
+					return new(direct, null, ScopeEnd.Close, null);
 				case DbTransaction tx:
-					return new(source, OpenConnectionOf(tx), tx, false);
+					return new(OpenConnectionOf(tx), tx, ScopeEnd.Close, null);
 				case IDbConnectionFactory factory:
 					connection = AsDbConnection(factory.Create(), factory);
-					break;
+					return connection is null
+						? throw NoConnection()
+						: new(connection, null, ScopeEnd.Dispose, null);
 				default:
-					connection = AsDbConnection(
-						((IDbConnectionPool)source).Take(),
-						source);
-					break;
+					var pool = (IDbConnectionPool)source;
+					connection = AsDbConnection(pool.Take(), source);
+					return connection is null
+						? throw NoConnection()
+						: new(connection, null, ScopeEnd.Give, pool);
 			}
-
-			return connection is null
-				? throw new InvalidOperationException(
-					"The connection source supplied no connection.")
-				: new(
-					source,
-					connection,
-					null,
-					ConnectionExtensions.NeedsOpen(connection.State));
 		}
+
+		static InvalidOperationException NoConnection()
+			=> new("The connection source supplied no connection.");
 
 		// A source that supplies something that is not a DbConnection: it is
 		// let go the way its source lets go of a connection (disposed for a
@@ -107,37 +159,14 @@ static class DbQueryRunner
 				: connection;
 		}
 
-		public void Open()
-		{
-			if (_opened) Connection.EnsureOpen();
-		}
-
-		// An open connection (the usual case) needs no awaiting at all.
-		public ValueTask OpenAsync(CancellationToken cancellationToken)
-			=> _opened
-				? ValueTaskHelpers.Discard(
-					Connection.EnsureOpenAsync(cancellationToken))
-				: default;
-
 		public CommandBehavior Behavior(CommandBehavior behavior)
 			=> _opened
 				? behavior | CommandBehavior.CloseConnection
 				: behavior;
 
-		public void Dispose()
-		{
-			try
-			{
-				if (_opened) Connection.Close();
-			}
-			finally
-			{
-				if (_source is IDbConnectionFactory)
-					Connection.Dispose();
-				else if (_source is IDbConnectionPool pool)
-					pool.Give(Connection);
-			}
-		}
+		public void Dispose() => _scope.Dispose();
+
+		public ValueTask DisposeAsync() => _scope.DisposeAsync();
 	}
 	static DbCommand Make(
 		DbConnection connection,
@@ -280,8 +309,7 @@ static class DbQueryRunner
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		using Lease lease = Lease.Take(source);
-		lease.Open();
+		using Lease lease = Lease.Open(source);
 		NameSet? names = call is { NeedsNames: true }
 			? Resolve(definition, source, lease.Connection, call)
 			: null;
@@ -311,8 +339,7 @@ static class DbQueryRunner
 		// Cancelled awaited tasks throw, so this does too.
 		cancellationToken.ThrowIfCancellationRequested();
 
-		using Lease lease = Lease.Take(source);
-		await lease.OpenAsync(cancellationToken).ConfigureAwait(false);
+		await using Lease lease = await Lease.OpenAsync(source, cancellationToken).ConfigureAwait(false);
 		NameSet? names = call is { NeedsNames: true }
 			? await ResolveAsync(
 					definition,
