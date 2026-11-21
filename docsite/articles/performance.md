@@ -16,7 +16,7 @@ How long the connection is held open (top) and how much memory is allocated (bot
 
 ## What was asked, and the answer
 
-Each row is one page. Every page has the same order: the answer first, then the chart and the numbers, then why, then how it was measured.
+A *terminal* is the call that ends a query and gives you the rows: `ToListAsync()`, `ToArrayAsync()`, `First()` and the like. Each row is one page. Every page has the same order: the answer first, then the chart and the numbers, then why, then how it was measured.
 
 | What we asked | The answer in a few words | Page |
 |---|---|---|
@@ -28,7 +28,7 @@ Each row is one page. Every page has the same order: the answer first, then the 
 | Sync reads or async reads? | Sync is cheapest or tied in every case measured; async can wait on a busy thread pool | [Sync reads against async reads](benchmarks/sync-vs-async.md) |
 | What happens on a slow link or with a 100 MB value? | The link sets the time; the sync read allocates less; one async path took 5.4 times as long | [Slow links and large values](benchmarks/slow-links-and-large-values.md) |
 | Are channels and Dataflow faster than a loop? | No: 1.26 and 2.1 times a plain loop at 1,000 rows (older run) | [Channels and Dataflow against a plain loop](benchmarks/pipelines.md) |
-| Which pool, and how are rows cleared? | Plain `ArrayPool` arrays; 2 to 5% faster end to end; clearing is cheap when done inline | [Pooling and clearing](benchmarks/pooling-and-clearing.md) |
+| Which pool, and how are rows cleared? | Plain `ArrayPool` arrays; 2 to 5% faster end to end; always clearing reference rows costs 3 to 4 µs on a one-row call and nothing you can see from 100 rows | [Pooling and clearing](benchmarks/pooling-and-clearing.md) |
 
 Also: [How we measure](benchmarks/how-we-measure.md) (the method, the settings, how fresh the data is), the [data files](performance-data.md), and the [interactive ranking](../benchmarks/ranking.html) of the 16 synthetic variants, a snapshot of 2026-11-14.
 
@@ -37,7 +37,7 @@ Also: [How we measure](benchmarks/how-we-measure.md) (the method, the settings, 
 - On SQLite, at 10,000 rows of 20 columns, `Map<T>()` is slower than Dapper and than a hand-written selector. [On real databases](benchmarks/real-databases.md).
 - On SQL Server, `Map<T>()`, a hand-written selector and Dapper are within the noise of one run. The difference you can count on there is allocation.
 - A hand-written selector is faster than `Map<T>()` at every width, and `object[]` rows are faster at one column. [Cost per column](benchmarks/cost-per-column.md).
-- `AsyncReads()` costs more than the default. With a 20 µs wait every 100 rows and a busy thread pool it took 40 times as long (a synthetic model); a busy pool alone added 8%. [Sync reads against async reads](benchmarks/sync-vs-async.md).
+- `AsyncReads()` costs more than the default. With a 20 µs wait every 100 rows and a busy thread pool it took 40 times as long (a synthetic model); with only a busy pool, no refill, it took 8% more than a fully sync read (102.4 against 94.4 µs). [Sync reads against async reads](benchmarks/sync-vs-async.md).
 - `ToChannel` and the Dataflow methods are not faster than reading rows in a plain loop. They exist to feed pipelines: see [Channels and Dataflow](channels-and-dataflow.md).
 - `Retrieve().DequeueAs<T>()` is deprecated: it copies every row to `object[]` first and maps later. In an older run it took 1.29 and 1.33 times as long as a plain loop at 100 and 1,000 rows (6% less at one row; [`RESULTS.md`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md)). Use `Map<T>()`.
 

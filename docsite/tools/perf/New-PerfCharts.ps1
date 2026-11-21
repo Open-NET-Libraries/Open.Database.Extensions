@@ -70,7 +70,7 @@ function Get-Words([string]$text, [int]$max) {
 
 # Family key -> CSS class, legend text, legend order.
 $famClass = @{ 'arr' = 'one'; 'alt' = 'grey'; 'p-none' = 'grey'; 'p-inline' = 'one'; 'p-bin' = 'select'; 'loop' = 'grey'; 'odx' = 'one'; 'rd-sync' = 'one'; 'rd-async' = 'select'; 'raw' = 'grey'; 'odx-one' = 'one'; 'odx-select' = 'select'; 'odx-raw' = 'grey'; 'reference' = 'grey'; 'dapper' = 'dapper' }
-$famName = @{ 'arr' = 'Arrays from ArrayPool (what ODX does)'; 'alt' = 'The alternatives measured'; 'p-none' = 'No clear'; 'p-inline' = 'Inline clear'; 'p-bin' = 'Post to the recycle bin'; 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89' }
+$famName = @{ 'arr' = 'Arrays from ArrayPool (the lease per chunk is what ODX uses)'; 'alt' = 'The alternatives measured'; 'p-none' = 'No clear'; 'p-inline' = 'Inline clear'; 'p-bin' = 'Post to the recycle bin'; 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89' }
 $famOrder = 'arr', 'alt', 'p-none', 'p-inline', 'p-bin', 'loop', 'odx', 'rd-sync', 'rd-async', 'raw', 'odx-one', 'odx-select', 'odx-raw', 'reference', 'dapper'
 
 $css = @'
@@ -419,7 +419,7 @@ $e2eRows = @($pe | Sort-Object { -[double]$_.rows }, terminal -Stable | ForEach-
   $gain = (1 - [double]$_.after_us / [double]$_.before_us) * 100
   [pscustomobject]@{ Name = "$($_.terminal), $(F ([double]$_.rows) 0) rows"; Fam = 'arr'; Value = $gain
     Detail = "$($_.terminal), $(F ([double]$_.rows) 0) rows: $(Format-Micro ([double]$_.before_us)) before, $(Format-Micro ([double]$_.after_us)) after, $(F $gain 1)% less time." } })
-Write-Lf (Join-Path $ImageDir 'perf-pool-e2e.svg') (New-BarSvg 'pool-e2e' 'The final design against the Memory chunks build' 'Longer is better. How much less time the call takes, in percent.' @(@{ Title = ''; Rows = $e2eRows }) { param($v) (F $v 1) + '%' } 'percent less time than the Memory<T> chunks build (SQLite in memory, class rows)' "Builds 3c05c47 and d4b47b8, $($peSrc.Date), one run per case. Numbers: pool-e2e.csv" 'shared' 250 'Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced.' 560)
+Write-Lf (Join-Path $ImageDir 'perf-pool-e2e.svg') (New-BarSvg 'pool-e2e' 'The final design against the Memory chunks build' 'Longer is better. How much less time the call takes, in percent.' @(@{ Title = ''; Rows = $e2eRows }) { param($v) (F $v 1) + '%' } 'percent less time than the Memory<T> chunks build' "Builds 3c05c47 and d4b47b8, $($peSrc.Date), SQLite in memory, class rows. Numbers: pool-e2e.csv" 'shared' 250 'Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced.' 560)
 
 # ---------- the tables (markdown includes) ----------
 # Each file is one table, with no links (a page links to the CSV and the source file itself), so it reads the same

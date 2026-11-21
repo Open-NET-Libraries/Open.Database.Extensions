@@ -22,7 +22,7 @@ The last column is the cost of one more cell: the time at 20 columns minus the t
 
 - **Hand-written selector (1.91 ns per cell).** It reads each column with a typed getter and nothing else. This is the floor.
 - **`Map<T>()` (3.65 ns).** It reads each column with a typed getter too, through a mapping compiled once and cached.
-- **`object[]` rows (8.90 ns).** Every cell is boxed, which allocates, so each column costs an allocation. It does the least at one column and the most work at twenty.
+- **`object[]` rows (8.90 ns).** Every cell is boxed, which allocates, so each column costs an allocation. It is the fastest of the five at one column and the fourth at twenty.
 - **Dapper (9.70 ns).** The slope is close to the `object[]` rows'. These runs measure the slope, not what causes it.
 
 The practical reading: the more columns a query returns, the more it matters how the cells are read. For a narrow result the choice hardly shows; for a wide one it is the main cost.

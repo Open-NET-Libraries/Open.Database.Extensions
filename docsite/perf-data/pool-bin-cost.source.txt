@@ -1,4 +1,4 @@
-Benchmark build: before f6942a7 (master, the overloads with the flag false: nothing was cleared), after b86608b (an earlier build of the pooled-arrays change, merged later as 9a2fbf2: reference rows always cleared, large chunks on the recycle bin)
+Benchmark build: before f6942a7 and after b86608b (master with the flag false, where nothing was cleared, and an earlier build of the pooled-arrays change, merged later as 9a2fbf2, where reference rows are always cleared and large chunks go to the recycle bin)
 Run date: 2026-11-20
 Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets)
 Runtime: .NET 11.0.0

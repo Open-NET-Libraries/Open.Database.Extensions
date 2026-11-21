@@ -60,7 +60,7 @@ The library is built on one idea: hold the connection open as briefly as possibl
 
 That also fits the memory column matching a hand-written selector: nothing is left to allocate but the list and one object per row.
 
-**Where the gain does not survive.** Once a real provider does the work, most of the time is the provider's. SQL Server LocalDB reads 10,000 rows in about 25 ms whichever library maps them, so a 2.5-times lead on a synthetic reader becomes a tie. If your queries are slow because of the database, no mapping library will change that. The thing ODX still changes there is memory: on SQL Server 29% less than Dapper, on SQLite only 4.6% less.
+**Where the gain does not survive.** Once a real provider does the work, most of the time is the provider's. SQL Server LocalDB reads 10,000 rows in about 25 ms whichever library maps them, so a 2.5-times lead on a synthetic reader becomes a tie. If your queries are slow because of the database, no mapping library will change that. The thing ODX still changes there is memory: on SQL Server 23% less than Dapper (Dapper allocates 29% more), on SQLite only 4.6% less.
 
 ## How this was measured
 

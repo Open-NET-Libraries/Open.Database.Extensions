@@ -9,7 +9,7 @@ This is the long version of the [library comparison](library-comparison.md): all
 - **Connection held open.** A hand-written selector is fastest (46.8 µs). `Map<T>()` is next among the simple ones (81.6 µs). Dapper's variants take 197.5 to 257.6 µs, 2.4 to 3.2 times `Map<T>()`.
 - **Memory.** `Map<T>()` and a hand-written selector allocate 227.4 KB. A row class followed by `Select` allocates about twice that, because every row exists twice. Dapper's variants allocate 548.1 to 837.4 KB.
 - **Not the fastest:** four ODX variants beat `Map<T>()` on time: the hand-written selector (46.8 µs), and three selector variants (58.8, 62.8 and 67.6 µs). Each asks you to write the selector or the reuse yourself. `Map<T>()` is the one that needs none.
-- **Two variants look as fast as `Map<T>()` on the first chart only because their remaining work happens after the reader closes.** The second chart shows it.
+- **Two variants, a row class followed by `Select` after the reader closes and a row class with shaping after the close, look as fast as `Map<T>()` on the first chart (82.1 and 82.3 µs) only because their remaining work happens after the reader closes.** The second chart shows it.
 
 20 columns, 1,000 rows, synthetic reader. Every number is in the table at the end of the charts.
 

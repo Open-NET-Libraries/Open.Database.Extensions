@@ -8,7 +8,7 @@ In this page, "the default" is what an async terminal does: `ExecuteReaderAsync`
 
 ## In short
 
-- **The fully sync read is the cheapest, or level with the default, in all four conditions.** With no refill and no busy thread pool, the default (`ExecuteReaderAsync`, then `Read()`) costs **4.7% more** than the fully sync read (80.9 against 77.3 µs for 1,000 rows of 20 columns). `ReadAsync()` for every row costs **6.5% more** (82.3 µs), which is 1.8% more than the default. That extra time is the async state machine; these runs show nothing else adding to it.
+- **The fully sync read is the cheapest, or level with the default, in all four conditions.** With no refill and no busy thread pool, the default (`ExecuteReaderAsync`, then `Read()`) costs **4.7% more** than the fully sync read (80.9 against 77.3 µs for 1,000 rows of 20 columns). `ReadAsync()` for every row costs **6.5% more** (82.3 µs), which is 1.8% more than the default. That extra time is the extra work of an async method (the compiler's state machine); these runs show nothing else adding to it.
 - **A busy thread pool plus a wait for data is the hazard.** With a 20 µs wait every 100 rows (a buffer refill) and a busy pool, a read took **11.2 ms** with `AsyncReads()` and **0.28 ms** with the default, 40 times as long. Each refill makes `ReadAsync()` wait for a free thread while the reader stays open.
 - **Not faster:** in no condition measured is the async read faster, and the benefit of releasing a thread while a row is on the wire was not measured here. The default is within 4.7% of the fully sync read in all four conditions (4.7%, 3.1% and 1.3% more, and 0.1% less in the last).
 - Allocations are within 4 KB of each other in every case.

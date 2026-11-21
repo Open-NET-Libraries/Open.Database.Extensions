@@ -1,4 +1,4 @@
-Benchmark build: before 3c05c47 (the Memory<T> chunks build of the pooled-arrays change), after d4b47b8 (the arrays and struct lease build); both are builds of the branch that was merged as 9a2fbf2
+Benchmark build: before 3c05c47 and after d4b47b8 (the Memory<T> chunks build and the arrays and struct lease build of the branch that was merged as 9a2fbf2)
 Run date: 2026-11-20
 Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets)
 Runtime: .NET 11.0.0

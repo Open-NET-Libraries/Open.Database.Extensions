@@ -124,6 +124,6 @@
     <text class="val" x="378.11" y="265">3.1%</text>
   </g>
   <line class="axis" x1="250" y1="66" x2="250" y2="274"/>
-  <text class="muted small mid" x="369" y="306">percent less time than the Memory&lt;T&gt; chunks build (SQLite in memory, class rows)</text>
-  <text class="muted small" x="16" y="334">Builds 3c05c47 and d4b47b8, 2026-11-20, one run per case. Numbers: pool-e2e.csv</text>
+  <text class="muted small mid" x="369" y="306">percent less time than the Memory&lt;T&gt; chunks build</text>
+  <text class="muted small" x="16" y="334">Builds 3c05c47 and d4b47b8, 2026-11-20, SQLite in memory, class rows. Numbers: pool-e2e.csv</text>
 </svg>
