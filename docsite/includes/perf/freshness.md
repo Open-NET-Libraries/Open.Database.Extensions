@@ -14,7 +14,9 @@
 | `pool-store.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
 | `pool-rent.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
 | `pool-bytes.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
-| `pool-release.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
-| `pool-return-clear.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
+| `pool-release-path.csv` | pooling and clearing | `library master 6a88b60` | 2026-11-21 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); the probe pinned to 8 logical cores | .NET 10.0.15 |
+| `pool-clear-speed.csv` | pooling and clearing | `library master 6a88b60` | 2026-11-21 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); the probe pinned to 8 logical cores | .NET 10.0.15 |
+| `pool-bin-proof-e2e.csv` | pooling and clearing | `library master 6a88b60` | 2026-11-21 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); the probe pinned to 8 logical cores | .NET 10.0.15 |
+| `pool-bin-cpu.csv` | pooling and clearing | `library master 6a88b60` | 2026-11-21 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); the probe pinned to 8 logical cores | .NET 10.0.15 |
 | `pool-e2e.csv` | pooling and clearing | `before 3c05c47 and after d4b47b8` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 11.0.0 |
 | `pool-bin-cost.csv` | pooling and clearing | `before f6942a7 and after b86608b` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 11.0.0 |

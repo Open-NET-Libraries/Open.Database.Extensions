@@ -1,0 +1,8 @@
+Benchmark build: library master 6a88b60 (11.0.0-rc.11), BinProof harness commit 1f05bf1 (scratch, never pushed)
+Run date: 2026-11-21
+Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); the probe pinned to 8 logical cores
+Runtime: .NET 10.0.15
+Harness: the BinProof probe program (a scratch harness that is not in the repository), run against the library built from master 6a88b60 (11.0.0-rc.11); Release, server GC off; one process per run
+Benchmark: BinProof part 2: the cost of clearing and returning one array four ways, warm shared pool, rent and fill untimed; arrays of 1,024, 16,384 and 65,536 slots, full and half used; int rows and class rows
+Columns: ns = median of rounds, ns per clear and return; run = 1, 2 or 3
+Source: the numbers are copied from binproof-run1, binproof-run2 and binproof-run3 (part 2) of the BinProof console output. The logs are not in the repository.

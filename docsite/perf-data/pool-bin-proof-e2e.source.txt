@@ -1,0 +1,8 @@
+Benchmark build: library master 6a88b60 (11.0.0-rc.11), BinProof harness commit 1f05bf1 (scratch, never pushed)
+Run date: 2026-11-21
+Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); the probe pinned to 8 logical cores
+Runtime: .NET 10.0.15
+Harness: the BinProof probe program (a scratch harness that is not in the repository), run against the library built from master 6a88b60 (11.0.0-rc.11); Release, server GC off; one process per run
+Benchmark: BinProof part 3: end to end on SQLite in memory, class rows, ToListAsync and ToAsyncBufferStream at 10,000 and 100,000 rows; the shipped bin (chunks of 4,096 rows or more go to it) against inline always (a test-only setting, deferFromRows = int.MaxValue); the two arms interleaved in blocks
+Columns: median_ms, mean_ms and p90_ms = time of one call; cpu_ms = process CPU time per call, all threads; alloc_kb = allocated per call; run = 1, 2 or 3
+Source: the numbers are copied from binproof-run1, binproof-run2 and binproof-run3 (part 3) of the BinProof console output. The logs are not in the repository.
