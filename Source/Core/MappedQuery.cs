@@ -198,13 +198,29 @@ readonly struct MappedQueryCore<T>(
 		=> new(Command, _source, _skip, _take, _singleResult, _asyncReads, config);
 
 	public MappedQueryCore<T> WithSkip(int count)
-		=> count >= 0 ? new(Command, _source, _skip + count, _take, _singleResult, _asyncReads, Config)
+		=> count >= 0
+			? new(
+				Command,
+				_source,
+				_skip + count,
+				_take,
+				_singleResult,
+				_asyncReads,
+				Config)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// Take is set exactly once (the staging structs only expose it before any take exists), so this
 	// just records the limit; it applies after the skip, i.e. Enumerable.Skip(a).Take(b).
 	public MappedQueryCore<T> WithTake(int count)
-		=> count >= 0 ? new(Command, _source, _skip, count, _singleResult, _asyncReads, Config)
+		=> count >= 0
+			? new(
+				Command,
+				_source,
+				_skip,
+				count,
+				_singleResult,
+				_asyncReads,
+				Config)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// One token governs a whole call: the one passed to the terminal together with the command's own (either cancels), for the connection open, the name lookup, the execute and the reads.

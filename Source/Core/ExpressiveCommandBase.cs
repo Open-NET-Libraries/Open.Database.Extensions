@@ -943,7 +943,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (_poolOrConnection is TConnection single)
 		{
 			using Busy busy = EnterDirect();
-			var direct = await EnsureOpenScopeUnlessOpenAsync(single, null, cancellationToken).ConfigureAwait(false);
+			var direct = await EnsureOpenScopeUnlessOpenAsync(
+					single,
+					null,
+					cancellationToken)
+				.ConfigureAwait(false);
 			await using var directDisposal = direct.ConfigureAwait(false);
 			NameSet? names = null;
 			if (_hasDerivedParams)
@@ -961,7 +965,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 
 		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
-		var lease = await EnsureOpenScopeUnlessOpenAsync(pool.Take(), pool, cancellationToken).ConfigureAwait(false);
+		var lease = await EnsureOpenScopeUnlessOpenAsync(
+				pool.Take(),
+				pool,
+				cancellationToken)
+			.ConfigureAwait(false);
 		await using var leaseDisposal = lease.ConfigureAwait(false);
 		NameSet? leaseNames = null;
 		if (_hasDerivedParams)
@@ -1016,7 +1024,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		return new Busy(this);
 	}
 
-	readonly struct Busy(ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis> owner) : IDisposable
+	readonly struct Busy(
+		ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis> owner)
+		: IDisposable
 	{
 		public void Dispose() => Volatile.Write(ref owner._busy, 0);
 	}

@@ -63,12 +63,14 @@ public static partial class ConnectionExtensions
 		return new(connection, connection.State, connectionPool);
 	}
 
-	internal static ConnectionScope<TConnection> Rent<TConnection>(this IDbConnectionPool<TConnection> connectionPool)
+	internal static ConnectionScope<TConnection> Rent<TConnection>(
+		this IDbConnectionPool<TConnection> connectionPool)
 		where TConnection : IDbConnection
 	{
 		TConnection connection = connectionPool.Take();
 		return new(connection, connection.State, connectionPool);
 	}
+
 	/// <summary>
 	/// Creates a connection from the factory, opens it if needed, and returns a
 	/// <see cref="ConnectionScope{TConnection}"/> that disposes it when the scope is disposed.
@@ -82,7 +84,8 @@ public static partial class ConnectionExtensions
 	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
-	public static ConnectionScope<IDbConnection> EnsureOpenScope(this IDbConnectionFactory connectionFactory)
+	public static ConnectionScope<IDbConnection> EnsureOpenScope(
+		this IDbConnectionFactory connectionFactory)
 	{
 		if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
 		Contract.EndContractBlock();
@@ -99,7 +102,8 @@ public static partial class ConnectionExtensions
 	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
-	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
+	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(
+		this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
 	{
 		if (connectionFactory is null) throw new ArgumentNullException(nameof(connectionFactory));
@@ -191,7 +195,8 @@ public static partial class ConnectionExtensions
 	/// <param name="connectionPool">The connection pool to take the connection from.</param>
 	/// <returns>The connection, and the state it was in before it was opened.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>.</exception>
-	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(this IDbConnectionPool<TConnection> connectionPool)
+	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(
+		this IDbConnectionPool<TConnection> connectionPool)
 		where TConnection : IDbConnection
 	{
 		if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));

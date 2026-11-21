@@ -129,7 +129,8 @@ public static class AsyncBuffers
 		await using PooledBuffer<Post> buffer = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.Skip(1).Take(2)
+			.Skip(1)
+			.Take(2)
 			.ToAsyncBuffer(cancellationToken);
 
 		PooledArray<Post> posts = await buffer.Items;
@@ -430,7 +431,10 @@ public sealed class CountingPool<T> : ArrayPool<T>
 	public override void Return(T[] array, bool clearArray = false)
 	{
 		// What a pool does with the flag.
-		if (clearArray) Array.Clear(array);
+		if (clearArray)
+		{
+			Array.Clear(array);
+		}
 
 		if (Array.Exists(
 			array,

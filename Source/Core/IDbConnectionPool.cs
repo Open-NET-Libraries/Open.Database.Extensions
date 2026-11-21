@@ -1,11 +1,11 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// A common abstraction for acquiring and releasing database connections. Can easily be used with dependency injection.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Every <see cref="Take"/> is paired with exactly one <see cref="Give(IDbConnection)"/>. The expressive commands (for example <see cref="ExpressiveCommand"/>) call <see cref="Give(IDbConnection)"/> in a <see langword="finally"/> block, so a connection is handed back even when the command fails.
+/// Every <see cref="Take"/> is paired with exactly one <see cref="Give(IDbConnection)"/>. The expressive commands (for example <see cref="ExpressiveCommand"/>) give the connection back through a <see cref="ConnectionScope{TConnection}"/> (a lease on the pool), so a connection is handed back even when the command fails.
 /// </para>
 /// <para>
 /// Implementations decide what giving a connection back means. A pool that hosts a single connection for non-concurrent operations returns the connection to the state it was in when it was taken (a connection that was closed is closed again). A connection factory can pose as a pool through <see cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/>, in which case taking always creates a new connection and giving back always disposes it.

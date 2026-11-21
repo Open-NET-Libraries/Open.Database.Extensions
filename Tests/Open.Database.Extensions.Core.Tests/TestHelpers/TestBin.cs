@@ -20,7 +20,7 @@ internal sealed class TestBin : RecycleBin
 	/// <summary>How many posts were attempted.</summary>
 	public int Posts => Volatile.Read(ref _posts);
 
-	protected override PostResult TryPost(Work work)
+	public override PostResult TryPost(Work work)
 	{
 		Interlocked.Increment(ref _posts);
 		return Mode switch

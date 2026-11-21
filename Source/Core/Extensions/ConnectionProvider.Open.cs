@@ -236,7 +236,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionFactory.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionFactory
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		return await action(scope.Connection).ConfigureAwait(false);
 	}
@@ -262,7 +264,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionFactory.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionFactory
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		await action(scope.Connection).ConfigureAwait(false);
 	}
@@ -291,7 +295,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionFactory.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionFactory
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		return await action(scope.Connection).ConfigureAwait(false);
 	}
@@ -319,7 +325,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var scope = await connectionFactory.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		var scope = await connectionFactory
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 		await action(scope.Connection).ConfigureAwait(false);
 	}

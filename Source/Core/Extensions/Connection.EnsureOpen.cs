@@ -154,6 +154,7 @@ public static partial class ConnectionExtensions
 		=> new(
 			connection,
 			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false));
+
 	/// <summary>
 	/// If the <paramref name="connection"/> derives from <see cref="DbConnection"/>, this will call <see cref="DbConnection.OpenAsync(CancellationToken)"/>;
 	/// otherwise it will call <see cref="IDbConnection.Open()"/>.

@@ -143,7 +143,16 @@ public static class ArrayLeaseTests
 		await Until(() => pool.Returns == 1, "the bin ran");
 		Assert.Equal(0, pool.DirtyReturns);
 		Assert.Equal(0, pool.Unmatched);
+
+		// Cleared there as the inline release does: the ten rows are gone and
+		// every slot after them still holds the sentinel.
+		Assert.All(array.Take(10), r => Assert.Null(r));
+		Assert.All(array.Skip(10), r => Assert.Equal(-1, r!.Id));
 	}
+
+	[Fact]
+	public static void TheDeferThreshold_IsTheMeasuredFourThousandNinetySix()
+		=> Assert.Equal(4096, ChunkConfig<ChannelRow>.DefaultDeferFromRows);
 
 	[Fact]
 	public static void AChunkOfExactlyTheThreshold_IsPosted()

@@ -27,7 +27,7 @@ public static class ClearOnReturnTests
 	static MappedCommand<T> Pooled<T>(
 		MappedCommand<T> view,
 		ArrayPool<T> pool,
-		bool clearOnReturn,
+		bool? clearOnReturn,
 		RecycleBin? bin = null)
 		=> view.WithConfig(TestConfig.Of(pool, clearOnReturn, bin, deferFromRows: 1));
 
@@ -60,7 +60,7 @@ public static class ClearOnReturnTests
 		string terminal,
 		MappedCommand<T> view,
 		ArrayPool<T> pool,
-		bool clearOnReturn,
+		bool? clearOnReturn,
 		RecycleBin? bin = null)
 	{
 		MappedCommand<T> pooled = Pooled(view, pool, clearOnReturn, bin);
@@ -135,6 +135,27 @@ public static class ClearOnReturnTests
 		// "Full" refuses: the arrays were cleared where they were released,
 		// and returned clean.
 		await Until(() => pool.Outstanding == 0, "the arrays back");
+		AssertBalanced(pool);
+		Assert.Equal(0, pool.DirtyReturns);
+	}
+
+	// Rows that hold references are cleared whatever was asked (the floor), also
+	// on the bin path: a chunk sent to the bin is cleared there, not returned dirty.
+	[Theory]
+	[InlineData(false)]
+	[InlineData(null)]
+	public static async Task ReferenceRows_AreClearedInTheBin_EvenWhenNotAskedTo(
+		bool? clearOnReturn)
+	{
+		var pool = RowPool(roundUp: true);
+		var bin = new TestBin();
+
+		Assert.Equal(
+			100,
+			await ReadAll("stream", Rows(100), pool, clearOnReturn, bin));
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+
+		Assert.True(bin.Posts > 0);
 		AssertBalanced(pool);
 		Assert.Equal(0, pool.DirtyReturns);
 	}

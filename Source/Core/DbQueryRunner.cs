@@ -137,7 +137,8 @@ static class DbQueryRunner
 				supplied.Dispose();
 
 			throw new InvalidOperationException(
-				$"The connection source supplied a {supplied.GetType()}, which is not a DbConnection.");
+				$"The connection source supplied a {supplied.GetType()}, "
+				+ "which is not a DbConnection.");
 		}
 
 		// A transaction is begun on an open connection and holds it: it is
@@ -339,7 +340,9 @@ static class DbQueryRunner
 		// Cancelled awaited tasks throw, so this does too.
 		cancellationToken.ThrowIfCancellationRequested();
 
-		Lease lease = await Lease.OpenAsync(source, cancellationToken).ConfigureAwait(false);
+		Lease lease = await Lease
+			.OpenAsync(source, cancellationToken)
+			.ConfigureAwait(false);
 		await using var leaseDisposal = lease.ConfigureAwait(false);
 		NameSet? names = call is { NeedsNames: true }
 			? await ResolveAsync(

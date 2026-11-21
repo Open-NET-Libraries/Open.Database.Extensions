@@ -131,7 +131,7 @@ internal class RecycleBin(int capacity = RecycleBin.DefaultCapacity)
 	}
 
 	/// <summary>The post itself (a test can replace it).</summary>
-	protected virtual PostResult TryPost(Work work)
+	public virtual PostResult TryPost(Work work)
 	{
 		if (Volatile.Read(ref _loop) is null)
 		{

@@ -234,6 +234,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 		=> _connection is not null
 			? ConnectionExtensions.ReaderBehavior(PriorState, behavior)
 			: behavior;
+
 	/// <summary>
 	/// Configures how the disposal of this scope is awaited by <c>await using</c>, without boxing the scope.
 	/// </summary>
