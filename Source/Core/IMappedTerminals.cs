@@ -15,6 +15,11 @@ namespace Open.Database.Extensions;
 /// </remarks>
 internal interface IMappedTerminals<T>
 {
+	// The query's own core: a query that is ours is collected by its own terminals, with the
+	// pool and the clear rule it was given (UsePool), whichever way it is called. A query that
+	// is not ours (a user's IMappedQuery<T>) has none, and is collected without pooling.
+	MappedQueryCore<T> Core { get; }
+
 	T First();
 
 	T Single();

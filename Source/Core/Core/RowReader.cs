@@ -94,13 +94,6 @@ internal static class RowReader
 		return list;
 	}
 
-	// Buffers mapped rows in a queue so a caller can drain it: each item is released to the GC as it is dequeued.
-	// The rows are collected in a chain of pooled arrays and the queue is made from the exact count in one block copy (no growth copies, no slack).
-	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take, ChunkConfig<T> config)
-		=> Collect<T, QueueBuild<T>, Queue<T>>(
-			source, reader, skip, take, default,
-			config);
-
 	// The collecting terminals' one sync shape: the rows go into a chain of
 	// pooled arrays (from the pool of config: the shared array pool by
 	// default), then build makes the result from the chain (the copy happens
@@ -303,13 +296,6 @@ internal static class RowReader
 		while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
 		return sink;
 	}
-
-	public static ValueTask<Queue<T>> ToQueueAsync<T>(
-		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, ChunkConfig<T> config, CancellationToken cancellationToken)
-		=> CollectAsync<T, QueueBuild<T>, Queue<T>>(
-			source, reader, skip, take, useReadAsync, default,
-			config,
-			cancellationToken);
 
 	// ONE async method for every collecting terminal (ToList, ToArray, ToQueue,
 	// ToHashSet, ToDictionary): the read loop and the build share a single

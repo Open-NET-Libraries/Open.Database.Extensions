@@ -275,8 +275,8 @@ static class Views
 		IExecuteReader command,
 		IRowSource<T> source)
 		=> command is SingleResultReader single
-			? new(single.Command, source, 0, -1, true, AsyncReads(single.Command), ChunkConfig<T>.Preset)
-			: new(command, source, 0, -1, false, AsyncReads(command), ChunkConfig<T>.Preset);
+			? NewCore(single.Command, source, true, AsyncReads(single.Command))
+			: NewCore(command, source, false, AsyncReads(command));
 
 	// The command's own choice, made by cmd.AsyncReads() before Map: staged into the view.
 	static bool AsyncReads(IExecuteReader command)
@@ -285,21 +285,57 @@ static class Views
 	internal static MappedQueryCore<T> ReaderCore<T>(
 		IDataReader reader,
 		IRowSource<T> source)
-		=> new(new ReaderExecutor(reader), source, 0, -1, true, false, ChunkConfig<T>.Preset);
+		=> NewCore(new ReaderExecutor(reader), source, true, false);
 
 	internal static MappedQueryCore<T> CommandCore<T>(
 		IDbCommand command,
 		IRowSource<T> source)
 		=> command is SingleResultDbCommand single
-			? new(new CommandExecutor(single.Command), source, 0, -1, true, false, ChunkConfig<T>.Preset)
-			: new(new CommandExecutor(command), source, 0, -1, false, false, ChunkConfig<T>.Preset);
+			? NewCore(new CommandExecutor(single.Command), source, true, false)
+			: NewCore(new CommandExecutor(command), source, false, false);
 
 	internal static MappedQueryCore<T> TableCore<T>(
 		DataTable table,
 		IRowSource<T> source)
-		=> new(new TableExecutor(table), source, 0, -1, true, false, ChunkConfig<T>.Preset);
-}
+		=> NewCore(new TableExecutor(table), source, true, false);
 
+	// The ONE door every query is made through, and so the one place a default
+	// pool configuration is chosen: when the query is made, before any terminal
+	// runs. Everything after this (a terminal, UsePool, a collector) uses the
+	// query's own configuration and never picks one.
+	static MappedQueryCore<T> NewCore<T>(
+		IExecuteReader command,
+		IRowSource<T> source,
+		bool singleResult,
+		bool asyncReads)
+		=> new(
+			command,
+			source,
+			0,
+			-1,
+			singleResult,
+			asyncReads,
+			Defaults<T>.For(PoolClearing.Resolve<T>(null)));
+
+	// The shared array pool, the shipped sizes and the default bin, per row type.
+	// Private to Views: nothing else can ask for it.
+	static class Defaults<T>
+	{
+		static readonly ChunkConfig<T> Plain = Make(false);
+		static readonly ChunkConfig<T> Clearing = Make(true);
+
+		public static ChunkConfig<T> For(bool clearOnReturn)
+			=> clearOnReturn ? Clearing : Plain;
+
+		static ChunkConfig<T> Make(bool clearOnReturn)
+			=> new(
+				ArrayPool<T>.Shared,
+				clearOnReturn,
+				ChunkSizes.Default,
+				RecycleBin.Default,
+				ChunkConfig<T>.DefaultDeferFromRows);
+	}
+}
 // The two executors let MappedQueryCore<T> run over a reader or a raw command.
 // The core only uses the two state forms; the rest are derived from them.
 abstract class ViewExecutor : IExecuteReader
@@ -548,6 +584,8 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 public readonly record struct MappedReader<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedReader(MappedQueryCore<T> core)
@@ -721,6 +759,8 @@ public readonly record struct MappedReader<T>
 public readonly record struct MappedCommand<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedCommand(MappedQueryCore<T> core)
@@ -923,6 +963,8 @@ public readonly record struct MappedCommand<T>
 public readonly record struct MappedTable<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedTable(MappedQueryCore<T> core)

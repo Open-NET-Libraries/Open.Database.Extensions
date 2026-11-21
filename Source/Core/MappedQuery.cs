@@ -652,6 +652,8 @@ readonly struct MappedQueryCore<T>(
 public readonly record struct MappedQuery<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 	internal MappedQuery(MappedQueryCore<T> core) => _core = core;
 
@@ -1035,6 +1037,8 @@ public readonly record struct MappedQuery<T>
 public readonly record struct MappedQueryWithSkip<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithSkip(MappedQueryCore<T> core) => _core = core;
 
@@ -1155,6 +1159,8 @@ public readonly record struct MappedQueryWithSkip<T>
 public readonly record struct MappedQueryWithTake<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithTake(MappedQueryCore<T> core) => _core = core;
 

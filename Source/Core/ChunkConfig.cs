@@ -7,10 +7,10 @@ namespace Open.Database.Extensions.Core;
 /// </summary>
 /// <remarks>
 /// <para>
-/// One immutable object per query shape, not per call: the preset is cached
-/// per row type (<see cref="Preset"/>), and <c>UsePool</c> makes one when it
-/// is called, so no call allocates it. Every part is provided by whoever builds
-/// it: nothing here defaults to a shared pool.
+/// One immutable object per query shape, not per call: a query is given one when
+/// it is made (the default of the entry point, see Views) or by <c>UsePool</c>, so
+/// no call allocates it. Every part is provided by whoever builds it: nothing here
+/// defaults to a shared pool, and no terminal chooses one.
 /// A lease holds a reference to it, which is how a release knows its pool.
 /// </para>
 /// <para>
@@ -29,9 +29,6 @@ internal sealed class ChunkConfig<T>(
 	RecycleBin bin,
 	int deferFromRows)
 {
-	static readonly ChunkConfig<T> PlainPreset = Make(false);
-	static readonly ChunkConfig<T> ClearingPreset = Make(true);
-
 	/// <summary>
 	/// The chunk size (rows written) from which the rows of a chunk that holds
 	/// references are cleared in the recycle bin instead of where the chunk is
@@ -52,28 +49,6 @@ internal sealed class ChunkConfig<T>(
 	/// where it takes more than a post off the consumer's thread: from 4,096 rows.
 	/// </remarks>
 	public const int DefaultDeferFromRows = 4_096;
-
-	/// <summary>
-	/// The configuration of a call that was given no pool: the shared array pool,
-	/// the shipped chunk sizes, the default recycle bin, and the clear rule of
-	/// <see cref="PoolClearing"/> (the switch).
-	/// </summary>
-	/// <remarks>
-	/// Nothing below an entry point reaches for this: the pool, the sizes and the
-	/// bin are PROVIDED. The places that enter the library with no pool of their
-	/// own (a query when it is mapped, the legacy reader extensions, the
-	/// <c>IAsyncEnumerable</c> collector) take this preset once and hand it down.
-	/// </remarks>
-	public static ChunkConfig<T> Preset
-		=> PoolClearing.Resolve<T>(null) ? ClearingPreset : PlainPreset;
-
-	static ChunkConfig<T> Make(bool clearOnReturn)
-		=> new(
-			ArrayPool<T>.Shared,
-			clearOnReturn,
-			ChunkSizes.Default,
-			RecycleBin.Default,
-			DefaultDeferFromRows);
 
 	/// <summary>The pool the arrays come from and go back to.</summary>
 	public ArrayPool<T> Pool { get; } = pool;

@@ -152,7 +152,16 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static List<T> ToList<T>(this IMappedQuery<T> query)
-		=> query.Read(items => items.ToList());
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		// Our own query collects with its own pool and clear rule; a query that is
+		// not ours has none, so it is collected without pooling.
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToList()
+			: query.Read(items => items.ToList());
+	}
 
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="List{T}"/>.
@@ -168,9 +177,16 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<List<T>> ToListAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(
-			(items, token) => CollectListAsync(items, token),
-			cancellationToken);
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToListAsync(cancellationToken)
+			: query.ReadAsync(
+				(items, token) => CollectListAsync(items, token),
+				cancellationToken);
+	}
 
 	/// <summary>
 	/// Reads every mapped row into a new array.
@@ -184,7 +200,14 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static T[] ToArray<T>(this IMappedQuery<T> query)
-		=> query.Read(items => items.ToArray());
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToArray()
+			: query.Read(items => items.ToArray());
+	}
 
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new array.
@@ -202,9 +225,16 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T[]> ToArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(
-			(items, token) => CollectArrayAsync(items, ChunkConfig<T>.Preset, token),
-			cancellationToken);
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToArrayAsync(cancellationToken)
+			: query.ReadAsync(
+				async (items, token) => (await CollectListAsync(items, token).ConfigureAwait(false)).ToArray(),
+				cancellationToken);
+	}
 
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="ImmutableArray{T}"/>.
@@ -218,7 +248,14 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ImmutableArray<T> ToImmutableArray<T>(this IMappedQuery<T> query)
-		=> query.Read(items => items.ToImmutableArray());
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToImmutableArray()
+			: query.Read(items => items.ToImmutableArray());
+	}
 
 	internal static async ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IAsyncEnumerable<T> query, CancellationToken cancellationToken)
 	{
@@ -248,9 +285,17 @@ public static class MappedQueryExtensions
 	/// </remarks>
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	public static ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default) => query.ReadAsync(
-			async (items, token) => await items.ToImmutableArrayAsync(token).ConfigureAwait(false),
-			cancellationToken);
+	public static ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToImmutableArrayAsync(cancellationToken)
+			: query.ReadAsync(
+				async (items, token) => await items.ToImmutableArrayAsync(token).ConfigureAwait(false),
+				cancellationToken);
+	}
 
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>, keyed by <paramref name="keySelector"/>.
@@ -272,7 +317,15 @@ public static class MappedQueryExtensions
 	public static Dictionary<TKey, T> ToDictionary<T, TKey>(
 		this IMappedQuery<T> query, Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer = null)
 		where TKey : notnull
-		=> query.Read(items => items.ToDictionary(keySelector, comparer));
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
+		Contract.EndContractBlock();
+
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToDictionary(keySelector, comparer)
+			: query.Read(items => items.ToDictionary(keySelector, comparer));
+	}
 
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>, keyed by <paramref name="keySelector"/>.
@@ -303,9 +356,11 @@ public static class MappedQueryExtensions
 		if (query is null) throw new ArgumentNullException(nameof(query));
 		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
 		Contract.EndContractBlock();
-		return query.ReadAsync(
-			(items, token) => CollectDictionaryAsync(items, keySelector, comparer, token),
-			cancellationToken);
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToDictionaryAsync(keySelector, comparer, cancellationToken)
+			: query.ReadAsync(
+				(items, token) => CollectDictionaryAsync(items, keySelector, comparer, token),
+				cancellationToken);
 	}
 
 	/// <summary>
@@ -345,8 +400,10 @@ public static class MappedQueryExtensions
 		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
 		Contract.EndContractBlock();
 
-		return query.Read(
-			items => items.ToDictionary(keySelector, valueSelector, comparer));
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToDictionary(keySelector, valueSelector, comparer)
+			: query.Read(
+				items => items.ToDictionary(keySelector, valueSelector, comparer));
 	}
 
 	/// <summary>
@@ -390,9 +447,11 @@ public static class MappedQueryExtensions
 		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
 		Contract.EndContractBlock();
 
-		return query.ReadAsync(
-			(items, token) => CollectDictionaryAsync(items, keySelector, valueSelector, comparer, token),
-			cancellationToken);
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToDictionaryAsync(keySelector, valueSelector, comparer, cancellationToken)
+			: query.ReadAsync(
+				(items, token) => CollectDictionaryAsync(items, keySelector, valueSelector, comparer, token),
+				cancellationToken);
 	}
 
 	/// <summary>
@@ -409,6 +468,12 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static HashSet<T> ToHashSet<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null)
 	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		if (query is IMappedTerminals<T> terminals)
+			return terminals.Core.ToHashSet(comparer);
+
 #if NETSTANDARD2_0
 		var result = new HashSet<T>(comparer);
 		return query.Read(items =>
@@ -440,9 +505,16 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null, CancellationToken cancellationToken = default)
-		=> query.ReadAsync(
-			(items, token) => CollectHashSetAsync(items, comparer, token),
-			cancellationToken);
+	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
+		Contract.EndContractBlock();
+
+		return query is IMappedTerminals<T> terminals
+			? terminals.Core.ToHashSetAsync(comparer, cancellationToken)
+			: query.ReadAsync(
+				(items, token) => CollectHashSetAsync(items, comparer, token),
+				cancellationToken);
+	}
 
 	/// <summary>
 	/// Reads the first mapped row.
@@ -736,28 +808,6 @@ public static class MappedQueryExtensions
 		}
 
 		return list;
-	}
-
-	static async ValueTask<T[]> CollectArrayAsync<T>(
-		IAsyncEnumerable<T> items,
-		ChunkConfig<T> config,
-		CancellationToken token)
-	{
-		// A struct that owns a rented buffer: it goes back to the pool however the call ends.
-		var sink = new ArraySink<T>(config);
-		try
-		{
-			await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))
-			{
-				sink.Add(item);
-			}
-
-			return sink.ToArray();
-		}
-		finally
-		{
-			sink.Dispose();
-		}
 	}
 
 	static async ValueTask<Dictionary<TKey, T>> CollectDictionaryAsync<T, TKey>(
