@@ -245,7 +245,10 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 	/// await using var disposal = scope.ConfigureAwait(false);
 	/// </code>
 	/// The scope is a struct, so the <see cref="IAsyncDisposable"/> extension of the same name would box
-	/// it; this instance method is chosen instead, and allocates nothing.
+	/// it; this instance method is chosen instead, and allocates nothing. It exists only for that:
+	/// it holds no library setting, and the library never returns to a caller's context (it always passes
+	/// <see langword="false"/>). Whether to return to a context is the caller's choice at their own call site,
+	/// as with <see cref="Task.ConfigureAwait(bool)"/>.
 	/// </remarks>
 	/// <param name="continueOnCapturedContext">
 	/// <see langword="true"/> to continue on the captured context after the connection has been
@@ -258,8 +261,15 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 
 /// <summary>
 /// A <see cref="ConnectionScope{TConnection}"/> whose disposal is awaited as configured by
-/// <see cref="ConnectionScope{TConnection}.ConfigureAwait(bool)"/>.
+/// <see cref="ConnectionScope{TConnection}.ConfigureAwait(bool)"/>. It exists only so that
+/// <c>await using</c> of the scope allocates nothing.
 /// </summary>
+/// <remarks>
+/// The scope is a struct, and the BCL <c>IAsyncDisposable.ConfigureAwait</c> extension would box it; this
+/// type is what the scope's own <c>ConfigureAwait</c> returns instead. It holds no library setting, and the
+/// library never returns to a caller's context: ODX always passes <see langword="false"/>, and whether to
+/// return to a context is the caller's choice at their own call site, as with <see cref="Task.ConfigureAwait(bool)"/>.
+/// </remarks>
 /// <typeparam name="TConnection">The type of the connection, as the caller holds it.</typeparam>
 public readonly struct ConfiguredConnectionScope<TConnection>
 	where TConnection : IDbConnection

@@ -163,8 +163,8 @@ static class DbQueryRunner
 
 		public void Dispose() => _scope.Dispose();
 
-		// For `await using var d = lease.ConfigureAwait(false)`: the scope's own,
-		// which does not box.
+		// For `await using`: the scope's own ConfigureAwait, which exists only so that this
+		// struct is not boxed (it holds no setting; the library never returns to a context).
 		public ConfiguredConnectionScope<DbConnection> ConfigureAwait(
 			bool continueOnCapturedContext)
 			=> _scope.ConfigureAwait(continueOnCapturedContext);
