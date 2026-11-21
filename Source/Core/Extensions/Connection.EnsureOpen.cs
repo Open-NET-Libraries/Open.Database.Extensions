@@ -99,45 +99,53 @@ public static partial class ConnectionExtensions
 
 	/// <summary>
 	/// Opens the connection if it is not open (a broken connection is closed first) and
-	/// returns a <see cref="ConnectionScope"/> that puts it back when disposed: a connection
-	/// this call opened is closed again, and one that was already open is left open.
+	/// returns a <see cref="ConnectionScope{TConnection}"/> that puts it back when disposed: a
+	/// connection this call opened is closed again, and one that was already open is left open.
 	/// </summary>
 	/// <remarks>
 	/// The same rule as <see cref="EnsureOpen(IDbConnection)"/>, which returns the prior state
 	/// for a caller that wants to do the closing itself; the scope does it, without a
 	/// <c>try</c>/<c>finally</c>. It is safe to call on a connection that is already open.
-	/// Prefer <see cref="EnsureOpenScopeAsync(IDbConnection, CancellationToken)"/>.
+	/// You already hold the connection, so the scope is usually only there to be disposed:
+	/// <c>using var _ = connection.EnsureOpenScope();</c>. Prefer
+	/// <see cref="EnsureOpenScopeAsync{TConnection}(TConnection, CancellationToken)"/>.
 	/// </remarks>
+	/// <typeparam name="TConnection">The type of the connection; inferred from the call.</typeparam>
 	/// <param name="connection">The connection to open.</param>
-	/// <returns>The connection and the state it was found in, restored by <see cref="ConnectionScope.Dispose"/>.</returns>
+	/// <returns>The connection and the state it was found in, restored by <see cref="ConnectionScope{TConnection}.Dispose"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
-	public static ConnectionScope EnsureOpenScope(this IDbConnection connection)
+	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(this TConnection connection)
+		where TConnection : IDbConnection
 		=> new(connection, connection.EnsureOpen());
 
 	/// <summary>
 	/// Opens the connection if it is not open (a broken connection is closed first) and
-	/// returns a <see cref="ConnectionScope"/> that puts it back when disposed: a connection
-	/// this call opened is closed again, and one that was already open is left open.
+	/// returns a <see cref="ConnectionScope{TConnection}"/> that puts it back when disposed: a
+	/// connection this call opened is closed again, and one that was already open is left open.
 	/// </summary>
 	/// <remarks>
 	/// <code>
-	/// await using var scope = await connection.EnsureOpenScopeAsync(cancellationToken);
+	/// await using var _ = await connection.EnsureOpenScopeAsync(cancellationToken);
 	/// </code>
-	/// The same rule as <see cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>, which returns the
-	/// prior state for a caller that wants to do the closing itself. It opens with
+	/// You already hold the connection, so the scope is usually only there to be disposed; keep it
+	/// (<c>var scope = ...</c>, then <c>var (sql, was) = scope;</c>) when you also want the state the
+	/// connection was found in. The same rule as <see cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>,
+	/// which returns the prior state for a caller that wants to do the closing itself. It opens with
 	/// <see cref="DbConnection.OpenAsync(CancellationToken)"/> when the connection is a
 	/// <see cref="DbConnection"/>, and always awaits with <c>ConfigureAwait(false)</c>.
-	/// The scope's <see cref="ConnectionScope.DisposeAsync"/> closes with <c>CloseAsync</c>
+	/// The scope's <see cref="ConnectionScope{TConnection}.DisposeAsync"/> closes with <c>CloseAsync</c>
 	/// where the target has it (not netstandard2.0, which closes synchronously). If the token
 	/// is cancelled the connection it opened is closed again and no scope is returned.
 	/// </remarks>
+	/// <typeparam name="TConnection">The type of the connection; inferred from the call.</typeparam>
 	/// <param name="connection">The connection to open.</param>
 	/// <param name="cancellationToken">A cancellation token to cancel opening.</param>
-	/// <returns>The connection and the state it was found in, restored by <see cref="ConnectionScope.DisposeAsync"/>.</returns>
+	/// <returns>The connection and the state it was found in, restored by <see cref="ConnectionScope{TConnection}.DisposeAsync"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
-	public static async ValueTask<ConnectionScope> EnsureOpenScopeAsync(
-		this IDbConnection connection,
+	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
+		this TConnection connection,
 		CancellationToken cancellationToken = default)
+		where TConnection : IDbConnection
 		=> new(
 			connection,
 			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false));

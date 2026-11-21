@@ -114,11 +114,11 @@ public static class ConnectionScopeTests
 	// ---- a closed connection: opened, then closed again ----------------------------
 
 	[Fact]
-	public static void AClosedConnection_IsOpenedByTheScope_AndClosedWhenItIsWasDisposed()
+	public static void AClosedConnection_IsOpenedByTheScope_AndClosedWhenItIsDisposed()
 	{
 		var connection = new ScopeConnection();
 
-		using (ConnectionScope scope = connection.EnsureOpenScope())
+		using (var scope = connection.EnsureOpenScope())
 		{
 			Assert.Equal(ConnectionState.Open, connection.State);
 			Assert.Equal(ConnectionState.Closed, scope.PriorState);
@@ -135,7 +135,7 @@ public static class ConnectionScopeTests
 	{
 		var connection = new ScopeConnection();
 
-		await using (ConnectionScope scope = await connection.EnsureOpenScopeAsync(Ct))
+		await using (var scope = await connection.EnsureOpenScopeAsync(Ct))
 		{
 			Assert.Equal(ConnectionState.Open, connection.State);
 			Assert.Equal(ConnectionState.Closed, scope.PriorState);
@@ -146,11 +146,11 @@ public static class ConnectionScopeTests
 	}
 
 	[Fact]
-	public static async Task AScopeMadeAsync_AndWasDisposedSynchronously_UsesClose()
+	public static async Task AScopeMadeAsync_AndDisposedSynchronously_UsesClose()
 	{
 		var connection = new ScopeConnection();
 
-		ConnectionScope scope = await connection.EnsureOpenScopeAsync(Ct);
+		var scope = await connection.EnsureOpenScopeAsync(Ct);
 		scope.Dispose();
 
 		Assert.Equal(["openAsync", "close"], connection.Log);
@@ -161,7 +161,7 @@ public static class ConnectionScopeTests
 	{
 		var connection = new PlainConnection();
 
-		await using (ConnectionScope scope = await connection.EnsureOpenScopeAsync(Ct))
+		await using (var scope = await connection.EnsureOpenScopeAsync(Ct))
 			Assert.Equal(ConnectionState.Open, connection.State);
 
 		Assert.Equal(["open", "close"], connection.Log);
@@ -180,7 +180,7 @@ public static class ConnectionScopeTests
 		var connection = new ScopeConnection();
 		connection.SetState(state);
 
-		using (ConnectionScope scope = connection.EnsureOpenScope())
+		using (var scope = connection.EnsureOpenScope())
 			Assert.Equal(state, scope.PriorState);
 
 		await using (await connection.EnsureOpenScopeAsync(Ct)) { }
@@ -197,7 +197,7 @@ public static class ConnectionScopeTests
 		var connection = new ScopeConnection();
 		connection.SetState(ConnectionState.Broken);
 
-		using (ConnectionScope scope = connection.EnsureOpenScope())
+		using (var scope = connection.EnsureOpenScope())
 		{
 			Assert.Equal(ConnectionState.Broken, scope.PriorState);
 			Assert.Equal(ConnectionState.Open, connection.State);
@@ -223,7 +223,7 @@ public static class ConnectionScopeTests
 	[Fact]
 	public static async Task ADefaultScope_DisposesToNothing_AndHasNoConnection()
 	{
-		ConnectionScope scope = default;
+		ConnectionScope<ScopeConnection> scope = default;
 
 		scope.Dispose();
 		await scope.DisposeAsync();
@@ -231,7 +231,7 @@ public static class ConnectionScopeTests
 		Assert.Throws<InvalidOperationException>(() => scope.Connection);
 		Assert.Throws<InvalidOperationException>(() =>
 		{
-			(IDbConnection connection, ConnectionState state) = scope;
+			(ScopeConnection connection, ConnectionState state) = scope;
 			return connection;
 		});
 		Assert.Equal(ConnectionState.Closed, scope.PriorState);
@@ -241,9 +241,9 @@ public static class ConnectionScopeTests
 	public static void ADeconstructedScope_GivesTheConnectionAndThePriorState()
 	{
 		var connection = new ScopeConnection();
-		using ConnectionScope scope = connection.EnsureOpenScope();
+		using var scope = connection.EnsureOpenScope();
 
-		(IDbConnection held, ConnectionState was) = scope;
+		(ScopeConnection held, ConnectionState was) = scope;
 
 		Assert.Same(connection, held);
 		Assert.Equal(ConnectionState.Closed, was);
@@ -257,7 +257,7 @@ public static class ConnectionScopeTests
 
 		using (connection.EnsureOpenScope())
 		{
-			using (ConnectionScope inner = connection.EnsureOpenScope())
+			using (var inner = connection.EnsureOpenScope())
 				Assert.Equal(ConnectionState.Open, inner.PriorState);
 
 			Assert.Equal(ConnectionState.Open, connection.State);
@@ -272,8 +272,8 @@ public static class ConnectionScopeTests
 		// The documented hazard of a readonly struct: it cannot remember that it
 		// was disposed. Pinned, so that a change to it is deliberate.
 		var connection = new ScopeConnection();
-		ConnectionScope scope = connection.EnsureOpenScope();
-		ConnectionScope copy = scope;
+		var scope = connection.EnsureOpenScope();
+		var copy = scope;
 
 		scope.Dispose();
 		connection.Open();
@@ -287,13 +287,56 @@ public static class ConnectionScopeTests
 	public static void ASecondDispose_OfAClosedConnection_IsHarmless()
 	{
 		var connection = new ScopeConnection();
-		ConnectionScope scope = connection.EnsureOpenScope();
+		var scope = connection.EnsureOpenScope();
 
 		scope.Dispose();
 		Assert.Null(Record.Exception(scope.Dispose));
 		Assert.False(connection.WasDisposed);
 	}
 
+	// ---- the connection keeps its type; the scope may be ignored ------------------------
+
+	[Fact]
+	public static async Task TheScope_KeepsTheTypeOfTheConnection_ItWasCalledOn()
+	{
+		var connection = new ScopeConnection();
+
+		await using var scope = await connection.EnsureOpenScopeAsync(Ct);
+		ScopeConnection same = scope.Connection;
+		var (held, was) = scope;
+
+		Assert.Same(connection, same);
+		Assert.Same(connection, held);
+		Assert.Equal(ConnectionState.Closed, was);
+	}
+
+	[Fact]
+	public static async Task AConnection_HeldAsTheInterface_StillGetsAScope()
+	{
+		IDbConnection connection = new ScopeConnection();
+
+		await using ConnectionScope<IDbConnection> scope
+			= await connection.EnsureOpenScopeAsync(Ct);
+
+		Assert.Same(connection, scope.Connection);
+		Assert.Equal(ConnectionState.Open, connection.State);
+	}
+
+	[Fact]
+	public static async Task TheScope_CanBeIgnored_AndStillClosesTheConnection()
+	{
+		var connection = new ScopeConnection();
+
+		await using (await connection.EnsureOpenScopeAsync(Ct))
+			Assert.Equal(ConnectionState.Open, connection.State);
+
+		using (connection.EnsureOpenScope())
+			Assert.Equal(ConnectionState.Open, connection.State);
+
+		Assert.Equal(
+			["openAsync", "closeAsync", "open", "close"],
+			connection.Log);
+	}
 	// ---- failures ---------------------------------------------------------------------
 
 	[Fact]
@@ -303,7 +346,7 @@ public static class ConnectionScopeTests
 		{
 			CloseException = new InvalidOperationException("close failed"),
 		};
-		ConnectionScope scope = connection.EnsureOpenScope();
+		var scope = connection.EnsureOpenScope();
 
 		var ex = Assert.Throws<InvalidOperationException>(scope.Dispose);
 

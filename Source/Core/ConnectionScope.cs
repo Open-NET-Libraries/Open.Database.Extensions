@@ -7,14 +7,24 @@ namespace Open.Database.Extensions;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Made by <see cref="ConnectionExtensions.EnsureOpenScope(IDbConnection)"/> and
-/// <see cref="ConnectionExtensions.EnsureOpenScopeAsync(IDbConnection, CancellationToken)"/>.
+/// Made by <see cref="ConnectionExtensions.EnsureOpenScope{TConnection}(TConnection)"/> and
+/// <see cref="ConnectionExtensions.EnsureOpenScopeAsync{TConnection}(TConnection, CancellationToken)"/>.
 /// It is what <see cref="ConnectionExtensions.EnsureOpen(IDbConnection)"/> and its
-/// async twin return the state for, without the <c>try</c>/<c>finally</c>:
+/// async twin return the state for, without the <c>try</c>/<c>finally</c>. You already
+/// hold the connection, so the scope is usually only there to be disposed:
+/// </para>
+/// <code>
+/// await using var _ = await connection.EnsureOpenScopeAsync(cancellationToken);
+/// // ... use the connection you already hold.
+/// </code>
+/// <para>
+/// Keep the scope when you also want the state the connection was found in. The scope keeps
+/// the type of the connection you called it on (a <c>SqlConnection</c> stays a
+/// <c>SqlConnection</c>), and deconstructs:
 /// </para>
 /// <code>
 /// await using var scope = await connection.EnsureOpenScopeAsync(cancellationToken);
-/// // ... use scope.Connection, or the connection you already hold.
+/// var (sql, was) = scope;
 /// </code>
 /// <para>
 /// Disposing closes the connection only when this call opened it: the connection was
@@ -27,8 +37,7 @@ namespace Open.Database.Extensions;
 /// <para>
 /// Dispose the value you were given exactly once, and do not copy it: a readonly struct
 /// cannot remember that it was disposed, so a second dispose of a copy closes the
-/// connection again if someone opened it in between. To read the connection and the prior
-/// state, deconstruct a scope you hold (<c>var (connection, was) = scope;</c>), never the
+/// connection again if someone opened it in between. Deconstruct a scope you hold, never the
 /// call itself: <c>var (c, s) = connection.EnsureOpenScope();</c> drops the scope, and the
 /// connection it opened stays open.
 /// </para>
@@ -38,11 +47,13 @@ namespace Open.Database.Extensions;
 /// <see cref="InvalidOperationException"/>.
 /// </para>
 /// </remarks>
-public readonly struct ConnectionScope : IDisposable, IAsyncDisposable
+/// <typeparam name="TConnection">The type of the connection, as the caller holds it.</typeparam>
+public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposable
+	where TConnection : IDbConnection
 {
-	readonly IDbConnection? _connection;
+	readonly TConnection? _connection;
 
-	internal ConnectionScope(IDbConnection connection, ConnectionState priorState)
+	internal ConnectionScope(TConnection connection, ConnectionState priorState)
 	{
 		_connection = connection;
 		PriorState = priorState;
@@ -50,7 +61,7 @@ public readonly struct ConnectionScope : IDisposable, IAsyncDisposable
 
 	/// <summary>The connection, open for as long as the scope has not been disposed.</summary>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> scope.</exception>
-	public IDbConnection Connection
+	public TConnection Connection
 		=> _connection ?? throw new InvalidOperationException(
 			"This scope was not created by EnsureOpenScope(); a default value has no connection.");
 
@@ -66,7 +77,7 @@ public readonly struct ConnectionScope : IDisposable, IAsyncDisposable
 	/// <param name="connection">The connection.</param>
 	/// <param name="priorState">The state it was found in.</param>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> scope.</exception>
-	public void Deconstruct(out IDbConnection connection, out ConnectionState priorState)
+	public void Deconstruct(out TConnection connection, out ConnectionState priorState)
 	{
 		connection = Connection;
 		priorState = PriorState;
