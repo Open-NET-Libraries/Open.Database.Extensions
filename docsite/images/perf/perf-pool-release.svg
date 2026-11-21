@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 588" role="img" aria-labelledby="pool-release-title pool-release-desc">
+  <title id="pool-release-title">Releasing one chunk: clear it here, or post it to the bin</title>
+  <desc id="pool-release-desc">Four panels of three bars each, each panel on its own scale: the time on the releasing thread to release one chunk of 16, 256, 4,096 and 8,192 int rows, with no clear, with an inline clear and by posting to the recycle bin. Every bar starts at zero. 16 rows: no clear 12 ns; inline clear 14 ns; bin post 154 ns. 256 rows: no clear 110 ns; inline clear 115 ns; bin post 205 ns. 4,096 rows: no clear 1,691 ns; inline clear 1,910 ns; bin post 1,629 ns. 8,192 rows: no clear 3,377 ns; inline clear 3,560 ns; bin post 2,809 ns.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="519" height="587" rx="8"/>
+  <text class="title" x="16" y="28">Releasing one chunk: clear it here, or post it to the bin</text>
+  <text class="muted" x="16" y="48">Shorter is better. Time on the releasing thread, int rows, pool spike, net10.</text>
+  <rect class="grey" x="16" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="72">No clear</text>
+  <rect class="one" x="101" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="119" y="72">Inline clear</text>
+  <rect class="select" x="213" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="231" y="72">Post to the recycle bin</text>
+  <text class="head" x="16" y="108">16 rows</text>
+  <g>
+    <title>16 int rows, no clear: 12 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="118" width="520" height="26"/>
+    <text class="name" x="100" y="135">no clear</text>
+    <path class="grey" d="M110,123 h21.24 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-21.24 z"/>
+    <text class="val" x="141.24" y="135">12 ns</text>
+  </g>
+  <g>
+    <title>16 int rows, inline clear: 14 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="144" width="520" height="26"/>
+    <text class="name" x="100" y="161">inline clear</text>
+    <path class="one" d="M110,149 h26.95 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-26.95 z"/>
+    <text class="val" x="146.95" y="161">14 ns</text>
+  </g>
+  <g>
+    <title>16 int rows, bin post: 154 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="170" width="520" height="26"/>
+    <text class="name" x="100" y="187">bin post</text>
+    <path class="select" d="M110,175 h334 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-334 z"/>
+    <text class="val" x="454" y="187">154 ns</text>
+  </g>
+  <line class="axis" x1="110" y1="118" x2="110" y2="196"/>
+  <text class="head" x="16" y="224">256 rows</text>
+  <g>
+    <title>256 int rows, no clear: 110 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="234" width="520" height="26"/>
+    <text class="name" x="100" y="251">no clear</text>
+    <path class="grey" d="M110,239 h177.37 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-177.37 z"/>
+    <text class="val" x="297.37" y="251">110 ns</text>
+  </g>
+  <g>
+    <title>256 int rows, inline clear: 115 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="260" width="520" height="26"/>
+    <text class="name" x="100" y="277">inline clear</text>
+    <path class="one" d="M110,265 h185.61 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-185.61 z"/>
+    <text class="val" x="305.61" y="277">115 ns</text>
+  </g>
+  <g>
+    <title>256 int rows, bin post: 205 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="286" width="520" height="26"/>
+    <text class="name" x="100" y="303">bin post</text>
+    <path class="select" d="M110,291 h334 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-334 z"/>
+    <text class="val" x="454" y="303">205 ns</text>
+  </g>
+  <line class="axis" x1="110" y1="234" x2="110" y2="312"/>
+  <text class="head" x="16" y="340">4,096 rows</text>
+  <g>
+    <title>4096 int rows, no clear: 1,691 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="350" width="520" height="26"/>
+    <text class="name" x="100" y="367">no clear</text>
+    <path class="grey" d="M110,355 h295.25 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-295.25 z"/>
+    <text class="val" x="415.25" y="367">1,691 ns</text>
+  </g>
+  <g>
+    <title>4096 int rows, inline clear: 1,910 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="376" width="520" height="26"/>
+    <text class="name" x="100" y="393">inline clear</text>
+    <path class="one" d="M110,381 h334 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-334 z"/>
+    <text class="val" x="454" y="393">1,910 ns</text>
+  </g>
+  <g>
+    <title>4096 int rows, bin post: 1,629 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="402" width="520" height="26"/>
+    <text class="name" x="100" y="419">bin post</text>
+    <path class="select" d="M110,407 h284.27 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-284.27 z"/>
+    <text class="val" x="404.27" y="419">1,629 ns</text>
+  </g>
+  <line class="axis" x1="110" y1="350" x2="110" y2="428"/>
+  <text class="head" x="16" y="456">8,192 rows</text>
+  <g>
+    <title>8192 int rows, no clear: 3,377 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="466" width="520" height="26"/>
+    <text class="name" x="100" y="483">no clear</text>
+    <path class="grey" d="M110,471 h316.63 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-316.63 z"/>
+    <text class="val" x="436.63" y="483">3,377 ns</text>
+  </g>
+  <g>
+    <title>8192 int rows, inline clear: 3,560 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="492" width="520" height="26"/>
+    <text class="name" x="100" y="509">inline clear</text>
+    <path class="one" d="M110,497 h334 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-334 z"/>
+    <text class="val" x="454" y="509">3,560 ns</text>
+  </g>
+  <g>
+    <title>8192 int rows, bin post: 2,809 ns on the releasing thread.</title>
+    <rect class="hit" x="0" y="518" width="520" height="26"/>
+    <text class="name" x="100" y="535">bin post</text>
+    <path class="select" d="M110,523 h262.7 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-262.7 z"/>
+    <text class="val" x="382.7" y="535">2,809 ns</text>
+  </g>
+  <line class="axis" x1="110" y1="466" x2="110" y2="544"/>
+  <text class="muted small" x="16" y="566">Pool spike, 2026-11-20, mean of 12 iterations. Numbers: pool-release.csv</text>
+</svg>

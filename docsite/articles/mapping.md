@@ -191,7 +191,7 @@ Compilers older than C# 14 have no `field` keyword and need an explicit backing 
 
 [!code-csharp[](../samples/Mapping.cs#map_call_site)]
 
-The cost is measured in the benchmarks (the [`RowMap<T>` scenario](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md#rowmapt-a-prebuilt-column-mapping-when-every-column-is-named-differently)). Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
+The cost is measured: building a map takes 0.19 to 0.87 ms, and a call-site map is built again on every call. See [What building a map costs](benchmarks/map-cost.md). Use these forms only for a one-off, and declare a map for anything that runs more than occasionally.
 
 The constructor also takes the pairs as arguments, with no brackets: `Map(new RowMap<T>(pair, pair))`. It is the same one-off and costs the same:
 

@@ -1,0 +1,16 @@
+size,case,family,ns
+16,"ArrayShared int",arr,9
+16,"MemoryShared int (span once)",alt,14.7
+16,"MemoryShared int (per row)",alt,27.4
+16,"ArrayShared string",arr,8.8
+16,"MemoryShared string",alt,16
+1024,"ArrayShared int",arr,267
+1024,"MemoryShared int (span once)",alt,220
+1024,"MemoryShared int (per row)",alt,748
+1024,"ArrayShared string",arr,216
+1024,"MemoryShared string",alt,224
+8192,"ArrayShared int",arr,2117
+8192,"MemoryShared int (span once)",alt,1680
+8192,"MemoryShared int (per row)",alt,6068
+8192,"ArrayShared string",arr,1673
+8192,"MemoryShared string",alt,1705

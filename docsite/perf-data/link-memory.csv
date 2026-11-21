@@ -1,0 +1,5 @@
+shape,read_path,family,allocated_kb,wall_ms,incomplete_readasync_calls,source_run
+Map(Func),"Sync read (the default)",rd-sync,9713,538.282,0,malloc2
+Map(Func),"AsyncReads() (opt-in)",rd-async,16812,538.166,788.7,malloc2
+Map<T>(),"Sync read (the default)",rd-sync,9709,538.262,0,malloc2
+Map<T>(),"AsyncReads() (opt-in)",rd-async,9743,538.201,4,malloc2

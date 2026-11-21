@@ -1,0 +1,10 @@
+Benchmark build: not recorded (a build where the opt-in was still named EnableAsyncRead, the rc.5 name)
+Run date: 2026-11-15
+Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); SQL Server 2022 (RTM-CU28) in a Docker container on it, limited to 4 CPUs
+Runtime: .NET 11.0.0
+Harness: the benchmark project's own probe program (the S4 probes), not BenchmarkDotNet. One warm-up, then one measured operation per cell.
+Benchmark: SQL Server over TCP (127.0.0.1) with a simulated link: 5 ms delay and 100 Mbit rate (tc netem); round trip median 5.57 ms
+Conditions: one row holding one 100 MB varbinary(max) value
+Columns: seconds = total time of the operation; peak_working_set_mb = the process's peak working set, where it was recorded
+Switches: the s4-switches row ran with Switch.Microsoft.Data.SqlClient.UseCompatibilityAsyncBehaviour and Switch.Microsoft.Data.SqlClient.UseCompatibilityProcessSni set to false (SqlClient 7.0 and later)
+Run output (not in the repository, the numbers are copied from it): s4 = the docker-s4 and docker-s4b launch outputs of 2026-11-15; s4-switches = the docker-s4d launch output (switches off) of the same day

@@ -144,7 +144,7 @@ foreach ($run in $syn) {
     if (-not $variants.Contains($id)) { throw "unknown variant $id" }
     $v = $variants[$id]
     $items += [pscustomobject]@{ Key = $id; Line = ('{0},{1},{2},{3},20,1000,{4},{5},{6},{7}' -f $id, (Quote $v[1]), $v[0], (Quote $v[2]),
-      (Format-Num ([double]::Parse($r.'ReaderOpen (us)', $inv)) 3), (Format-Num (ConvertTo-Microseconds $r.Mean) 3), (Format-Num (ConvertTo-Kilobytes $r.Allocated) 3), $run.Name) }
+      (Format-Num ([double]::Parse($r.'ReaderOpen (us)', $inv)) 3), (Format-Num (ConvertTo-Microseconds $r.Mean) 3), (Format-Num (ConvertTo-Kilobytes $r.Allocated) 3), (Format-Num (ConvertTo-Microseconds $r.Error) 3), $run.Name) }
   }
 }
 Assert-Unique $items 'a synthetic variant'
@@ -201,19 +201,19 @@ foreach ($run in $real) {
     if (-not $id) { continue }
     $v = $variants[$id]
     $items += [pscustomobject]@{ P = $r.Provider; W = [int]$r.Width; Id = $id; Key = "$($r.Provider)/$($r.Width)/$id"
-      Line = ('{0},{1},{2},{3},{4},{5},10000,{6},{7},{8}' -f (Quote $providers[$r.Provider]), $id, (Quote $v[1]), $v[0], (Quote $v[2]), $r.Width,
-        (Format-Num (ConvertTo-Microseconds $r.Mean) 3), (Format-Num (ConvertTo-Kilobytes $r.Allocated) 3), $run.Name) }
+      Line = ('{0},{1},{2},{3},{4},{5},10000,{6},{7},{8},{9}' -f (Quote $providers[$r.Provider]), $id, (Quote $v[1]), $v[0], (Quote $v[2]), $r.Width,
+        (Format-Num (ConvertTo-Microseconds $r.Mean) 3), (Format-Num (ConvertTo-Kilobytes $r.Allocated) 3), (Format-Num (ConvertTo-Microseconds $r.Error) 3), $run.Name) }
   }
 }
 Assert-Unique $items 'a provider, width and variant'
 $order = @($variants.Keys)
 $sorted = $items | Sort-Object P, W, @{ Expression = { [array]::IndexOf($order, $_.Id) } }
-Write-Lf (Join-Path $OutDir 'real-providers.csv') (@('provider,variant_id,variant,family,description,columns,rows,total_us,allocated_kb,source_run') + @($sorted | ForEach-Object Line))
+Write-Lf (Join-Path $OutDir 'real-providers.csv') (@('provider,variant_id,variant,family,description,columns,rows,total_us,allocated_kb,error_us,source_run') + @($sorted | ForEach-Object Line))
 Write-Source 'real-providers' $real $RealBuild @(
   'Benchmark: RealProviderBenchmarks (the library against SQL Server LocalDB through Microsoft.Data.SqlClient, and against a SQLite file through Microsoft.Data.Sqlite)',
   'Conditions: 10,000 rows per call, widths 5 and 20 typed columns, synchronous terminals, one run per case; the LocalDB database and the SQLite file are created for the run and removed after it',
   'SQLite: Dapper maps text to Guid through the usual SqlMapper.TypeHandler recipe; it does not convert it on its own',
-  'Columns: total_us = mean time of the whole call (BenchmarkDotNet Mean); allocated_kb = allocated per call (BenchmarkDotNet, KB = 1024 bytes)')
+  'Columns: total_us = mean time of the whole call (BenchmarkDotNet Mean); allocated_kb = allocated per call (BenchmarkDotNet, KB = 1024 bytes); error_us = BenchmarkDotNet Error, the half-width of the 99.9% confidence interval of total_us')
 
 # ---- sync-async.csv: the RowMap plan read three ways under four conditions ----
 $items = @()

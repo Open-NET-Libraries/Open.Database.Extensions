@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 604" role="img" aria-labelledby="syn-memory-title syn-memory-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 612" role="img" aria-labelledby="syn-memory-title syn-memory-desc">
   <title id="syn-memory-title">Memory allocated per call</title>
-  <desc id="syn-memory-desc">Ranked horizontal bars, shortest first, one per way of reading 20 columns and 1,000 rows from a synthetic in-memory reader, colored by family. Every bar starts at zero. Map&lt;T&gt;(), the RowMap plan 227.4 KB; Map(selector), hand-written 227.4 KB; Selector, reused row, Select 228.1 KB; Selector, pooled row, Select 228.2 KB; Shaping inside the selector 297.7 KB; Row class, inline Select 438.7 KB; Row class, close, then Select 446.3 KB; Row class, shaping in Select 509.1 KB; object[] rows (baseline) 516.6 KB; Row class, shaping after close 516.7 KB; Dapper Query&lt;T&gt; 548.1 KB; object[] rows, objects later 735.4 KB; Dapper, inline Select 759.0 KB; Dapper, then Select after 767.0 KB; Dapper, shaping in Select 829.3 KB; Dapper, shaping after 837.4 KB.</desc>
+  <desc id="syn-memory-desc">Ranked horizontal bars, shortest first, one per way of reading 20 columns and 1,000 rows from a synthetic in-memory reader, colored by family. Every bar starts at zero. Map&lt;T&gt;() 227.4 KB; Map(selector), hand-written 227.4 KB; Selector, reused row, Select 228.1 KB; Selector, pooled row, Select 228.2 KB; Shaping inside the selector 297.7 KB; Row class, inline Select 438.7 KB; Row class, close, then Select 446.3 KB; Row class, shaping in Select 509.1 KB; object[] rows (baseline) 516.6 KB; Row class, shaping after close 516.7 KB; Dapper Query&lt;T&gt; 548.1 KB; object[] rows, objects later 735.4 KB; Dapper, inline Select 759.0 KB; Dapper, then Select after 767.0 KB; Dapper, shaping in Select 829.3 KB; Dapper, shaping after 837.4 KB.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -56,7 +56,7 @@
     .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
     .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
   </style>
-  <rect class="frame" x="0.5" y="0.5" width="559" height="603" rx="8"/>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="611" rx="8"/>
   <text class="title" x="16" y="28">Memory allocated per call</text>
   <text class="muted" x="16" y="48">Smaller is better.</text>
   <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
@@ -80,9 +80,9 @@
   <line class="grid" x1="488" y1="114" x2="488" y2="530"/>
   <text class="muted small mid" x="488" y="546">1,000</text>
   <g>
-    <title>Map&lt;T&gt;(), the RowMap plan (V1): The cached, compiled typed plan. Reader open 81.6 µs, total 81.7 µs, 227.4 KB allocated.</title>
+    <title>Map&lt;T&gt;() (V1): The cached, compiled typed plan. Reader open 81.6 µs, total 81.7 µs, 227.4 KB allocated.</title>
     <rect class="hit" x="0" y="114" width="560" height="26"/>
-    <text class="name" x="222" y="131">Map&lt;T&gt;(), the RowMap plan</text>
+    <text class="name" x="222" y="131">Map&lt;T&gt;()</text>
     <path class="one" d="M232,119 h54.21 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-54.21 z"/>
     <text class="val" x="296.21" y="131">227.4 KB</text>
   </g>

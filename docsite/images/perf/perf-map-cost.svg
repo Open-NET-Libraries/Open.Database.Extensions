@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 218" role="img" aria-labelledby="map-cost-title map-cost-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 226" role="img" aria-labelledby="map-cost-title map-cost-desc">
   <title id="map-cost-title">What building a map costs, once</title>
   <desc id="map-cost-desc">Ranked horizontal bars of the one-time cost of building and compiling a map, for 1, 5 and 20 columns; one row per call. Every bar starts at zero. 1 column 0.19 ms; 5 columns 0.33 ms; 20 columns 0.87 ms.</desc>
   <style>
@@ -56,7 +56,7 @@
     .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
     .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
   </style>
-  <rect class="frame" x="0.5" y="0.5" width="559" height="217" rx="8"/>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="225" rx="8"/>
   <text class="title" x="16" y="28">What building a map costs, once</text>
   <text class="muted" x="16" y="48">Shorter is better. A reused map costs 0.17 to 0.27 µs for a one-row call.</text>
   <line class="grid" x1="100" y1="66" x2="100" y2="144"/>
