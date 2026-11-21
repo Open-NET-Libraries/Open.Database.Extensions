@@ -60,6 +60,46 @@ public static class Mapping
 			.Map<Person>(PersonMaps.PersonNamesOnlyMap)
 			.ToArrayAsync(cancellationToken);
 
+	public static async Task<DecoratedPost[]> MapDecoratedAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
+	{
+		#region map_decorated
+		// The model declares id at 0 and title at 2, so the result must
+		// have them there; author (at 1) is not declared and is ignored.
+		DecoratedPost[] posts = await connection
+			.Command("select id, author, title from posts order by id")
+			.Map<DecoratedPost>()
+			.ToArrayAsync(cancellationToken);
+		#endregion
+
+		return posts;
+	}
+
+	public static async Task<string> MapDecoratedMismatchAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
+	{
+		#region map_decorated_mismatch
+		try
+		{
+			// title is where id is declared: a hard instruction that is not
+			// true throws, naming the member, the ordinal and what is there.
+			// The check runs when the row reader is built, so the first row
+			// is enough to see it.
+			DecoratedPost? first = await connection
+				.Command("select title, id, author from posts order by id")
+				.Map<DecoratedPost>()
+				.FirstOrDefaultAsync(cancellationToken);
+
+			return $"no exception (first id: {first?.Id})";
+		}
+		catch (ValueMappingException ex)
+		{
+			return ex.Message;
+		}
+		#endregion
+	}
 
 	public static string MapUnknownProperty()
 	{

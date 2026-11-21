@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Samples;
 
 // Maps from "select * from posts": the extra "views" column has no property and is ignored.
@@ -8,6 +10,22 @@ public class Post
 	public int Author { get; init; }
 	public string Title { get; init; } = "";
 	public string? Body { get; init; }
+}
+#endregion
+
+// A model that declares where its columns are: the result must say the same, or reading it throws.
+#region decorated_model
+public class DecoratedPost
+{
+	[Column("id", Order = 0)]
+	public required int Id { get; init; }
+
+	[Column("title", Order = 2)]
+	public string Title { get; init; } = "";
+
+	// Not mapped: no column is ever read into it, whatever the result has.
+	[NotMapped]
+	public string Slug { get; init; } = "unset";
 }
 #endregion
 

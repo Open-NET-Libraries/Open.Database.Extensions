@@ -62,6 +62,10 @@ Person[] declared = await Mapping.MapDeclaredAsync(connection, CancellationToken
 Check(declared.Length == 2 && declared[0].Id == 1 && declared[0].FirstName == "Ada" && declared[1].LastName == "Turing", "a declared RowMap maps the renamed columns");
 Person[] namesOnly = await Mapping.MapNamesOnlyAsync(connection, CancellationToken.None);
 Check(namesOnly[0].FirstName == "Ada" && namesOnly[0].LastName is "", "a null column in a RowMap means do not map the property, even by name");
+DecoratedPost[] decorated = await Mapping.MapDecoratedAsync(connection, CancellationToken.None);
+Check(decorated.Length == 5 && decorated[0].Id == 1 && decorated[0].Title == "Post 1" && decorated[0].Slug == "unset", "a decorated model reads its declared columns and leaves a [NotMapped] member alone");
+string decoratedMismatch = await Mapping.MapDecoratedMismatchAsync(connection, CancellationToken.None);
+Check(decoratedMismatch.Contains("column 0 must be 'id'") && decoratedMismatch.Contains("column 0 is 'title'"), "a column that is not where the model declares it throws, naming the ordinal and what is there");
 Person[] callSite = await Mapping.MapCallSiteAsync(connection, CancellationToken.None);
 Check(callSite.Length == 2 && callSite[1].FirstName == "Alan" && callSite[1].LastName == "Turing", "a new RowMap at the call site maps the renamed columns");
 Person[] pairs = await Mapping.MapPairsAsync(connection, CancellationToken.None);
