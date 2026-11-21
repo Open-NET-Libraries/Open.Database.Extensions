@@ -7,9 +7,10 @@ namespace Open.Database.Extensions.Core;
 /// </summary>
 /// <remarks>
 /// <para>
-/// One immutable object per query shape, not per call: the default
-/// configurations are cached per row type (<see cref="For"/>), and
-/// <c>UsePool</c> makes one when it is called, so no call allocates it.
+/// One immutable object per query shape, not per call: the preset is cached
+/// per row type (<see cref="Preset"/>), and <c>UsePool</c> makes one when it
+/// is called, so no call allocates it. Every part is provided by whoever builds
+/// it: nothing here defaults to a shared pool.
 /// A lease holds a reference to it, which is how a release knows its pool.
 /// </para>
 /// <para>
@@ -22,14 +23,14 @@ namespace Open.Database.Extensions.Core;
 /// </para>
 /// </remarks>
 internal sealed class ChunkConfig<T>(
-	ArrayPool<T>? pool,
+	ArrayPool<T> pool,
 	bool clearOnReturn,
-	ChunkSizes? sizes = null,
-	RecycleBin? bin = null,
-	int deferFromRows = ChunkConfig<T>.DefaultDeferFromRows)
+	ChunkSizes sizes,
+	RecycleBin bin,
+	int deferFromRows)
 {
-	static readonly ChunkConfig<T> Plain = new(null, false);
-	static readonly ChunkConfig<T> Clearing = new(null, true);
+	static readonly ChunkConfig<T> PlainPreset = Make(false);
+	static readonly ChunkConfig<T> ClearingPreset = Make(true);
 
 	/// <summary>
 	/// The chunk size (rows written) from which the rows of a chunk that holds
@@ -52,12 +53,30 @@ internal sealed class ChunkConfig<T>(
 	/// </remarks>
 	public const int DefaultDeferFromRows = 4_096;
 
-	/// <summary>The default configuration: the shared array pool.</summary>
-	public static ChunkConfig<T> For(bool clearOnReturn)
-		=> clearOnReturn ? Clearing : Plain;
+	/// <summary>
+	/// The configuration of a call that was given no pool: the shared array pool,
+	/// the shipped chunk sizes, the default recycle bin, and the clear rule of
+	/// <see cref="PoolClearing"/> (the switch).
+	/// </summary>
+	/// <remarks>
+	/// Nothing below an entry point reaches for this: the pool, the sizes and the
+	/// bin are PROVIDED. The places that enter the library with no pool of their
+	/// own (a query when it is mapped, the legacy reader extensions, the
+	/// <c>IAsyncEnumerable</c> collector) take this preset once and hand it down.
+	/// </remarks>
+	public static ChunkConfig<T> Preset
+		=> PoolClearing.Resolve<T>(null) ? ClearingPreset : PlainPreset;
+
+	static ChunkConfig<T> Make(bool clearOnReturn)
+		=> new(
+			ArrayPool<T>.Shared,
+			clearOnReturn,
+			ChunkSizes.Default,
+			RecycleBin.Default,
+			DefaultDeferFromRows);
 
 	/// <summary>The pool the arrays come from and go back to.</summary>
-	public ArrayPool<T> Pool { get; } = pool ?? ArrayPool<T>.Shared;
+	public ArrayPool<T> Pool { get; } = pool;
 
 	/// <summary>Whether the rows are cleared before an array goes back.</summary>
 	/// <remarks>
@@ -68,11 +87,10 @@ internal sealed class ChunkConfig<T>(
 	public bool ClearOnReturn { get; } = PoolClearing.Resolve<T>(clearOnReturn);
 
 	/// <summary>The chunk sizes of the collectors, buffers and streams.</summary>
-	public ChunkSizes Sizes { get; } = sizes ?? ChunkSizes.Default;
+	public ChunkSizes Sizes { get; } = sizes;
 
 	/// <summary>The recycle bin that clears deferred chunks.</summary>
-	public RecycleBin Bin
-		=> bin ?? RecycleBin.Default;
+	public RecycleBin Bin { get; } = bin;
 
 	/// <summary>
 	/// A chunk of at least this many rows is cleared in the recycle bin;
@@ -113,6 +131,8 @@ internal sealed class ChunkConfig<T>(
 	// references to keep alive (see the constructor), or no rows written.
 	// Deferred: only a large chunk of rows that hold references (see
 	// DefaultDeferFromRows); everything else that clears does it right away.
+	// (On netstandard2.0 every type counts as holding references, so a large
+	// chunk of value rows is deferred there too: still correct.)
 	ClearMode ModeFor(int used)
 		=> !ClearOnReturn || used == 0
 			? ClearMode.None

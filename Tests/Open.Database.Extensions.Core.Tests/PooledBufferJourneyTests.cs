@@ -367,7 +367,6 @@ public static class PooledBufferJourneyTests
 			.GetAsyncEnumerator(Ct);
 
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
-		SpinWait.SpinUntil(() => j.Pool.Returns >= 0, 30_000);
 		Assert.Equal(0, j.Pool.Returns);
 
 		Assert.True(await e.MoveNextAsync().AsTask().Within());

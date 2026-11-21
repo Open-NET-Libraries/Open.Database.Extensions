@@ -49,7 +49,7 @@ public static class ArrayLeaseTests
 			IsDirty = static a => a.Any(v => v > 0),
 		};
 		var bin = new TestBin();
-		var config = new ChunkConfig<int>(pool, false, null, bin);
+		var config = TestConfig.Of<int>(pool, false, bin);
 		int[] array = pool.Rent(16);
 		for (int i = 0; i < 5; ++i) array[i] = i + 1;
 
@@ -66,7 +66,7 @@ public static class ArrayLeaseTests
 	{
 		var pool = Pool();
 		var bin = new TestBin();
-		var config = new ChunkConfig<ChannelRow>(pool, false, null, bin);
+		var config = TestConfig.Of<ChannelRow>(pool, false, bin);
 		ChannelRow[] array = Written(pool, 16, 5);
 
 		config.Seal(array, 5).Release();
@@ -80,7 +80,7 @@ public static class ArrayLeaseTests
 	{
 		var pool = Pool();
 		var bin = new TestBin();
-		var config = new ChunkConfig<ChannelRow>(pool, true, null, bin, 1);
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 1);
 		ChannelRow[] array = Written(pool, 16, 0);
 
 		config.Seal(array, 0).Release();
@@ -97,7 +97,7 @@ public static class ArrayLeaseTests
 	public static void WhenTheWholeArrayWasUsed_ThePoolIsAskedToClearIt()
 	{
 		var pool = Pool(exact: true);
-		var config = new ChunkConfig<ChannelRow>(pool, true);
+		var config = TestConfig.Of<ChannelRow>(pool, true);
 		ChannelRow[] array = Written(pool, 16, 16);
 
 		config.Seal(array, 16).Release();
@@ -111,7 +111,7 @@ public static class ArrayLeaseTests
 	public static void WhenPartOfTheArrayWasUsed_OnlyThoseRowsAreCleared_AndNoFlagIsUsed()
 	{
 		var pool = Pool();
-		var config = new ChunkConfig<ChannelRow>(pool, true);
+		var config = TestConfig.Of<ChannelRow>(pool, true);
 		ChannelRow[] array = Written(pool, 16, 5);
 		Assert.True(array.Length > 5);
 
@@ -134,7 +134,7 @@ public static class ArrayLeaseTests
 	{
 		var pool = Pool();
 		var bin = new TestBin();
-		var config = new ChunkConfig<ChannelRow>(pool, true, null, bin, 8);
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 8);
 		ChannelRow[] array = Written(pool, 16, 10);
 
 		config.Seal(array, 10).Release();
@@ -146,11 +146,24 @@ public static class ArrayLeaseTests
 	}
 
 	[Fact]
+	public static void AChunkOfExactlyTheThreshold_IsPosted()
+	{
+		var pool = Pool();
+		var bin = new TestBin { Mode = "Full" };
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 8);
+		ChannelRow[] array = Written(pool, 16, 8);
+
+		config.Seal(array, 8).Release();
+
+		Assert.Equal(1, bin.Posts);
+	}
+
+	[Fact]
 	public static void ASmallChunk_IsNeverPosted()
 	{
 		var pool = Pool();
 		var bin = new TestBin();
-		var config = new ChunkConfig<ChannelRow>(pool, true, null, bin, 8);
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 8);
 		ChannelRow[] array = Written(pool, 16, 7);
 
 		config.Seal(array, 7).Release();
@@ -165,7 +178,7 @@ public static class ArrayLeaseTests
 	{
 		var pool = Pool();
 		var bin = new TestBin { Mode = "Full" };
-		var config = new ChunkConfig<ChannelRow>(pool, true, null, bin, 1);
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 1);
 		ChannelRow[] array = Written(pool, 16, 5);
 
 		config.Seal(array, 5).Release();
@@ -189,7 +202,7 @@ public static class ArrayLeaseTests
 			IsDirty = static a => a.Any(v => v > 0),
 		};
 		var bin = new TestBin();
-		var config = new ChunkConfig<int>(pool, true, null, bin, 8);
+		var config = TestConfig.Of<int>(pool, true, bin, 8);
 		int[] array = pool.Rent(64);
 		for (int i = 0; i < 40; ++i) array[i] = i + 1;
 
@@ -240,6 +253,58 @@ public static class ArrayLeaseTests
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			() => buffer.DisposeAsync().AsTask());
 
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
+	}
+
+	[Fact]
+	public static void AToArrayWhoseReturnThrows_ReturnsEveryArrayOnce()
+	{
+		// The sink outgrows its first array: that release throws, and the
+		// sink must hold the new array once, so its Dispose releases the new
+		// array and never the old one again.
+		var pool = new CountingPool<ChannelRow> { ThrowOnReturn = true };
+		MappedCommand<ChannelRow> view = new FakeDbCommand(
+			new FakeDbConnection(),
+			() => new ChannelTestReader(100))
+			.Map<ChannelRow>()
+			.UsePool(pool, clearOnReturn: false);
+
+		Assert.Throws<InvalidOperationException>(() => view.ToArray());
+
+		Assert.True(pool.Rents > 1);
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
+	}
+
+	[Theory]
+	[InlineData("stream")]
+	[InlineData("buffered")]
+	public static async Task AStreamWhoseReturnThrows_ReturnsEveryArrayOnce(
+		string terminal)
+	{
+		var pool = new CountingPool<ChannelRow> { ThrowOnReturn = true };
+		MappedCommand<ChannelRow> view = new FakeDbCommand(
+			new FakeDbConnection(),
+			() => new ChannelTestReader(100))
+			.Map<ChannelRow>()
+			.AsyncReads()
+			.UsePool(pool, clearOnReturn: false);
+
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () =>
+			{
+				if (terminal == "stream")
+				{
+					await foreach (var _ in view.ToAsyncBufferStream(Ct)) { }
+				}
+				else
+				{
+					await foreach (var _ in view.ToBufferedAsyncStream(Ct)) { }
+				}
+			});
+
+		await Until(() => pool.Outstanding == 0, "the arrays back");
 		Assert.Equal(pool.Rents, pool.Returns);
 		Assert.Equal(0, pool.Unmatched);
 	}

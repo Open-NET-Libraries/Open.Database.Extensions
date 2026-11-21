@@ -51,10 +51,10 @@ public static class ChunkChainTests
 		if (sizes is not null)
 		{
 			return view.WithConfig(
-				new ChunkConfig<PoolRow>(
-					pool,
-					PoolClearing.Resolve<PoolRow>(false),
-					sizes));
+				TestConfig.Of(
+					pool ?? ArrayPool<PoolRow>.Shared,
+					false,
+					sizes: sizes));
 		}
 
 		return pool is null
@@ -298,7 +298,7 @@ public static class ChunkChainTests
 	}
 
 	static ChunkChain<Cell> RentChain()
-		=> ChunkChain<Cell>.Rent(ChunkConfig<Cell>.For(false));
+		=> ChunkChain<Cell>.Rent(TestConfig.Of(ArrayPool<Cell>.Shared, false));
 
 	// Fills a rented chain past its first chunk, copies it out and gives it
 	// back. Returns the chain and weak references to the rows. Kept out of
@@ -354,6 +354,23 @@ public static class ChunkChainTests
 		GC.WaitForPendingFinalizers();
 		GC.Collect();
 		Assert.DoesNotContain(rows, static w => w.IsAlive);
+	}
+
+	[Fact]
+	public static void ADisposedTwice_ReturnsEveryArrayOnce()
+	{
+		CountingPool<PoolRow> pool = NewPool();
+		ChunkChain<PoolRow> chain = ChunkChain<PoolRow>.Rent(
+			TestConfig.Of<PoolRow>(pool, false));
+		for (int i = 0; i < 100; ++i) chain.Add(new PoolRow(i + 1));
+
+		chain.Dispose();
+		int returns = pool.Returns;
+		chain.Dispose();
+
+		Assert.Equal(pool.Rents, returns);
+		Assert.Equal(returns, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
 	}
 
 	// ---- the queue is made from the exact count ------------------------------

@@ -10,8 +10,9 @@ namespace Open.Database.Extensions.Tests;
 // read path: a chunk of ChunkConfig.DeferFromRows rows or more through the
 // recycle bin, a smaller one where it is released. These tests give every
 // query its own configuration, with deferFromRows of 1 so that every chunk
-// goes through a bin the test owns (a counting, full or throwing one):
-// nothing is global, so they can run beside everything else.
+// goes through a bin: one the test owns where it counts, refuses or breaks
+// posts, otherwise the process-wide default bin. Nothing global is changed,
+// so they can run beside everything else.
 // The immediate path (small chunks) is in ArrayLeaseTests.
 [ExcludeFromCodeCoverage]
 public static class ClearOnReturnTests
@@ -28,13 +29,7 @@ public static class ClearOnReturnTests
 		ArrayPool<T> pool,
 		bool clearOnReturn,
 		RecycleBin? bin = null)
-		=> view.WithConfig(
-			new ChunkConfig<T>(
-				pool,
-				PoolClearing.Resolve<T>(clearOnReturn),
-				null,
-				bin,
-				deferFromRows: 1));
+		=> view.WithConfig(TestConfig.Of(pool, clearOnReturn, bin, deferFromRows: 1));
 
 	// ---- rigs ---------------------------------------------------------------
 

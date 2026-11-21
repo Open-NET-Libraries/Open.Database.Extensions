@@ -43,7 +43,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	static ChunkChain<T>? _spare;
 
 	T[][] _chunks = new T[4][];
-	ChunkConfig<T> _config = ChunkConfig<T>.For(false);
+	ChunkConfig<T>? _config;
 	bool _parked;
 	int _chunkCount;
 	T[] _array = [];
@@ -96,7 +96,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 			_chunks = chunks;
 		}
 
-		ChunkSizes sizes = _config.Sizes;
+		ChunkSizes sizes = _config!.Sizes;
 		int size = _nextSize;
 		if (size == 0) size = sizes.CollectFirstRows;
 
@@ -269,7 +269,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 		_parked = true;
 		T[][] chunks = _chunks;
-		ChunkConfig<T> config = _config;
+		ChunkConfig<T> config = _config!;
 		int count = _chunkCount;
 		int lastUsed = _index;
 		Exception? first = null;
@@ -288,7 +288,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 		Array.Clear(chunks, 0, count);
 		_array = [];
-		_config = ChunkConfig<T>.For(false);
+		_config = null;
 		_index = 0;
 		_filled = 0;
 		_nextSize = 0;

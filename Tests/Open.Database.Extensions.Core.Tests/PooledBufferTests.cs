@@ -1349,6 +1349,9 @@ public static class PooledBufferTests
 		await Until(() => pool.Outstanding == 0, "the arrays back");
 		Assert.Equal(pool.Rents, pool.Returns);
 		Assert.Equal(0, pool.Unmatched);
+
+		// The failing return really happened (the counter ran down to 0).
+		Assert.True(pool.ThrowOnFirstReturns <= 0);
 	}
 
 	// A pool that gives a shorter array than asked for breaks its contract:

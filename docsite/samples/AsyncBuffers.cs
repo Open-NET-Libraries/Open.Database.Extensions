@@ -270,8 +270,8 @@ public static class AsyncBuffers
 
 		PooledArray<int> ids = await buffer.Items;
 
-		// ... use the rows. The clear runs after the dispose,
-		// on a background loop, not on this path.
+		// ... use the rows. The clear runs as the arrays go back, when the
+		// buffer is disposed.
 		_ = ids.Count;
 	}
 	#endregion
@@ -359,7 +359,7 @@ public static class AsyncBuffers
 			.ToAsyncBuffer(cancellationToken);
 
 		// Cancels the read if it is still running, waits for the
-		// producer to stop, and returns the arrays to the pool (with clearing on, it hands them to the cleanup queue).
+		// producer to stop, and returns the arrays to the pool (a large chunk of rows that hold references goes to the cleanup queue).
 		await buffer.DisposeAsync();
 
 		// A disposed buffer has no Items.

@@ -275,8 +275,8 @@ static class Views
 		IExecuteReader command,
 		IRowSource<T> source)
 		=> command is SingleResultReader single
-			? new(single.Command, source, 0, -1, true, AsyncReads(single.Command))
-			: new(command, source, 0, -1, false, AsyncReads(command));
+			? new(single.Command, source, 0, -1, true, AsyncReads(single.Command), ChunkConfig<T>.Preset)
+			: new(command, source, 0, -1, false, AsyncReads(command), ChunkConfig<T>.Preset);
 
 	// The command's own choice, made by cmd.AsyncReads() before Map: staged into the view.
 	static bool AsyncReads(IExecuteReader command)
@@ -285,19 +285,19 @@ static class Views
 	internal static MappedQueryCore<T> ReaderCore<T>(
 		IDataReader reader,
 		IRowSource<T> source)
-		=> new(new ReaderExecutor(reader), source, 0, -1, true);
+		=> new(new ReaderExecutor(reader), source, 0, -1, true, false, ChunkConfig<T>.Preset);
 
 	internal static MappedQueryCore<T> CommandCore<T>(
 		IDbCommand command,
 		IRowSource<T> source)
 		=> command is SingleResultDbCommand single
-			? new(new CommandExecutor(single.Command), source, 0, -1, true)
-			: new(new CommandExecutor(command), source, 0, -1, false);
+			? new(new CommandExecutor(single.Command), source, 0, -1, true, false, ChunkConfig<T>.Preset)
+			: new(new CommandExecutor(command), source, 0, -1, false, false, ChunkConfig<T>.Preset);
 
 	internal static MappedQueryCore<T> TableCore<T>(
 		DataTable table,
 		IRowSource<T> source)
-		=> new(new TableExecutor(table), source, 0, -1, true);
+		=> new(new TableExecutor(table), source, 0, -1, true, false, ChunkConfig<T>.Preset);
 }
 
 // The two executors let MappedQueryCore<T> run over a reader or a raw command.

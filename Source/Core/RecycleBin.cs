@@ -95,6 +95,11 @@ internal class RecycleBin(int capacity = RecycleBin.DefaultCapacity)
 			AllowSynchronousContinuations = false,
 		});
 
+#if NET9_0_OR_GREATER
+	readonly Lock _gate = new();
+#else
+	readonly object _gate = new();
+#endif
 	Task? _loop;
 	long _overflowed;
 
@@ -128,7 +133,13 @@ internal class RecycleBin(int capacity = RecycleBin.DefaultCapacity)
 	/// <summary>The post itself (a test can replace it).</summary>
 	protected virtual PostResult TryPost(Work work)
 	{
-		LazyInitializer.EnsureInitialized(ref _loop, StartLoop);
+		if (Volatile.Read(ref _loop) is null)
+		{
+			// One loop, started once: a lock, not a racing initializer, and no
+			// delegate on the hot path.
+			lock (_gate) _loop ??= StartLoop();
+		}
+
 		return _work.Writer.TryWrite(work)
 			? PostResult.Posted
 			: PostResult.Full;

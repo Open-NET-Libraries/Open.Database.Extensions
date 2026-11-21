@@ -109,8 +109,8 @@ readonly struct MappedQueryCore<T>(
 	int skip,
 	int take,
 	bool singleResult,
-	bool asyncReads = false,
-	ChunkConfig<T>? config = null)
+	bool asyncReads,
+	ChunkConfig<T> config)
 	: IEquatable<MappedQueryCore<T>>
 {
 	// Generated mappings read each column once, in order, so the provider may stream the row.
@@ -122,7 +122,6 @@ readonly struct MappedQueryCore<T>(
 	readonly int _take = take; // -1 == unbounded.
 	readonly bool _singleResult = singleResult; // SingleResult() was called: stop after the first result set and do not read through the rest.
 	readonly bool _asyncReads = asyncReads; // AsyncReads() was called: the rows of an async terminal are read with ReadAsync (the default is Read).
-	readonly ChunkConfig<T>? _config = config; // UsePool() was called: the pool every pooling terminal rents from and whether it clears (null: the shared pool, and the AppContext switch decides).
 
 	// A default struct has no command: any use of it says so,
 	// the same way for every type of the family.
@@ -142,7 +141,7 @@ readonly struct MappedQueryCore<T>(
 		&& _take == other._take
 		&& _singleResult == other._singleResult
 		&& _asyncReads == other._asyncReads
-		&& ReferenceEquals(_config, other._config);
+		&& ReferenceEquals(Config, other.Config);
 
 	public override bool Equals(object? obj)
 		=> obj is MappedQueryCore<T> other && Equals(other);
@@ -158,7 +157,7 @@ readonly struct MappedQueryCore<T>(
 			return (h * 31)
 				+ (_singleResult ? 2 : 0)
 				+ (_asyncReads ? 1 : 0)
-				+ (_config?.GetHashCode() ?? 0);
+				+ RuntimeHelpers.GetHashCode(Config); // Reference equality, null for a default value.
 		}
 	}
 
@@ -167,21 +166,30 @@ readonly struct MappedQueryCore<T>(
 		? (_source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping)
 		: (_source is SelectorSource<T> ? CommandBehavior.Default : CommandBehavior.SequentialAccess);
 
-	public MappedQueryCore<T> WithSingleResult() => new(Command, _source, _skip, _take, true, _asyncReads, _config);
+	public MappedQueryCore<T> WithSingleResult() => new(Command, _source, _skip, _take, true, _asyncReads, Config);
 
-	public MappedQueryCore<T> WithAsyncReads() => new(Command, _source, _skip, _take, _singleResult, true, _config);
+	public MappedQueryCore<T> WithAsyncReads() => new(Command, _source, _skip, _take, _singleResult, true, Config);
 
-	// What UsePool set: the pool, and whether the rows are cleared. Without it, the
-	// shared array pool, and the rule of PoolClearing (the switch). A pool of the
-	// caller is never touched by ODX but to rent from and return to.
-	ChunkConfig<T> Config => _config ?? ChunkConfig<T>.For(PoolClearing.Resolve<T>(null));
+	// The configuration the query was given: the pool, and whether the rows are
+	// cleared. A pool of the caller is never touched by ODX but to rent from and
+	// return to.
+	// The configuration the query was given: the pool every pooling terminal rents from and
+	// whether it clears, provided when the query is made (the preset of the entry point, or
+	// UsePool).
+	ChunkConfig<T> Config { get; } = config;
 
 	public MappedQueryCore<T> WithPool(ArrayPool<T> pool, bool clearOnReturn)
 	{
 		if (pool is null) throw new ArgumentNullException(nameof(pool));
 		Contract.EndContractBlock();
 
-		return WithConfig(new ChunkConfig<T>(pool, PoolClearing.Resolve<T>(clearOnReturn)));
+		// The pool is the caller's; the sizes and the bin stay what the query had.
+		return WithConfig(new ChunkConfig<T>(
+			pool,
+			PoolClearing.Resolve<T>(clearOnReturn),
+			Config.Sizes,
+			Config.Bin,
+			Config.DeferFromRows));
 	}
 
 	// A whole configuration (the pool, the clear, the chunk sizes, the bin).
@@ -189,13 +197,13 @@ readonly struct MappedQueryCore<T>(
 		=> new(Command, _source, _skip, _take, _singleResult, _asyncReads, config);
 
 	public MappedQueryCore<T> WithSkip(int count)
-		=> count >= 0 ? new(Command, _source, _skip + count, _take, _singleResult, _asyncReads, _config)
+		=> count >= 0 ? new(Command, _source, _skip + count, _take, _singleResult, _asyncReads, Config)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// Take is set exactly once (the staging structs only expose it before any take exists), so this
 	// just records the limit; it applies after the skip, i.e. Enumerable.Skip(a).Take(b).
 	public MappedQueryCore<T> WithTake(int count)
-		=> count >= 0 ? new(Command, _source, _skip, count, _singleResult, _asyncReads, _config)
+		=> count >= 0 ? new(Command, _source, _skip, count, _singleResult, _asyncReads, Config)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	// One token governs a whole call: the one passed to the terminal together with the command's own (either cancels), for the connection open, the name lookup, the execute and the reads.

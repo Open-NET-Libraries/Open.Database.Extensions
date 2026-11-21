@@ -20,7 +20,7 @@ Which one to use:
 - `ToBufferedAsyncStream(cancellationToken)` yields the elements one by one, as an `IAsyncEnumerable<T>` that works with `await foreach` and `System.Linq.Async`.
 - `ToAsyncBufferStream(cancellationToken)` yields the chunks (`ReadOnlyMemory<T>`), for raw speed and the shortest connection time.
 
-Both are lazy and single-use: nothing runs until the first read, a second enumeration throws, and a `break` or a dispose cancels the query. The pooled buffers are cleared by the rule in [Pooled memory](async-buffers.md#pooled-memory), and `UsePool(pool, clear: ...)` after `Map` chooses the pool. The pool, clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
+Both are lazy and single-use: nothing runs until the first read, a second enumeration throws, and a `break` or a dispose cancels the query. The pooled buffers are cleared by the rule in [Pooled memory](async-buffers.md#pooled-memory), and `UsePool(pool, clearOnReturn: ...)` after `Map` chooses the pool. The pool, clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
 
 ### One producer, one consumer
 

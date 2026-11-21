@@ -62,15 +62,15 @@ namespace Open.Database.Extensions.Core;
 //   an InvalidOperationException (it goes the normal fault path, so Items
 //   and the stream complete with it). It does not clamp: the O(1) indexer
 //   needs every chunk exactly its planned number of rows. A pool may give
-//   a longer array; only the planned rows are used.// - A buffer is owned by exactly one party at a time: the producer
+//   a longer array; only the planned rows are used.
+// - A buffer is owned by exactly one party at a time: the producer
 //   while it fills it, then the target (Publish returned true), or the
 //   producer again if the target refused it (the target is disposed),
 //   in which case it releases it at once.
 // - Finish is called exactly once, last, whatever happens: a failure
-//   of Seal (a pool whose owner throws) is recorded as the read's
+//   of Seal (a pool whose Return throws) is recorded as the read's
 //   error, so Items and the stream still complete. Nothing is written
-//   after it. (If it is Slice that throws, the one buffer being filled
-//   is not released: it goes to the garbage collector.)
+//   after it.
 // - The linked source is disposed when RunAsync ends, whatever
 //   happens. Cancel is safe at any time: once the read is over (_ended)
 //   it does nothing, so a stream that ends normally does not touch the
@@ -220,7 +220,10 @@ internal sealed class ChunkProducer<T>(
 	{
 		if (_array is null || _next == _limit) Advance();
 
-		_array![_next++] = row;
+		// The row is stored before the count moves: a store that fails leaves
+		// nothing counted (Seal relies on it).
+		_array![_next] = row;
+		++_next;
 	}
 
 	// Hands the full buffer on and rents the next one.

@@ -203,7 +203,7 @@ public static class MappedQueryExtensions
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T[]> ToArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> query.ReadAsync(
-			(items, token) => CollectArrayAsync(items, token),
+			(items, token) => CollectArrayAsync(items, ChunkConfig<T>.Preset, token),
 			cancellationToken);
 
 	/// <summary>
@@ -740,10 +740,11 @@ public static class MappedQueryExtensions
 
 	static async ValueTask<T[]> CollectArrayAsync<T>(
 		IAsyncEnumerable<T> items,
+		ChunkConfig<T> config,
 		CancellationToken token)
 	{
 		// A struct that owns a rented buffer: it goes back to the pool however the call ends.
-		var sink = new ArraySink<T>(ChunkConfig<T>.For(PoolClearing.Resolve<T>(null)));
+		var sink = new ArraySink<T>(config);
 		try
 		{
 			await foreach (var item in items.WithCancellation(token).ConfigureAwait(false))

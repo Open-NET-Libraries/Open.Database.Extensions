@@ -1,3 +1,4 @@
+using System.Buffers;
 using Open.Database.Extensions.Core;
 using static Open.Database.Extensions.Tests.ChannelWait;
 
@@ -23,10 +24,10 @@ public static class ChunkSizingTests
 		return sizes is null
 			? view
 			: view.WithConfig(
-				new ChunkConfig<ChannelRow>(
-					null,
-					PoolClearing.Resolve<ChannelRow>(null),
-					sizes));
+				TestConfig.Of(
+					ArrayPool<ChannelRow>.Shared,
+					false,
+					sizes: sizes));
 	}
 
 	static async Task<List<int>> StreamSizes(int rows, ChunkSizes? sizes = null)

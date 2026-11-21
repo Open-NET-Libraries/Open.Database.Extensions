@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 public static partial class CoreExtensions
 {
@@ -45,7 +45,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.ToQueue(map ?? RowMap<T>.Default, reader, 0, -1).DequeueEach();
+		return RowReader.ToQueue(map ?? RowMap<T>.Default, reader, 0, -1, ChunkConfig<T>.Preset).DequeueEach();
 	}
 
 	/// <inheritdoc cref="ResultsBuffered{T}(IDataReader, RowMap{T}?)" />
@@ -54,7 +54,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return RowReader.ToQueue(RowMap<T>.Default, reader, 0, -1).DequeueEach();
+		return RowReader.ToQueue(RowMap<T>.Default, reader, 0, -1, ChunkConfig<T>.Preset).DequeueEach();
 	}
 
 	/// <summary>
@@ -137,7 +137,7 @@ public static partial class CoreExtensions
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
-		return (await RowReader.ToQueueAsync(map ?? RowMap<T>.Default, reader, 0, -1, useReadAsync, cancellationToken).ConfigureAwait(false)).DequeueEach();
+		return (await RowReader.ToQueueAsync(map ?? RowMap<T>.Default, reader, 0, -1, useReadAsync, ChunkConfig<T>.Preset, cancellationToken).ConfigureAwait(false)).DequeueEach();
 	}
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, RowMap{T}?, bool, CancellationToken)" />

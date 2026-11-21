@@ -1,6 +1,3 @@
-		// Take 0, a skip past the end and no rows all end here with an empty
-		// array. The command has already run (the reader exists); take 0 only
-		// means no row is read or mapped.
 namespace Open.Database.Extensions.Core;
 
 /// <summary>Supplies the per-row mapping delegate for the layout of a reader's current result set.</summary>
@@ -99,10 +96,10 @@ internal static class RowReader
 
 	// Buffers mapped rows in a queue so a caller can drain it: each item is released to the GC as it is dequeued.
 	// The rows are collected in a chain of pooled arrays and the queue is made from the exact count in one block copy (no growth copies, no slack).
-	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
+	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take, ChunkConfig<T> config)
 		=> Collect<T, QueueBuild<T>, Queue<T>>(
 			source, reader, skip, take, default,
-			ChunkConfig<T>.For(PoolClearing.Resolve<T>(null)));
+			config);
 
 	// The collecting terminals' one sync shape: the rows go into a chain of
 	// pooled arrays (from the pool of config: the shared array pool by
@@ -308,10 +305,10 @@ internal static class RowReader
 	}
 
 	public static ValueTask<Queue<T>> ToQueueAsync<T>(
-		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
+		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, ChunkConfig<T> config, CancellationToken cancellationToken)
 		=> CollectAsync<T, QueueBuild<T>, Queue<T>>(
 			source, reader, skip, take, useReadAsync, default,
-			ChunkConfig<T>.For(PoolClearing.Resolve<T>(null)),
+			config,
 			cancellationToken);
 
 	// ONE async method for every collecting terminal (ToList, ToArray, ToQueue,
@@ -540,19 +537,22 @@ internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 	void AddSlow(T item)
 	{
 		T[]? old = _items;
+		int rows = _count;
 		T[] bigger = config.Rent(old is null ? 16 : old.Length * 2);
-		if (old is not null)
-		{
-			Array.Copy(old, bigger, _count);
+		if (old is not null) Array.Copy(old, bigger, rows);
 
-			// The rows were copied: the old array goes back, its rows
-			// cleared first when the rule says so (they are alive in the
-			// new one, so the old must not keep them).
-			config.Seal(old, _count).Release();
-		}
-
+		// The sink holds the new array before the old one is released, so
+		// that a release that throws (a pool whose Return throws) leaves
+		// one array held once: Dispose releases the new one, and the old
+		// one is never released a second time.
 		_items = bigger;
-		bigger[_count++] = item;
+		bigger[rows] = item;
+		_count = rows + 1;
+
+		// The rows were copied: the old array goes back, its rows cleared
+		// first when the rule says so (they are alive in the new one, so the
+		// old must not keep them).
+		if (old is not null) config.Seal(old, rows).Release();
 	}
 
 	public readonly T[] ToArray()

@@ -100,8 +100,8 @@ namespace Open.Database.Extensions;
 /// returned by an internal background queue, where a return that throws is
 /// swallowed and costs only that array. When the queue is full the array is
 /// cleared and returned by the caller that releases it instead.
-/// While an array sits in the pool, or in a buffer that is not
-/// disposed, every reference-type row in it stays reachable.
+/// While the buffer is not disposed its rows stay reachable; a row that
+/// holds a reference is cleared before its array goes back to the pool.
 /// They are returned to the pool when the buffer is disposed,
 /// and not before: every <see cref="PooledArray{T}"/> it hands out
 /// is valid until then.
@@ -237,15 +237,16 @@ public sealed class PooledBuffer<T>
 	/// delays it by that call.
 	/// Does not throw for a well-behaved pool; for a pool whose
 	/// Return throws, see the remarks of the class.
-	/// Calling it again does nothing (it throws again if a pool's
-	/// Return threw the first time).
+	/// Calling it again does nothing: it only observes the producer's task,
+	/// so it throws again only if that task faulted.
 	/// After it, <see cref="Items"/> throws
 	/// <see cref="ObjectDisposedException"/>.
 	/// </remarks>
 	/// <returns>
-/// A task that completes when the producer has stopped and the arrays
-/// are returned (with clearing on, they are handed to the cleanup queue).
-/// </returns>
+	/// A task that completes when the producer has stopped and the arrays
+	/// are returned (a large chunk of rows that hold references goes to the
+	/// cleanup queue).
+	/// </returns>
 	public async ValueTask DisposeAsync()
 		=> await DisposeCore().ConfigureAwait(false);
 
