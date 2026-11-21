@@ -1,0 +1,19 @@
+<Project>
+
+	<!--
+		PROTOTYPE: what the Core package's buildTransitive targets would carry (SG.md section 1). Imported by the projects in this
+		repository that consume the generator as an analyzer. A .targets (not a .props), so it is read after the project body and a
+		project that sets InterceptorsNamespaces without $(...) cannot drop the generator's namespace.
+	-->
+	<PropertyGroup>
+		<InterceptorsNamespaces>$(InterceptorsNamespaces);Open.Database.Extensions.Generated</InterceptorsNamespaces>
+		<InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Open.Database.Extensions.Generated</InterceptorsPreviewNamespaces>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- OdxGenerateMaps=false switches the generator off (the user switch). OdxGeneratorCounters=true is test-only: it emits call counters. -->
+		<CompilerVisibleProperty Include="OdxGenerateMaps" />
+		<CompilerVisibleProperty Include="OdxGeneratorCounters" />
+	</ItemGroup>
+
+</Project>

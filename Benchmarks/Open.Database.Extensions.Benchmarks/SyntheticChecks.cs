@@ -113,6 +113,9 @@ public static partial class SyntheticChecks
 		// V10 (generator-shaped; GeneratorShaped.cs): inside ODX's loop (V10), the raw loop on DbDataReader (V10r) and on the sealed reader (V10c), each against V2's rows (and V1's, the table's).
 		VerifyV10(report, conn, table, width, rows, v1, hand, where);
 
+		// Gen and GenD (the prototype source generator; SyntheticGenerated.cs) against V2's rows.
+		VerifyGenerated(report, conn, width, SyntheticVariants.V2(conn, hand), where);
+
 		// V0 produces object[] rows: its final objects are compared as GetValues returns them.
 		foreach (var kv in new KeyValuePair<string, List<object[]>>[] { new("V0 sync", SyntheticVariants.V0(conn)), new("V0 async", Wait(SyntheticVariants.V0Async(conn))) })
 		{
@@ -278,6 +281,9 @@ public static partial class SyntheticChecks
 							break;
 						case List<object[]> boxed:
 							report.Check(boxed.Count == rows, $"{name} {where}: {boxed.Count} rows, expected {rows}");
+							break;
+						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal):
+							CompareGenerated(report, name, where, v1, generated);
 							break;
 						case System.Collections.IList shaped:
 							CompareItems(report, name, where, massaged, Items(shaped));

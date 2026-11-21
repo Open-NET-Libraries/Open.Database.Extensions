@@ -1,0 +1,135 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Open.Database.Extensions.Generator.Models;
+
+// The benchmark twins (SG.md 5f): the first 1, 3, 5, 10 and 20 members of the Benchmarks project's SynRow, with its types and nullability,
+// so Gen (undecorated, read by name) and GenD (decorated, constant ordinals) read exactly the columns V2's Hand(width) reads, at every catalog width.
+// Every member is fed by the synthetic catalog of that width, so a passing result set is a full layout.
+
+/// <summary>Width 1, undecorated.</summary>
+public sealed class GenRow1
+{
+	public int Id { get; set; }
+}
+
+/// <summary>Width 1, decorated.</summary>
+public sealed class GenRowD1
+{
+	[Column("Id", Order = 0)] public int Id { get; set; }
+}
+
+/// <summary>Width 3, undecorated.</summary>
+public sealed class GenRow3
+{
+	public int Id { get; set; }
+	public DateTime Created { get; set; }
+	public string? Title { get; set; }
+}
+
+/// <summary>Width 3, decorated.</summary>
+public sealed class GenRowD3
+{
+	[Column("Id", Order = 0)] public int Id { get; set; }
+	[Column("Created", Order = 1)] public DateTime Created { get; set; }
+	[Column("Title", Order = 2)] public string? Title { get; set; }
+}
+
+/// <summary>Width 5, undecorated.</summary>
+public sealed class GenRow5
+{
+	public int Id { get; set; }
+	public DateTime Created { get; set; }
+	public string? Title { get; set; }
+	public decimal Price { get; set; }
+	public int? Qty { get; set; }
+}
+
+/// <summary>Width 5, decorated: [Column(Name, Order)] on every member.</summary>
+public sealed class GenRowD5
+{
+	[Column("Id", Order = 0)] public int Id { get; set; }
+	[Column("Created", Order = 1)] public DateTime Created { get; set; }
+	[Column("Title", Order = 2)] public string? Title { get; set; }
+	[Column("Price", Order = 3)] public decimal Price { get; set; }
+	[Column("Qty", Order = 4)] public int? Qty { get; set; }
+}
+
+/// <summary>Width 10, undecorated.</summary>
+public sealed class GenRow10
+{
+	public int Id { get; set; }
+	public DateTime Created { get; set; }
+	public string? Title { get; set; }
+	public decimal Price { get; set; }
+	public int? Qty { get; set; }
+	public bool IsActive { get; set; }
+	public Guid Key { get; set; }
+	public double Score { get; set; }
+	public string? Note { get; set; }
+	public byte[]? Blob { get; set; }
+}
+
+/// <summary>Width 10, decorated.</summary>
+public sealed class GenRowD10
+{
+	[Column("Id", Order = 0)] public int Id { get; set; }
+	[Column("Created", Order = 1)] public DateTime Created { get; set; }
+	[Column("Title", Order = 2)] public string? Title { get; set; }
+	[Column("Price", Order = 3)] public decimal Price { get; set; }
+	[Column("Qty", Order = 4)] public int? Qty { get; set; }
+	[Column("IsActive", Order = 5)] public bool IsActive { get; set; }
+	[Column("Key", Order = 6)] public Guid Key { get; set; }
+	[Column("Score", Order = 7)] public double Score { get; set; }
+	[Column("Note", Order = 8)] public string? Note { get; set; }
+	[Column("Blob", Order = 9)] public byte[]? Blob { get; set; }
+}
+
+/// <summary>Width 20, undecorated.</summary>
+public sealed class GenRow20
+{
+	public int Id { get; set; }
+	public DateTime Created { get; set; }
+	public string? Title { get; set; }
+	public decimal Price { get; set; }
+	public int? Qty { get; set; }
+	public bool IsActive { get; set; }
+	public Guid Key { get; set; }
+	public double Score { get; set; }
+	public string? Note { get; set; }
+	public byte[]? Blob { get; set; }
+	public long Big { get; set; }
+	public string? Body { get; set; }
+	public decimal? Amount { get; set; }
+	public DateTime? Stamp { get; set; }
+	public string? Tag { get; set; }
+	public double Ratio { get; set; }
+	public bool? Flag { get; set; }
+	public Guid? Link { get; set; }
+	public long Count { get; set; }
+	public string? Summary { get; set; }
+}
+
+/// <summary>Width 20, decorated: [Column(Name, Order)] on every member.</summary>
+public sealed class GenRowD20
+{
+	[Column("Id", Order = 0)] public int Id { get; set; }
+	[Column("Created", Order = 1)] public DateTime Created { get; set; }
+	[Column("Title", Order = 2)] public string? Title { get; set; }
+	[Column("Price", Order = 3)] public decimal Price { get; set; }
+	[Column("Qty", Order = 4)] public int? Qty { get; set; }
+	[Column("IsActive", Order = 5)] public bool IsActive { get; set; }
+	[Column("Key", Order = 6)] public Guid Key { get; set; }
+	[Column("Score", Order = 7)] public double Score { get; set; }
+	[Column("Note", Order = 8)] public string? Note { get; set; }
+	[Column("Blob", Order = 9)] public byte[]? Blob { get; set; }
+	[Column("Big", Order = 10)] public long Big { get; set; }
+	[Column("Body", Order = 11)] public string? Body { get; set; }
+	[Column("Amount", Order = 12)] public decimal? Amount { get; set; }
+	[Column("Stamp", Order = 13)] public DateTime? Stamp { get; set; }
+	[Column("Tag", Order = 14)] public string? Tag { get; set; }
+	[Column("Ratio", Order = 15)] public double Ratio { get; set; }
+	[Column("Flag", Order = 16)] public bool? Flag { get; set; }
+	[Column("Link", Order = 17)] public Guid? Link { get; set; }
+	[Column("Count", Order = 18)] public long Count { get; set; }
+	[Column("Summary", Order = 19)] public string? Summary { get; set; }
+}

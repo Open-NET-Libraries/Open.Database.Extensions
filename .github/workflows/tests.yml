@@ -115,6 +115,34 @@ jobs:
           name: trx-legacy-compiler
           path: TestResults/legacy-compiler/*.trx
 
+  generator:
+    name: Test the source generator prototype
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+
+      # The generator runs as an analyzer of the test project and intercepts its Map<T>() calls on the models of another assembly;
+      # each test compares those rows, or that exception, with the runtime map's on the same data. No -f: net10.0 and net11.0.
+      - name: Run the generator tests
+        run: dotnet test Tests/Open.Database.Extensions.Generator.Tests -c Release --logger "trx;LogFilePrefix=generator" --results-directory TestResults/generator
+
+      - name: Upload the TRX files
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: trx-generator
+          path: TestResults/generator/*.trx
+
   benchmarks-build:
     name: Build the Benchmarks project
     runs-on: windows-latest
@@ -159,7 +187,8 @@ jobs:
         run: |
           $projects = @(
             'Source\Core', 'Source\SqlClient', 'Source\MSSqlClient', 'Source\Channel', 'Source\Dataflow', 'Source\Extensions',
-            'Tests\Open.Database.Extensions.Core.Tests', 'Tests\Open.Database.Extensions.LegacyCompiler.Tests', 'docsite\samples', 'Benchmarks\Open.Database.Extensions.Benchmarks')
+            'Tests\Open.Database.Extensions.Core.Tests', 'Tests\Open.Database.Extensions.LegacyCompiler.Tests', 'docsite\samples', 'Benchmarks\Open.Database.Extensions.Benchmarks',
+            'Source\Generator', 'Tests\Open.Database.Extensions.Generator.Models', 'Tests\Open.Database.Extensions.Generator.Tests', 'Benchmarks\Open.Database.Extensions.Benchmarks.Generated')
           $failures = @()
           foreach ($project in $projects) {
             # A full Windows path: with forward slashes the formatter loads nothing and reports a false zero.

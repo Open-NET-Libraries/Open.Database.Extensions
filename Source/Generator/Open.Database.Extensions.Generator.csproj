@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		PROTOTYPE (SG phase A). The source generator that serves a plain Map<T>() through C# interceptors.
+		Isolated on purpose: Core never references this project, builds, tests and ships without it.
+		Consumers in this repository reference it as an analyzer and import build/Open.Database.Extensions.Generator.targets,
+		which stands in for the buildTransitive targets the Core package would carry.
+	-->
+	<PropertyGroup>
+		<!-- Source/Directory.Build.props targets the library frameworks and packs every project: an analyzer is netstandard2.0 only and is not a package (yet). -->
+		<TargetFrameworks></TargetFrameworks>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<IsPackable>false</IsPackable>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<IncludeSymbols>false</IncludeSymbols>
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<RootNamespace>Open.Database.Extensions.Generator</RootNamespace>
+		<!-- RSEXPERIMENTAL002: GetInterceptableLocation is marked experimental in the Roslyn version this builds against. -->
+		<NoWarn>$(NoWarn);RSEXPERIMENTAL002;NU5128</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- The lowest Roslyn this has been built and run against (SG.probe used 4.14); the lower bound is SG 5e's job. -->
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+	</ItemGroup>
+
+</Project>
