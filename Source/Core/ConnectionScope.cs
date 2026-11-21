@@ -210,4 +210,49 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 #endif
 		}
 	}
+
+	/// <summary>
+	/// Configures how the disposal of this scope is awaited by <c>await using</c>, without boxing the scope.
+	/// </summary>
+	/// <remarks>
+	/// Library code takes the scope first, then hands it to <c>await using</c> on its own line:
+	/// <code>
+	/// var scope = await connection.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+	/// await using var disposal = scope.ConfigureAwait(false);
+	/// </code>
+	/// The scope is a struct, so the <see cref="IAsyncDisposable"/> extension of the same name would box
+	/// it; this instance method is chosen instead, and allocates nothing.
+	/// </remarks>
+	/// <param name="continueOnCapturedContext">
+	/// <see langword="true"/> to continue on the captured context after the connection has been
+	/// closed, disposed or given back; otherwise <see langword="false"/>.
+	/// </param>
+	/// <returns>A value that disposes the scope asynchronously, configured as asked.</returns>
+	public ConfiguredConnectionScope<TConnection> ConfigureAwait(bool continueOnCapturedContext)
+		=> new(this, continueOnCapturedContext);
+}
+
+/// <summary>
+/// A <see cref="ConnectionScope{TConnection}"/> whose disposal is awaited as configured by
+/// <see cref="ConnectionScope{TConnection}.ConfigureAwait(bool)"/>.
+/// </summary>
+/// <typeparam name="TConnection">The type of the connection, as the caller holds it.</typeparam>
+public readonly struct ConfiguredConnectionScope<TConnection>
+	where TConnection : IDbConnection
+{
+	readonly ConnectionScope<TConnection> _scope;
+	readonly bool _continueOnCapturedContext;
+
+	internal ConfiguredConnectionScope(
+		ConnectionScope<TConnection> scope,
+		bool continueOnCapturedContext)
+	{
+		_scope = scope;
+		_continueOnCapturedContext = continueOnCapturedContext;
+	}
+
+	/// <summary>Disposes the scope as <see cref="ConnectionScope{TConnection}.DisposeAsync"/> does, awaited as configured.</summary>
+	/// <returns>An awaitable that completes when the scope has been disposed.</returns>
+	public ConfiguredValueTaskAwaitable DisposeAsync()
+		=> _scope.DisposeAsync().ConfigureAwait(_continueOnCapturedContext);
 }

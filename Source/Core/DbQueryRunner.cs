@@ -21,7 +21,7 @@ static class DbQueryRunner
 	// back (and what that means is the pool's, as in pool.Open). A transaction's
 	// connection is the transaction's: it is never opened, closed or given back
 	// here. All of this holds when the run throws.
-	public readonly struct Lease : IDisposable, IAsyncDisposable
+	public readonly struct Lease : IDisposable
 	{
 		readonly ConnectionScope<DbConnection> _scope;
 		readonly bool _opened;
@@ -166,7 +166,11 @@ static class DbQueryRunner
 
 		public void Dispose() => _scope.Dispose();
 
-		public ValueTask DisposeAsync() => _scope.DisposeAsync();
+		// For `await using var d = lease.ConfigureAwait(false)`: the scope's own,
+		// which does not box.
+		public ConfiguredConnectionScope<DbConnection> ConfigureAwait(
+			bool continueOnCapturedContext)
+			=> _scope.ConfigureAwait(continueOnCapturedContext);
 	}
 	static DbCommand Make(
 		DbConnection connection,
@@ -339,7 +343,8 @@ static class DbQueryRunner
 		// Cancelled awaited tasks throw, so this does too.
 		cancellationToken.ThrowIfCancellationRequested();
 
-		await using Lease lease = await Lease.OpenAsync(source, cancellationToken).ConfigureAwait(false);
+		Lease lease = await Lease.OpenAsync(source, cancellationToken).ConfigureAwait(false);
+		await using var leaseDisposal = lease.ConfigureAwait(false);
 		NameSet? names = call is { NeedsNames: true }
 			? await ResolveAsync(
 					definition,

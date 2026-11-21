@@ -466,12 +466,13 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 
 		// No connection: nothing to open, and the command says so itself (the
 		// provider throws InvalidOperationException), as it always has.
-		await using ConnectionScope<IDbConnection> scope
+		ConnectionScope<IDbConnection> scope
 			= command.Connection is { } connection
 				? await connection
 					.EnsureOpenScopeAsync(cancellationToken)
 					.ConfigureAwait(false)
 				: default;
+		await using var scopeDisposal = scope.ConfigureAwait(false);
 
 		CommandBehavior b = ConnectionExtensions.NeedsOpen(scope.PriorState)
 			? behavior | CommandBehavior.CloseConnection

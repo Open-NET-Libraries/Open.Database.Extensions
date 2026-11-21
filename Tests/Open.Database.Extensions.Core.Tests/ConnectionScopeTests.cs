@@ -353,6 +353,69 @@ public static class ConnectionScopeTests
 			["openAsync", "closeAsync", "open", "close"],
 			connection.Log);
 	}
+	// ---- ConfigureAwait: the owner's pattern, without boxing the scope -----------------
+
+	[Fact]
+	public static async Task AScope_TakenFirst_ThenHandedToAwaitUsing_ClosesTheConnection()
+	{
+		var connection = new ScopeConnection();
+
+		var scope = await connection.EnsureOpenScopeAsync(Ct);
+		await using (scope.ConfigureAwait(false))
+			Assert.Equal(ConnectionState.Open, connection.State);
+
+		Assert.Equal(["openAsync", "closeAsync"], connection.Log);
+		Assert.Equal(ConnectionState.Closed, connection.State);
+	}
+
+	[Fact]
+	public static async Task AConfiguredDisposal_AwaitsWithoutTheCapturedContext()
+	{
+		var connection = new ScopeConnection();
+		var scope = await connection.EnsureOpenScopeAsync(Ct);
+
+		// Both are awaitable; the configuration is the one asked for.
+		await scope.ConfigureAwait(true).DisposeAsync();
+		Assert.Equal(["openAsync", "closeAsync"], connection.Log);
+
+		connection.Log.Clear();
+		connection.SetState(ConnectionState.Open);
+		await scope.ConfigureAwait(false).DisposeAsync();
+		Assert.Equal(["closeAsync"], connection.Log);
+	}
+
+	// A struct handed to the IAsyncDisposable extension of the same name is boxed;
+	// the scope's own ConfigureAwait is chosen instead and allocates nothing.
+	[Fact]
+	public static void ConfigureAwait_DoesNotBoxTheScope()
+	{
+		var connection = new ScopeConnection();
+		connection.SetState(ConnectionState.Open);
+		var scope = connection.EnsureOpenScope();
+
+		long ours = BytesPerCall(() =>
+			scope.ConfigureAwait(false).DisposeAsync().GetAwaiter().GetResult());
+		long boxed = BytesPerCall(() =>
+			((IAsyncDisposable)scope).ConfigureAwait(false).DisposeAsync().GetAwaiter().GetResult());
+
+		Assert.Equal(0, ours);
+		Assert.True(boxed > 0, "the IAsyncDisposable extension was expected to box the scope");
+	}
+
+	// Bytes per call, after a warm-up: the allocated-bytes counter of this thread is exact.
+	static long BytesPerCall(Action call)
+	{
+		for (int i = 0; i < 100; i++) call();
+		long best = long.MaxValue;
+		for (int round = 0; round < 3; round++)
+		{
+			long before = GC.GetAllocatedBytesForCurrentThread();
+			for (int i = 0; i < 1000; i++) call();
+			best = Math.Min(best, (GC.GetAllocatedBytesForCurrentThread() - before) / 1000);
+		}
+
+		return best;
+	}
 	// ---- failures ---------------------------------------------------------------------
 
 	[Fact]

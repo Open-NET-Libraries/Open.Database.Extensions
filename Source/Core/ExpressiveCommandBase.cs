@@ -943,7 +943,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (_poolOrConnection is TConnection single)
 		{
 			using Busy busy = EnterDirect();
-			await using var direct = await OpenScopeIfNeededAsync(single, null, cancellationToken).ConfigureAwait(false);
+			var direct = await OpenScopeIfNeededAsync(single, null, cancellationToken).ConfigureAwait(false);
+			await using var directDisposal = direct.ConfigureAwait(false);
 			NameSet? names = null;
 			if (_hasDerivedParams)
 			{
@@ -960,7 +961,8 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 
 		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
-		await using var lent = await OpenScopeIfNeededAsync(pool.Take(), pool, cancellationToken).ConfigureAwait(false);
+		var lent = await OpenScopeIfNeededAsync(pool.Take(), pool, cancellationToken).ConfigureAwait(false);
+		await using var lentDisposal = lent.ConfigureAwait(false);
 		NameSet? lentNames = null;
 		if (_hasDerivedParams)
 		{
