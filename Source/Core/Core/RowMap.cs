@@ -36,6 +36,12 @@ namespace Open.Database.Extensions;
 /// A property of such a type keeps the value its constructor or initializer gave it, else its default; a constructor parameter receives its declared default value, else <see langword="default"/>.
 /// Anything else receives <see langword="null"/>: <see cref="Nullable{T}"/>, a reference type declared nullable (<c>string?</c>, or <c>[AllowNull]</c> on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter.
 /// The annotations are read from the assembly the model is declared in, once per model type.
+/// A member that declares its column is a hard instruction, and a result that does not say the same throws (the attributes of <c>System.ComponentModel.DataAnnotations.Schema</c>, read by full name):
+/// <c>[Column("name")]</c> reads that column (exactly, else ignoring case; never inferred), and none in the result throws <see cref="ValueMappingException"/>;
+/// <c>[Column(Order = n)]</c> says column <c>n</c> is the member's (its declared name, else its own name, exactly or ignoring case, never ignoring underscores), and another column there, or too few columns, throws <see cref="ValueMappingException"/> naming the member, the ordinal and what is there;
+/// <c>[NotMapped]</c> leaves the member out (no column feeds it, whatever its name, unless a pair names it). These are checked once per result set, when the row reader is built, never per row, and a result set that fails is checked again the next time it comes back.
+/// A <c>[NotMapped]</c> member that is also <c>[Column]</c>, required, or set by a constructor parameter, and two members that declare the same ordinal or name, are a type error (<see cref="InvalidOperationException"/>).
+/// A pair that names a declared member overrides its declarations for that map (it reads the pair's column, a <see langword="null"/> column leaves it unread, and a <c>[NotMapped]</c> member it names is mapped), and nothing throws for it; the other members keep theirs. A NULL follows the rules below, declared or not.
 /// A map is immutable and thread-safe, and caches its compiled row readers. One built at a call site is rebuilt on every call, so declare it once.
 /// Declare it with the collection syntax, <c>RowMap&lt;Post&gt; map = [new(nameof(Post.Id), "post_id")];</c>, or with the constructor, from one pair or several; a map enumerates the pairs it was declared with.
 /// A column that needs a trim, a parse or a format on its way to a member has a converter:
@@ -83,13 +89,14 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	public RowMap(params ReadOnlySpan<KeyValuePair<string, string?>> mappings)
 	{
 		// A model type that cannot be mapped fails here, at the call, not when the first row is read.
-		TypeShape.ThrowIfUnmappable();
+		ThrowIfUnmappable();
 		_slots = ModelSlots;
 		_slotIndex = ModelSlotIndex;
 
-		// slot → column, in slot order; a slot reads the column of its own name unless a pair says otherwise.
+		// slot → column, in slot order; a slot reads the column its member declares ([Column(Name)]), else the column of its own name, unless a pair says otherwise.
+		// A [NotMapped] member reads none (null) unless a pair names it.
 		string?[] columns = new string?[_slots.Length];
-		for (int i = 0; i < columns.Length; i++) columns[i] = _slots[i].Name;
+		for (int i = 0; i < columns.Length; i++) columns[i] = _slots[i].NotMapped ? null : _slots[i].ColumnName ?? _slots[i].Name;
 
 		bool[] named = Declare(mappings, columns, nameof(mappings));
 		RejectSharedColumns(columns, named, nameof(mappings));
@@ -130,7 +137,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		_slotIndex = BuildSlotIndex(_slots);
 
 		string?[] columns = new string?[_slots.Length];
-		for (int i = 0; i < columns.Length; i++) columns[i] = _slots[i].Name;
+		for (int i = 0; i < columns.Length; i++) columns[i] = _slots[i].ColumnName ?? _slots[i].Name;
 
 		bool[] named = Declare(pairs, columns, nameof(pairs));
 		RejectSharedColumns(columns, named, nameof(pairs));
@@ -355,28 +362,52 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	// What a column can feed: one slot per parameter of the constructor the model is built through (none for a model built as it always was), then one per settable public
 	// instance property no parameter covers, in declaration order (a property hidden by name keeps the first). Reflection runs once per T.
-	static readonly ImmutableArray<Slot> ModelSlots = BuildSlots();
+	// A property marked [NotMapped] keeps its slot but reads no column of its own (a pair can still name it). What the members declare ([Column], [NotMapped]) is judged here too, once.
+	static readonly SlotTable Model = BuildSlots();
+	static readonly ImmutableArray<Slot> ModelSlots = Model.Slots;
 
-	static ImmutableArray<Slot> BuildSlots()
+	// Why T cannot be mapped (its shape, else a contradiction in what its members declare), or null when it can.
+	static readonly string? TypeError = TypeShape.Error ?? Model.Error;
+
+	// Whether any member declares a column or an ordinal: only then does a result set pay the checks of Match for it (once per layout, never per row).
+	static readonly bool HasDecorators = Model.Decorated;
+
+	sealed class SlotTable(ImmutableArray<Slot> slots, string? error, bool decorated)
 	{
-		if (TypeShape.Error is not null) return [];
+		public readonly ImmutableArray<Slot> Slots = slots;
+		public readonly string? Error = error;
+		public readonly bool Decorated = decorated;
+	}
+
+	static SlotTable BuildSlots()
+	{
+		if (TypeShape.Error is not null) return new([], null, false);
 
 		var seen = new HashSet<string>(StringComparer.Ordinal);
 		var list = new List<Slot>();
-		if (TypeShape.Constructor is { } constructor) AddParameterSlots(constructor, list, seen);
+		string? error = null;
+		if (TypeShape.Constructor is { } constructor) AddParameterSlots(constructor, list, seen, ref error);
 
 		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		{
-			if (p.GetIndexParameters().Length == 0 && p.GetSetMethod() is { } setter && seen.Add(p.Name))
-				list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p), NullAnnotations.IsNonNullableReference(p)));
+			if (p.GetIndexParameters().Length != 0 || p.GetSetMethod() is not { } setter || !seen.Add(p.Name)) continue;
+
+			Decoration declared = Decoration.Of(p);
+			if (declared.NotMapped) error ??= NotMappedError(p, declared, null);
+
+			list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p), NullAnnotations.IsNonNullableReference(p), declared.Column, declared.Order, declared.NotMapped));
 		}
 
-		return [.. list];
+		bool decorated = list.Exists(s => s.ColumnName is not null || s.Order >= 0);
+		if (decorated) error ??= DuplicateDeclaration(list);
+
+		return new([.. list], error, decorated);
 	}
 
 	// A parameter and a public property whose names are equal ignoring case are one slot: named after the property, typed by the parameter, fed through the constructor and never set again
 	// (a record's positional init property). The exact name wins over the one ignoring case, each property serves one parameter, and a parameter with no property is a slot named after itself.
-	static void AddParameterSlots(ConstructorInfo constructor, List<Slot> list, HashSet<string> seen)
+	// The slot takes what its property declares ([property: Column("x")] on a positional record); a parameter with no property declares nothing.
+	static void AddParameterSlots(ConstructorInfo constructor, List<Slot> list, HashSet<string> seen, ref string? error)
 	{
 		ParameterInfo[] parameters = constructor.GetParameters();
 		PropertyInfo[] properties = [.. typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.GetIndexParameters().Length == 0)];
@@ -406,10 +437,47 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			string name = matches[i]?.Name ?? parameter.Name ?? "arg" + i;
 			bool added = seen.Add(name);
 			Debug.Assert(added, "A slot name is unique: a parameter takes the name of a property or its own, and the exact name was matched first.");
-			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter), matches[i] is { } property && MustHaveColumn(property), NullAnnotations.IsNonNullableReference(parameter)));
+
+			Decoration declared = matches[i] is { } property ? Decoration.Of(property) : Decoration.None;
+			if (declared.NotMapped) error ??= NotMappedError(matches[i]!, declared, parameter);
+
+			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter), matches[i] is { } required && MustHaveColumn(required), NullAnnotations.IsNonNullableReference(parameter), declared.Column, declared.Order));
 		}
 	}
 
+	// A [NotMapped] member that cannot simply be left out of the map, so the type cannot be mapped: it is also a [Column], it is required (no column could feed it),
+	// or a constructor parameter sets it. Null when it is plain, the property is left out.
+	static string? NotMappedError(PropertyInfo property, Decoration declared, ParameterInfo? parameter)
+	{
+		string type = Shape.TypeName(typeof(T));
+		if (declared.HasColumnAttribute)
+			return $"'{type}' cannot be mapped: property '{property.Name}' is both [NotMapped] and [Column]. A member is mapped or it is not.";
+
+		if (parameter is not null)
+			return $"'{type}' cannot be mapped: property '{property.Name}' is [NotMapped], but constructor parameter '{parameter.Name}' sets it. Remove [NotMapped], or the parameter.";
+
+		return MustHaveColumn(property)
+			? $"'{type}' cannot be mapped: property '{property.Name}' is [NotMapped] and required, so no column could feed it. Remove one of them."
+			: null;
+	}
+
+	// Two members that declare the same ordinal, or the same column name (ignoring case), cannot both be satisfied. The first pair is named.
+	static string? DuplicateDeclaration(List<Slot> slots)
+	{
+		for (int j = 1; j < slots.Count; j++)
+		{
+			for (int i = 0; i < j; i++)
+			{
+				if (slots[i].Order >= 0 && slots[i].Order == slots[j].Order)
+					return $"'{Shape.TypeName(typeof(T))}' cannot be mapped: '{slots[i].Name}' and '{slots[j].Name}' both declare [Column(Order = {slots[i].Order})].";
+
+				if (slots[i].ColumnName is { } column && string.Equals(column, slots[j].ColumnName, StringComparison.OrdinalIgnoreCase))
+					return $"'{Shape.TypeName(typeof(T))}' cannot be mapped: '{slots[i].Name}' and '{slots[j].Name}' both declare [Column(\"{column}\")].";
+			}
+		}
+
+		return null;
+	}
 	// A required property must be fed by a column in every result shape, and a constructor parameter's default does not feed it: the property of a parameter is required all the same.
 	// A constructor that sets the required members itself ([SetsRequiredMembers]) lifts that: they are ordinary properties then.
 	static bool MustHaveColumn(PropertyInfo property) => !TypeShape.SetsRequiredMembers && Shape.IsRequired(property);
@@ -429,12 +497,15 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	public static RowMap<T> Default
 	{
 		// Null when T cannot be mapped, so reading Default throws instead of a static initializer failing.
-		get => field ?? throw new InvalidOperationException(TypeShape.Error);
-	} = TypeShape.Error is null ? new() : null; // Declared after TypeShape, ModelSlots and ModelSlotIndex: its constructor reads them.
+		get => field ?? throw new InvalidOperationException(TypeError);
+	} = TypeError is null ? new() : null; // Declared after TypeShape, ModelSlots and ModelSlotIndex: its constructor reads them.
 
 	// For an entry point that runs a command before it maps a row: checking the type first makes an unmappable T fail at the call, with nothing executed.
 	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter", Justification = "It checks this T's shape: the type parameter is how a caller names which T to check (RowMap<T>.ThrowIfUnmappable()).")]
-	internal static void ThrowIfUnmappable() => TypeShape.ThrowIfUnmappable();
+	internal static void ThrowIfUnmappable()
+	{
+		if (TypeError is not null) throw new InvalidOperationException(TypeError);
+	}
 
 	// What this map's columns can feed: the model's own slots (ModelSlots), or the parameters of its factory (From(factory, pairs)).
 	readonly ImmutableArray<Slot> _slots;
@@ -510,7 +581,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		var feeds = new Slot?[names.Length];
 		bool[] filled = new bool[_columns.Length];
 
-		int unmatched = names.Length - Feed(ColumnIndex(StringComparer.Ordinal), names, feeds, filled);
+		// A column a member declares by ordinal ([Column(Order = n)]) is its before any tier runs, so none gives it away; a column that is not its throws.
+		int claimed = HasDecorators ? ClaimOrdinals(names, feeds, filled) : 0;
+
+		int unmatched = names.Length - claimed - Feed(ColumnIndex(StringComparer.Ordinal), names, feeds, filled);
 		if (unmatched > 0) unmatched -= Feed(ColumnIndex(StringComparer.OrdinalIgnoreCase), names, feeds, filled);
 		if (unmatched > 0 && NameIndex(filled) is { } byName) Feed(byName, names, feeds, filled);
 
@@ -537,11 +611,54 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	Dictionary<string, int> ColumnIndex(StringComparer comparer)
 	{
 		var index = new Dictionary<string, int>(_columns.Length, comparer);
+
+		// A member that declares its column ([Column(Name)]) is asked first: another member reading the same name does not take it.
+		if (HasDecorators)
+		{
+			for (int p = 0; p < _columns.Length; p++)
+				if (_slots[p].ColumnName is not null && !_named[p] && _columns[p] is { } declared && !index.ContainsKey(declared)) index.Add(declared, p);
+		}
+
 		for (int p = 0; p < _columns.Length; p++)
 			if (_columns[p] is { } column && !index.ContainsKey(column)) index.Add(column, p);
 
 		return index;
 	}
+
+	// [Column(Order = n)]: column n must be the column of the member that declares it: its [Column] name, else the member's own name, exactly or ignoring case and never ignoring underscores
+	// (an undecorated member is matched loosely; a declared one is not). It is that member's from then on. Runs once per layout; nothing here is per row.
+	int ClaimOrdinals(string[] names, Slot?[] feeds, bool[] filled)
+	{
+		int claimed = 0;
+		for (int p = 0; p < _slots.Length; p++)
+		{
+			// A pair that names the member overrides what it declares: the column is the pair's, and the ordinal is not checked.
+			Slot slot = _slots[p];
+			if (slot.Order < 0 || _named[p]) continue;
+
+			string expected = _columns[p] ?? slot.Name;
+			if (slot.Order >= names.Length)
+				throw OrderMismatch(slot, expected, $"the result has {names.Length} column{(names.Length == 1 ? "" : "s")}");
+
+			string actual = names[slot.Order];
+			// A declaration is a hard rule: the name, exactly or ignoring case, never the looser tiers of an undecorated member (no underscores).
+			if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase)) throw OrderMismatch(slot, expected, $"column {slot.Order} is '{actual}'");
+
+			feeds[slot.Order] = slot;
+			filled[p] = true;
+			claimed++;
+		}
+
+		return claimed;
+	}
+
+
+	ValueMappingException OrderMismatch(Slot slot, string expected, string found)
+		=> new(
+			$"The {Describe(slot)} of '{Shape.TypeName(typeof(T))}' is declared [Column(Order = {slot.Order})], so column {slot.Order} must be '{expected}', but {found}.",
+			slot.Name,
+			expected,
+			slot.Type);
 
 	// Tier 3: property name → the first property, in declaration order, of the unfilled properties no pair named (every named property is left out, whatever its column), compared
 	// ignoring case and underscores. Null when there is none, so nothing is built for a result set whose properties are all settled.
@@ -551,7 +668,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		for (int p = 0; p < _columns.Length; p++)
 		{
 			string name = _slots[p].Name;
-			if (filled[p] || _named[p]) continue;
+			if (filled[p] || _named[p] || _slots[p].ColumnName is not null || _slots[p].NotMapped) continue;
 
 			index ??= new(_columns.Length, new IgnoreCaseAndUnderscores());
 #if NETSTANDARD2_0
@@ -1102,11 +1219,14 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		for (int s = 0; s < _slots.Length; s++)
 		{
 			Slot slot = _slots[s];
-			if (!slot.Required || Array.IndexOf(feeds, slot) >= 0) continue;
+			// A pair that names a declared member overrides the declaration: only what the map says is looked for.
+			if ((!slot.Required && (slot.ColumnName is null || _named[s])) || Array.IndexOf(feeds, slot) >= 0) continue;
 
-			string column = _columns[s]!; // A required slot is never mapped to null: the pairs are validated.
+			string column = _columns[s]!; // A required slot is never mapped to null (the pairs are validated), and a declared one is not either.
 			throw new ValueMappingException(
-				$"No column feeds the required property '{slot.Name}' ({Shape.TypeName(slot.Type)}) of '{Shape.TypeName(typeof(T))}'; expected a column named '{column}'.",
+				slot.Required
+					? $"No column feeds the required property '{slot.Name}' ({Shape.TypeName(slot.Type)}) of '{Shape.TypeName(typeof(T))}'; expected a column named '{column}'."
+					: $"No column feeds the {Describe(slot)} of '{Shape.TypeName(typeof(T))}', which is declared [Column(\"{column}\")]; expected a column named '{column}'.",
 				slot.Name, column, slot.Type);
 		}
 	}
@@ -1533,9 +1653,12 @@ internal sealed class FirstColumn<T> : IRowSource<T>
 sealed class Slot
 {
 	// A settable property.
-	public Slot(string name, Type type, MethodInfo setter, bool required, bool nonNullableReference)
+	public Slot(string name, Type type, MethodInfo setter, bool required, bool nonNullableReference, string? columnName = null, int order = -1, bool notMapped = false)
 	{
 		Name = name;
+		ColumnName = columnName;
+		Order = order;
+		NotMapped = notMapped;
 		Required = required;
 		Type = type;
 		Setter = setter;
@@ -1558,9 +1681,11 @@ sealed class Slot
 	}
 
 	// A constructor parameter, named after the property of that name when there is one.
-	public Slot(string name, Type type, int position, string parameter, bool isProperty, Expression fallback, bool required, bool nonNullableReference)
+	public Slot(string name, Type type, int position, string parameter, bool isProperty, Expression fallback, bool required, bool nonNullableReference, string? columnName = null, int order = -1)
 	{
 		Name = name;
+		ColumnName = columnName;
+		Order = order;
 		Required = required;
 		Type = type;
 		Position = position;
@@ -1580,6 +1705,14 @@ sealed class Slot
 
 	public readonly string Name;
 	public readonly Type Type;
+
+	// What the member declares for the map ([Column(Name)], [Column(Order = n)]; see Decoration): the column it reads, and the ordinal that column must have. Null and -1 for none.
+	// A slot that declares either is a hard instruction: the result must satisfy it, or the row reader is not built.
+	public readonly string? ColumnName;
+	public readonly int Order = -1;
+
+	// [NotMapped]: the member reads no column on its own (no tier matches it); it still has a slot, so that a pair can name it and map it all the same.
+	public readonly bool NotMapped;
 
 	// The method that stores the value; null for a slot fed through the constructor.
 	public readonly MethodInfo? Setter;
@@ -1733,6 +1866,59 @@ static class NullAnnotations
 			if (attribute.AttributeType.FullName == attributeName) return true;
 
 		return false;
+	}
+}
+
+// What a model property declares for the map, read as data by the full name of the attributes (a consumer's own copy counts, and no package is needed):
+// [Column(Name)] and [Column(Order = n)] (System.ComponentModel.DataAnnotations.Schema.ColumnAttribute; TypeName is ignored) and [NotMapped].
+// This runs once per model type, when the slots are built, never per row.
+readonly struct Decoration(string? column, int order, bool hasColumnAttribute, bool notMapped)
+{
+	const string ColumnAttributeName = "System.ComponentModel.DataAnnotations.Schema.ColumnAttribute";
+	const string NotMappedAttributeName = "System.ComponentModel.DataAnnotations.Schema.NotMappedAttribute";
+
+	// The name the column attribute gives, or null for none.
+	public string? Column => column;
+
+	// The ordinal the column attribute gives, or -1 for none.
+	public int Order => order;
+
+	// Whether a column attribute is there at all.
+	public bool HasColumnAttribute => hasColumnAttribute;
+
+	public bool NotMapped => notMapped;
+
+	// A member that declares nothing (the default value of the struct would claim ordinal 0).
+	public static Decoration None => new(null, -1, false, false);
+
+	public static Decoration Of(PropertyInfo property)
+	{
+		string? column = null;
+		int order = -1;
+		bool hasColumn = false;
+		bool notMapped = false;
+		foreach (CustomAttributeData attribute in CustomAttributeData.GetCustomAttributes(property))
+		{
+			string? name = attribute.AttributeType.FullName;
+			if (name == NotMappedAttributeName)
+			{
+				notMapped = true;
+			}
+			else if (name == ColumnAttributeName)
+			{
+				hasColumn = true;
+				if (attribute.ConstructorArguments.Count > 0 && attribute.ConstructorArguments[0].Value is string { Length: > 0 } given)
+					column = given;
+
+				foreach (CustomAttributeNamedArgument named in attribute.NamedArguments)
+				{
+					if (named.MemberName == "Order" && named.TypedValue.Value is int value && value >= 0)
+						order = value;
+				}
+			}
+		}
+
+		return new(column, order, hasColumn, notMapped);
 	}
 }
 

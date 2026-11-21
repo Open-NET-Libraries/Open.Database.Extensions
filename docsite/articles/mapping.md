@@ -197,6 +197,25 @@ The constructor also takes the pairs as arguments, with no brackets: `Map(new Ro
 
 [!code-csharp[](../samples/Mapping.cs#map_pairs)]
 
+## Decorated models
+
+A model can say where its columns are, with the attributes of `System.ComponentModel.DataAnnotations.Schema`. A declaration is a hard instruction: when the result does not say the same, reading it throws, so a query that changed shape fails loudly instead of mapping the wrong column. A model that declares nothing is read by name, as above, and so is every undeclared member of a model that does.
+
+[!code-csharp[](../samples/Models.cs#decorated_model)]
+
+[!code-csharp[](../samples/Mapping.cs#map_decorated)]
+
+- **`[Column("name")]`** reads the column of that name, exactly, else ignoring case. The name is not inferred: no underscore matching, and the property's own name does not stand in. When the result has no such column, `ValueMappingException` names the member and the column, when the row reader is built (the first row of that shape, as for a [`required` member](#required-and-init-members)).
+- **`[Column(Order = n)]`** says the column at ordinal `n` is this member's: its `[Column]` name, else the property's own name, exactly or ignoring case (never ignoring underscores: a declaration leaves nothing to infer). Another column there throws `ValueMappingException`, naming the member, the ordinal and what the result has there, and so does a result with fewer than `n + 1` columns. Columns at ordinals no member declares are allowed and ignored. A name and an order can be given together.
+- **`[NotMapped]`** removes the member from the map: no column feeds it, whatever it is called, and it keeps its initializer. Declared next to `[Column]`, on a `required` member (unless the constructor has `[SetsRequiredMembers]`) or on a property a constructor parameter sets, it contradicts itself, and so do two members that declare the same ordinal or the same name: the type throws `InvalidOperationException` at the call.
+- **On a positional record** the attribute goes on the property, `[property: Column("id", Order = 0)]`, and the constructor parameter reads the same column.
+
+[!code-csharp[](../samples/Mapping.cs#map_decorated_mismatch)]
+
+The check runs once per result set, when its row reader is built, and costs nothing per row. A result set that fails is not remembered as good: it throws every time it comes back, and a good one after it maps. A NULL follows [the same rules](#a-missing-column-and-a-null) for a declared member as for any other. A [`RowMap<T>` pair](#columns-named-differently) overrides the declarations of the member it names, for that map: the pair's column is read (a converter's column the same), a `null` column leaves the member unread, and a `[NotMapped]` member a pair names is mapped. Nothing throws for it, and the other members keep their declarations.
+
+The attributes are read by their full name, so a model's own copy of them counts. On netstandard2.0 the package `System.ComponentModel.Annotations` provides them.
+
 ## Types and NULL
 
 Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...), so nothing is boxed on the common path. When the column type and the property type differ:
