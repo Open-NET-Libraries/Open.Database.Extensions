@@ -190,6 +190,8 @@ Always dispose the enumerator, which `await foreach` does. An enumerator that is
 
 The rows of a buffer or a stream, and the chunks a collector (`ToListAsync`, `ToArrayAsync` and the rest) reads into before it copies the result once, live in arrays rented from a pool. By default the pool is `ArrayPool<T>.Shared`. An array goes back to its pool when the call, the buffer or the stream is done, and what is in it then is the question this section answers.
 
+The measurements behind these choices (which pool, how rows are cleared, and where) are on [Pooling and clearing](benchmarks/pooling-and-clearing.md).
+
 ### What is cleared
 
 A pooled array that goes back with rows in it keeps them reachable while it sits in the pool, and any other code in the process can rent the same array next. So ODX decides, for every array it rents, with one rule:

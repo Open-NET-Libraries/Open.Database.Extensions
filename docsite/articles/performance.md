@@ -28,6 +28,7 @@ Each row is one page. Every page has the same order: the answer first, then the 
 | Sync reads or async reads? | Sync is cheapest or tied in every case measured; async can wait on a busy thread pool | [Sync reads against async reads](benchmarks/sync-vs-async.md) |
 | What happens on a slow link or with a 100 MB value? | The link sets the time; the sync read allocates less; one async path took 5.4 times as long | [Slow links and large values](benchmarks/slow-links-and-large-values.md) |
 | Are channels and Dataflow faster than a loop? | No: 1.26 and 2.1 times a plain loop at 1,000 rows (older run) | [Channels and Dataflow against a plain loop](benchmarks/pipelines.md) |
+| Which pool, and how are rows cleared? | Plain `ArrayPool` arrays; 2 to 5% faster end to end; clearing is cheap when done inline | [Pooling and clearing](benchmarks/pooling-and-clearing.md) |
 
 Also: [How we measure](benchmarks/how-we-measure.md) (the method, the settings, how fresh the data is), the [data files](performance-data.md), and the [interactive ranking](../benchmarks/ranking.html) of the 16 synthetic variants, a snapshot of 2026-11-14.
 

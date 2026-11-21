@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 706" role="img" aria-labelledby="pool-store-title pool-store-desc">
+  <title id="pool-store-title">Where the rows live: arrays or Memory</title>
+  <desc id="pool-store-desc">Three panels of six bars, each panel on its own scale: the time to collect, buffer or stream 10,000 int rows with six designs of the chunk store. The two array designs are fastest in every panel. Every bar starts at zero. Collect: add 10,000 rows, copy out: Arrays, one store 9.1 µs; Arrays, lease per chunk 9.8 µs; Memory&lt;T&gt; chunks 11.7 µs; Arrays, owner object 12.9 µs; MemoryPool, span per chunk 16.3 µs; MemoryPool, span per row 30.3 µs. Buffer: add 10,000 rows, read each one: Arrays, one store 19.7 µs; Arrays, lease per chunk 22.3 µs; Arrays, owner object 24.1 µs; Memory&lt;T&gt; chunks 48.4 µs; MemoryPool, span per row 53.7 µs; MemoryPool, span per chunk 54.2 µs. Stream: add 10,000 rows, read chunk by chunk: Arrays, one store 19.5 µs; Arrays, lease per chunk 21.7 µs; MemoryPool, span per chunk 23.5 µs; Arrays, owner object 24.4 µs; Memory&lt;T&gt; chunks 43.1 µs; MemoryPool, span per row 115.9 µs.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="539" height="705" rx="8"/>
+  <text class="title" x="16" y="28">Where the rows live: arrays or Memory</text>
+  <text class="muted" x="16" y="48">Shorter is better. 10,000 int rows, pool spike, net10.</text>
+  <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="72">Arrays from ArrayPool (what ODX does)</text>
+  <rect class="grey" x="293" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="311" y="72">The alternatives measured</text>
+  <text class="head" x="16" y="108">Collect: add 10,000 rows, copy out</text>
+  <g>
+    <title>Arrays, one store per call: 9.1 µs to collect 10,000 int rows.</title>
+    <rect class="hit" x="0" y="118" width="540" height="26"/>
+    <text class="name" x="190" y="135">Arrays, one store</text>
+    <path class="one" d="M200,123 h76.44 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-76.44 z"/>
+    <text class="val" x="286.44" y="135">9.1 µs</text>
+  </g>
+  <g>
+    <title>Arrays, a struct lease per chunk: 9.8 µs to collect 10,000 int rows.</title>
+    <rect class="hit" x="0" y="144" width="540" height="26"/>
+    <text class="name" x="190" y="161">Arrays, lease per chunk</text>
+    <path class="one" d="M200,149 h82.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-82.42 z"/>
+    <text class="val" x="292.42" y="161">9.8 µs</text>
+  </g>
+  <g>
+    <title>Memory&lt;T&gt; chunks with an array fast path: 11.7 µs to collect 10,000 int rows.</title>
+    <rect class="hit" x="0" y="170" width="540" height="26"/>
+    <text class="name" x="190" y="187">Memory&lt;T&gt; chunks</text>
+    <path class="grey" d="M200,175 h99.64 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-99.64 z"/>
+    <text class="val" x="309.64" y="187">11.7 µs</text>
+  </g>
+  <g>
+    <title>Arrays, an owner object per chunk: 12.9 µs to collect 10,000 int rows.</title>
+    <rect class="hit" x="0" y="196" width="540" height="26"/>
+    <text class="name" x="190" y="213">Arrays, owner object</text>
+    <path class="grey" d="M200,201 h110.46 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-110.46 z"/>
+    <text class="val" x="320.46" y="213">12.9 µs</text>
+  </g>
+  <g>
+    <title>MemoryPool, one span per chunk where possible: 16.3 µs to collect 10,000 int rows.</title>
+    <rect class="hit" x="0" y="222" width="540" height="26"/>
+    <text class="name" x="190" y="239">MemoryPool, span per chunk</text>
+    <path class="grey" d="M200,227 h139.77 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-139.77 z"/>
+    <text class="val" x="349.77" y="239">16.3 µs</text>
+  </g>
+  <g>
+    <title>MemoryPool, every row through a span: 30.3 µs to collect 10,000 int rows.</title>
+    <rect class="hit" x="0" y="248" width="540" height="26"/>
+    <text class="name" x="190" y="265">MemoryPool, span per row</text>
+    <path class="grey" d="M200,253 h264 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-264 z"/>
+    <text class="val" x="474" y="265">30.3 µs</text>
+  </g>
+  <line class="axis" x1="200" y1="118" x2="200" y2="274"/>
+  <text class="head" x="16" y="302">Buffer: add 10,000 rows, read each one</text>
+  <g>
+    <title>Arrays, one store per call: 19.7 µs to buffer 10,000 int rows.</title>
+    <rect class="hit" x="0" y="312" width="540" height="26"/>
+    <text class="name" x="190" y="329">Arrays, one store</text>
+    <path class="one" d="M200,317 h93.67 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-93.67 z"/>
+    <text class="val" x="303.67" y="329">19.7 µs</text>
+  </g>
+  <g>
+    <title>Arrays, a struct lease per chunk: 22.3 µs to buffer 10,000 int rows.</title>
+    <rect class="hit" x="0" y="338" width="540" height="26"/>
+    <text class="name" x="190" y="355">Arrays, lease per chunk</text>
+    <path class="one" d="M200,343 h106.09 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-106.09 z"/>
+    <text class="val" x="316.09" y="355">22.3 µs</text>
+  </g>
+  <g>
+    <title>Arrays, an owner object per chunk: 24.1 µs to buffer 10,000 int rows.</title>
+    <rect class="hit" x="0" y="364" width="540" height="26"/>
+    <text class="name" x="190" y="381">Arrays, owner object</text>
+    <path class="grey" d="M200,369 h115.3 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-115.3 z"/>
+    <text class="val" x="325.3" y="381">24.1 µs</text>
+  </g>
+  <g>
+    <title>Memory&lt;T&gt; chunks with an array fast path: 48.4 µs to buffer 10,000 int rows.</title>
+    <rect class="hit" x="0" y="390" width="540" height="26"/>
+    <text class="name" x="190" y="407">Memory&lt;T&gt; chunks</text>
+    <path class="grey" d="M200,395 h235.54 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-235.54 z"/>
+    <text class="val" x="445.54" y="407">48.4 µs</text>
+  </g>
+  <g>
+    <title>MemoryPool, every row through a span: 53.7 µs to buffer 10,000 int rows.</title>
+    <rect class="hit" x="0" y="416" width="540" height="26"/>
+    <text class="name" x="190" y="433">MemoryPool, span per row</text>
+    <path class="grey" d="M200,421 h261.58 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-261.58 z"/>
+    <text class="val" x="471.58" y="433">53.7 µs</text>
+  </g>
+  <g>
+    <title>MemoryPool, one span per chunk where possible: 54.2 µs to buffer 10,000 int rows.</title>
+    <rect class="hit" x="0" y="442" width="540" height="26"/>
+    <text class="name" x="190" y="459">MemoryPool, span per chunk</text>
+    <path class="grey" d="M200,447 h264 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-264 z"/>
+    <text class="val" x="474" y="459">54.2 µs</text>
+  </g>
+  <line class="axis" x1="200" y1="312" x2="200" y2="468"/>
+  <text class="head" x="16" y="496">Stream: add 10,000 rows, read chunk by chunk</text>
+  <g>
+    <title>Arrays, one store per call: 19.5 µs to stream 10,000 int rows.</title>
+    <rect class="hit" x="0" y="506" width="540" height="26"/>
+    <text class="name" x="190" y="523">Arrays, one store</text>
+    <path class="one" d="M200,511 h41.02 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-41.02 z"/>
+    <text class="val" x="251.02" y="523">19.5 µs</text>
+  </g>
+  <g>
+    <title>Arrays, a struct lease per chunk: 21.7 µs to stream 10,000 int rows.</title>
+    <rect class="hit" x="0" y="532" width="540" height="26"/>
+    <text class="name" x="190" y="549">Arrays, lease per chunk</text>
+    <path class="one" d="M200,537 h46.23 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-46.23 z"/>
+    <text class="val" x="256.23" y="549">21.7 µs</text>
+  </g>
+  <g>
+    <title>MemoryPool, one span per chunk where possible: 23.5 µs to stream 10,000 int rows.</title>
+    <rect class="hit" x="0" y="558" width="540" height="26"/>
+    <text class="name" x="190" y="575">MemoryPool, span per chunk</text>
+    <path class="grey" d="M200,563 h50.25 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-50.25 z"/>
+    <text class="val" x="260.25" y="575">23.5 µs</text>
+  </g>
+  <g>
+    <title>Arrays, an owner object per chunk: 24.4 µs to stream 10,000 int rows.</title>
+    <rect class="hit" x="0" y="584" width="540" height="26"/>
+    <text class="name" x="190" y="601">Arrays, owner object</text>
+    <path class="grey" d="M200,589 h52.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-52.42 z"/>
+    <text class="val" x="262.42" y="601">24.4 µs</text>
+  </g>
+  <g>
+    <title>Memory&lt;T&gt; chunks with an array fast path: 43.1 µs to stream 10,000 int rows.</title>
+    <rect class="hit" x="0" y="610" width="540" height="26"/>
+    <text class="name" x="190" y="627">Memory&lt;T&gt; chunks</text>
+    <path class="grey" d="M200,615 h95.68 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-95.68 z"/>
+    <text class="val" x="305.68" y="627">43.1 µs</text>
+  </g>
+  <g>
+    <title>MemoryPool, every row through a span: 115.9 µs to stream 10,000 int rows.</title>
+    <rect class="hit" x="0" y="636" width="540" height="26"/>
+    <text class="name" x="190" y="653">MemoryPool, span per row</text>
+    <path class="grey" d="M200,641 h264 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-264 z"/>
+    <text class="val" x="474" y="653">115.9 µs</text>
+  </g>
+  <line class="axis" x1="200" y1="506" x2="200" y2="662"/>
+  <text class="muted small" x="16" y="684">Pool spike, 2026-11-20, mean of 12 iterations. Numbers: pool-store.csv</text>
+</svg>

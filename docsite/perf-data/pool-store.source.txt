@@ -1,0 +1,8 @@
+Benchmark build: 3c05c47 plus the PoolSpike prototype project (the prototype is not committed to the repository)
+Run date: 2026-11-20
+Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets)
+Runtime: .NET 10.0.15 (net10.0)
+Harness: BenchmarkDotNet 0.15.8, --inprocess, 5 warm-up and 12 measured iterations, one launch, 4 cores at BelowNormal priority, one run at a time
+Benchmark: the pool spike: CollectBench, BufferBench and StreamBench, one chunk store per arm (A0, E1, E2, E3, M1, M2), int rows and class rows (an int and a string), 1, 100 and 10,000 rows, clearing on, same chunk schedule (16 doubling) in every arm
+Columns: ns = mean time of the whole cycle (add the rows, read them, release the chunks); arm = the store design (see arm_name); family = arr for the array stores, alt for the alternatives
+Source: the numbers are copied from section 2 (the time of the chunk store alone) of the pool spike report (foreman session, 2026-11-20) and were spot-checked against the BenchmarkDotNet reports of the runs. The run folders and the report are not in the repository.

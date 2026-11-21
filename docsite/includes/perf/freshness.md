@@ -11,3 +11,10 @@
 | `link-memory.csv` | slow links and large values | `not recorded` | 2026-11-15 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); SQL Server 2022 (RTM-CU28) in a Docker container on it, limited to 4 CPUs | .NET 11.0.0 |
 | `large-value.csv` | slow links and large values | `not recorded` | 2026-11-15 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); SQL Server 2022 (RTM-CU28) in a Docker container on it, limited to 4 CPUs | .NET 11.0.0 |
 | `channels.csv` | channels and Dataflow | `not recorded` | 2026-11-07 and earlier (the Dataflow rows were re-measured on 2026-11-07; the date of the ToChannel rows is not recorded) | AMD Ryzen 9 7900 3.70GHz, Windows 10; 4 cores at BelowNormal priority under a watchdog | .NET 10 |
+| `pool-store.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
+| `pool-rent.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
+| `pool-bytes.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
+| `pool-release.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
+| `pool-return-clear.csv` | pooling and clearing | `3c05c47 plus the PoolSpike prototype project` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 10.0.15 (net10.0) |
+| `pool-e2e.csv` | pooling and clearing | `before 3c05c47` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 11.0.0 |
+| `pool-bin-cost.csv` | pooling and clearing | `before f6942a7` | 2026-11-20 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets) | .NET 11.0.0 |

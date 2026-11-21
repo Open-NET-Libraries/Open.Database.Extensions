@@ -69,9 +69,9 @@ function Get-Words([string]$text, [int]$max) {
 }
 
 # Family key -> CSS class, legend text, legend order.
-$famClass = @{ 'loop' = 'grey'; 'odx' = 'one'; 'rd-sync' = 'one'; 'rd-async' = 'select'; 'raw' = 'grey'; 'odx-one' = 'one'; 'odx-select' = 'select'; 'odx-raw' = 'grey'; 'reference' = 'grey'; 'dapper' = 'dapper' }
-$famName = @{ 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89' }
-$famOrder = 'loop', 'odx', 'rd-sync', 'rd-async', 'raw', 'odx-one', 'odx-select', 'odx-raw', 'reference', 'dapper'
+$famClass = @{ 'arr' = 'one'; 'alt' = 'grey'; 'p-none' = 'grey'; 'p-inline' = 'one'; 'p-bin' = 'select'; 'loop' = 'grey'; 'odx' = 'one'; 'rd-sync' = 'one'; 'rd-async' = 'select'; 'raw' = 'grey'; 'odx-one' = 'one'; 'odx-select' = 'select'; 'odx-raw' = 'grey'; 'reference' = 'grey'; 'dapper' = 'dapper' }
+$famName = @{ 'arr' = 'Arrays from ArrayPool (what ODX does)'; 'alt' = 'The alternatives measured'; 'p-none' = 'No clear'; 'p-inline' = 'Inline clear'; 'p-bin' = 'Post to the recycle bin'; 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89' }
+$famOrder = 'arr', 'alt', 'p-none', 'p-inline', 'p-bin', 'loop', 'odx', 'rd-sync', 'rd-async', 'raw', 'odx-one', 'odx-select', 'odx-raw', 'reference', 'dapper'
 
 $css = @'
     :root {
@@ -381,6 +381,46 @@ foreach ($feat in @($ch | ForEach-Object { $_.feature } | Select-Object -Unique)
 }
 Write-Lf (Join-Path $ImageDir 'perf-channels.svg') (New-BarSvg 'channels' 'Draining 1,000 rows: a plain loop against ODX' 'Shorter is better. In-memory provider.' $chPanels { param($v) Format-MicroX $v } '' "Older run, before 11.0.0-rc.8. Numbers: channels.csv" 'panel' 100 'Two panels of two bars each, each panel on its own scale: the time to drain 1,000 rows with a hand-written loop and with ODX, for a channel and for a BufferBlock.' 520)
 
+# ---------- 9. pooling and clearing (the pool spike and the end-to-end pairs) ----------
+$ps = Read-Data 'pool-store';      $psSrc = Read-Source 'pool-store'
+$pr = Read-Data 'pool-rent';       $prSrc = Read-Source 'pool-rent'
+$pb = Read-Data 'pool-bytes';      $pbSrc = Read-Source 'pool-bytes'
+$prl = Read-Data 'pool-release';   $prlSrc = Read-Source 'pool-release'
+$prc = Read-Data 'pool-return-clear'; $prcSrc = Read-Source 'pool-return-clear'
+$pe = Read-Data 'pool-e2e';        $peSrc = Read-Source 'pool-e2e'
+$pbc = Read-Data 'pool-bin-cost';  $pbcSrc = Read-Source 'pool-bin-cost'
+function Spike-Footer($src, [string]$csv) { "Pool spike, $($src.Date), mean of 12 iterations. Numbers: $csv.csv" }
+$shortArm = @{ 'A0' = 'Memory<T> chunks'; 'E1' = 'Arrays, lease per chunk'; 'E2' = 'Arrays, owner object'; 'E3' = 'Arrays, one store'; 'M1' = 'MemoryPool, span per row'; 'M2' = 'MemoryPool, span per chunk' }
+
+# The chunk store: 10,000 int rows, one panel per shape.
+$storePanels = @()
+foreach ($shape in 'collect', 'buffer', 'stream') {
+  $rows = @($ps | Where-Object { $_.shape -eq $shape -and $_.element -eq 'int' -and $_.rows -eq '10000' } | Sort-Object { [double]$_.ns } -Stable | ForEach-Object {
+    [pscustomobject]@{ Name = $shortArm[$_.arm]; Fam = $_.family; Value = [double]$_.ns / 1000
+      Detail = "$($_.arm_name): $(F ([double]$_.ns / 1000) 1) $muX`s to $shape 10,000 int rows." } })
+  $title = switch ($shape) { 'collect' { 'Collect: add 10,000 rows, copy out' } 'buffer' { 'Buffer: add 10,000 rows, read each one' } default { 'Stream: add 10,000 rows, read chunk by chunk' } }
+  $storePanels += @{ Title = $title; Rows = $rows }
+}
+Write-Lf (Join-Path $ImageDir 'perf-pool-store.svg') (New-BarSvg 'pool-store' 'Where the rows live: arrays or Memory' 'Shorter is better. 10,000 int rows, pool spike, net10.' $storePanels { param($v) (F $v 1) + " ${muX}s" } '' (Spike-Footer $psSrc 'pool-store') 'panel' 200 'Three panels of six bars, each panel on its own scale: the time to collect, buffer or stream 10,000 int rows with six designs of the chunk store. The two array designs are fastest in every panel.' 540)
+
+# Releasing a chunk: three ways, int rows, one panel per size.
+$relPanels = @()
+foreach ($size in 16, 256, 4096, 8192) {
+  $rows = @($prl | Where-Object { $_.element -eq 'int' -and $_.rows -eq "$size" } | ForEach-Object {
+    $fam = switch ($_.way) { 'no clear' { 'p-none' } 'inline clear' { 'p-inline' } default { 'p-bin' } }
+    [pscustomobject]@{ Name = $_.way; Fam = $fam; Value = [double]$_.ns
+      Detail = "$size int rows, $($_.way): $(F ([double]$_.ns) 0) ns on the releasing thread." } })
+  $relPanels += @{ Title = "$(F $size 0) rows"; Rows = $rows }
+}
+Write-Lf (Join-Path $ImageDir 'perf-pool-release.svg') (New-BarSvg 'pool-release' 'Releasing one chunk: clear it here, or post it to the bin' 'Shorter is better. Time on the releasing thread, int rows, pool spike, net10.' $relPanels { param($v) (F $v 0) + ' ns' } '' (Spike-Footer $prlSrc 'pool-release') 'panel' 110 'Four panels of three bars each, each panel on its own scale: the time on the releasing thread to release one chunk of 16, 256, 4,096 and 8,192 int rows, with no clear, with an inline clear and by posting to the recycle bin.' 520)
+
+# End to end: how much less time than the Memory<T> chunks build.
+$e2eRows = @($pe | Sort-Object { -[double]$_.rows }, terminal -Stable | ForEach-Object {
+  $gain = (1 - [double]$_.after_us / [double]$_.before_us) * 100
+  [pscustomobject]@{ Name = "$($_.terminal), $(F ([double]$_.rows) 0) rows"; Fam = 'arr'; Value = $gain
+    Detail = "$($_.terminal), $(F ([double]$_.rows) 0) rows: $(Format-Micro ([double]$_.before_us)) before, $(Format-Micro ([double]$_.after_us)) after, $(F $gain 1)% less time." } })
+Write-Lf (Join-Path $ImageDir 'perf-pool-e2e.svg') (New-BarSvg 'pool-e2e' 'The final design against the Memory chunks build' 'Longer is better. How much less time the call takes, in percent.' @(@{ Title = ''; Rows = $e2eRows }) { param($v) (F $v 1) + '%' } 'percent less time than the Memory<T> chunks build (SQLite in memory, class rows)' "Builds 3c05c47 and d4b47b8, $($peSrc.Date), one run per case. Numbers: pool-e2e.csv" 'shared' 250 'Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced.' 560)
+
 # ---------- the tables (markdown includes) ----------
 # Each file is one table, with no links (a page links to the CSV and the source file itself), so it reads the same
 # wherever it is included.
@@ -466,6 +506,51 @@ $t = @('| Feature | Rows | Plain loop | ODX | ODX time against the loop | ODX me
 foreach ($r in $ch) { $t += "| $(M $r.feature) | $(F ([double]$r.rows) 0) | $(Format-Micro ([double]$r.loop_us)) | $(Format-Micro ([double]$r.odx_us)) | $($r.time_ratio)$times | $(F ([double]$r.alloc_ratio) 2)$times |" }
 Write-Table 'channels' $t
 
+# The pooling tables.
+function Fmt-Ns([double]$ns) { if ($ns -ge 1000) { (F ($ns / 1000) 1) + " $mu" + "s" } else { (F $ns 1) + " ns" } }
+function Fmt-Us([double]$us) { (F $us 1) + " $mu" + "s" }
+$armNames = 'Memory<T> chunks', 'Arrays, lease per chunk', 'Arrays, owner object', 'Arrays, one store', 'MemoryPool, span per row', 'MemoryPool, span per chunk'
+$t = @(('| Shape | Rows | ' + ($armNames -join ' | ') + ' |'), '|---|---:|---:|---:|---:|---:|---:|---:|')
+foreach ($shape in 'collect', 'buffer', 'stream') { foreach ($el in 'int', 'class') { foreach ($n in '1', '100', '10000') {
+  $cells = foreach ($arm in 'A0', 'E1', 'E2', 'E3', 'M1', 'M2') { $v = [double]($ps | Where-Object { $_.shape -eq $shape -and $_.element -eq $el -and $_.rows -eq $n -and $_.arm -eq $arm }).ns; Fmt-Ns $v }
+  $t += "| $shape, $el rows | $(F ([double]$n) 0) | " + ($cells -join ' | ') + ' |' } } }
+Write-Table 'pool-store' $t
+
+$t = @('| Size (slots) | ArrayPool, int | MemoryPool, one span, int | MemoryPool, per row, int | ArrayPool, string | MemoryPool, string |', '|---:|---:|---:|---:|---:|---:|')
+foreach ($s in 16, 1024, 8192) {
+  $c = foreach ($case in 'ArrayShared int', 'MemoryShared int (span once)', 'MemoryShared int (per row)', 'ArrayShared string', 'MemoryShared string') { "$(F ([double]($pr | Where-Object { $_.size -eq "$s" -and $_.case -eq $case }).ns) 1) ns" }
+  $t += "| $(F $s 0) | " + ($c -join ' | ') + ' |' }
+Write-Table 'pool-rent' $t
+
+$t = @('| What | Bytes |', '|---|---:|')
+foreach ($r in $pb) { $t += "| $(M $r.item) | $($r.bytes) |" }
+Write-Table 'pool-bytes' $t
+
+$t = @('| Rows in the chunk | Int, no clear | Int, inline clear | Int, post to the bin | Class, no clear | Class, inline clear | Class, post to the bin |', '|---:|---:|---:|---:|---:|---:|---:|')
+foreach ($n in 16, 64, 256, 1024, 4096, 8192) {
+  $c = foreach ($el in 'int', 'class') { foreach ($w in 'no clear', 'inline clear', 'bin post') { "$(F ([double]($prl | Where-Object { $_.rows -eq "$n" -and $_.element -eq $el -and $_.way -eq $w }).ns) 0) ns" } }
+  $t += "| $(F $n 0) | " + ($c -join ' | ') + ' |' }
+Write-Table 'pool-release' $t
+
+$t = @('| What was timed | Rows | Int | Class |', '|---|---|---:|---:|')
+foreach ($test in @($prc | ForEach-Object { $_.test } | Select-Object -Unique)) {
+  foreach ($size in @($prc | Where-Object { $_.test -eq $test } | ForEach-Object { $_.size } | Select-Object -Unique)) {
+    $i = $prc | Where-Object { $_.test -eq $test -and $_.size -eq $size -and $_.element -eq 'int' } | Select-Object -First 1
+    $c = $prc | Where-Object { $_.test -eq $test -and $_.size -eq $size -and $_.element -eq 'class' } | Select-Object -First 1
+    $sz = if ($size -eq 'any') { 'any' } else { F ([double]$size) 0 }
+    $iv = if ($i) { (F ([double]$i.ns) 1) + ' ns' } else { '-' }
+    $cv = if ($c) { (F ([double]$c.ns) 1) + ' ns' } else { '-' }
+    $t += "| $(M $test) | $sz | $iv | $cv |" } }
+Write-Table 'pool-return-clear' $t
+
+foreach ($set in @(@('pool-e2e', $pe), @('pool-bin-cost', $pbc))) {
+  $t = @('| Call | Rows | Before | After | Change | Error margins | Memory before | Memory after |', '|---|---:|---:|---:|---:|---:|---:|---:|')
+  foreach ($r in ($set[1] | Sort-Object { [double]$_.rows }, terminal -Stable)) {
+    $chg = ([double]$r.after_us / [double]$r.before_us - 1) * 100
+    $word = if ($chg -le 0) { (F (-$chg) 1) + '% less' } else { (F $chg 1) + '% more' }
+    $t += "| ``$(M $r.terminal)`` | $(F ([double]$r.rows) 0) | $(Fmt-Us ([double]$r.before_us)) | $(Fmt-Us ([double]$r.after_us)) | $word | ±$(F (100 * [double]$r.before_error_us / [double]$r.before_us) 1)%, ±$(F (100 * [double]$r.after_error_us / [double]$r.after_us) 1)% | $(F ([double]$r.before_allocated_kb) 2) KB | $(F ([double]$r.after_allocated_kb) 2) KB |" }
+  Write-Table $set[0] $t }
+
 # How fresh each data set is.
 $t = @('| Data file | Used on | Build | Run date | Machine | Runtime |', '|---|---|---|---|---|---|')
 foreach ($p in @(
@@ -477,7 +562,14 @@ foreach ($p in @(
     @('link-time', 'slow links and large values', $ltSrc),
     @('link-memory', 'slow links and large values', $lmSrc),
     @('large-value', 'slow links and large values', $lvSrc),
-    @('channels', 'channels and Dataflow', $chSrc))) {
+    @('channels', 'channels and Dataflow', $chSrc),
+    @('pool-store', 'pooling and clearing', $psSrc),
+    @('pool-rent', 'pooling and clearing', $prSrc),
+    @('pool-bytes', 'pooling and clearing', $pbSrc),
+    @('pool-release', 'pooling and clearing', $prlSrc),
+    @('pool-return-clear', 'pooling and clearing', $prcSrc),
+    @('pool-e2e', 'pooling and clearing', $peSrc),
+    @('pool-bin-cost', 'pooling and clearing', $pbcSrc))) {
   $bld = ($p[2].Build -split ' \(')[0]
   $t += "| ``$($p[0]).csv`` | $($p[1]) | ``$bld`` | $($p[2].Date) | $(M $p[2].Machine) | $(M $p[2].Runtime.Replace('[Host] : ', '')) |"
 }

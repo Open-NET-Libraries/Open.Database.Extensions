@@ -13,6 +13,8 @@ Every chart, and every table except the two marked "older run" (the library comp
 | [link-memory.csv](../perf-data/link-memory.csv) | [source](../perf-data/link-memory.source.txt) | [Slow links and large values](benchmarks/slow-links-and-large-values.md) |
 | [large-value.csv](../perf-data/large-value.csv) | [source](../perf-data/large-value.source.txt) | [Slow links and large values](benchmarks/slow-links-and-large-values.md) |
 | [channels.csv](../perf-data/channels.csv) | [source](../perf-data/channels.source.txt) | [Channels and Dataflow](benchmarks/pipelines.md) |
+| [pool-store.csv](../perf-data/pool-store.csv), [pool-rent.csv](../perf-data/pool-rent.csv), [pool-bytes.csv](../perf-data/pool-bytes.csv), [pool-release.csv](../perf-data/pool-release.csv), [pool-return-clear.csv](../perf-data/pool-return-clear.csv) | [store](../perf-data/pool-store.source.txt), [rent](../perf-data/pool-rent.source.txt), [bytes](../perf-data/pool-bytes.source.txt), [release](../perf-data/pool-release.source.txt), [return-clear](../perf-data/pool-return-clear.source.txt) | [Pooling and clearing](benchmarks/pooling-and-clearing.md) |
+| [pool-e2e.csv](../perf-data/pool-e2e.csv), [pool-bin-cost.csv](../perf-data/pool-bin-cost.csv) | [e2e](../perf-data/pool-e2e.source.txt), [bin cost](../perf-data/pool-bin-cost.source.txt) | [Pooling and clearing](benchmarks/pooling-and-clearing.md) |
 
 ## How fresh the data is
 

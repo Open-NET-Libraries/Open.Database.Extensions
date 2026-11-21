@@ -17,6 +17,7 @@
   - href: benchmarks/sync-vs-async.md
   - href: benchmarks/slow-links-and-large-values.md
   - href: benchmarks/pipelines.md
+  - href: benchmarks/pooling-and-clearing.md
   - href: benchmarks/how-we-measure.md
   - href: performance-data.md
   - name: Interactive ranking (snapshot)

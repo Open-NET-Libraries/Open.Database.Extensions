@@ -1,0 +1,8 @@
+Benchmark build: before f6942a7 (master, the overloads with the flag false: nothing was cleared), after b86608b (an earlier build of the pooled-arrays change, merged later as 9a2fbf2: reference rows always cleared, large chunks on the recycle bin)
+Run date: 2026-11-20
+Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets)
+Runtime: .NET 11.0.0
+Harness: BenchmarkDotNet 0.15.8, --inprocess, 5 warm-up and 12 measured iterations, one launch; the same benchmark file compiled against the two builds
+Benchmark: PoolBinCostBenchmarks, ToAsyncBuffer(...).Items (then dispose the items) and ToBufferedAsyncStream consumed whole, class rows (an int and a string), SQLite in memory, 1, 100 and 10,000 rows
+Columns: before_us and after_us = BenchmarkDotNet Mean; *_error_us = BenchmarkDotNet Error; *_allocated_kb = BenchmarkDotNet Allocated (KB = 1024 bytes)
+Source files (BenchmarkDotNet report CSVs, one pair per terminal and row count; the run folders are not in the repository): the pbB runs (before) and the pbA runs (after), named in the source_run column

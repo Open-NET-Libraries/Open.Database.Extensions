@@ -1,0 +1,14 @@
+test,element,size,ns
+"Return(clearArray: true), whole chunk schedule of N rows",int,10000,2675
+"Array.Clear(array, 0, used) then Return(false), whole chunk schedule of N rows",int,10000,4567
+"Return(clearArray: true), whole chunk schedule of N rows",class,10000,22409
+"Array.Clear(array, 0, used) then Return(false), whole chunk schedule of N rows",class,10000,23729
+"Return(false), one row written",int,16,7.5
+"Return(clearArray: true), one row written",int,16,9.4
+"Return(clearArray: true), one row written",int,1024,36.9
+"Return(clearArray: true), one row written",int,8192,242
+"Return(clearArray: true), one row written",class,16,19
+"Return(clearArray: true), one row written",class,1024,122
+"Return(clearArray: true), one row written",class,8192,884
+"Our used-part clear, one row written",int,any,10.2
+"Our used-part clear, one row written",class,any,17.7

@@ -1,0 +1,109 @@
+shape,element,rows,arm,arm_name,family,ns
+collect,int,1,A0,"Memory<T> chunks with an array fast path",alt,26.3
+collect,int,1,E1,"Arrays, a struct lease per chunk",arr,20.9
+collect,int,1,E2,"Arrays, an owner object per chunk",alt,25.6
+collect,int,1,E3,"Arrays, one store per call",arr,22.5
+collect,int,1,M1,"MemoryPool, every row through a span",alt,33.6
+collect,int,1,M2,"MemoryPool, one span per chunk where possible",alt,34.9
+collect,int,100,A0,"Memory<T> chunks with an array fast path",alt,217.5
+collect,int,100,E1,"Arrays, a struct lease per chunk",arr,140.1
+collect,int,100,E2,"Arrays, an owner object per chunk",alt,170.4
+collect,int,100,E3,"Arrays, one store per call",arr,126.2
+collect,int,100,M1,"MemoryPool, every row through a span",alt,366.3
+collect,int,100,M2,"MemoryPool, one span per chunk where possible",alt,239.8
+collect,int,10000,A0,"Memory<T> chunks with an array fast path",alt,11724
+collect,int,10000,E1,"Arrays, a struct lease per chunk",arr,9776
+collect,int,10000,E2,"Arrays, an owner object per chunk",alt,12949
+collect,int,10000,E3,"Arrays, one store per call",arr,9100
+collect,int,10000,M1,"MemoryPool, every row through a span",alt,30318
+collect,int,10000,M2,"MemoryPool, one span per chunk where possible",alt,16264
+collect,class,1,A0,"Memory<T> chunks with an array fast path",alt,35.6
+collect,class,1,E1,"Arrays, a struct lease per chunk",arr,31.8
+collect,class,1,E2,"Arrays, an owner object per chunk",alt,35.9
+collect,class,1,E3,"Arrays, one store per call",arr,31.6
+collect,class,1,M1,"MemoryPool, every row through a span",alt,39.3
+collect,class,1,M2,"MemoryPool, one span per chunk where possible",alt,44
+collect,class,100,A0,"Memory<T> chunks with an array fast path",alt,416.6
+collect,class,100,E1,"Arrays, a struct lease per chunk",arr,383.2
+collect,class,100,E2,"Arrays, an owner object per chunk",alt,444.1
+collect,class,100,E3,"Arrays, one store per call",arr,379.2
+collect,class,100,M1,"MemoryPool, every row through a span",alt,727.6
+collect,class,100,M2,"MemoryPool, one span per chunk where possible",alt,485.4
+collect,class,10000,A0,"Memory<T> chunks with an array fast path",alt,35925
+collect,class,10000,E1,"Arrays, a struct lease per chunk",arr,33308
+collect,class,10000,E2,"Arrays, an owner object per chunk",alt,35643
+collect,class,10000,E3,"Arrays, one store per call",arr,33546
+collect,class,10000,M1,"MemoryPool, every row through a span",alt,56531
+collect,class,10000,M2,"MemoryPool, one span per chunk where possible",alt,38177
+buffer,int,1,A0,"Memory<T> chunks with an array fast path",alt,24.8
+buffer,int,1,E1,"Arrays, a struct lease per chunk",arr,15.5
+buffer,int,1,E2,"Arrays, an owner object per chunk",alt,21.5
+buffer,int,1,E3,"Arrays, one store per call",arr,17
+buffer,int,1,M1,"MemoryPool, every row through a span",alt,30.6
+buffer,int,1,M2,"MemoryPool, one span per chunk where possible",alt,31.9
+buffer,int,100,A0,"Memory<T> chunks with an array fast path",alt,515.2
+buffer,int,100,E1,"Arrays, a struct lease per chunk",arr,244.1
+buffer,int,100,E2,"Arrays, an owner object per chunk",alt,280.6
+buffer,int,100,E3,"Arrays, one store per call",arr,224.4
+buffer,int,100,M1,"MemoryPool, every row through a span",alt,601.4
+buffer,int,100,M2,"MemoryPool, one span per chunk where possible",alt,594.1
+buffer,int,10000,A0,"Memory<T> chunks with an array fast path",alt,48415
+buffer,int,10000,E1,"Arrays, a struct lease per chunk",arr,22251
+buffer,int,10000,E2,"Arrays, an owner object per chunk",alt,24112
+buffer,int,10000,E3,"Arrays, one store per call",arr,19740
+buffer,int,10000,M1,"MemoryPool, every row through a span",alt,53677
+buffer,int,10000,M2,"MemoryPool, one span per chunk where possible",alt,54167
+buffer,class,1,A0,"Memory<T> chunks with an array fast path",alt,29
+buffer,class,1,E1,"Arrays, a struct lease per chunk",arr,23.8
+buffer,class,1,E2,"Arrays, an owner object per chunk",alt,29.3
+buffer,class,1,E3,"Arrays, one store per call",arr,24.6
+buffer,class,1,M1,"MemoryPool, every row through a span",alt,40
+buffer,class,1,M2,"MemoryPool, one span per chunk where possible",alt,35
+buffer,class,100,A0,"Memory<T> chunks with an array fast path",alt,619.4
+buffer,class,100,E1,"Arrays, a struct lease per chunk",arr,478.2
+buffer,class,100,E2,"Arrays, an owner object per chunk",alt,588.7
+buffer,class,100,E3,"Arrays, one store per call",arr,496.9
+buffer,class,100,M1,"MemoryPool, every row through a span",alt,1064
+buffer,class,100,M2,"MemoryPool, one span per chunk where possible",alt,775.5
+buffer,class,10000,A0,"Memory<T> chunks with an array fast path",alt,57283
+buffer,class,10000,E1,"Arrays, a struct lease per chunk",arr,44793
+buffer,class,10000,E2,"Arrays, an owner object per chunk",alt,53096
+buffer,class,10000,E3,"Arrays, one store per call",arr,46034
+buffer,class,10000,M1,"MemoryPool, every row through a span",alt,95552
+buffer,class,10000,M2,"MemoryPool, one span per chunk where possible",alt,68397
+stream,int,1,A0,"Memory<T> chunks with an array fast path",alt,33.3
+stream,int,1,E1,"Arrays, a struct lease per chunk",arr,18.8
+stream,int,1,E2,"Arrays, an owner object per chunk",alt,24.2
+stream,int,1,E3,"Arrays, one store per call",arr,20.4
+stream,int,1,M1,"MemoryPool, every row through a span",alt,36.8
+stream,int,1,M2,"MemoryPool, one span per chunk where possible",alt,40
+stream,int,100,A0,"Memory<T> chunks with an array fast path",alt,497.5
+stream,int,100,E1,"Arrays, a struct lease per chunk",arr,250.5
+stream,int,100,E2,"Arrays, an owner object per chunk",alt,299.3
+stream,int,100,E3,"Arrays, one store per call",arr,229.6
+stream,int,100,M1,"MemoryPool, every row through a span",alt,1247
+stream,int,100,M2,"MemoryPool, one span per chunk where possible",alt,318.4
+stream,int,10000,A0,"Memory<T> chunks with an array fast path",alt,43118
+stream,int,10000,E1,"Arrays, a struct lease per chunk",arr,21729
+stream,int,10000,E2,"Arrays, an owner object per chunk",alt,24404
+stream,int,10000,E3,"Arrays, one store per call",arr,19472
+stream,int,10000,M1,"MemoryPool, every row through a span",alt,115924
+stream,int,10000,M2,"MemoryPool, one span per chunk where possible",alt,23464
+stream,class,1,A0,"Memory<T> chunks with an array fast path",alt,37
+stream,class,1,E1,"Arrays, a struct lease per chunk",arr,29.3
+stream,class,1,E2,"Arrays, an owner object per chunk",alt,34.5
+stream,class,1,E3,"Arrays, one store per call",arr,27
+stream,class,1,M1,"MemoryPool, every row through a span",alt,43.8
+stream,class,1,M2,"MemoryPool, one span per chunk where possible",alt,43.9
+stream,class,100,A0,"Memory<T> chunks with an array fast path",alt,665.9
+stream,class,100,E1,"Arrays, a struct lease per chunk",arr,453.7
+stream,class,100,E2,"Arrays, an owner object per chunk",alt,557.6
+stream,class,100,E3,"Arrays, one store per call",arr,464.9
+stream,class,100,M1,"MemoryPool, every row through a span",alt,928.4
+stream,class,100,M2,"MemoryPool, one span per chunk where possible",alt,574.1
+stream,class,10000,A0,"Memory<T> chunks with an array fast path",alt,59760
+stream,class,10000,E1,"Arrays, a struct lease per chunk",arr,40437
+stream,class,10000,E2,"Arrays, an owner object per chunk",alt,57302
+stream,class,10000,E3,"Arrays, one store per call",arr,41904
+stream,class,10000,M1,"MemoryPool, every row through a span",alt,86479
+stream,class,10000,M2,"MemoryPool, one span per chunk where possible",alt,48830
