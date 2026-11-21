@@ -11,7 +11,7 @@ namespace Open.Database.Extensions.Tests;
 // true), around a sequential awaited loop. Run it alone in an idle process
 // (dotnet test --filter) for the numbers to mean anything.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
+[Collection("Heap measurements")]
 public sealed class ToListArraySqlServerAllocationProbe(ITestOutputHelper output)
 {
 	public sealed class ClassRow

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The one text about pooled memory. Every member that rents pooled arrays
+  includes it (an include of the compiler: <include file="PooledMemory.docs.xml"
+  path="docs/members[@name='pooled']/*" />), so it is written here once and
+  cannot drift between them.
+-->
+<docs>
+  <members name="pooled">
+    <para>
+      Pooled memory: the rows are held in arrays rented from a pool and given
+      back when the call, the buffer or the stream is done.
+      By default that pool is <c>ArrayPool&lt;T&gt;.Shared</c>.
+      To use your own, call <c>.UsePool(pool, clearOnReturn: ...)</c> after
+      <c>Map</c>: the pool is yours, ODX rents from it and gives back to it,
+      and never disposes it.
+      The arrays it hands out may be longer than asked for: ODX uses the rows
+      it wrote and clears only those.
+      A pool that hands out a shorter array than asked for makes the read
+      throw <see cref="System.InvalidOperationException"/>.
+      Returning an array must not throw.
+    </para>
+    <para>
+      Clearing: rows that hold references (a class, a string, a struct that
+      contains either) are always cleared before their array goes back, so a
+      pooled array never keeps a row alive; nothing turns that off.
+      Rows with no references (an <c>int</c>, a plain struct) go back as they
+      are, unless asked:
+      <c>UsePool(pool, clearOnReturn: true)</c> clears them,
+      <c>clearOnReturn: false</c> keeps them as they are whatever the app-wide setting
+      says, and a query that does not call <c>UsePool</c> follows the setting.
+      The app-wide setting is the AppContext switch
+      <c>Open.Database.Extensions.ClearPooledArrays</c> (off by default; read
+      once, so set it before the first query).
+      Set it in the application's project file with
+      <c>&lt;RuntimeHostConfigurationOption
+      Include="Open.Database.Extensions.ClearPooledArrays" Value="true"
+      /&gt;</c>, which puts it in <c>runtimeconfig.json</c>, or call
+      <c>AppContext.SetSwitch</c> before the first query.
+    </para>
+  </members>
+</docs>

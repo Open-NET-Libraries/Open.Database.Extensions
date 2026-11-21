@@ -17,10 +17,10 @@ The channel terminals on the typed views (`ToChannelReader()` and `ToChannel()`)
 A stream earns its place when a producer and its consumer run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows at database speed on a background task, in chunks, and is finished with the connection as soon as the last row is read. The consumer does the slow work (a web call, a file write, a transform) while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`.
 
 Which one to use:
-- `ToBufferedAsyncStream(clearOnReturn)` yields the elements one by one, as an `IAsyncEnumerable<T>` that works with `await foreach` and `System.Linq.Async`.
-- `ToAsyncBufferStream(clearOnReturn)` yields the chunks (`ReadOnlyMemory<T>`), for raw speed and the shortest connection time.
+- `ToBufferedAsyncStream(cancellationToken)` yields the elements one by one, as an `IAsyncEnumerable<T>` that works with `await foreach` and `System.Linq.Async`.
+- `ToAsyncBufferStream(cancellationToken)` yields the chunks (`ReadOnlyMemory<T>`), for raw speed and the shortest connection time.
 
-Both are lazy and single-use: nothing runs until the first read, a second enumeration throws, and a `break` or a dispose cancels the query. `clearOnReturn` has no default on the shared pool, so you decide whether the pooled buffers are cleared. Pass the cancellation token last. The overloads, clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
+Both are lazy and single-use: nothing runs until the first read, a second enumeration throws, and a `break` or a dispose cancels the query. The pooled buffers are cleared by the rule in [Pooled memory](async-buffers.md#pooled-memory), and `UsePool(pool, clearOnReturn: ...)` after `Map` chooses the pool. The pool, clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
 
 ### One producer, one consumer
 

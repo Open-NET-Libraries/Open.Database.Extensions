@@ -1,4 +1,4 @@
-﻿
+
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -27,6 +27,21 @@ public static partial class CommandExtensions
 		return command.Connection!.EnsureOpenAsync(cancellationToken);
 	}
 
+	// The scope of the command's own connection (opened if needed, closed again if the scope opened it).
+	// A command with no connection gets the empty scope, and the command reports the missing connection
+	// itself when it is executed, as it always has.
+	internal static ConnectionScope<IDbConnection> EnsureOpenScope(this IDbCommand command)
+		=> command.Connection is { } connection
+			? connection.EnsureOpenScope()
+			: default;
+
+	internal static async ValueTask<ConnectionScope<IDbConnection>> EnsureOpenScopeAsync(
+		this IDbCommand command,
+		CancellationToken cancellationToken)
+		=> command.Connection is { } connection
+			? await connection.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false)
+			: default;
+
 	// These open a closed connection and execute the reader in one step. CommandBehavior.CloseConnection closes the connection when the
 	// reader is disposed, but when the provider fails to execute there is no reader, so the connection that was opened here is closed here
 	// (never disposed). One the caller had opened is left as it was. A failure to close is ignored so that it cannot replace the exception
@@ -37,7 +52,7 @@ public static partial class CommandExtensions
 	internal static TReader OpenAndExecuteReader<TCommand, TReader>(TCommand command, CommandBehavior behavior, Func<TCommand, CommandBehavior, TReader> execute)
 		where TCommand : IDbCommand
 	{
-		if (command.EnsureOpen() != ConnectionState.Closed)
+		if (!ConnectionExtensions.NeedsOpen(command.EnsureOpen()))
 			return execute(command, behavior);
 
 		try
@@ -55,7 +70,8 @@ public static partial class CommandExtensions
 	internal static async ValueTask<TReader> OpenAndExecuteReaderAsync<TCommand, TReader>(TCommand command, CommandBehavior behavior, Func<TCommand, CommandBehavior, CancellationToken, Task<TReader>> execute, CancellationToken cancellationToken)
 		where TCommand : IDbCommand
 	{
-		if (await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false) != ConnectionState.Closed)
+		ConnectionState prior = await command.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
+		if (!ConnectionExtensions.NeedsOpen(prior))
 			return await execute(command, behavior, cancellationToken).ConfigureAwait(false);
 
 		try
@@ -519,7 +535,7 @@ public static partial class CommandExtensions
 	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// buffer the rows and release the connection
 	/// (call <c>.Map&lt;T&gt;()</c> first), and
-	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	/// streams them to a consumer without holding it
 	/// (the producer is unbounded: it reads without waiting for the
 	/// consumer and frees the connection while the consumer takes its

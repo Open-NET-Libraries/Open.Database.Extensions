@@ -291,7 +291,7 @@ An async terminal executes and opens asynchronously but reads the rows with `Rea
 > These members are here for the cases that need exactly that, such as a result too large to buffer or a row-by-row pipeline. Otherwise use a call that lets go of the connection first:
 >
 > - `ToListAsync(cancellationToken)` and `ToArrayAsync(cancellationToken)` buffer the rows and release the connection.
-> - `ToBufferedAsyncStream(clearOnReturn, cancellationToken)` and `ToAsyncBufferStream(clearOnReturn, cancellationToken)` stream the rows to a consumer without holding the connection. The producer reads into pooled chunks without waiting for the consumer, and frees the connection while the consumer takes its time (dispose the enumerator: `await foreach` does; an abandoned stream keeps reading the whole query). The stream is unbounded: the rows wait in memory until the consumer takes them. A producer that waited for room would bring the hold back, so it does not wait ([Async buffers and streams](async-buffers.md)).
+> - `ToBufferedAsyncStream(cancellationToken)` and `ToAsyncBufferStream(cancellationToken)` stream the rows to a consumer without holding the connection. The producer reads into pooled chunks without waiting for the consumer, and frees the connection while the consumer takes its time (dispose the enumerator: `await foreach` does; an abandoned stream keeps reading the whole query). The stream is unbounded: the rows wait in memory until the consumer takes them. A producer that waited for room would bring the hold back, so it does not wait ([Async buffers and streams](async-buffers.md)).
 
 ## Mapping a reader or a command you already have
 

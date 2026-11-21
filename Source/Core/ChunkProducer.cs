@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace Open.Database.Extensions.Core;
 
 // The one producer behind the buffer terminals (ToAsyncBuffer,
@@ -49,29 +47,30 @@ namespace Open.Database.Extensions.Core;
 //   Finish.
 //
 // Invariants.
-// - With clearing on (the terminal's clearOnReturn / clearOnDispose),
-//   Take wraps each exactly-sized owner so that disposing it clears
-//   its rows through the recycle bin (see MemoryOwnerExtensions). It
-//   wraps before the Publish attempt, so a chunk the target refuses,
-//   and the partial chunk sealed on a cancel or a fault, are cleared
-//   too (when the bin takes them; a full bin discards them): they hold
-//   rows. Nothing on the consumer's side knows.
-// - The memory a pool returns must be at least the capacity asked for.
-//   Advance checks it once per chunk, and a pool that gives less breaks
-//   its contract: the rented owner is disposed and the read fails with
-//   an InvalidOperationException (it goes the normal fault path, so
-//   Items and the stream complete with it). It does not clamp: the
-//   O(1) indexer needs every chunk exactly its planned size, and a
-//   short memory over a shared array would be written past its end.
+// - Every chunk is sealed into an ArrayLease when it leaves the producer
+//   (Take): the array, the rows written to it and what releasing it does
+//   (ClearMode: none, clear where it is released, or clear in the recycle
+//   bin; see ChunkConfig). The lease is made before the Publish attempt,
+//   so a chunk the target refuses, and the partial chunk sealed on a
+//   cancel or a fault, are cleared like any other: they hold rows. Only
+//   the rows that were written are cleared (a row is stored before the
+//   count moves, so a fault leaves nothing past it). Nothing on the
+//   consumer's side knows.
+// - The pool must give an array of at least the capacity asked for.
+//   ChunkConfig.Rent checks it once per chunk: a pool that gives less
+//   breaks its contract, the array is given back and the read fails with
+//   an InvalidOperationException (it goes the normal fault path, so Items
+//   and the stream complete with it). It does not clamp: the O(1) indexer
+//   needs every chunk exactly its planned number of rows. A pool may give
+//   a longer array; only the planned rows are used.
 // - A buffer is owned by exactly one party at a time: the producer
 //   while it fills it, then the target (Publish returned true), or the
 //   producer again if the target refused it (the target is disposed),
 //   in which case it releases it at once.
 // - Finish is called exactly once, last, whatever happens: a failure
-//   of Seal (a pool whose owner throws) is recorded as the read's
+//   of Seal (a pool whose Return throws) is recorded as the read's
 //   error, so Items and the stream still complete. Nothing is written
-//   after it. (If it is Slice that throws, the one buffer being filled
-//   is not released: it goes to the garbage collector.)
+//   after it.
 // - The linked source is disposed when RunAsync ends, whatever
 //   happens. Cancel is safe at any time: once the read is over (_ended)
 //   it does nothing, so a stream that ends normally does not touch the
@@ -81,8 +80,7 @@ namespace Open.Database.Extensions.Core;
 internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,
 	IChunkTarget<T> target,
-	MemoryPool<T> pool,
-	bool clear,
+	ChunkConfig<T> config,
 	CancellationToken caller)
 {
 	// The caller's token and the owner's dispose, as one token:
@@ -90,23 +88,15 @@ internal sealed class ChunkProducer<T>(
 	readonly CancellationTokenSource _linked
 		= CancellationTokenSource.CreateLinkedTokenSource(caller);
 
-	IMemoryOwner<T>? _owner;
-
-	// The hot path of Add: the buffer being filled, as a window over the
-	// array behind its memory. _next is the next free slot (an absolute
-	// index into _array) and _limit one past the last slot of this
-	// buffer: Add is one compare, one store and one increment, and the
-	// slow path (a full or a missing buffer, or memory that is not an
-	// array, for which _limit is 0) is a separate method.
+	// The hot path of Add: the buffer being filled. _next is the next
+	// free slot and _limit the rows this buffer holds: Add is one compare,
+	// one store and one increment, and the slow path (a full or a missing
+	// buffer) is a separate method.
 	T[]? _array;
-	int _offset;
 	int _next;
 	int _limit;
 
-	// Rows so far, when the buffer is NOT array-backed (see Filled).
-	int _count;
 	int _index;
-	int _capacity;
 	int _ended;
 
 	/// <summary>
@@ -114,7 +104,7 @@ internal sealed class ChunkProducer<T>(
 	/// starts nothing: the target ends with that cancel.
 	/// </summary>
 	[SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary")]
-	internal Task Start()
+	public Task Start()
 	{
 		if (caller.IsCancellationRequested)
 		{
@@ -153,7 +143,7 @@ internal sealed class ChunkProducer<T>(
 	/// may be disposed already: the owner asked for the cancel, so
 	/// neither matters to it.
 	/// </remarks>
-	internal void Cancel()
+	public void Cancel()
 	{
 		if (Volatile.Read(ref _ended) != 0) return;
 
@@ -191,7 +181,7 @@ internal sealed class ChunkProducer<T>(
 		Volatile.Write(ref _ended, 1);
 
 		// The rows read so far are delivered, even on a failure. If
-		// handing them over fails (a pool whose owner throws), that is
+		// handing them over fails (a pool whose release throws), that is
 		// the read's error (the first error stays), and Finish still
 		// runs: without it Items and the stream would never complete.
 		// The source is disposed whatever happens here.
@@ -209,11 +199,10 @@ internal sealed class ChunkProducer<T>(
 	}
 
 	// One row, from the read loop (through ChunkSink): straight into the
-	// array behind the current buffer's memory (the shared pool's memory
-	// is an array). No enumerator, no allocation: the same loop
+	// current buffer's array. No enumerator, no allocation: the same loop
 	// ToArrayAsync uses, with the buffer's bounds held in two fields.
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal void Add(T row)
+	public void Add(T row)
 	{
 		int next = _next;
 		if (next < _limit)
@@ -226,20 +215,15 @@ internal sealed class ChunkProducer<T>(
 		AddSlow(row);
 	}
 
-	// How many rows the buffer being filled holds.
-	int Filled
-		=> _array is not null ? _next - _offset : _count;
-
-	// A full buffer, no buffer yet, or memory that is not an array (it
-	// goes through its span).
+	// A full buffer, or no buffer yet.
 	void AddSlow(T row)
 	{
-		if (_owner is null || Filled == _capacity) Advance();
+		if (_array is null || _next == _limit) Advance();
 
-		if (_array is not null)
-			_array[_next++] = row;
-		else
-			_owner!.Memory.Span[_count++] = row;
+		// The row is stored before the count moves: a store that fails leaves
+		// nothing counted (Seal relies on it).
+		_array![_next] = row;
+		++_next;
 	}
 
 	// Hands the full buffer on and rents the next one.
@@ -252,9 +236,9 @@ internal sealed class ChunkProducer<T>(
 		// sealed and delivered, as for every cancel.
 		_linked.Token.ThrowIfCancellationRequested();
 
-		if (_owner is not null)
+		if (_array is not null)
 		{
-			IMemoryOwner<T> full = Take();
+			ArrayLease<T> full = Take();
 			if (!target.Publish(full))
 			{
 				full.Release();
@@ -262,93 +246,48 @@ internal sealed class ChunkProducer<T>(
 			}
 		}
 
-		_capacity = target.CapacityOf(_index++);
-		IMemoryOwner<T> owner = pool.Rent(_capacity);
+		int capacity = target.CapacityOf(_index++);
 
-		// Ask for the memory ONCE, and fail cleanly: an owner that throws
-		// when asked is disposed here (nothing else holds it yet), and a
-		// pool must give at least what was asked for. Checked once per
-		// chunk, before the owner is kept, so nothing is half-open.
-		Memory<T> memory;
-		try
-		{
-			memory = owner.Memory;
-		}
-		catch
-		{
-			owner.Dispose();
-			throw;
-		}
+		// The rent checks that the pool gave at least what was asked for,
+		// and gives the array back if not: nothing is half-open.
+		T[] array = config.Rent(capacity);
 
-		if (memory.Length < _capacity)
-		{
-			owner.Dispose();
-			throw new InvalidOperationException(
-				"The pool returned less memory than asked for.");
-		}
+		_next = 0;
+		_limit = capacity;
 
-		_count = 0;
-		if (MemoryMarshal.TryGetArray<T>(
-			memory,
-			out ArraySegment<T> segment)
-			&& segment.Array is not null)
-		{
-			_array = segment.Array;
-			_offset = segment.Offset;
-			_next = _offset;
-			_limit = _offset + _capacity;
-		}
-		else
-		{
-			_array = null;
-			_offset = 0;
-			_next = 0;
-			_limit = 0;
-		}
-
-		// Kept last: the buffer is open only once the window is set.
-		_owner = owner;
+		// Kept last: the buffer is open only once its bounds are set.
+		_array = array;
 	}
 
-	// The buffer being filled, cut to the rows it holds
-	// (the same owner when the pool gave exactly that).
-	IMemoryOwner<T> Take()
+	// The buffer being filled, sealed with the rows it holds.
+	ArrayLease<T> Take()
 	{
-		IMemoryOwner<T> owner = _owner!.Slice(Filled);
-
-		// The writer decides: with clearing on, every chunk it makes is
-		// wrapped here, before any Publish, so a refused or leftover chunk
-		// (released on a cancel, a fault or at Seal) is cleared too, like any
-		// other (when the bin takes it).
-		if (clear) owner = owner.ClearOnDispose();
-		_owner = null;
+		ArrayLease<T> lease = config.Seal(_array!, _next);
 		_array = null;
-		_offset = 0;
 		_next = 0;
 		_limit = 0;
-		_count = 0;
-		return owner;
+		return lease;
 	}
 
 	// Hands on the buffer that is still being filled, if there is one.
 	void Seal()
 	{
-		if (_owner is null) return;
+		if (_array is null) return;
 
 		// A buffer is opened just before a row is stored in it, so it
 		// holds a row unless storing that row failed (the failure is the
 		// read's error, and it is recorded first). An empty buffer is
 		// never published: it is released, and this is reported (the
 		// first error stays).
-		if (Filled == 0)
+		if (_next == 0)
 		{
-			IMemoryOwner<T> empty = Take();
+			ArrayLease<T> empty = Take();
 			empty.Release();
 			throw new InvalidOperationException(
 				"The producer was left holding a buffer without a row.");
 		}
 
-		IMemoryOwner<T> last = Take();
+		ArrayLease<T> last = Take();
 		if (!target.Publish(last)) last.Release();
 	}
 }

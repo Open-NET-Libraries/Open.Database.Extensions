@@ -54,9 +54,7 @@ public static class ChannelsAndDataflow
 		IAsyncEnumerable<Post> posts = connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToBufferedAsyncStream(
-				clearOnReturn: false,
-				cancellationToken);
+			.ToBufferedAsyncStream(cancellationToken);
 
 		// This is the consumer. Its slow work does not hold the
 		// query back, because the rows are already buffered.
@@ -80,9 +78,7 @@ public static class ChannelsAndDataflow
 		IAsyncEnumerable<Post> posts = connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToBufferedAsyncStream(
-				clearOnReturn: false,
-				cancellationToken);
+			.ToBufferedAsyncStream(cancellationToken);
 
 		// Stage 2: a transform that consumes stage 1 and is the
 		// producer of a channel.

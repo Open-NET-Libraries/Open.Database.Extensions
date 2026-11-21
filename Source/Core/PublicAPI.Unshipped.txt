@@ -1,4 +1,40 @@
 #nullable enable
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToAsyncBuffer(bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToAsyncBufferStream(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToAsyncBufferStream(System.Buffers.MemoryPool<T>! pool, bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToAsyncBufferStream(bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToBufferedAsyncStream(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToBufferedAsyncStream(System.Buffers.MemoryPool<T>! pool, bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToBufferedAsyncStream(bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToAsyncBuffer(bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToAsyncBufferStream(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToAsyncBufferStream(System.Buffers.MemoryPool<T>! pool, bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToAsyncBufferStream(bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToBufferedAsyncStream(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToBufferedAsyncStream(System.Buffers.MemoryPool<T>! pool, bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToBufferedAsyncStream(bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToAsyncBuffer(bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToAsyncBufferStream(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToAsyncBufferStream(System.Buffers.MemoryPool<T>! pool, bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToAsyncBufferStream(bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToBufferedAsyncStream(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToBufferedAsyncStream(System.Buffers.MemoryPool<T>! pool, bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToBufferedAsyncStream(bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToAsyncBuffer(System.Buffers.MemoryPool<T>! pool, bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToAsyncBuffer(bool clearOnDispose, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToAsyncBufferStream(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToAsyncBufferStream(System.Buffers.MemoryPool<T>! pool, bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToAsyncBufferStream(bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToBufferedAsyncStream(System.Buffers.MemoryPool<T>! pool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToBufferedAsyncStream(System.Buffers.MemoryPool<T>! pool, bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToBufferedAsyncStream(bool clearOnReturn, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
 Open.Database.Extensions.DbQuery
 Open.Database.Extensions.DbQuery.Equals(Open.Database.Extensions.DbQuery? other) -> bool
 Open.Database.Extensions.DbQuery.Params<TParams>() -> Open.Database.Extensions.DbQuery<TParams>!
@@ -14,14 +50,14 @@ Open.Database.Extensions.DbQuery<TParams>.Using<TConnection>(Open.Database.Exten
 Open.Database.Extensions.DbQuery<TParams>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.DbQueryUsing<TParams>
 Open.Database.Extensions.DbQueryCall
 Open.Database.Extensions.DbQueryCall.AddParam(string! name, string? value) -> Open.Database.Extensions.DbQueryCall!
-Open.Database.Extensions.DbQueryCall.AddParam<T>(string! name, T value) -> Open.Database.Extensions.DbQueryCall!
 Open.Database.Extensions.DbQueryCall.AddParam<T>(T value, string? expression = null) -> Open.Database.Extensions.DbQueryCall!
+Open.Database.Extensions.DbQueryCall.AddParam<T>(string! name, T value) -> Open.Database.Extensions.DbQueryCall!
 Open.Database.Extensions.DbQueryCall.AddParams<T>(T values) -> Open.Database.Extensions.DbQueryCall!
 Open.Database.Extensions.DbQueryCall.Source.get -> object!
 Open.Database.Extensions.DbQueryUsing
 Open.Database.Extensions.DbQueryUsing.AddParam(string! name, string? value) -> Open.Database.Extensions.DbQueryCall!
-Open.Database.Extensions.DbQueryUsing.AddParam<T>(string! name, T value) -> Open.Database.Extensions.DbQueryCall!
 Open.Database.Extensions.DbQueryUsing.AddParam<T>(T value, string? expression = null) -> Open.Database.Extensions.DbQueryCall!
+Open.Database.Extensions.DbQueryUsing.AddParam<T>(string! name, T value) -> Open.Database.Extensions.DbQueryCall!
 Open.Database.Extensions.DbQueryUsing.AddParams<T>(T values) -> Open.Database.Extensions.DbQueryCall!
 Open.Database.Extensions.DbQueryUsing.DbQueryUsing() -> void
 Open.Database.Extensions.DbQueryUsing.Equals(Open.Database.Extensions.DbQueryUsing other) -> bool
@@ -29,9 +65,25 @@ Open.Database.Extensions.DbQueryUsing.Source.get -> object!
 Open.Database.Extensions.DbQueryUsing<TParams>
 Open.Database.Extensions.DbQueryUsing<TParams>.AddParams(TParams values) -> Open.Database.Extensions.DbQueryCall!
 Open.Database.Extensions.DbQueryUsing<TParams>.DbQueryUsing() -> void
+Open.Database.Extensions.MappedCommand<T>.ToAsyncBuffer(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+Open.Database.Extensions.MappedCommand<T>.ToAsyncBufferStream(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+Open.Database.Extensions.MappedCommand<T>.ToBufferedAsyncStream(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedCommand<T>.UsePool(System.Buffers.ArrayPool<T>! pool, bool clearOnReturn) -> Open.Database.Extensions.MappedCommand<T>
 Open.Database.Extensions.MappedQuery<T>.Command.get -> Open.Database.Extensions.IExecuteReader!
+Open.Database.Extensions.MappedQuery<T>.ToAsyncBuffer(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+Open.Database.Extensions.MappedQuery<T>.ToAsyncBufferStream(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+Open.Database.Extensions.MappedQuery<T>.ToBufferedAsyncStream(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQuery<T>.UsePool(System.Buffers.ArrayPool<T>! pool, bool clearOnReturn) -> Open.Database.Extensions.MappedQuery<T>
 Open.Database.Extensions.MappedQueryWithSkip<T>.Command.get -> Open.Database.Extensions.IExecuteReader!
+Open.Database.Extensions.MappedQueryWithSkip<T>.ToAsyncBuffer(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+Open.Database.Extensions.MappedQueryWithSkip<T>.ToAsyncBufferStream(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+Open.Database.Extensions.MappedQueryWithSkip<T>.ToBufferedAsyncStream(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQueryWithSkip<T>.UsePool(System.Buffers.ArrayPool<T>! pool, bool clearOnReturn) -> Open.Database.Extensions.MappedQueryWithSkip<T>
 Open.Database.Extensions.MappedQueryWithTake<T>.Command.get -> Open.Database.Extensions.IExecuteReader!
+Open.Database.Extensions.MappedQueryWithTake<T>.ToAsyncBuffer(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Open.Database.Extensions.PooledBuffer<T>!
+Open.Database.Extensions.MappedQueryWithTake<T>.ToAsyncBufferStream(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<T>>!
+Open.Database.Extensions.MappedQueryWithTake<T>.ToBufferedAsyncStream(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQueryWithTake<T>.UsePool(System.Buffers.ArrayPool<T>! pool, bool clearOnReturn) -> Open.Database.Extensions.MappedQueryWithTake<T>
 override Open.Database.Extensions.DbQuery.Equals(object? obj) -> bool
 override Open.Database.Extensions.DbQuery.GetHashCode() -> int
 override Open.Database.Extensions.DbQueryUsing.Equals(object? obj) -> bool
@@ -40,3 +92,25 @@ static Open.Database.Extensions.DbQuery.Procedure(string! name) -> Open.Database
 static Open.Database.Extensions.DbQuery.Text(string! sql) -> Open.Database.Extensions.DbQuery!
 static Open.Database.Extensions.DbQueryUsing.operator !=(Open.Database.Extensions.DbQueryUsing left, Open.Database.Extensions.DbQueryUsing right) -> bool
 static Open.Database.Extensions.DbQueryUsing.operator ==(Open.Database.Extensions.DbQueryUsing left, Open.Database.Extensions.DbQueryUsing right) -> bool
+Open.Database.Extensions.ConnectionScope<TConnection>
+Open.Database.Extensions.ConnectionScope<TConnection>.ConnectionScope() -> void
+Open.Database.Extensions.ConnectionScope<TConnection>.Connection.get -> TConnection
+Open.Database.Extensions.ConnectionScope<TConnection>.Deconstruct(out TConnection connection, out System.Data.ConnectionState priorState) -> void
+Open.Database.Extensions.ConnectionScope<TConnection>.Dispose() -> void
+Open.Database.Extensions.ConnectionScope<TConnection>.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Open.Database.Extensions.ConnectionScope<TConnection>.PriorState.get -> System.Data.ConnectionState
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScope<TConnection>(this TConnection connection) -> Open.Database.Extensions.ConnectionScope<TConnection>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScopeAsync<TConnection>(this TConnection connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Open.Database.Extensions.ConnectionScope<TConnection>>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScope(this Open.Database.Extensions.IDbConnectionFactory! connectionFactory) -> Open.Database.Extensions.ConnectionScope<System.Data.IDbConnection!>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScope(this Open.Database.Extensions.IDbConnectionPool! connectionPool) -> Open.Database.Extensions.ConnectionScope<System.Data.IDbConnection!>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScope<TConnection>(this Open.Database.Extensions.IDbConnectionFactory<TConnection>! connectionFactory) -> Open.Database.Extensions.ConnectionScope<TConnection>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScope<TConnection>(this Open.Database.Extensions.IDbConnectionPool<TConnection>! connectionPool) -> Open.Database.Extensions.ConnectionScope<TConnection>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScopeAsync(this Open.Database.Extensions.IDbConnectionFactory! connectionFactory, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Open.Database.Extensions.ConnectionScope<System.Data.IDbConnection!>>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScopeAsync(this Open.Database.Extensions.IDbConnectionPool! connectionPool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Open.Database.Extensions.ConnectionScope<System.Data.IDbConnection!>>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScopeAsync<TConnection>(this Open.Database.Extensions.IDbConnectionFactory<TConnection>! connectionFactory, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Open.Database.Extensions.ConnectionScope<TConnection>>
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScopeAsync<TConnection>(this Open.Database.Extensions.IDbConnectionPool<TConnection>! connectionPool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Open.Database.Extensions.ConnectionScope<TConnection>>
+Open.Database.Extensions.ConfiguredConnectionScope<TConnection>
+Open.Database.Extensions.ConfiguredConnectionScope<TConnection>.ConfiguredConnectionScope() -> void
+Open.Database.Extensions.ConfiguredConnectionScope<TConnection>.DisposeAsync() -> System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable
+Open.Database.Extensions.ConnectionScope<TConnection>.ConfigureAwait(bool continueOnCapturedContext) -> Open.Database.Extensions.ConfiguredConnectionScope<TConnection>
+Open.Database.Extensions.ConnectionScope<TConnection>.ReaderBehavior(System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> System.Data.CommandBehavior

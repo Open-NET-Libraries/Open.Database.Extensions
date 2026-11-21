@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections;
 using System.Data.Common;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
@@ -663,4 +664,21 @@ public static class MappedViewParityTests
 			ct);
 		return list;
 	}
-}
+
+	// A default value has no command: UsePool says so, like every other member of
+	// the family, and does not fail with a NullReferenceException on the missing
+	// configuration.
+	[Fact]
+	public static void UsePool_OnADefaultValue_ThrowsTheFamilysInvalidOperation()
+	{
+		static void Check(Action use)
+		{
+			var ex = Assert.Throws<InvalidOperationException>(use);
+			Assert.Contains("Map<T>()", ex.Message);
+		}
+
+		Check(() => default(MappedQuery<int>).UsePool(ArrayPool<int>.Shared, true));
+		Check(() => default(MappedQueryWithSkip<int>).UsePool(ArrayPool<int>.Shared, true));
+		Check(() => default(MappedQueryWithTake<int>).UsePool(ArrayPool<int>.Shared, false));
+		Check(() => default(MappedCommand<int>).UsePool(ArrayPool<int>.Shared, false));
+	}}

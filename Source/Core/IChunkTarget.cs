@@ -1,8 +1,8 @@
 namespace Open.Database.Extensions.Core;
 
-// The unit of every chunk is an IMemoryOwner<T> rented from the pool:
-// exactly the rows of one buffer. Releasing it disposes it, which
-// returns the buffer to its pool (see MemoryOwnerExtensions).
+// The unit of every chunk is an ArrayLease<T>: a pooled array and the rows
+// written to it, exactly the rows of one buffer. Releasing it returns the
+// array to its pool (after clearing the rows, when that applies).
 
 /// <summary>Where the producer hands its chunks.</summary>
 internal interface IChunkTarget<T>
@@ -20,7 +20,7 @@ internal interface IChunkTarget<T>
 	/// Takes over a chunk. False means refused (disposed):
 	/// the chunk stays the producer's, which returns it.
 	/// </summary>
-	bool Publish(IMemoryOwner<T> chunk);
+	bool Publish(ArrayLease<T> chunk);
 
 	/// <summary>
 	/// The producer ended; the error is null for an end that is not

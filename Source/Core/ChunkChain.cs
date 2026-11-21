@@ -13,66 +13,70 @@ namespace Open.Database.Extensions.Core;
 // (that is ToAsyncBuffer's job, and it is for a different purpose: a
 // consumer that works while the read is still running).
 //
-// Chunk sizes start at ChunkSizing's collect-first value and grow by
-// ChunkSizing's collect-shift per chunk up to its collect-max; they are
-// always powers of two, so a pool hands back exactly that size.
+// Chunk sizes start at the configuration's collect-first value and grow by
+// its collect-shift per chunk up to its collect-max (ChunkSizes); they are
+// what the chain ASKS for. A pool may give a longer array (the shared array
+// pool rounds up to a power of two), and the chain uses all of it, so the
+// last chunk is the only one that is not full and the only one whose tail
+// is never written, read or cleared.
 //
 // The chain object is reused: one spare is kept per T, taken by Rent and
-// parked again by Dispose, so a small result allocates nothing for it
-// (as the sink struct of the earlier path allocated nothing). A chain is
-// rented by one call, used by that call alone, and disposed once, by a
-// using declaration (the chain is IDisposable): after that it belongs to
-// the spare slot, and no reference to it is used again.
+// parked again by Dispose, so a small result allocates nothing for it. A
+// chain is rented by one call, used by that call alone, and disposed once,
+// by a using declaration (the chain is IDisposable): after that it belongs
+// to the spare slot, and no reference to it is used again.
 //
-// Clearing: a chunk that may hold references is cleared before it goes
-// back (the used part only), so a pooled array never keeps a row alive.
-// A chunk of plain values is returned as it is.
+// What the chain holds is arrays: the hot write is one array store. The
+// number of rows in each is known (every array is full but the last), so
+// nothing needs an array's true length except the write itself.
+//
+// Where the arrays come from and go back to: the call's ChunkConfig (the
+// shared array pool, or the ArrayPool a caller passed to UsePool). Clearing
+// is decided once per call (PoolClearing: the floor for row types that
+// hold references, then the query's explicit choice, then the app-wide
+// switch) and only the rows that were written are cleared: Dispose seals
+// each array with its row count (ArrayLease) and releases it, and the
+// lease knows whether that clears where it runs or in the recycle bin.
 internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 {
 	// The one spare chain of this T.
 	static ChunkChain<T>? _spare;
 
-	// A test seam (like ChunkSizing): set by reflection to count rents and
-	// returns, then put back. Per T.
-	internal static ArrayPool<T> _pool = ArrayPool<T>.Shared;
-
-#if NETSTANDARD2_0
-	const bool MustClear = true;
-#else
-	static readonly bool MustClear
-		= RuntimeHelpers.IsReferenceOrContainsReferences<T>();
-#endif
-
 	T[][] _chunks = new T[4][];
+	ChunkConfig<T>? _config;
 	bool _parked;
 	int _chunkCount;
-	T[] _current = [];
+	T[] _array = [];
 	int _index;
 	int _filled; // rows in the chunks before the current one
 	int _nextSize;
 
-	/// <summary>An empty chain: the spare one if there is one.</summary>
-	internal static ChunkChain<T> Rent()
+	/// <summary>
+	/// An empty chain: the spare one if there is one. The arrays come from
+	/// the pool of <paramref name="config"/>.
+	/// </summary>
+	public static ChunkChain<T> Rent(ChunkConfig<T> config)
 	{
 		ChunkChain<T>? chain = Interlocked.Exchange(ref _spare, null);
-		if (chain is null) return new ChunkChain<T>();
+		chain ??= new ChunkChain<T>();
 
 		chain._parked = false;
+		chain._config = config;
 		return chain;
 	}
 
 	/// <summary>How many rows were added.</summary>
-	internal int Count
+	public int Count
 		=> _filled + _index;
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal void Add(T item)
+	public void Add(T item)
 	{
-		T[] current = _current;
+		T[] array = _array;
 		int index = _index;
-		if ((uint)index < (uint)current.Length)
+		if ((uint)index < (uint)array.Length)
 		{
-			current[index] = item;
+			array[index] = item;
 			_index = index + 1;
 			return;
 		}
@@ -92,16 +96,17 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 			_chunks = chunks;
 		}
 
+		ChunkSizes sizes = _config!.Sizes;
 		int size = _nextSize;
-		if (size == 0) size = ChunkSizing.ResolveCollectFirstRows();
+		if (size == 0) size = sizes.CollectFirstRows;
 
 		// Counted only once the rent has succeeded, so a failed rent leaves
 		// the chain as it was.
-		T[] next = _pool.Rent(size);
-		_nextSize = ChunkSizing.NextCollectRows(size);
+		T[] next = _config.Rent(size);
+		_nextSize = sizes.NextCollectRows(size);
 		chunks[_chunkCount++] = next;
 		_filled += _index;
-		_current = next;
+		_array = next;
 		next[0] = item;
 		_index = 1;
 	}
@@ -110,8 +115,12 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	static void ThrowDisposed()
 		=> throw new ObjectDisposedException(nameof(ChunkChain<>));
 
+	// How many rows of chunk i are written: all of them, except in the last.
+	int Used(int i)
+		=> i == _chunkCount - 1 ? _index : _chunks[i].Length;
+
 	/// <summary>The rows, in order, in an array of exactly that length.</summary>
-	internal T[] ToArray()
+	public T[] ToArray()
 	{
 		int count = Count;
 		if (count == 0) return [];
@@ -126,7 +135,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>The rows, in order, in a list of exactly that capacity.</summary>
-	internal List<T> ToList()
+	public List<T> ToList()
 	{
 		int count = Count;
 
@@ -141,13 +150,8 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		List<T> list = new(count);
 		if (count == 0) return list;
 
-		T[][] chunks = _chunks;
 		for (int i = 0; i < _chunkCount; ++i)
-		{
-			T[] chunk = chunks[i];
-			int length = i == _chunkCount - 1 ? _index : chunk.Length;
-			list.AddRange(new ArraySegment<T>(chunk, 0, length));
-		}
+			list.AddRange(new ArraySegment<T>(_chunks[i], 0, Used(i)));
 
 		return list;
 #endif
@@ -163,14 +167,14 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	/// checked by a test on the shipped runtimes; older runtimes enqueue
 	/// one by one, which is the same result).
 	/// </remarks>
-	internal Queue<T> ToQueue()
+	public Queue<T> ToQueue()
 		=> Count == 0 ? new Queue<T>() : new Queue<T>(this);
 
 	/// <summary>
 	/// The rows in a hash set that never regrows (duplicates are
 	/// dropped, as a hash set does).
 	/// </summary>
-	internal HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
+	public HashSet<T> ToHashSet(IEqualityComparer<T>? comparer)
 	{
 #if NETSTANDARD2_0
 		// No HashSet constructor takes a capacity here.
@@ -178,13 +182,11 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 #else
 		HashSet<T> set = new(Count, comparer);
 #endif
-		T[][] chunks = _chunks;
-		int last = _chunkCount - 1;
-		for (int i = 0; i <= last; ++i)
+		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == last ? _index : chunk.Length;
-			for (int j = 0; j < length; ++j)
+			T[] chunk = _chunks[i];
+			int used = Used(i);
+			for (int j = 0; j < used; ++j)
 				set.Add(chunk[j]);
 		}
 
@@ -196,19 +198,17 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	/// <paramref name="keySelector"/>. A duplicate key throws the
 	/// dictionary's own exception.
 	/// </summary>
-	internal Dictionary<TKey, T> ToDictionary<TKey>(
+	public Dictionary<TKey, T> ToDictionary<TKey>(
 		Func<T, TKey> keySelector,
 		IEqualityComparer<TKey>? comparer)
 		where TKey : notnull
 	{
 		Dictionary<TKey, T> dictionary = new(Count, comparer);
-		T[][] chunks = _chunks;
-		int last = _chunkCount - 1;
-		for (int i = 0; i <= last; ++i)
+		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == last ? _index : chunk.Length;
-			for (int j = 0; j < length; ++j)
+			T[] chunk = _chunks[i];
+			int used = Used(i);
+			for (int j = 0; j < used; ++j)
 			{
 				T item = chunk[j];
 				dictionary.Add(keySelector(item), item);
@@ -222,20 +222,18 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	/// As <see cref="ToDictionary{TKey}"/>, with the value chosen by
 	/// <paramref name="valueSelector"/>.
 	/// </summary>
-	internal Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+	public Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
 		Func<T, TKey> keySelector,
 		Func<T, TValue> valueSelector,
 		IEqualityComparer<TKey>? comparer)
 		where TKey : notnull
 	{
 		Dictionary<TKey, TValue> dictionary = new(Count, comparer);
-		T[][] chunks = _chunks;
-		int last = _chunkCount - 1;
-		for (int i = 0; i <= last; ++i)
+		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == last ? _index : chunk.Length;
-			for (int j = 0; j < length; ++j)
+			T[] chunk = _chunks[i];
+			int used = Used(i);
+			for (int j = 0; j < used; ++j)
 			{
 				T item = chunk[j];
 				dictionary.Add(keySelector(item), valueSelector(item));
@@ -247,24 +245,22 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 	void CopyTo(Span<T> destination)
 	{
-		T[][] chunks = _chunks;
-		int last = _chunkCount - 1;
-		for (int i = 0; i < last; ++i)
+		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			chunk.CopyTo(destination);
-			destination = destination[chunk.Length..];
+			int used = Used(i);
+			_chunks[i].AsSpan(0, used).CopyTo(destination);
+			destination = destination[used..];
 		}
-
-		chunks[last].AsSpan(0, _index).CopyTo(destination);
 	}
 
 	/// <summary>
-	/// Clears what may hold references, returns every array to the pool
-	/// and parks the chain as the spare. Call it once, from the finally of
-	/// the call that rented the chain, which a using declaration on the
-	/// rented chain does (a second call, before the chain is rented again,
-	/// does nothing). Public only because the interface requires it: the
+	/// Gives every array back (see the notes at the top) and parks the
+	/// chain as the spare. Call it once, from the finally of the call that
+	/// rented the chain, which a using declaration on the rented chain does
+	/// (a second call, before the chain is rented again, does nothing). A
+	/// release that throws (a pool whose Return throws) does not stop the
+	/// others: every array is released, and the first exception is thrown
+	/// after the last. Public only because the interface requires it: the
 	/// class is internal.
 	/// </summary>
 	public void Dispose()
@@ -273,25 +269,34 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 		_parked = true;
 		T[][] chunks = _chunks;
-		_current = [];
-		int last = _chunkCount - 1;
-		for (int i = 0; i <= last; ++i)
+		ChunkConfig<T> config = _config!;
+		int count = _chunkCount;
+		int lastUsed = _index;
+		Exception? first = null;
+		for (int i = 0; i < count; ++i)
 		{
-			T[] chunk = chunks[i];
-			if (MustClear)
+			try
 			{
-				Array.Clear(chunk, 0, i == last ? _index : chunk.Length);
+				int used = i == count - 1 ? lastUsed : chunks[i].Length;
+				config.Seal(chunks[i], used).Release();
 			}
-
-			_pool.Return(chunk, clearArray: false);
+			catch (Exception ex)
+			{
+				first ??= ex;
+			}
 		}
 
-		Array.Clear(chunks, 0, _chunkCount);
+		Array.Clear(chunks, 0, count);
+		_array = [];
+		_config = null;
 		_index = 0;
 		_filled = 0;
 		_nextSize = 0;
 		_chunkCount = 0;
 		Interlocked.CompareExchange(ref _spare, this, null);
+
+		if (first is not null)
+			System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(first).Throw();
 	}
 
 	// The chain is an ICollection only so that a Queue can be made from it
@@ -305,12 +310,11 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 	IEnumerator<T> IEnumerable<T>.GetEnumerator()
 	{
-		T[][] chunks = _chunks;
 		for (int i = 0; i < _chunkCount; ++i)
 		{
-			T[] chunk = chunks[i];
-			int length = i == _chunkCount - 1 ? _index : chunk.Length;
-			for (int j = 0; j < length; ++j)
+			T[] chunk = _chunks[i];
+			int used = Used(i);
+			for (int j = 0; j < used; ++j)
 				yield return chunk[j];
 		}
 	}

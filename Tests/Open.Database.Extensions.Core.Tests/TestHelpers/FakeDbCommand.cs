@@ -11,7 +11,7 @@ namespace Open.Database.Extensions.Tests;
 /// so it can't be configured on an NSubstitute substitute.)
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal sealed class FakeDbCommand(DbConnection connection, Func<DbDataReader> readerFactory) : DbCommand
+internal sealed class FakeDbCommand(DbConnection? connection, Func<DbDataReader> readerFactory) : DbCommand
 {
 	public List<CommandBehavior> Behaviors { get; } = [];
 
@@ -45,6 +45,11 @@ internal sealed class FakeDbCommand(DbConnection connection, Func<DbDataReader> 
 	protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
 	{
 		Behaviors.Add(behavior);
+
+		// What a provider does for a command that has no connection.
+		if (DbConnection is null)
+			throw new InvalidOperationException("ExecuteReader requires an open and available Connection.");
+
 		return readerFactory();
 	}
 }

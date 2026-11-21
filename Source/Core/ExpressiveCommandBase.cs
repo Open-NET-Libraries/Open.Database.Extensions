@@ -911,18 +911,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		if (_poolOrConnection is TConnection single)
 			return ExecuteDirect(single, state, func);
 
+		// Take, open if needed, give back when done (the pool decides what that means).
 		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
-		TConnection conn = pool.Take();
-		try
-		{
-			ConnectionState prior = conn.EnsureOpen();
-			using TCommand cmd = PrepareResolved(conn);
-			return func(cmd, prior, state);
-		}
-		finally
-		{
-			pool.Give(conn);
-		}
+		using var lease = pool.EnsureOpenScope();
+		using TCommand cmd = PrepareResolved(lease.Connection);
+		return func(cmd, lease.PriorState, state);
 	}
 
 	// The terminals that take a token:
@@ -949,96 +942,93 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		if (_poolOrConnection is TConnection single)
 		{
-			EnterDirect();
-			ConnectionState before = single.State;
-			try
-			{
-				ConnectionState prior = await OpenIfNeededAsync(single, cancellationToken).ConfigureAwait(false);
-				NameSet? names = null;
-				if (_hasDerivedParams)
-				{
-					names = await ResolveDerivedNamesAsync(
-							single,
-							cancellationToken)
-						.ConfigureAwait(false);
-				}
-
-				using TCommand cmd = _hasDerivedParams
-					? PrepareDerived(single, names)
-					: PrepareCommand(single);
-				return await func(cmd, prior, state).ConfigureAwait(false);
-			}
-			finally
-			{
-				ExitDirect(single, before);
-			}
-		}
-
-		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
-		TConnection conn = pool.Take();
-		try
-		{
-			ConnectionState prior = await OpenIfNeededAsync(conn, cancellationToken).ConfigureAwait(false);
+			using Busy busy = EnterDirect();
+			var direct = await EnsureOpenScopeUnlessOpenAsync(
+					single,
+					null,
+					cancellationToken)
+				.ConfigureAwait(false);
+			await using var directDisposal = direct.ConfigureAwait(false);
 			NameSet? names = null;
 			if (_hasDerivedParams)
 			{
-				names = await ResolveDerivedNamesAsync(conn, cancellationToken)
+				names = await ResolveDerivedNamesAsync(
+						single,
+						cancellationToken)
 					.ConfigureAwait(false);
 			}
 
 			using TCommand cmd = _hasDerivedParams
-				? PrepareDerived(conn, names)
-				: PrepareCommand(conn);
-			return await func(cmd, prior, state).ConfigureAwait(false);
+				? PrepareDerived(single, names)
+				: PrepareCommand(single);
+			return await func(cmd, direct.PriorState, state).ConfigureAwait(false);
 		}
-		finally
+
+		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
+		var lease = await EnsureOpenScopeUnlessOpenAsync(
+				pool.Take(),
+				pool,
+				cancellationToken)
+			.ConfigureAwait(false);
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		NameSet? leaseNames = null;
+		if (_hasDerivedParams)
 		{
-			pool.Give(conn);
+			leaseNames = await ResolveDerivedNamesAsync(lease.Connection, cancellationToken)
+				.ConfigureAwait(false);
 		}
+
+		using TCommand leaseCommand = _hasDerivedParams
+			? PrepareDerived(lease.Connection, leaseNames)
+			: PrepareCommand(lease.Connection);
+		return await func(leaseCommand, lease.PriorState, state).ConfigureAwait(false);
 	}
 
-	// An open connection (the usual case) needs no awaiting at all.
-	static ValueTask<ConnectionState> OpenIfNeededAsync(TConnection connection, CancellationToken cancellationToken)
+	// The scope of a connection taken from a pool (given back when it is disposed) or, with no pool, the
+	// caller's own (closed again if it was opened here). An open connection (the usual case) needs no awaiting at all.
+	static ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeUnlessOpenAsync(
+		TConnection connection,
+		IDbConnectionPool<TConnection>? pool,
+		CancellationToken cancellationToken)
 	{
 		ConnectionState state = connection.State;
-		return (state & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open
-			? new ValueTask<ConnectionState>(state)
-			: connection.EnsureOpenAsync(cancellationToken);
+		if ((state & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open)
+		{
+			return new ValueTask<ConnectionScope<TConnection>>(
+				pool is null
+					? new ConnectionScope<TConnection>(connection, state)
+					: new ConnectionScope<TConnection>(connection, state, pool));
+		}
+
+		return pool is null
+			? connection.EnsureOpenScopeAsync(cancellationToken)
+			: ConnectionExtensions.OpenOwnedAsync(connection, pool, cancellationToken);
 	}
 
 	TResult ExecuteDirect<TState, TResult>(TConnection single, TState state, Func<TCommand, ConnectionState, TState, TResult> func)
 	{
-		EnterDirect();
-		ConnectionState before = single.State;
-		try
-		{
-			ConnectionState prior = single.EnsureOpen();
-			using TCommand cmd = PrepareResolved(single);
-			return func(cmd, prior, state);
-		}
-		finally
-		{
-			ExitDirect(single, before);
-		}
+		using Busy busy = EnterDirect();
+		using var direct = single.EnsureOpenScope();
+		using TCommand cmd = PrepareResolved(single);
+		return func(cmd, direct.PriorState, state);
 	}
 
-	// A connection that was closed when taken is closed again when released; one that was open stays open.
-	void EnterDirect()
+	// A single connection is for one run at a time. The guard is what the run holds
+	// while it uses it, and disposing it lets the next run in; a connection that was
+	// closed when the run began is closed again by its own scope, before this lets go.
+	Busy EnterDirect()
 	{
 		if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
 			throw new InvalidOperationException("Concurrent use of a single connection is not supported.");
+
+		return new Busy(this);
 	}
 
-	void ExitDirect(TConnection connection, ConnectionState before)
+	readonly struct Busy(
+		ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis> owner)
+		: IDisposable
 	{
-		try
-		{
-			if (ConnectionExtensions.NeedsOpen(before)) connection.Close();
-		}
-		finally
-		{
-			Volatile.Write(ref _busy, 0);
-		}
+		public void Dispose() => Volatile.Write(ref owner._busy, 0);
 	}
 
 	#endregion
@@ -1122,7 +1112,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		return ExecuteCore((state, transform, behavior), static (cmd, prior, s) =>
 		{
-			CommandBehavior b = ConnectionExtensions.NeedsOpen(prior) ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
+			CommandBehavior b = ConnectionExtensions.ReaderBehavior(prior, s.behavior);
 			using IDataReader reader = cmd.ExecuteReader(b);
 			return s.transform(reader, s.state);
 		});
@@ -1201,7 +1191,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	ValueTask<TResult> ExecuteReaderCoreAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
 		=> ExecuteCoreAsync((state, transform, behavior, cancellationToken), static async (cmd, prior, s) =>
 		{
-			CommandBehavior b = ConnectionExtensions.NeedsOpen(prior) ? s.behavior | CommandBehavior.CloseConnection : s.behavior;
+			CommandBehavior b = ConnectionExtensions.ReaderBehavior(prior, s.behavior);
 			if (cmd is DbCommand dbCommand)
 			{
 #if NETSTANDARD2_0

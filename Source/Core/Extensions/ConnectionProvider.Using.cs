@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 public static partial class ConnectionExtensions
 {
@@ -103,15 +103,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		IDbConnection conn = connectionPool.Take();
-		try
-		{
-			return action(conn);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		using var lease = connectionPool.Rent();
+		return action(lease.Connection);
 	}
 
 	/// <summary>
@@ -129,15 +122,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		IDbConnection conn = connectionPool.Take();
-		try
-		{
-			action(conn);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		using var lease = connectionPool.Rent();
+		action(lease.Connection);
 	}
 
 	/// <summary>
@@ -159,15 +145,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		TConnection conn = connectionPool.Take();
-		try
-		{
-			return action(conn);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		using var lease = connectionPool.Rent();
+		return action(lease.Connection);
 	}
 
 	/// <summary>
@@ -187,15 +166,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		TConnection conn = connectionPool.Take();
-		try
-		{
-			action(conn);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		using var lease = connectionPool.Rent();
+		action(lease.Connection);
 	}
 
 	/// <summary>
@@ -345,15 +317,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		IDbConnection conn = connectionPool.Take();
-		try
-		{
-			return await action(conn).ConfigureAwait(false);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		var lease = connectionPool.Rent();
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		return await action(lease.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -372,15 +338,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		IDbConnection conn = connectionPool.Take();
-		try
-		{
-			await action(conn).ConfigureAwait(false);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		var lease = connectionPool.Rent();
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		await action(lease.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -402,15 +362,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		TConnection conn = connectionPool.Take();
-		try
-		{
-			return await action(conn).ConfigureAwait(false);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		var lease = connectionPool.Rent();
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		return await action(lease.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -431,15 +385,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		TConnection conn = connectionPool.Take();
-		try
-		{
-			await action(conn).ConfigureAwait(false);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		var lease = connectionPool.Rent();
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		await action(lease.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
