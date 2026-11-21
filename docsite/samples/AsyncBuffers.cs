@@ -129,8 +129,7 @@ public static class AsyncBuffers
 		await using PooledBuffer<Post> buffer = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.Skip(1)
-			.Take(2)
+			.Skip(1).Take(2)
 			.ToAsyncBuffer(cancellationToken);
 
 		PooledArray<Post> posts = await buffer.Items;
