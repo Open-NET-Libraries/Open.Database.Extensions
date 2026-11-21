@@ -170,6 +170,21 @@ public static class ConnectionSourceScopeTests
 	}
 
 	[Fact]
+	public static async Task AFactory_WhenCancelledWhileOpening_ClosesAndDisposesTheConnection()
+	{
+		using var cts = new CancellationTokenSource();
+		var connection = new ConnectionScopeTests.ScopeConnection { CancelWhenOpened = cts };
+		var factory = new CountingFactory(connection);
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () => await factory.OpenScopeAsync(cts.Token));
+
+		// Opened, then closed by EnsureOpenAsync, then disposed by the scope: not left open.
+		Assert.Equal(["openAsync", "close", "disposeAsync"], connection.Log);
+		Assert.Equal(ConnectionState.Closed, connection.State);
+	}
+
+	[Fact]
 	public static void AFactory_ASecondDisposeOfACopy_DisposesAgain()
 	{
 		// The documented hazard of a readonly struct: pinned so a change is deliberate.
@@ -311,6 +326,21 @@ public static class ConnectionSourceScopeTests
 	}
 
 	[Fact]
+	public static async Task APool_WhenCancelledWhileOpening_ClosesAndGivesTheConnectionBack()
+	{
+		using var cts = new CancellationTokenSource();
+		var connection = new ConnectionScopeTests.ScopeConnection { CancelWhenOpened = cts };
+		var pool = new CountingPool(connection);
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () => await pool.OpenScopeAsync(cts.Token));
+
+		Assert.Equal(1, pool.Takes);
+		Assert.Equal(1, pool.Gives);
+		Assert.Equal(["openAsync", "close", "give"], connection.Log);
+	}
+
+	[Fact]
 	public static void APool_ASecondDisposeOfACopy_GivesBackAgain()
 	{
 		// The documented hazard of a readonly struct: pinned so a change is deliberate.
@@ -341,10 +371,11 @@ public static class ConnectionSourceScopeTests
 	}
 
 	[Fact]
-	public static void ADefaultScope_FromAFactoryOrPool_IsInert()
+	public static async Task ADefaultScope_FromAFactoryOrPool_IsInert()
 	{
 		ConnectionScope<ConnectionScopeTests.ScopeConnection> scope = default;
 
 		Assert.Null(Record.Exception(scope.Dispose));
+		await scope.DisposeAsync();
 	}
 }

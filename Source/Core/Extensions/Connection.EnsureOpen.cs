@@ -112,7 +112,7 @@ public static partial class ConnectionExtensions
 	/// </remarks>
 	/// <typeparam name="TConnection">The type of the connection; inferred from the call.</typeparam>
 	/// <param name="connection">The connection to open.</param>
-	/// <returns>The connection and the state it was found in, restored by <see cref="ConnectionScope{TConnection}.Dispose"/>.</returns>
+	/// <returns>The connection and the state it was found in; <see cref="ConnectionScope{TConnection}.Dispose"/> closes it again if the scope opened it.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
 	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(this TConnection connection)
 		where TConnection : IDbConnection
@@ -140,8 +140,8 @@ public static partial class ConnectionExtensions
 	/// <typeparam name="TConnection">The type of the connection; inferred from the call.</typeparam>
 	/// <param name="connection">The connection to open.</param>
 	/// <param name="cancellationToken">A cancellation token to cancel opening.</param>
-	/// <returns>The connection and the state it was found in, restored by <see cref="ConnectionScope{TConnection}.DisposeAsync"/>.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
+	/// <returns>The connection and the state it was found in; <see cref="ConnectionScope{TConnection}.DisposeAsync"/> closes it again if the scope opened it.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
 		this TConnection connection,
 		CancellationToken cancellationToken = default)

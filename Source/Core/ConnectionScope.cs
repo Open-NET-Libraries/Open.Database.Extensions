@@ -36,8 +36,8 @@ enum ScopeEnd : byte
 /// <item>
 /// <term><see cref="ConnectionExtensions.OpenScope(IDbConnectionFactory)"/> /
 /// <see cref="ConnectionExtensions.OpenScopeAsync(IDbConnectionFactory, CancellationToken)"/> (on a factory)</term>
-/// <description>The factory created it, so it is yours; disposes it (<c>DisposeAsync</c> when the
-/// connection has one), as <c>factory.Open(...)</c> does.</description>
+/// <description>The factory created it, so it is yours; disposes it: <c>Dispose</c>, as
+/// <c>factory.Open(...)</c> does, and <c>DisposeAsync</c> from <see cref="DisposeAsync"/> when the connection has one.</description>
 /// </item>
 /// <item>
 /// <term><see cref="ConnectionExtensions.OpenScope(IDbConnectionPool)"/> /
@@ -127,7 +127,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 
 	/// <summary>
 	/// The state the connection was in when the scope was made (not its state now):
-	/// <see cref="ConnectionState.Closed"/>, or <see cref="ConnectionState.Open"/> (possibly
+	/// for example <see cref="ConnectionState.Closed"/>, or <see cref="ConnectionState.Open"/> (possibly
 	/// with <see cref="ConnectionState.Executing"/> or <see cref="ConnectionState.Fetching"/>),
 	/// or with <see cref="ConnectionState.Broken"/> set.
 	/// </summary>

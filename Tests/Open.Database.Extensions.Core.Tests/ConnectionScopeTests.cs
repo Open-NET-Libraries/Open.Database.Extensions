@@ -25,6 +25,9 @@ public static class ConnectionScopeTests
 
 		public Exception? CloseException { get; set; }
 
+		// Cancelled while OpenAsync is under way, after the connection is open.
+		public CancellationTokenSource? CancelWhenOpened { get; set; }
+
 		public void SetState(ConnectionState state) => _state = state;
 
 		[AllowNull]
@@ -49,6 +52,7 @@ public static class ConnectionScopeTests
 			if (OpenException is not null) throw OpenException;
 
 			_state = ConnectionState.Open;
+			CancelWhenOpened?.Cancel();
 			return Task.CompletedTask;
 		}
 
@@ -300,6 +304,7 @@ public static class ConnectionScopeTests
 		scope.Dispose();
 		Assert.Null(Record.Exception(scope.Dispose));
 		Assert.False(connection.WasDisposed);
+		Assert.Equal(["open", "close", "close"], connection.Log);
 	}
 
 	// ---- the connection keeps its type; the scope may be ignored ------------------------
