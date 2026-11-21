@@ -13,9 +13,9 @@ Every page in [Benchmarks](../performance.md) is measured the same way. This pag
 
 | Number | What it is | Where it comes from |
 |---|---|---|
-| **Connection held open** | How long the reader is open: from the moment `ExecuteReader` is entered until the reader is closed. The connection can serve nobody else in that time, so this is the cost a busy service pays. | A stopwatch inside the benchmark that wraps the reader (the *reader-open* column of the data files). |
+| **Connection held open** | How long the reader is open: from the moment `ExecuteReader` is entered until the reader is closed. The connection can serve nobody else in that time, so this is the cost a busy service pays. | A stopwatch inside the benchmark that wraps the reader (the `reader_open_us` column of the data files). |
 | **Whole call** | How long the call takes from start to finish, including work that happens after the reader has closed. | BenchmarkDotNet's `Mean` column. |
-| **Memory allocated** | The managed memory the call allocates, in KB (1 KB is 1,024 bytes). | BenchmarkDotNet's `MemoryDiagnoser`, the `Allocated` column: bytes per call. |
+| **Memory allocated** | The managed memory the call allocates, in KB (1 KB is 1,024 bytes; 1 MB is 1,024 KB; B is a byte). | BenchmarkDotNet's `MemoryDiagnoser`, the `Allocated` column: bytes per call. |
 
 Allocation is deterministic, so memory does not depend on how busy the machine was. Time does.
 
@@ -35,7 +35,7 @@ The synthetic reader can also add a wait every N rows (a buffer refill) and keep
 2. **Warm.** Each case runs 5 warm-up iterations, then 12 measured ones, in one launch. The compiled mapping is built before the first measured call, except in the one benchmark that measures building it ([What building a map costs](map-cost.md)).
 3. **One at a time.** Each benchmark runs alone, on a machine with nothing else running.
 4. **Dapper is written the way its documentation shows.** `Query<T>` for a list, and the usual type handler recipe where it needs one (on SQLite, text to `Guid`).
-5. **Reference points are labelled.** A *hand loop* is a loop written directly on the provider's reader with typed getters. It is the floor: no library can be faster than it.
+5. **Reference points are labelled.** A *hand loop* is a loop written directly on the provider's reader with typed getters. It is the reference point, not a limit: on SQL Server at 20 columns a hand-written selector came out 1.7% faster than it, which is within the noise.
 
 ## What we do not measure
 
@@ -45,7 +45,7 @@ The synthetic reader can also add a wait every N rows (a buffer refill) and keep
 
 ## How sure are the numbers?
 
-Each case is one BenchmarkDotNet run. On the real providers BenchmarkDotNet's own error margin is 2 to 9% of the mean, so a gap of a few percent between two bars is not a result. Allocation does not have this problem: it is the same every time.
+Each case is one BenchmarkDotNet run. On the real providers BenchmarkDotNet reported error margins (the half-width of its 99.9% confidence interval) of 0.4 to 8.8% of the mean, and the tables show each one, so a gap of a few percent between two bars is not a result. Allocation does not have this problem: it is the same every time.
 
 ## How fresh is the data?
 
@@ -55,7 +55,7 @@ Each data set has a CSV file in the repository and a source file beside it that 
 
 Data files and sources: [synthetic-overhead](../../perf-data/synthetic-overhead.csv) ([source](../../perf-data/synthetic-overhead.source.txt)), [width-sweep](../../perf-data/width-sweep.csv) ([source](../../perf-data/width-sweep.source.txt)), [map-cost](../../perf-data/map-cost.csv) ([source](../../perf-data/map-cost.source.txt)), [real-providers](../../perf-data/real-providers.csv) ([source](../../perf-data/real-providers.source.txt)), [sync-async](../../perf-data/sync-async.csv) ([source](../../perf-data/sync-async.source.txt)).
 
-The runs above were made on 2026-11-14, before 11.0.0-rc.6. A page says so at the top when it rests on older or hand-recorded numbers.
+The synthetic, real-database, map-cost and sync-against-async runs were made on 2026-11-14, before 11.0.0-rc.6; the slow-link memory and large-value runs on 2026-11-15; the channel numbers are older. A page says so at the top when it rests on older or hand-recorded numbers.
 
 The [interactive ranking](../../benchmarks/ranking.html) shows the 16-variant synthetic run as one page with hover details. It is a snapshot from 2026-11-14.
 

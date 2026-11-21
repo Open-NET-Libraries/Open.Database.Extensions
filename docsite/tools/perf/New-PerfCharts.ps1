@@ -251,7 +251,7 @@ function Get-SynRows([string]$col, [scriptblock]$fmt) {
   ,$rows
 }
 $synIntro = 'Ranked horizontal bars, shortest first, one per way of reading 20 columns and 1,000 rows from a synthetic in-memory reader, colored by family.'
-Write-Lf (Join-Path $ImageDir 'perf-synthetic-open.svg') (New-BarSvg 'syn-open' 'Reader-open time per call' 'Shorter is better: a shorter bar holds the connection for less time.' @(@{ Title = ''; Rows = (Get-SynRows 'reader_open_us') }) { param($v) Format-MicroX $v } ("microseconds from ExecuteReader until the reader closes") (Footer $synSrc 'synthetic-overhead') 'shared' 232 $synIntro)
+Write-Lf (Join-Path $ImageDir 'perf-synthetic-open.svg') (New-BarSvg 'syn-open' 'Connection held open per call' 'Shorter is better: a shorter bar holds the connection for less time.' @(@{ Title = ''; Rows = (Get-SynRows 'reader_open_us') }) { param($v) Format-MicroX $v } ("microseconds from ExecuteReader until the reader closes") (Footer $synSrc 'synthetic-overhead') 'shared' 232 $synIntro)
 Write-Lf (Join-Path $ImageDir 'perf-synthetic-total.svg') (New-BarSvg 'syn-total' 'Total time per call' 'Shorter is better. Where it is far above reader-open time, work happens after the reader closes.' @(@{ Title = ''; Rows = (Get-SynRows 'total_us') }) { param($v) Format-MicroX $v } 'microseconds per call, the whole call' (Footer $synSrc 'synthetic-overhead') 'shared' 232 $synIntro)
 Write-Lf (Join-Path $ImageDir 'perf-synthetic-memory.svg') (New-BarSvg 'syn-memory' 'Memory allocated per call' 'Smaller is better.' @(@{ Title = ''; Rows = (Get-SynRows 'allocated_kb') }) { param($v) (F $v 1) + ' KB' } 'kilobytes allocated per call' (Footer $synSrc 'synthetic-overhead') 'shared' 232 $synIntro)
 
@@ -336,13 +336,13 @@ foreach ($cond in @($sa | ForEach-Object { $_.condition } | Select-Object -Uniqu
       Detail = "$cond, $($_.path): reader open $(Format-Micro ([double]$_.reader_open_us)), $(F ([double]$_.reader_open_us / [double]$syncRow.reader_open_us) 2)$timesX the sync read; $(F ([double]$_.allocated_kb) 1) KB allocated." } })
   $saPanels += @{ Title = $cond; Rows = $rows }
 }
-Write-Lf (Join-Path $ImageDir 'perf-sync-async.svg') (New-BarSvg 'sync-async' 'Sync reads against async reads' 'Reader-open time, Map<T>(), 20 columns, 1,000 rows. Each panel has its own scale.' $saPanels { param($v) Format-MicroX $v } '' (Footer $saSrc 'sync-async') 'panel' 110 'Four panels of three bars each, one panel per condition, each on its own scale: sync, async execute, and async read.')
+Write-Lf (Join-Path $ImageDir 'perf-sync-async.svg') (New-BarSvg 'sync-async' 'Sync reads against async reads' 'Connection held open, Map<T>(), 20 columns, 1,000 rows. Each panel has its own scale.' $saPanels { param($v) Format-MicroX $v } '' (Footer $saSrc 'sync-async') 'panel' 110 'Four panels of three bars each, one panel per condition, each on its own scale: sync, async execute, and async read.')
 
 # ---------- 7. slow link and large values (the hand-recorded probe runs) ----------
 $lt = Read-Data 'link-time';   $ltSrc = Read-Source 'link-time'
 $lm = Read-Data 'link-memory'; $lmSrc = Read-Source 'link-memory'
 $lv = Read-Data 'large-value'; $lvSrc = Read-Source 'large-value'
-function Link-Footer($src, [string]$csv) { "Run $($src.Date), one run per case. Numbers: $csv.csv" }
+function Link-Footer($src, [string]$csv) { "Run $($src.Date), mean of 3 operations. Numbers: $csv.csv" }
 
 $ltPanels = @()
 foreach ($sc in @($lt | ForEach-Object { $_.scenario } | Select-Object -Unique)) {
@@ -428,9 +428,9 @@ foreach ($pair in @(@('SQL Server LocalDB', 'real-sqlserver', '20'), @('SQLite f
   if ($rows.Count -eq 0) { continue }
   $bestT = [double]$rows[0].total_us
   $bestM = ($rows | ForEach-Object { [double]$_.allocated_kb } | Measure-Object -Minimum).Minimum
-  $t = @("| Rank | Variant | Time per call (ms) | Against the best | Memory per call (MB) | Against the least |", '|---:|---|---:|---:|---:|---:|')
+  $t = @("| Rank | Variant | Time per call (ms) | Error margin | Against the best | Memory per call (MB) | Against the least |", "|---:|---|---:|---:|---:|---:|---:|")
   $rank = 0
-  foreach ($r in $rows) { $rank++; $t += "| $rank | $(M $r.variant) | $(F ([double]$r.total_us / 1000) 2) | $(Format-Pct ([double]$r.total_us) $bestT) | $(F ([double]$r.allocated_kb / 1024) 2) | $(Format-Pct ([double]$r.allocated_kb) $bestM) |" }
+  foreach ($r in $rows) { $rank++; $t += "| $rank | $(M $r.variant) | $(F ([double]$r.total_us / 1000) 2) | ±$(F (100 * [double]$r.error_us / [double]$r.total_us) 1)% | $(Format-Pct ([double]$r.total_us) $bestT) | $(F ([double]$r.allocated_kb / 1024) 2) | $(Format-Pct ([double]$r.allocated_kb) $bestM) |" }
   Write-Table $pair[1] $t
 }
 

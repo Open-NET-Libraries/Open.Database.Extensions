@@ -58,7 +58,7 @@
   </style>
   <rect class="frame" x="0.5" y="0.5" width="559" height="559" rx="8"/>
   <text class="title" x="16" y="28">Sync reads against async reads</text>
-  <text class="muted" x="16" y="48">Reader-open time, Map&lt;T&gt;(), 20 columns, 1,000 rows. Each panel has its own scale.</text>
+  <text class="muted" x="16" y="48">Connection held open, Map&lt;T&gt;(), 20 columns, 1,000 rows. Each panel has its own scale.</text>
   <text class="head" x="16" y="80">Neither</text>
   <g>
     <title>Neither, Sync: reader open 77.3 µs, 1.00× the sync read; 227.4 KB allocated.</title>

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 612" role="img" aria-labelledby="syn-open-title syn-open-desc">
-  <title id="syn-open-title">Reader-open time per call</title>
+  <title id="syn-open-title">Connection held open per call</title>
   <desc id="syn-open-desc">Ranked horizontal bars, shortest first, one per way of reading 20 columns and 1,000 rows from a synthetic in-memory reader, colored by family. Every bar starts at zero. Map(selector), hand-written 46.8 µs; Selector, reused row, Select 58.8 µs; Selector, pooled row, Select 62.8 µs; Shaping inside the selector 67.6 µs; Map&lt;T&gt;() 81.6 µs; Row class, close, then Select 82.1 µs; Row class, shaping after close 82.3 µs; Row class, inline Select 106.4 µs; Row class, shaping in Select 138.9 µs; object[] rows, objects later 170.1 µs; object[] rows (baseline) 178.4 µs; Dapper, then Select after 197.5 µs; Dapper, shaping after 200.5 µs; Dapper Query&lt;T&gt; 202.4 µs; Dapper, inline Select 214.0 µs; Dapper, shaping in Select 257.6 µs.</desc>
   <style>
     :root {
@@ -57,7 +57,7 @@
     .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
   </style>
   <rect class="frame" x="0.5" y="0.5" width="559" height="611" rx="8"/>
-  <text class="title" x="16" y="28">Reader-open time per call</text>
+  <text class="title" x="16" y="28">Connection held open per call</text>
   <text class="muted" x="16" y="48">Shorter is better: a shorter bar holds the connection for less time.</text>
   <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
   <text class="small" x="34" y="72">ODX: one object per row</text>

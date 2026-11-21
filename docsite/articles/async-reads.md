@@ -99,7 +99,7 @@ The hazard points the opposite way from "use it on a starved pool". On a real li
 
 ### The large-value warning for Map(Func)
 
-One value of 100 MB (one row, SQL Server, over a simulated slow link) took 8.86 s with a raw sync `Read` and 48.0 s with raw `Default` and `ReadAsync`: 5.4 times as long. `Map<T>()` with the opt-in took 8.86 s, because it opens its reader with `SequentialAccess`. `Map(Func)` opens its reader with `Default`, so the 48.0 s cell is the one that applies to it; ODX `Map(Func)` with the opt-in on a 100 MB value was NOT measured, and its cost is inferred from the raw cell. Turning off both SqlClient compatibility switches brought the raw cell back to 8.87 s, at about 130 MB more peak memory. The chart and the table are on [Slow links and large values](benchmarks/slow-links-and-large-values.md#one-100-mb-value).
+One value of 100 MB (one row, SQL Server, over a simulated slow link) took 8.86 s with a raw sync `Read` and 48.0 s with raw `Default` and `ReadAsync`: 5.4 times as long. `Map<T>()` with the opt-in took 8.86 s, and it opens its reader with `SequentialAccess`, as the raw 8.86 s cell does (we did not isolate that as the reason). `Map(Func)` opens its reader with `Default`, so the 48.0 s cell is the one that applies to it; ODX `Map(Func)` with the opt-in on a 100 MB value was NOT measured, and its cost is inferred from the raw cell. Turning off both SqlClient compatibility switches brought the raw cell back to 8.87 s, at about 130 MB more peak memory. The chart and the table are on [Slow links and large values](benchmarks/slow-links-and-large-values.md#one-100-mb-value).
 
 The default, a synchronous `Read`, is the safe choice for large values.
 

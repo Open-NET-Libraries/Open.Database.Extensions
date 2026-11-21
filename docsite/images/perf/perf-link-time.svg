@@ -95,5 +95,5 @@
     <text class="val" x="453.9" y="251">6,757.4 ms</text>
   </g>
   <line class="axis" x1="170" y1="208" x2="170" y2="260"/>
-  <text class="muted small" x="16" y="282">Run 2026-11-14, one run per case. Numbers: link-time.csv</text>
+  <text class="muted small" x="16" y="282">Run 2026-11-14, mean of 3 operations. Numbers: link-time.csv</text>
 </svg>

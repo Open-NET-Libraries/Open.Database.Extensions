@@ -116,5 +116,5 @@
   </g>
   <line class="axis" x1="170" y1="232" x2="170" y2="284"/>
   <text class="muted small mid" x="309" y="316">kilobytes allocated per operation</text>
-  <text class="muted small" x="16" y="344">Run 2026-11-15, one run per case. Numbers: link-memory.csv</text>
+  <text class="muted small" x="16" y="344">Run 2026-11-15, mean of 3 operations. Numbers: link-memory.csv</text>
 </svg>

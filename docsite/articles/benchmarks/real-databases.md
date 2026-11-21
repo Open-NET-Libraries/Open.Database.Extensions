@@ -4,9 +4,9 @@
 
 ## In short
 
-- **On SQL Server LocalDB, `Map<T>()` ties with hand-written code and with Dapper.** For 10,000 rows of 20 columns it took 25.9 ms, a hand-written selector 25.2 ms and Dapper 27.6 ms. BenchmarkDotNet's own error margin on these runs is 2 to 9% of the mean, so those gaps are not a result.
-- **Memory is where ODX still wins.** `Map<T>()` allocates 9.48 MB, the same as hand-written code. Dapper allocates 12.27 MB, 29.4% more.
-- **Not faster on SQLite.** `Map<T>()` is 20.9% slower than a hand-written selector at 20 columns (31.3 against 25.9 ms) and 24.5% slower at 5 columns. Against Dapper it is 5.1% slower at 20 columns and 2.0% faster at 5. These runs do not show why.
+- **On SQL Server LocalDB, `Map<T>()` ties with hand-written code and with Dapper.** For 10,000 rows of 20 columns it took 25.9 ms, a hand-written selector 25.2 ms and Dapper 27.6 ms. BenchmarkDotNet's own error margin on these runs is 3.1 to 8.8% of the mean (the tables show each one), so those gaps are not a result.
+- **Memory is where ODX still wins over Dapper.** On SQL Server `Map<T>()` allocates 9.48 MB, the same as hand-written code; Dapper allocates 12.27 MB, 29.4% more. On SQLite `Map<T>()` allocates 14.11 MB: 4.6% less than Dapper (14.79) and 17.9% more than hand-written code (11.96).
+- **Not faster on SQLite.** `Map<T>()` is 20.9% slower than a hand-written selector at 20 columns (31.3 against 25.9 ms) and 24.3% slower at 5 columns. Against Dapper it is 5.1% slower at 20 columns and 2.1% faster at 5. These runs do not show why.
 
 ## Time per call
 
@@ -44,15 +44,15 @@ Each table lists time and memory for the same five ways of reading the rows. *Ha
 
 [!include[](../../includes/perf/real-sqlite-w5.md)]
 
-## What to take from it
+## Why, and what to take from it
 
 **The database sets the pace.** The synthetic reader serves rows for free, so the library's own work is the whole bar. Here the provider reads, parses and converts every row first, and that is most of the time. A lead of 2.5 times over Dapper on a synthetic reader becomes a few percent on SQL Server.
 
-**What you can count on is memory.** Allocations are the library's, so they show through any provider. They are also what the garbage collector later pays for.
+**What you can count on is memory, against Dapper.** Allocations are the library's, so they show through any provider. They are also what the garbage collector later pays for.
 
 **SQLite is the one place `Map<T>()` is behind.** The hand loop and the hand-written selector are the two leaders on SQLite at both widths, and `Map<T>()` is about a fifth behind at 20 columns. These runs do not show why, so we do not claim a cause.
 
-**Reader-open time is not on these charts.** The real-provider runs measure the whole call. The synthetic pages show how long the connection is held, which is the number a busy service cares about.
+**How long the connection is held open is not on these charts.** The real-provider runs measure the whole call, not how long the connection is held. The synthetic pages show the connection time, which is the number a busy service cares about.
 
 ## How this was measured
 

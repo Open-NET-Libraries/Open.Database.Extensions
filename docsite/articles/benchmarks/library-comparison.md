@@ -1,14 +1,15 @@
 # ODX against Dapper and hand-written code
 
-**The question:** for the same query and the same rows, how does `Map<T>()` compare with Dapper and with ADO.NET written by hand?
+**The question:** for the same query and the same rows, how does Map<T>() compare with Dapper and with ADO.NET written by hand?
+
+ODX is not an ORM, so EF Core is not on these charts.
 
 ## In short
 
-- **With no database in the way**, `Map<T>()` holds the connection open **2.48 times shorter** than Dapper's `Query<T>` (81.6 against 202.4 µs) and allocates **2.41 times less memory** (227.4 against 548.1 KB). 20 columns, 1,000 rows, synthetic reader.
+- **With no database in the way**, `Map<T>()` holds the connection open for **2.5 times less time** than Dapper's `Query<T>` (81.6 against 202.4 µs) and allocates **2.4 times less memory** (227.4 against 548.1 KB). 20 columns, 1,000 rows, synthetic reader.
 - It allocates exactly what a hand-written selector allocates (227.4 KB) and takes **1.74 times as long** (81.6 against 46.8 µs). A hand-written selector is the floor.
 - **On a real database the gap closes.** On SQL Server LocalDB the three are within the noise of one run (25.2 to 27.6 ms for 10,000 rows). What you can count on there is memory: Dapper allocates 29.4% more.
 - **Not faster:** on a SQLite file, 10,000 rows of 20 columns, `Map<T>()` takes 31.3 ms. That is 5.1% more than Dapper (29.8 ms) and 20.9% more than a hand-written selector (25.9 ms). These runs do not show why.
-- **EF Core** is not measured yet. No number for it appears on this page.
 
 ## With no database: a synthetic reader
 
@@ -18,7 +19,7 @@ Each panel shows one thing about the same job, reading 1,000 rows of 20 columns 
 
 [!include[](../../includes/perf/summary.md)]
 
-Two of the four are for context. **Hand-written selector** is `Map(selector)` with a function you write yourself: it is the fastest way to use ODX, and what `Map<T>()` is compared against. **`object[]` rows** copy every row into an array of boxed values and map later: it is the usual shortcut, and the slowest way to hold a connection.
+Two of the four are for context. **Hand-written selector** is `Map(selector)` with a function you write yourself: it is the fastest way to use ODX, and what `Map<T>()` is compared against. **`object[]` rows** copy every row into an array of boxed values and map later: it is the usual shortcut, and it holds the connection longer than `Map<T>()` or a hand-written selector, and a little less than Dapper (178.4 against 202.4 µs).
 
 ## On real databases
 
@@ -28,9 +29,9 @@ The same job on a real provider, with 10,000 rows of 20 columns. A real provider
 
 <div class="perf-chart"><img src="../../images/perf/perf-real-memory.svg" alt="Two panels of ranked bars on one scale, memory per call at 20 columns and 10,000 rows. SQL Server LocalDB: hand loop, Map of T and hand-written selector 9.48 megabytes, row class with Select 11.54, Dapper 12.27. SQLite file: hand loop and hand-written selector 11.96, Map of T 14.11, Dapper 14.79, row class with Select 16.17."></div>
 
-The second chart is memory. It does not shrink on a real provider, because the extra allocations are the library's, not the database's.
+The second chart is memory. The lead over Dapper shrinks here too, but less than the time lead: Dapper allocates 2.41 times as much as `Map<T>()` on the synthetic reader, 1.29 times on SQL Server LocalDB and 1.05 times on SQLite (20 columns).
 
-The tables for both providers, and the same runs at 5 columns, are on [On real databases](real-databases.md). The row class with `Select` is the usual way to get a second object per row: read a row class, then call `Select`. It costs more memory than the other approaches on every provider.
+The tables for both providers, and the same runs at 5 columns, are on [On real databases](real-databases.md). The row class with `Select` is the usual way to get a second object per row: read a row class, then call `Select`. It costs more memory than `Map<T>()` and the hand-written selector on every provider, and more than Dapper on SQLite (16.17 against 14.79 MB). On SQL Server LocalDB at 20 columns Dapper allocates more (12.27 against 11.54 MB).
 
 ## A wider set of everyday calls (older run)
 
@@ -46,24 +47,20 @@ The synthetic runs above read lists. This table is from an older run of the same
 | Untyped rows | 108,936 ns | 98,712 ns | 0.91 | 411,688 B | 363,184 B |
 | `Scalar` (one value) | 61 ns | 40 ns | 0.66 | 136 B | 168 B |
 
-ODX is at or below Dapper's time in all 54 cases of that run, and a tie in a few (`ScalarAsync` 0.98). It allocates more than Dapper in a few small fixed-cost cases: `Scalar` and `Execute` by 32 bytes, because of the command object the fluent API returns.
-
-## EF Core
-
-EF Core is not in these benchmarks yet, so this page gives no number for it.
+ODX is at or below Dapper's time in all 54 cases of that run, and a tie in a few (`ScalarAsync` 0.98). It allocates more than Dapper in a few small cases: `Scalar` and `Execute` by 32 bytes (the command object the fluent API returns), the hand-written selector by 80 bytes (33,176 against 33,096 B in the table), and at one row async scalar and untyped rows by 16 bytes each.
 
 ## Why `Map<T>()` is faster here
 
-The library is built on one idea: hold the connection open as briefly as possible, and allocate as little as possible while it is open. Four things in the changes of [What's new in 11](../whats-new-11.md) account for the numbers above:
+The library is built on one idea: hold the connection open as briefly as possible, and allocate as little as possible while it is open. Four design choices from [What's new in 11](../whats-new-11.md) are the likely reasons for the numbers above. These runs did not isolate each one:
 
 - The mapping from columns to your type is compiled once for each result-set shape and cached. A call after the first does not look at the type again.
 - Values are read with typed getters (`GetInt32`, `GetString`), so nothing is boxed.
 - Terminals read straight from the reader, with no copy of every row first.
 - Running a command allocates no closures, and a command built from a connection allocates no pool wrapper.
 
-The same list explains why the memory column matches a hand-written selector: there is nothing left to allocate but the list and one object per row.
+That also fits the memory column matching a hand-written selector: nothing is left to allocate but the list and one object per row.
 
-**Where the gain does not survive.** Once a real provider does the work, most of the time is the provider's. SQL Server LocalDB reads 10,000 rows in about 25 ms whichever library maps them, so a 2.5-times lead on a synthetic reader becomes a tie. If your queries are slow because of the database, no mapping library will change that. The thing ODX still changes there is memory.
+**Where the gain does not survive.** Once a real provider does the work, most of the time is the provider's. SQL Server LocalDB reads 10,000 rows in about 25 ms whichever library maps them, so a 2.5-times lead on a synthetic reader becomes a tie. If your queries are slow because of the database, no mapping library will change that. The thing ODX still changes there is memory: on SQL Server 29% less than Dapper, on SQLite only 4.6% less.
 
 ## How this was measured
 

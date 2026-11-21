@@ -8,18 +8,18 @@ This is the long version of the [library comparison](library-comparison.md): all
 
 - **Connection held open.** A hand-written selector is fastest (46.8 µs). `Map<T>()` is next among the simple ones (81.6 µs). Dapper's variants take 197.5 to 257.6 µs, 2.4 to 3.2 times `Map<T>()`.
 - **Memory.** `Map<T>()` and a hand-written selector allocate 227.4 KB. A row class followed by `Select` allocates about twice that, because every row exists twice. Dapper's variants allocate 548.1 to 837.4 KB.
-- **Not faster:** four ODX variants beat `Map<T>()` on time: the hand-written selector (46.8 µs), and three selector variants (58.8, 62.8 and 67.6 µs). Each asks you to write the selector or the reuse yourself. `Map<T>()` is the one that needs none.
+- **Not the fastest:** four ODX variants beat `Map<T>()` on time: the hand-written selector (46.8 µs), and three selector variants (58.8, 62.8 and 67.6 µs). Each asks you to write the selector or the reuse yourself. `Map<T>()` is the one that needs none.
 - **Two variants look as fast as `Map<T>()` on the first chart only because their remaining work happens after the reader closes.** The second chart shows it.
 
 20 columns, 1,000 rows, synthetic reader. Every number is in the table at the end of the charts.
 
 ## Connection held open
 
-<div class="perf-chart"><img src="../../images/perf/perf-synthetic-open.svg" alt="Ranked bars of connection-held-open time per call, shortest first, 16 ways of reading 20 columns and 1,000 rows. The hand-written selector is fastest at 46.8 microseconds, Map of T is 81.6, the row class with an inline Select is 106.4, object arrays are 178.4 and Dapper is 202.4 to 257.6."></div>
+<div class="perf-chart"><img src="../../images/perf/perf-synthetic-open.svg" alt="Ranked bars of connection-held-open time per call, shortest first, 16 ways of reading 20 columns and 1,000 rows. The hand-written selector is fastest at 46.8 microseconds, Map of T is 81.6, the row class with an inline Select is 106.4, object arrays are 178.4 and Dapper's variants are 197.5 to 257.6."></div>
 
 The time from `ExecuteReader` until the reader closes. It is the number that matters most for a busy service, because the connection can serve nobody else until then. Shorter is better.
 
-`Map<T>()` takes 81.6 µs: 2.48 times less than Dapper's plain `Query<T>` (202.4 µs) and 2.19 times less than copying every row into `object[]` (178.4 µs). The usual way to get a second object per row is a row class followed by `Select`. With the reader open that costs 106.4 µs, 30% more than `Map<T>()`. Every Dapper variant takes between 197.5 and 257.6 µs, so even Dapper's best is 2.4 times `Map<T>()`.
+`Map<T>()` takes 81.6 µs: 2.5 times less time than Dapper's plain `Query<T>` (202.4 µs) and 2.2 times less than copying every row into `object[]` (178.4 µs). The usual way to get a second object per row is a row class followed by `Select`. With the reader open that costs 106.4 µs, 30% more than `Map<T>()`. Every Dapper variant takes between 197.5 and 257.6 µs, so even Dapper's best is 2.4 times `Map<T>()`.
 
 ## Total time per call
 
@@ -58,4 +58,4 @@ You can also explore the same data in the [interactive ranking](../../benchmarks
 - **Settings:** BenchmarkDotNet 0.15.8, in-process, 5 warm-up and 12 measured iterations, one launch, one run per case. Connection time comes from a timer around the life of the reader; total time and memory are BenchmarkDotNet's `Mean` and `Allocated`. See [How we measure](how-we-measure.md).
 - **Build, date, machine:** build `b27a02f`, 2026-11-14; AMD Ryzen 9 7900, .NET 11.0.0, Windows 10.
 - **Data:** [synthetic-overhead.csv](../../perf-data/synthetic-overhead.csv) ([source and conditions](../../perf-data/synthetic-overhead.source.txt)).
-- **Reproduce:** `dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*SyntheticBenchmarks.V?_Sync"` (and `V??_Sync`, `V7_*_Sync`) with `ODX_SYN_WIDTHS=20` and `ODX_SYN_ROWS=1000`; the [generator README](https://github.com/Open-NET-Libraries/Open.Database.Extensions/tree/master/docsite/tools/perf) has the exact filters.
+- **Reproduce:** `dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*SyntheticBenchmarks.V?_Sync"` (and `V??_Sync`, `V7_*_Sync`; `?` stands for one character) with `ODX_SYN_WIDTHS=20` and `ODX_SYN_ROWS=1000`; the [generator README](https://github.com/Open-NET-Libraries/Open.Database.Extensions/tree/master/docsite/tools/perf) has the exact filters.

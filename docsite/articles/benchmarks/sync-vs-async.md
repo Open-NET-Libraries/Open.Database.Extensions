@@ -4,16 +4,18 @@
 
 The numbers on this page come from a model: a synthetic reader that pretends to need a refill every so often. They show the mechanism, not what your server will do. The same question on a real SQL Server link is on [Slow links and large values](slow-links-and-large-values.md).
 
+In this page, "the default" is what an async terminal does: `ExecuteReaderAsync`, then `Read()` for every row. "Fully sync" is `ExecuteReader` then `Read()`.
+
 ## In short
 
-- **The default is the cheapest in every case measured.** With no refill and no busy thread pool, `ReadAsync()` for every row costs **1.8% more** than the default (82.3 against 80.9 µs for 1,000 rows of 20 columns) and **6.5% more** than the fully sync read (77.3 µs). That is the async state machine, and nothing else.
-- **A busy thread pool plus a wait for data is the hazard.** With a refill every 100 rows and a busy pool, a read took **11.2 ms** with `AsyncReads()` and **0.28 ms** with the default, 40 times as long. Each refill makes `ReadAsync()` wait for a free thread while the reader stays open.
-- **Not faster:** in no condition measured is the async read faster. The benefit of releasing a thread while a row is on the wire was not measured here. The default (`ExecuteReaderAsync`, then `Read()`) is within 4.7% of the fully sync path in all four conditions.
+- **The fully sync read is the cheapest, or level with the default, in all four conditions.** With no refill and no busy thread pool, the default (`ExecuteReaderAsync`, then `Read()`) costs **4.7% more** than the fully sync read (80.9 against 77.3 µs for 1,000 rows of 20 columns). `ReadAsync()` for every row costs **6.5% more** (82.3 µs), which is 1.8% more than the default. That extra time is the async state machine; these runs show nothing else adding to it.
+- **A busy thread pool plus a wait for data is the hazard.** With a 20 µs wait every 100 rows (a buffer refill) and a busy pool, a read took **11.2 ms** with `AsyncReads()` and **0.28 ms** with the default, 40 times as long. Each refill makes `ReadAsync()` wait for a free thread while the reader stays open.
+- **Not faster:** in no condition measured is the async read faster, and the benefit of releasing a thread while a row is on the wire was not measured here. The default is within 4.7% of the fully sync read in all four conditions (4.7%, 3.1% and 1.3% more, and 0.1% less in the last).
 - Allocations are within 4 KB of each other in every case.
 
 ## The chart
 
-<div class="perf-chart"><img src="../../images/perf/perf-sync-async.svg" alt="Four panels of three bars, each panel on its own scale, connection held open by Map of T at 20 columns and 1,000 rows. With neither a refill nor a busy pool: sync 77.3 microseconds, async execute 80.9, async read 82.3. With a busy pool: 94.4, 97.4, 102.4. With buffer refills: 257.9, 261.2, 314.3. With refills and a busy pool: 279.3, 279.0 and 11.2 milliseconds."></div>
+<div class="perf-chart"><img src="../../images/perf/perf-sync-async.svg" alt="Four panels of three bars, each panel on its own scale, connection held open by Map of T at 20 columns and 1,000 rows. With neither a refill nor a busy pool: sync 77.3 microseconds, async execute 80.9, async read 82.3. With a busy pool: 94.4, 97.4, 102.4. With buffer refills: 257.9, 261.2, 314.3. With refills and a busy pool: 279.3 microseconds, 279.0 microseconds and 11.2 milliseconds."></div>
 
 Each panel is one condition, with its own scale, so compare the bars inside a panel and not across panels. In each panel the three bars are:
 
@@ -29,7 +31,7 @@ The four conditions are: *neither* (the reader always has the next row ready), *
 
 A synchronous `Read()` blocks the calling thread until the row is there. A `ReadAsync()` that cannot complete at once returns an unfinished task, and the rest of the work runs on a thread-pool thread when the data arrives. If the pool is busy, that continuation waits in a queue, and the reader, and the connection, stay open the whole time.
 
-So the opt-in trades a blocked thread for a possible wait on the pool. It costs a little more when nothing waits (the state machine), and a great deal more when something waits and the pool has no thread to spare. The default does the opposite: it blocks a thread and never queues, and in these runs it held the connection for the shortest time. For the full argument, read [Row reads: sync by default, AsyncReads() to opt in](../async-reads.md).
+So the opt-in trades a blocked thread for a possible wait on the pool. It costs a little more when nothing waits (the state machine), and a great deal more when something waits and the pool has no thread to spare. The default does the opposite: it blocks a thread and never queues, and in these runs it was within 4.7% of the fully sync read in every condition. For the full argument, read [Row reads: sync by default, AsyncReads() to opt in](../async-reads.md).
 
 ## How this was measured
 
