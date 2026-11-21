@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 public static partial class ConnectionExtensions
 {
@@ -97,6 +97,49 @@ public static partial class ConnectionExtensions
 		return connection.EnsureOpen();
 	}
 
+	/// <summary>
+	/// Opens the connection if it is not open (a broken connection is closed first) and
+	/// returns a <see cref="ConnectionScope"/> that puts it back when disposed: a connection
+	/// this call opened is closed again, and one that was already open is left open.
+	/// </summary>
+	/// <remarks>
+	/// The same rule as <see cref="EnsureOpen(IDbConnection)"/>, which returns the prior state
+	/// for a caller that wants to do the closing itself; the scope does it, without a
+	/// <c>try</c>/<c>finally</c>. It is safe to call on a connection that is already open.
+	/// Prefer <see cref="EnsureOpenScopeAsync(IDbConnection, CancellationToken)"/>.
+	/// </remarks>
+	/// <param name="connection">The connection to open.</param>
+	/// <returns>The connection and the state it was found in, restored by <see cref="ConnectionScope.Dispose"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
+	public static ConnectionScope EnsureOpenScope(this IDbConnection connection)
+		=> new(connection, connection.EnsureOpen());
+
+	/// <summary>
+	/// Opens the connection if it is not open (a broken connection is closed first) and
+	/// returns a <see cref="ConnectionScope"/> that puts it back when disposed: a connection
+	/// this call opened is closed again, and one that was already open is left open.
+	/// </summary>
+	/// <remarks>
+	/// <code>
+	/// await using var scope = await connection.EnsureOpenScopeAsync(cancellationToken);
+	/// </code>
+	/// The same rule as <see cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>, which returns the
+	/// prior state for a caller that wants to do the closing itself. It opens with
+	/// <see cref="DbConnection.OpenAsync(CancellationToken)"/> when the connection is a
+	/// <see cref="DbConnection"/>, closes with <c>CloseAsync</c>, and always
+	/// awaits with <c>ConfigureAwait(false)</c>. If the token is cancelled the connection it
+	/// opened is closed again and no scope is returned.
+	/// </remarks>
+	/// <param name="connection">The connection to open.</param>
+	/// <param name="cancellationToken">A cancellation token to cancel opening.</param>
+	/// <returns>The connection and the state it was found in, restored by <see cref="ConnectionScope.DisposeAsync"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
+	public static async ValueTask<ConnectionScope> EnsureOpenScopeAsync(
+		this IDbConnection connection,
+		CancellationToken cancellationToken = default)
+		=> new(
+			connection,
+			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false));
 	/// <summary>
 	/// If the <paramref name="connection"/> derives from <see cref="DbConnection"/>, this will call <see cref="DbConnection.OpenAsync(CancellationToken)"/>;
 	/// otherwise it will call <see cref="IDbConnection.Open()"/>.

@@ -92,3 +92,12 @@ static Open.Database.Extensions.DbQuery.Procedure(string! name) -> Open.Database
 static Open.Database.Extensions.DbQuery.Text(string! sql) -> Open.Database.Extensions.DbQuery!
 static Open.Database.Extensions.DbQueryUsing.operator !=(Open.Database.Extensions.DbQueryUsing left, Open.Database.Extensions.DbQueryUsing right) -> bool
 static Open.Database.Extensions.DbQueryUsing.operator ==(Open.Database.Extensions.DbQueryUsing left, Open.Database.Extensions.DbQueryUsing right) -> bool
+Open.Database.Extensions.ConnectionScope
+Open.Database.Extensions.ConnectionScope.ConnectionScope() -> void
+Open.Database.Extensions.ConnectionScope.Connection.get -> System.Data.IDbConnection!
+Open.Database.Extensions.ConnectionScope.Deconstruct(out System.Data.IDbConnection! connection, out System.Data.ConnectionState priorState) -> void
+Open.Database.Extensions.ConnectionScope.Dispose() -> void
+Open.Database.Extensions.ConnectionScope.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Open.Database.Extensions.ConnectionScope.PriorState.get -> System.Data.ConnectionState
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScope(this System.Data.IDbConnection! connection) -> Open.Database.Extensions.ConnectionScope
+static Open.Database.Extensions.ConnectionExtensions.EnsureOpenScopeAsync(this System.Data.IDbConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Open.Database.Extensions.ConnectionScope>
