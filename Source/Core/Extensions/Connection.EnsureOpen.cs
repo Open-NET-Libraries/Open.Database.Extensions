@@ -126,9 +126,10 @@ public static partial class ConnectionExtensions
 	/// The same rule as <see cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>, which returns the
 	/// prior state for a caller that wants to do the closing itself. It opens with
 	/// <see cref="DbConnection.OpenAsync(CancellationToken)"/> when the connection is a
-	/// <see cref="DbConnection"/>, closes with <c>CloseAsync</c>, and always
-	/// awaits with <c>ConfigureAwait(false)</c>. If the token is cancelled the connection it
-	/// opened is closed again and no scope is returned.
+	/// <see cref="DbConnection"/>, and always awaits with <c>ConfigureAwait(false)</c>.
+	/// The scope's <see cref="ConnectionScope.DisposeAsync"/> closes with <c>CloseAsync</c>
+	/// where the target has it (not netstandard2.0, which closes synchronously). If the token
+	/// is cancelled the connection it opened is closed again and no scope is returned.
 	/// </remarks>
 	/// <param name="connection">The connection to open.</param>
 	/// <param name="cancellationToken">A cancellation token to cancel opening.</param>

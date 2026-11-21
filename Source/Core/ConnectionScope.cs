@@ -21,7 +21,8 @@ namespace Open.Database.Extensions;
 /// closed, or broken (a broken connection is closed and opened again, so it is closed
 /// again afterwards; the broken state is not restored). It never disposes the
 /// connection: that is the caller's. <see cref="DisposeAsync"/> calls
-/// <c>CloseAsync</c> for a <see cref="DbConnection"/>.
+/// <c>CloseAsync</c> for a <see cref="DbConnection"/> where the target has it
+/// (not netstandard2.0, where it closes synchronously).
 /// </para>
 /// <para>
 /// Dispose the value you were given exactly once, and do not copy it: a readonly struct
@@ -83,7 +84,8 @@ public readonly struct ConnectionScope : IDisposable, IAsyncDisposable
 
 	/// <summary>
 	/// As <see cref="Dispose"/>, awaiting <c>CloseAsync</c> when the
-	/// connection is a <see cref="DbConnection"/>.
+	/// connection is a <see cref="DbConnection"/> (on netstandard2.0, which has no
+	/// <c>CloseAsync</c>, it calls <c>Close</c>).
 	/// </summary>
 	public ValueTask DisposeAsync()
 	{
