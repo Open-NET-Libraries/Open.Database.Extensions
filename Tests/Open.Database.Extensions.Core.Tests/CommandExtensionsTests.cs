@@ -127,7 +127,7 @@ public static class CommandExtensionsTests
 	}
 
 	[Fact]
-	public static void FirstOrdinalResults_ReadsFirstColumn_ConvertsDBNullToNull_AndRequestsSequentialSingleResult()
+	public static void FirstOrdinalResults_ReadsFirstColumn_ConvertsDBNullToNull_AndRequestsSequentialAccess()
 	{
 		var probe = new ConnectionProbe(ConnectionState.Closed)
 		{
@@ -138,7 +138,7 @@ public static class CommandExtensionsTests
 
 		Assert.Equal([1, null, 3], results);
 		Assert.Equal(
-			CommandBehavior.SequentialAccess | CommandBehavior.SingleResult | CommandBehavior.CloseConnection,
+			CommandBehavior.SequentialAccess | CommandBehavior.CloseConnection, // not SingleResult: the later sets are read through
 			probe.Behaviors.Single());
 		Assert.Contains("DisposeReader", probe.Log);
 	}

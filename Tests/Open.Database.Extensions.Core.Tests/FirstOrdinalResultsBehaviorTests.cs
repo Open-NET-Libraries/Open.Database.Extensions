@@ -21,6 +21,6 @@ public static class FirstOrdinalResultsBehaviorTests
 		Assert.Equal(Expected, results);
 		CommandBehavior used = Assert.Single(command.Behaviors);
 		Assert.True(used.HasFlag(CommandBehavior.KeyInfo), $"the caller's behavior was dropped (used: {used})");
-		Assert.True(used.HasFlag(CommandBehavior.SingleResult));
+		Assert.False(used.HasFlag(CommandBehavior.SingleResult), "SingleResult is the caller's opt-out; it is not added");
 	}
 }

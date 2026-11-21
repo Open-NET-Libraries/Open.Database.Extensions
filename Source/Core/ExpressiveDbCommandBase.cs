@@ -255,13 +255,26 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		}
 	}
 
+	// Reads the first result set with the handler and then reads through the later sets, so a failure in one is thrown.
+	// These instance members have no SingleResult opt-out: they take no behavior; use cmd.SingleResult().Map(...) or ExecuteReader when only the first set is wanted.
+	ValueTask<T> ReadThroughAsync<T>(Func<TReader, ValueTask<T>> handler, CommandBehavior behavior, CancellationToken cancellationToken)
+		=> ExecuteReaderAsync(
+			async reader =>
+			{
+				T result = await handler(reader).ConfigureAwait(false);
+				await RowReader.ReadThroughAsync(reader, cancellationToken).ConfigureAwait(false);
+				return result;
+			},
+			behavior,
+			cancellationToken);
+
 	/// <summary>
 	/// Reads the first column from every record and returns the results as a list..
 	/// <see cref="DBNull"/> values are converted to null.
 	/// </summary>
 	/// <returns>The list of transformed records.</returns>
 	public ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync()
-		=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(UsesAsyncReads, CancellationToken), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
+		=> ReadThroughAsync(reader => reader.FirstOrdinalResultsAsync(UsesAsyncReads, CancellationToken), CommandBehavior.SequentialAccess, CancellationToken);
 
 	/// <summary>
 	/// Reads the first column from every record..
@@ -269,7 +282,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <returns>The enumerable of casted values.</returns>
 	public ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>()
-		=> ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(UsesAsyncReads, CancellationToken), CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
+		=> ReadThroughAsync(reader => reader.FirstOrdinalResultsAsync<T0>(UsesAsyncReads, CancellationToken), CommandBehavior.SequentialAccess, CancellationToken);
 
 	/// <summary>
 	/// Asynchronously iterates all records within the current result set using an IDataReader and returns the desired results.
@@ -353,6 +366,12 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <summary>
 	/// Asynchronously iterates all records within the first result set using an IDataReader and returns the results.
 	/// </summary>
+	/// <remarks>
+	/// The later result sets are then read through (a <em>result</em> here is one whole result set, what <see cref="IDataReader.NextResult"/> moves between) without reading their rows,
+	/// so a failure in a later statement is thrown as the provider raised it.
+	/// This also holds for the other <c>RetrieveAsync</c> and <c>FirstOrdinalResultsAsync</c> overloads of the command.
+	/// These members take no <see cref="CommandBehavior"/>: to read only the first result set, run the reader with <c>ExecuteReaderAsync</c> and <see cref="CommandBehavior.SingleResult"/>.
+	/// </remarks>
 	/// <param name="cancellationToken">
 	/// A token that can cancel the call.
 	/// It is used together with the command's own token; either one cancels.
@@ -360,11 +379,11 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		CancellationToken cancellationToken = default)
-		=> ExecuteReaderAsync(
+		=> ReadThroughAsync(
 			reader => reader.RetrieveAsync(
 				UsesAsyncReads,
 				cancellationToken),
-			CommandBehavior.SingleResult,
+			CommandBehavior.Default,
 			cancellationToken);
 
 	/// <summary>
@@ -379,12 +398,12 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	public ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		IEnumerable<int> ordinals,
 		CancellationToken cancellationToken = default)
-		=> ExecuteReaderAsync(
+		=> ReadThroughAsync(
 			reader => reader.RetrieveAsync(
 				ordinals,
 				UsesAsyncReads,
 				cancellationToken),
-			CommandBehavior.SingleResult,
+			CommandBehavior.Default,
 			cancellationToken);
 
 	/// <summary>
@@ -401,7 +420,7 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		IEnumerable<string> columnNames,
 		bool normalizeColumnOrder = false,
 		CancellationToken cancellationToken = default)
-		=> ExecuteReaderAsync(
+		=> ReadThroughAsync(
 			reader => reader.RetrieveAsync(
 				columnNames,
 				normalizeColumnOrder,

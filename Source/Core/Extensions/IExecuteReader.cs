@@ -665,6 +665,11 @@ public static class IExecuteReaderExtensions
 	/// Iterates all records within the first result set using an IDataReader and returns the results.
 	/// <see cref="DBNull"/> values are left unchanged (retained).
 	/// </summary>
+	/// <remarks>
+	/// The later result sets are then read through (a <em>result</em> here is one whole result set, what <see cref="IDataReader.NextResult"/> moves between) without reading their rows,
+	/// so a failure in a later statement is thrown as the provider raised it.
+	/// Call <c>SingleResult()</c> on the command first to read only the first result set.
+	/// </remarks>
 	/// <param name="command">The IExecuteReader to iterate.</param>
 	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
 	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command)
@@ -672,9 +677,9 @@ public static class IExecuteReaderExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReader(
+		return command.ExecuteReaderThrough(
 			reader => reader.Retrieve(),
-			CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
+			CommandBehavior.SequentialAccess);
 	}
 
 	/// <summary>
@@ -689,9 +694,9 @@ public static class IExecuteReaderExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReader(
+		return command.ExecuteReaderThrough(
 			reader => reader.Retrieve(ordinals),
-			CommandBehavior.SingleResult);
+			CommandBehavior.Default);
 	}
 
 	/// <summary>
@@ -707,9 +712,9 @@ public static class IExecuteReaderExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReader(
+		return command.ExecuteReaderThrough(
 			reader => reader.Retrieve(n, others),
-			CommandBehavior.SingleResult);
+			CommandBehavior.Default);
 	}
 
 	/// <summary>
@@ -725,9 +730,9 @@ public static class IExecuteReaderExtensions
 		if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReader(
+		return command.ExecuteReaderThrough(
 			reader => reader.Retrieve(columnNames),
-			CommandBehavior.SingleResult);
+			CommandBehavior.Default);
 	}
 
 	/// <summary>
@@ -745,9 +750,9 @@ public static class IExecuteReaderExtensions
 		//if (others.Any(e => e is null)) throw new ArgumentNullException(nameof(c));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReader(
+		return command.ExecuteReaderThrough(
 			reader => reader.Retrieve(c, others),
-			CommandBehavior.SingleResult);
+			CommandBehavior.Default);
 	}
 
 	/// <summary>

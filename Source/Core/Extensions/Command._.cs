@@ -858,16 +858,13 @@ public static partial class CommandExtensions
 	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
 	public static IEnumerable<object?> FirstOrdinalResults(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
-	{
-		var results = new Queue<object>(IterateReaderInternal(command, behavior | CommandBehavior.SingleResult, r => r.GetValue(0)));
-		return results.DequeueEach().DBNullToNull();
-	}
+		=> command.ExecuteReaderThrough(reader => reader.FirstOrdinalResults(), behavior);
 
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
 	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 		=> command is DbCommand dbc
 		? dbc.FirstOrdinalResults<T0>(behavior)
-		: command.FirstOrdinalResults(behavior | CommandBehavior.SingleResult).Cast<T0>();
+		: command.FirstOrdinalResults(behavior).Cast<T0>();
 
 	/// <typeparam name="T0">The expected type of the first ordinal.</typeparam>
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)" path="/*[not(self::typeparam)]"/>
@@ -876,25 +873,27 @@ public static partial class CommandExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		using IDataReader reader = command.OpenAndExecuteReader(behavior | CommandBehavior.SingleResult);
-		return reader.FirstOrdinalResults<T0>();
+		using IDataReader reader = command.OpenAndExecuteReader(behavior);
+		IEnumerable<T0> results = reader.FirstOrdinalResults<T0>();
+		if (CoreExtensions.ReadsThrough(command, behavior)) RowReader.ReadThrough(reader);
+		return results;
 	}
 
 	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
 	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
 	public static ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default)
-		=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(useReadAsync, cancellationToken), behavior | CommandBehavior.SingleResult, cancellationToken);
+		=> command.ExecuteReaderThroughAsync(reader => reader.FirstOrdinalResultsAsync(useReadAsync, cancellationToken), behavior, cancellationToken);
 
 	/// <summary>
 	/// Reads the first column from every record.
 	/// </summary>
 	/// <typeparam name="T0">The expected type of the first ordinal.</typeparam>
-	/// <remarks>Any <see cref="DBNull"/> values are then converted to null and casted to type <typeparamref name="T0"/>.</remarks>
+	/// <remarks>Any <see cref="DBNull"/> values are then converted to null and casted to type <typeparamref name="T0"/>. The rows of the first result set are returned and the later result sets are then read through, so a failure in a later statement is thrown; pass <see cref="CommandBehavior.SingleResult"/> in <paramref name="behavior"/> to read only the first.</remarks>
 	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
 	/// <param name="behavior">The behavior to use with the data reader.</param>
 	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
 	/// <param name="cancellationToken">The cancellation token.</param>
 	/// <returns>The enumerable of casted values.</returns>
 	public static ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default)
-		=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(useReadAsync, cancellationToken), behavior | CommandBehavior.SingleResult, cancellationToken);
+		=> command.ExecuteReaderThroughAsync(reader => reader.FirstOrdinalResultsAsync<T0>(useReadAsync, cancellationToken), behavior, cancellationToken);
 }
