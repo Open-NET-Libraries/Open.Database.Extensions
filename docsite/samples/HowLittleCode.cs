@@ -106,7 +106,7 @@ public static class HowLittleCode
 			.Command(AuthorPostsSql)
 			.AddParam(author)
 			.Map<Post>()
-			.ToBufferedAsyncStream(clearOnReturn: false, ct)
+			.ToBufferedAsyncStream(ct)
 			.Select(static p => Headline(p));
 	#endregion
 
@@ -178,7 +178,7 @@ public static class HowLittleCode
 			.Command(AuthorPostsSql)
 			.AddParam(author)
 			.Map<Post>()
-			.ToAsyncBuffer(clearOnDispose: false, ct)
+			.ToAsyncBuffer(ct)
 			.Items;
 
 		return posts

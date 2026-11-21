@@ -8,7 +8,6 @@ namespace Open.Database.Extensions.Tests;
 // a chain first and add them after the read, so a duplicate key throws the
 // dictionary's own exception once every row has been read.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
 public static class CollectTerminalTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;

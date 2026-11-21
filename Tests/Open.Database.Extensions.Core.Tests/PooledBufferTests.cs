@@ -14,7 +14,6 @@ namespace Open.Database.Extensions.Tests;
 // the arrays' return to the pool cannot be observed from here.
 // Every wait is bounded.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
 public static class PooledBufferTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -108,6 +107,15 @@ public static class PooledBufferTests
 	static Run Rows100()
 		=> Run.Create(() => new ChannelTestReader(100));
 
+	// Rows with no references: the buffers of these are not cleared, so they
+	// go back on the caller's path, which is what the tests of the release
+	// mechanics need to see.
+	static MappedCommand<int> Ints100()
+		=> new FakeDbCommand(
+			new FakeDbConnection(),
+			() => new ChannelTestReader(100))
+			.Map<int>();
+
 	static void AssertContiguous(List<int[]> chunks, int rows)
 	{
 		Assert.Equal(Ids(rows), chunks.SelectMany(c => c).ToList());
@@ -120,7 +128,7 @@ public static class PooledBufferTests
 	public static async Task Items_HoldsEveryRow_AndIndexesAcrossSegments()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
@@ -147,7 +155,7 @@ public static class PooledBufferTests
 	public static async Task Items_OfAnEmptyResult_HasCountZero()
 	{
 		var run = Run.Create(() => new ChannelTestReader(0));
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		Assert.True(items.Count is 0);
@@ -161,7 +169,7 @@ public static class PooledBufferTests
 	public static async Task ToAsyncBuffer_StartsAtTheCall_AndFillsOnce()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 
 		// Nobody reads: the read runs, and the connection closes.
 		await Until(() => run.Closed, "the connection closed");
@@ -182,7 +190,7 @@ public static class PooledBufferTests
 		MappedCommand<ChannelRow> view = default;
 
 		Assert.Throws<InvalidOperationException>(
-			() => view.ToAsyncBuffer(clearOnDispose: false, Ct));
+			() => view.ToAsyncBuffer(Ct));
 		await Task.CompletedTask;
 	}
 
@@ -192,7 +200,7 @@ public static class PooledBufferTests
 	public static async Task DisposingTheItems_DisposesTheBuffer()
 	{
 		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		items.Dispose();
@@ -217,7 +225,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 20),
 			asyncReads: true);
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 
@@ -237,7 +245,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 20),
 			asyncReads: true);
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		_ = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 
@@ -258,7 +266,7 @@ public static class PooledBufferTests
 	public static async Task Stream_YieldsExactSlices_Lazy_AndSingleShot()
 	{
 		var run = Rows100();
-		var stream = run.View.ToAsyncBufferStream(clearOnReturn: false, Ct);
+		var stream = run.View.ToAsyncBufferStream(Ct);
 
 		await Task.Delay(200, Ct);
 		Assert.Equal(0, run.Executes);
@@ -286,7 +294,7 @@ public static class PooledBufferTests
 	{
 		var run = Rows100();
 		await using var e = run.View
-			.ToAsyncBufferStream(clearOnReturn: false, Ct)
+			.ToAsyncBufferStream(Ct)
 			.GetAsyncEnumerator(Ct);
 
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
@@ -312,7 +320,7 @@ public static class PooledBufferTests
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
 
-		await foreach (var chunk in run.View.ToAsyncBufferStream(clearOnReturn: false, Ct))
+		await foreach (var chunk in run.View.ToAsyncBufferStream(Ct))
 		{
 			Assert.Equal(16, chunk.Length);
 			await Until(() => reader is { Stalled: true }, "the stall");
@@ -338,7 +346,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 20),
 			asyncReads: true);
-		var stream = run.View.ToAsyncBufferStream(clearOnReturn: false, cts.Token);
+		var stream = run.View.ToAsyncBufferStream(cts.Token);
 		await using var e = stream.GetAsyncEnumerator(Ct);
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 
@@ -358,7 +366,7 @@ public static class PooledBufferTests
 			asyncReads: true);
 		using var cts2 = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
-		await using var buffer = run2.View.ToAsyncBuffer(clearOnDispose: false, cts2.Token);
+		await using var buffer = run2.View.ToAsyncBuffer(cts2.Token);
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 		cts2.Cancel();
@@ -374,7 +382,7 @@ public static class PooledBufferTests
 		static Run Faulty() => Run.Create(
 			() => new ChannelTestReader(40, failAtRow: 30));
 
-		var stream = Faulty().View.ToAsyncBufferStream(clearOnReturn: false, Ct);
+		var stream = Faulty().View.ToAsyncBufferStream(Ct);
 		List<int[]> chunks = [];
 		await using (var e = stream.GetAsyncEnumerator(Ct))
 		{
@@ -393,7 +401,7 @@ public static class PooledBufferTests
 
 		// The buffer is not readable while it fills, and a faulted read
 		// has no view: Items faults, every time it is asked.
-		await using var buffer = Faulty().View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		await using var buffer = Faulty().View.ToAsyncBuffer(Ct);
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			() => buffer.Items.Within());
 		await Assert.ThrowsAsync<InvalidOperationException>(
@@ -427,10 +435,10 @@ public static class PooledBufferTests
 		Thread thread = new(() =>
 		{
 			SynchronizationContext.SetSynchronizationContext(context);
-			var buffer = run.View.ToAsyncBuffer(clearOnDispose: false);
+			var buffer = run.View.ToAsyncBuffer();
 			completed = buffer.Items.Wait(TimeSpan.FromSeconds(20));
 
-			var e = run.View.ToAsyncBufferStream(clearOnReturn: false).GetAsyncEnumerator();
+			var e = run.View.ToAsyncBufferStream().GetAsyncEnumerator();
 			completed &= e.MoveNextAsync().AsTask()
 				.Wait(TimeSpan.FromSeconds(20));
 		});
@@ -447,7 +455,7 @@ public static class PooledBufferTests
 	public static async Task AfterDispose_TheEnumeratorIndexerAndCopyTo_Throw()
 	{
 		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		// Created, and moved once, before the dispose.
@@ -471,7 +479,7 @@ public static class PooledBufferTests
 		// Arrays of 16, 32, 64 ... rows start at 0, 16, 48, 112, 240,
 		// 496, 1008 (the last array is not full).
 		var run = Run.Create(() => new ChannelTestReader(1100));
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		int[] at = [0, 15, 16, 47, 48, 111, 112, 239, 240, 495, 496,
@@ -493,7 +501,7 @@ public static class PooledBufferTests
 			async () =>
 			{
 				await foreach (var _ in run.View
-					.ToAsyncBufferStream(clearOnReturn: false, Ct)
+					.ToAsyncBufferStream(Ct)
 					.WithCancellation(cts.Token)) { }
 			});
 	}
@@ -509,7 +517,7 @@ public static class PooledBufferTests
 	public static async Task TheItems_AreAFastPathCollection_ForLinq(int n)
 	{
 		var run = Run.Create(() => new ChannelTestReader(n));
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		Assert.True(items.TryGetNonEnumeratedCount(out int c));
@@ -533,7 +541,7 @@ public static class PooledBufferTests
 	public static async Task TheCollectionView_IsReadOnly_AndSearchable()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		ICollection<ChannelRow> collection = items;
 
@@ -557,7 +565,7 @@ public static class PooledBufferTests
 	public static async Task TheCollectionCopyTo_ValidatesAndCopiesInOrder()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		ICollection<ChannelRow> collection = items;
 
@@ -582,7 +590,7 @@ public static class PooledBufferTests
 	public static async Task TheCollectionMembers_ThrowAfterDispose()
 	{
 		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		ICollection<ChannelRow> collection = items;
 
@@ -609,6 +617,9 @@ public static class PooledBufferTests
 
 	static void AssertBalanced(CountingPool<ChannelRow> pool)
 	{
+		// Rows that hold references are cleared, and go back through the
+		// cleanup queue, off the caller's path.
+		SpinWait.SpinUntil(() => pool.Outstanding == 0, 30_000);
 		Assert.True(pool.Rents > 0, "nothing was rented");
 		Assert.Equal(pool.Rents, pool.Returns);
 		Assert.Equal(0, pool.Unmatched);
@@ -621,21 +632,21 @@ public static class PooledBufferTests
 	static async Task<int> ReadAll(
 		string terminal,
 		MappedCommand<ChannelRow> view,
-		MemoryPool<ChannelRow> pool)
+		ArrayPool<ChannelRow> pool)
 	{
 		int rows = 0;
 		switch (terminal)
 		{
 			case "buffer":
 				{
-					await using var buffer = view.ToAsyncBuffer(pool, Ct);
+					await using var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					rows = (await buffer.Items.Within()).Count;
 					break;
 				}
 
 			case "stream":
 				await foreach (var chunk in view
-					.ToAsyncBufferStream(pool, Ct))
+					.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 				{
 					rows += chunk.Length;
 				}
@@ -644,7 +655,7 @@ public static class PooledBufferTests
 
 			default:
 				await foreach (var _ in view
-					.ToBufferedAsyncStream(pool, Ct))
+					.UsePool(pool, clearOnReturn: false).ToBufferedAsyncStream(Ct))
 				{
 					++rows;
 				}
@@ -672,16 +683,16 @@ public static class PooledBufferTests
 	public static void ANullPool_ThrowsAtTheCall_OnEveryOverload()
 	{
 		var run = Rows100();
-		MemoryPool<ChannelRow> none = null!;
+		ArrayPool<ChannelRow> none = null!;
 
 		foreach (Action call in new Action[]
 		{
-			() => run.View.ToAsyncBuffer(none, Ct),
-			() => run.View.ToAsyncBuffer(none, clearOnDispose: true, Ct),
-			() => run.View.ToAsyncBufferStream(none, Ct),
-			() => run.View.ToAsyncBufferStream(none, clearOnReturn: true, Ct),
-			() => run.View.ToBufferedAsyncStream(none, Ct),
-			() => run.View.ToBufferedAsyncStream(none, clearOnReturn: true, Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToAsyncBuffer(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToAsyncBuffer(Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToAsyncBufferStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToAsyncBufferStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToBufferedAsyncStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToBufferedAsyncStream(Ct),
 		})
 		{
 			var ex = Assert.Throws<ArgumentNullException>(call);
@@ -703,14 +714,14 @@ public static class PooledBufferTests
 			case "buffer":
 				{
 					await using var buffer = run.View
-						.ToAsyncBuffer(clearOnDispose: false, Ct);
+						.ToAsyncBuffer(Ct);
 					rows = (await buffer.Items.Within()).Count;
 					break;
 				}
 
 			case "stream":
 				await foreach (var chunk in run.View
-					.ToAsyncBufferStream(clearOnReturn: false, Ct))
+					.ToAsyncBufferStream(Ct))
 				{
 					rows += chunk.Length;
 				}
@@ -719,7 +730,7 @@ public static class PooledBufferTests
 
 			default:
 				await foreach (var _ in run.View
-					.ToBufferedAsyncStream(clearOnReturn: false, Ct))
+					.ToBufferedAsyncStream(Ct))
 				{
 					++rows;
 				}
@@ -745,7 +756,7 @@ public static class PooledBufferTests
 		if (terminal == "stream")
 		{
 			await foreach (var chunk in run.View
-				.ToAsyncBufferStream(pool, Ct))
+				.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 			{
 				await Until(() => reader is { Stalled: true }, "the stall");
 				break;
@@ -754,7 +765,7 @@ public static class PooledBufferTests
 		else
 		{
 			await foreach (ChannelRow row in run.View
-				.ToBufferedAsyncStream(pool, Ct))
+				.UsePool(pool, clearOnReturn: false).ToBufferedAsyncStream(Ct))
 			{
 				if (row.Id != 5) continue;
 
@@ -777,7 +788,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		_ = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 
@@ -791,7 +802,7 @@ public static class PooledBufferTests
 		var run2 = Run.Create(
 			() => reader2 = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer2 = run2.View.ToAsyncBuffer(pool2, Ct);
+		var buffer2 = run2.View.UsePool(pool2, clearOnReturn: false).ToAsyncBuffer(Ct);
 		_ = buffer2.Items;
 		await Until(
 			() => reader2 is { Stalled: true },
@@ -824,7 +835,7 @@ public static class PooledBufferTests
 	public static async Task ADrainedEnumerator_ThrowsAfterDispose(int n)
 	{
 		var run = Run.Create(() => new ChannelTestReader(n));
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		var e = items.GetEnumerator();
 		for (int i = 0; i < n; ++i) Assert.True(e.MoveNext());
@@ -847,7 +858,7 @@ public static class PooledBufferTests
 			asyncReads: true);
 
 		// No access at all: the fill started at the call.
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		await buffer.DisposeAsync().AsTask().Within();
@@ -861,7 +872,7 @@ public static class PooledBufferTests
 	{
 		var pool = new CountingPool<ChannelRow>();
 		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await items.Within();
@@ -888,7 +899,7 @@ public static class PooledBufferTests
 			asyncReads: true);
 
 		// Nobody has touched the buffer when the token fires.
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, cts.Token);
+		await using var buffer = run.View.ToAsyncBuffer(cts.Token);
 		await Until(() => reader is { Stalled: true }, "the stall");
 		cts.Cancel();
 		await Until(() => run.Closed, "the connection closed");
@@ -916,7 +927,7 @@ public static class PooledBufferTests
 		{
 			var run = Run.Create(
 				() => new ChannelTestReader(40, failAtRow: 30));
-			var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+			var buffer = run.View.ToAsyncBuffer(Ct);
 
 			// Nobody reads: the fill ends with the fault, stored.
 			await Until(() => run.Closed, "the connection closed");
@@ -930,7 +941,7 @@ public static class PooledBufferTests
 			// And a buffer nobody ever touched.
 			var run2 = Run.Create(
 				() => new ChannelTestReader(40, failAtRow: 30));
-			var untouched = run2.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+			var untouched = run2.View.ToAsyncBuffer(Ct);
 			await Until(() => run2.Closed, "the second close");
 			await Task.Delay(100, Ct);
 			await untouched.DisposeAsync();
@@ -963,7 +974,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 20, true),
 			asyncReads: true);
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		Assert.Null(Record.Exception(() => buffer.Dispose()));
@@ -980,7 +991,7 @@ public static class PooledBufferTests
 			() => reader = new StallingReader(100, 40, true),
 			asyncReads: true);
 		var e = run.View
-			.ToAsyncBufferStream(pool, Ct)
+			.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
 			.GetAsyncEnumerator(Ct);
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 		await Until(() => reader is { Stalled: true }, "the stall");
@@ -1003,7 +1014,7 @@ public static class PooledBufferTests
 		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 		await using var e = run.View
-			.ToAsyncBufferStream(clearOnReturn: false, cts.Token)
+			.ToAsyncBufferStream(cts.Token)
 			.GetAsyncEnumerator(Ct);
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 		await Until(() => reader is { Stalled: true }, "the stall");
@@ -1027,7 +1038,7 @@ public static class PooledBufferTests
 			asyncReads: true);
 		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
-		await using var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, cts.Token);
+		await using var buffer = run.View.ToAsyncBuffer(cts.Token);
 		await Until(() => reader is { Stalled: true }, "the stall");
 		cts.Cancel();
 
@@ -1052,7 +1063,7 @@ public static class PooledBufferTests
 		{
 			var run = Run.Create(
 				() => new ChannelTestReader(40, failAtRow: 30));
-			var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+			var buffer = run.View.ToAsyncBuffer(Ct);
 			_ = buffer.Items;
 			await Until(() => run.Closed, "the connection closed");
 			await Task.Delay(100, Ct);
@@ -1079,75 +1090,13 @@ public static class PooledBufferTests
 
 	// ---- the memory pool and its owners -----------------------------------
 
-	static readonly Type Extensions = typeof(PooledBuffer<>).Assembly
-		.GetType("Open.Database.Extensions.Core.MemoryOwnerExtensions")!;
-
-	static IMemoryOwner<T> Slice<T>(IMemoryOwner<T> owner, int count)
-		=> (IMemoryOwner<T>)Extensions
-			.GetMethod(
-				"Slice",
-				BindingFlags.Static | BindingFlags.NonPublic)!
-			.MakeGenericMethod(typeof(T))
-			.Invoke(null, [owner, count])!;
-
-	static void Release<T>(IMemoryOwner<T> owner)
-		=> Extensions
-			.GetMethod(
-				"Release",
-				BindingFlags.Static | BindingFlags.NonPublic)!
-			.MakeGenericMethod(typeof(T))
-			.Invoke(null, [owner]);
-
-	[Fact]
-	public static void Slice_ReturnsTheSameOwner_WhenTheLengthMatches()
-	{
-		var pool = new CountingPool<int>();
-		IMemoryOwner<int> owner = pool.Rent(16);
-
-		Assert.Same(owner, Slice(owner, 16));
-	}
-
-	[Fact]
-	public static void Slice_WrapsAnOwnerWhoseMemoryIsLonger()
-	{
-		var pool = new CountingPool<int>();
-		IMemoryOwner<int> host = pool.Rent(16);
-
-		IMemoryOwner<int> sliced = Slice(host, 10);
-
-		Assert.NotSame(host, sliced);
-		Assert.Equal(10, sliced.Memory.Length);
-
-		// Disposing the wrapper disposes the host (the array goes back
-		// once); a second disposal is safe, and after it the memory is
-		// refused.
-		sliced.Dispose();
-		Assert.Equal(1, pool.Returns);
-		Assert.Null(Record.Exception(() => sliced.Dispose()));
-		Assert.Equal(1, pool.Returns);
-		Assert.Throws<ObjectDisposedException>(() => sliced.Memory);
-		Assert.Throws<ObjectDisposedException>(() => host.Memory);
-	}
-
-	[Fact]
-	public static void Slice_OfTheSharedPoolsOwner_IsSafeToDisposeTwice()
-	{
-		IMemoryOwner<int> host = MemoryPool<int>.Shared.Rent(10);
-		IMemoryOwner<int> sliced = Slice(host, 7);
-
-		Assert.Equal(7, sliced.Memory.Length);
-		sliced.Dispose();
-		Assert.Null(Record.Exception(() => sliced.Dispose()));
-		Assert.Throws<ObjectDisposedException>(() => sliced.Memory);
-	}
-
 	[Fact]
 	public static async Task APoolThatRoundsUp_StillYieldsExactMemoryEverywhere()
 	{
 		var pool = new CountingPool<ChannelRow> { RoundUp = true };
 		var run = Rows100();
 
-		await using (var buffer = run.View.ToAsyncBuffer(pool, Ct))
+		await using (var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct))
 		{
 			PooledArray<ChannelRow> items = await buffer.Items.Within();
 			Assert.Equal(100, items.Count);
@@ -1170,7 +1119,7 @@ public static class PooledBufferTests
 		var run2 = Rows100();
 		List<int> sizes = [];
 		List<int> ids = [];
-		await foreach (var chunk in run2.View.ToAsyncBufferStream(pool2, Ct))
+		await foreach (var chunk in run2.View.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct))
 		{
 			sizes.Add(chunk.Length);
 			ids.AddRange(chunk.ToArray().Select(r => r.Id));
@@ -1182,71 +1131,17 @@ public static class PooledBufferTests
 	}
 
 	[Fact]
-	public static async Task Release_DoesNotClearByDefault()
+	public static async Task Release_DoesNotClearRowsWithNoReferences_ByDefault()
 	{
-		var pool = new CountingPool<ChannelRow>();
-		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+		var pool = new CountingPool<int>();
+		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		await buffer.Items.Within();
 		await buffer.DisposeAsync();
 
 		// The BCL default: the arrays went back with the rows in them.
 		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(1, pool.Captured[0][0].Id);
-		Assert.All(pool.Captured, a => Assert.NotNull(a[0]));
-	}
-
-	// The recipe the pool parameter's docs give: a pool whose owners
-	// clear on Dispose scrubs the rows.
-	sealed class ClearingPool<T>(MemoryPool<T> inner) : MemoryPool<T>
-	{
-		public override int MaxBufferSize
-			=> inner.MaxBufferSize;
-
-		public override IMemoryOwner<T> Rent(int minBufferSize = -1)
-			=> new ClearingOwner(inner.Rent(minBufferSize));
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class ClearingOwner(IMemoryOwner<T> host)
-			: IMemoryOwner<T>
-		{
-			public Memory<T> Memory
-				=> host.Memory;
-
-			public void Dispose()
-			{
-				host.Memory.Span.Clear();
-				host.Dispose();
-			}
-		}
-	}
-
-	[Fact]
-	public static async Task AClearingPool_ScrubsTheRows_OnEveryPath()
-	{
-		var counting = new CountingPool<ChannelRow>();
-		var pool = new ClearingPool<ChannelRow>(counting);
-		var run = Rows100();
-
-		var buffer = run.View.ToAsyncBuffer(pool, Ct);
-		await buffer.Items.Within();
-		Assert.All(counting.Captured, a => Assert.NotNull(a[0]));
-		await buffer.DisposeAsync();
-		Assert.All(
-			counting.Captured,
-			a => Assert.All(a, r => Assert.Null(r)));
-
-		var counting2 = new CountingPool<ChannelRow>();
-		var pool2 = new ClearingPool<ChannelRow>(counting2);
-		await foreach (var _ in Rows100().View
-			.ToAsyncBufferStream(pool2, Ct)) { }
-
-		Assert.True(counting2.Rents > 0);
-		Assert.Equal(counting2.Rents, counting2.Returns);
-		Assert.All(
-			counting2.Captured,
-			a => Assert.All(a, r => Assert.Null(r)));
+		Assert.Equal(1, pool.Captured[0][0]);
+		Assert.All(pool.Captured, a => Assert.NotEqual(0, a[0]));
 	}
 
 	[Fact]
@@ -1258,7 +1153,7 @@ public static class PooledBufferTests
 			() => new ChannelTestReader(100))
 			.Map<int>()
 			.AsyncReads();
-		var buffer = view.ToAsyncBuffer(pool, Ct);
+		var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		PooledArray<int> items = await buffer.Items.Within();
 		Assert.Equal(Enumerable.Range(1, 100), items);
 
@@ -1270,24 +1165,10 @@ public static class PooledBufferTests
 	}
 
 	[Fact]
-	public static void Release_JustDisposesTheOwner()
-	{
-		var pool = new CountingPool<string>();
-		IMemoryOwner<string> owner = pool.Rent(4);
-		owner.Memory.Span[0] = "a";
-
-		Release(owner);
-
-		Assert.Equal("a", pool.Captured[0][0]);
-		Assert.Equal(1, pool.Returns);
-	}
-
-	[Fact]
 	public static async Task APoolWhoseReturnThrows_PropagatesFromDisposeAsync()
 	{
-		var pool = new CountingPool<ChannelRow>();
-		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(pool, Ct);
+		var pool = new CountingPool<int>();
+		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		await buffer.Items.Within();
 		pool.ThrowOnReturn = true;
 
@@ -1310,7 +1191,7 @@ public static class PooledBufferTests
 
 		for (int i = 0; i < Iterations; ++i)
 		{
-			var buffer = view.ToAsyncBuffer(clearOnDispose: false, Ct);
+			var buffer = view.ToAsyncBuffer(Ct);
 			int round = i;
 
 			// The first accesses land before, during and after the
@@ -1352,7 +1233,7 @@ public static class PooledBufferTests
 
 		for (int i = 0; i < Iterations; ++i)
 		{
-			var buffer = view.ToAsyncBuffer(pool, Ct);
+			var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 			int round = i;
 			var touch = Task.Run(
 				async () =>
@@ -1421,8 +1302,7 @@ public static class PooledBufferTests
 			.Map<int>();
 		var pool = new CountingPool<int>();
 
-		await using var buffer = view.ToAsyncBuffer(
-			pool, clearOnDispose: false, Ct);
+		await using var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		PooledArray<int> items = await buffer.Items.Within();
 		Assert.Equal(rows, items.Count);
 
@@ -1460,7 +1340,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer = run.View.ToAsyncBuffer(pool, clearOnDispose: false, Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		await Record.ExceptionAsync(
@@ -1469,73 +1349,21 @@ public static class PooledBufferTests
 		await Until(() => pool.Outstanding == 0, "the arrays back");
 		Assert.Equal(pool.Rents, pool.Returns);
 		Assert.Equal(0, pool.Unmatched);
+
+		// The failing return really happened (the counter ran down to 0).
+		Assert.True(pool.ThrowOnFirstReturns <= 0);
 	}
 
-	// A pool that hands back HALF of what was asked for, over one shared
-	// array: the other half of every rent belongs to a neighbour.
-	sealed class ShortPool : MemoryPool<ChannelRow>
-	{
-		public ChannelRow[] Backing { get; } = [.. Enumerable
-			.Range(0, 1 << 14)
-			.Select(_ => new ChannelRow(-1))];
-
-		readonly List<(int Start, int Length)> _given = [];
-		int _next;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public int Rents => _given.Count;
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			int size = Math.Max(minBufferSize, 1);
-			int start = _next;
-			_next += size;
-			_given.Add((start, size / 2));
-			return new Owner(this, new Memory<ChannelRow>(
-				Backing, start, size / 2));
-		}
-
-		// Every cell that was written is inside memory that was given.
-		public bool NeighboursUntouched()
-		{
-			for (int i = 0; i < Backing.Length; ++i)
-			{
-				if (Backing[i].Id != -1
-					&& !_given.Any(g => i >= g.Start
-						&& i < g.Start + g.Length))
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class Owner(ShortPool pool, Memory<ChannelRow> memory)
-			: IMemoryOwner<ChannelRow>
-		{
-			public Memory<ChannelRow> Memory => memory;
-
-			public void Dispose()
-				=> Interlocked.Increment(ref pool._disposes);
-		}
-	}
-
+	// A pool that gives a shorter array than asked for breaks its contract:
+	// the read fails with an InvalidOperationException, and that array goes
+	// back to the pool at once.
 	[Theory]
 	[InlineData("buffer")]
 	[InlineData("stream")]
-	public static async Task APoolThatGivesLessMemory_FailsTheRead_AndWritesNothingElse(
+	public static async Task APoolThatGivesLessMemory_FailsTheRead_AndReturnsTheArray(
 		string terminal)
 	{
-		var pool = new ShortPool();
+		var pool = new CountingPool<ChannelRow> { Exact = true, Shortfall = 1 };
 		var run = Rows100();
 
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -1543,22 +1371,21 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.ToAsyncBuffer(
-						pool, clearOnDispose: false, Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					await buffer.Items.Within();
 				}
 				else
 				{
-					await foreach (var _ in run.View.ToAsyncBufferStream(
-						pool, clearOnReturn: false, Ct)) { }
+					await foreach (var _ in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)) { }
 				}
 			});
 
 		Assert.Contains("less memory", ex.Message);
-		Assert.True(pool.NeighboursUntouched());
-		Assert.Equal(pool.Rents, pool.Disposes);
+		await Until(() => pool.Outstanding == 0, "the arrays back");
+		Assert.Equal(1, pool.Rents);
+		Assert.Equal(1, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
 	}
-
 	[Theory]
 	[InlineData("buffer")]
 	[InlineData("stream")]
@@ -1575,14 +1402,12 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.ToAsyncBuffer(
-						pool, clearOnDispose: false, Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					await buffer.Items.Within();
 				}
 				else
 				{
-					await foreach (var chunk in run.View.ToAsyncBufferStream(
-						pool, clearOnReturn: false, Ct))
+					await foreach (var chunk in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
 					{
 						seen.AddRange(chunk.ToArray().Select(r => r.Id));
 					}
@@ -1622,7 +1447,7 @@ public static class PooledBufferTests
 			for (int i = 0; i < 20; ++i)
 			{
 				await foreach (var _ in Rows100().View
-					.ToAsyncBufferStream(clearOnReturn: false, Ct)) { }
+					.ToAsyncBufferStream(Ct)) { }
 			}
 		}
 		finally
@@ -1666,15 +1491,13 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.ToAsyncBuffer(
-						pool, clearOnDispose: false, Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 					items = buffer.Items;
 					await items.Within();
 				}
 				else
 				{
-					await foreach (var _ in run.View.ToAsyncBufferStream(
-						pool, clearOnReturn: false, Ct)) { }
+					await foreach (var _ in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)) { }
 				}
 			});
 
@@ -1696,8 +1519,7 @@ public static class PooledBufferTests
 
 		for (int i = 0; i < 1_000; ++i)
 		{
-			var buffer = view.ToAsyncBuffer(
-				pool, clearOnDispose: false, Ct);
+			var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
 
 			// Half the rounds dispose a finished buffer, half a filling one.
 			if (i % 2 == 0) await buffer.Items.Within();
@@ -1721,7 +1543,7 @@ public static class PooledBufferTests
 		var run = Run.Create(() => new ChannelTestReader(40, failAtRow: 30));
 
 		await using (var e = run.View
-			.ToAsyncBufferStream(pool, clearOnReturn: false, Ct)
+			.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
 			.GetAsyncEnumerator(Ct))
 		{
 			await Assert.ThrowsAsync<InvalidOperationException>(
@@ -1768,8 +1590,7 @@ public static class PooledBufferTests
 		int n)
 	{
 		var run = Run.Create(() => new ChannelTestReader(n));
-		await using var buffer = run.View.ToAsyncBuffer(
-			clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		List<int> viaForeach = [];
@@ -1798,7 +1619,7 @@ public static class PooledBufferTests
 	public static async Task TheStructEnumerator_ThrowsOnTheNextMoveNext_AfterADispose()
 	{
 		var run = Run.Create(() => new ChannelTestReader(100));
-		var buffer = run.View.ToAsyncBuffer(clearOnDispose: false, Ct);
+		var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		var e = items.GetEnumerator();
 		for (int i = 0; i < 40; ++i) Assert.True(e.MoveNext());
@@ -1815,8 +1636,7 @@ public static class PooledBufferTests
 	public static async Task TheEnumerator_Current_AndReset_Behave()
 	{
 		var run = Run.Create(() => new ChannelTestReader(20));
-		await using var buffer = run.View.ToAsyncBuffer(
-			clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		// Deliberately the interface: Reset is an explicit member, and this
 		// is the boxed enumerator that foreach over IEnumerable<T> uses.
@@ -1844,333 +1664,11 @@ public static class PooledBufferTests
 		Assert.Equal(20, e.Current!.Id);
 	}
 
-	// ---- the delta review: the view is built from owners that may fail -----
-
-	// A pool whose owners count every access to their Memory, and fail
-	// from a given access on (a pool that breaks its contract).
-	sealed class FlakyMemoryPool : MemoryPool<ChannelRow>
-	{
-		readonly ArrayPool<ChannelRow> _inner = ArrayPool<ChannelRow>.Create();
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _accesses;
-#pragma warning restore IDE0032
-		int _rents;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public int ThrowAfter { get; set; } = int.MaxValue;
-
-		public Func<Exception> Failure { get; set; }
-			= static () => new InvalidOperationException("memory failed");
-
-		public Action? OnFailure { get; set; }
-
-		public int Accesses => Volatile.Read(ref _accesses);
-
-		public int Rents => Volatile.Read(ref _rents);
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			Interlocked.Increment(ref _rents);
-			int size = Math.Max(minBufferSize, 1);
-			return new Owner(this, _inner.Rent(size), size);
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class Owner(FlakyMemoryPool pool, ChannelRow[] array, int size)
-			: IMemoryOwner<ChannelRow>
-		{
-			int _disposed;
-
-			public Memory<ChannelRow> Memory
-			{
-				get
-				{
-					if (Interlocked.Increment(ref pool._accesses)
-						> pool.ThrowAfter)
-					{
-						pool.OnFailure?.Invoke();
-						throw pool.Failure();
-					}
-
-					return new Memory<ChannelRow>(array, 0, size);
-				}
-			}
-
-			public void Dispose()
-			{
-				if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-
-				Interlocked.Increment(ref pool._disposes);
-				pool._inner.Return(array);
-			}
-		}
-	}
-
-	// How many times the producer asks the owners for their Memory when
-	// it reads 5 rows (the view is not built: Items is never asked).
-	static async Task<int> ProducerAccesses()
-	{
-		var pool = new FlakyMemoryPool();
-		var run = Run.Create(() => new ChannelTestReader(5));
-		await using var buffer = run.View.ToAsyncBuffer(
-			pool, clearOnDispose: false, Ct);
-		await Until(() => run.Closed, "the read ended");
-		await Task.Delay(150, Ct);
-
-		return pool.Accesses;
-	}
-
-	[Fact]
-	public static async Task AnOwnerThatFailsWhenTheViewIsBuilt_FailsItems_NotHangsIt()
-	{
-		int producer = await ProducerAccesses();
-		var pool = new FlakyMemoryPool { ThrowAfter = producer };
-		var run = Run.Create(() => new ChannelTestReader(5));
-		var buffer = run.View.ToAsyncBuffer(
-			pool, clearOnDispose: false, Ct);
-
-		// The producer stays within its accesses; building the view is
-		// the next one, and it fails with something other than a dispose.
-		Task<PooledArray<ChannelRow>> items = buffer.Items;
-		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-			() => items.Within());
-
-		Assert.Equal("memory failed", ex.Message);
-		Assert.Same(items, buffer.Items);
-
-		await buffer.DisposeAsync().AsTask().Within();
-		Assert.Equal(pool.Rents, pool.Disposes);
-	}
-
-	[Fact]
-	public static async Task ADisposeWhileTheViewIsBuilt_CancelsItems()
-	{
-		int producer = await ProducerAccesses();
-		var pool = new FlakyMemoryPool { ThrowAfter = producer };
-		var run = Run.Create(() => new ChannelTestReader(5));
-		var buffer = run.View.ToAsyncBuffer(
-			pool, clearOnDispose: false, Ct);
-
-		// The owner is disposed under the builder's hands: its memory
-		// is refused, and the buffer disposed.
-		pool.Failure = static () => new ObjectDisposedException("owner");
-		pool.OnFailure = buffer.Dispose;
-
-		Task<PooledArray<ChannelRow>> items = buffer.Items;
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			() => items.Within());
-		Assert.True(items.IsCanceled);
-
-		await buffer.DisposeAsync().AsTask().Within();
-		await Until(() => pool.Rents == pool.Disposes, "the owners released");
-		Assert.Equal(pool.Rents, pool.Disposes);
-	}
-
-	// ---- memory that is not what the fast path expects ---------------------
-
-	// A pool whose odd rents are NOT array-backed (a MemoryManager) and
-	// whose even rents are, so one read mixes both kinds of chunk.
-	sealed class MixedPool : MemoryPool<ChannelRow>
-	{
-		int _rents;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public int Rents => Volatile.Read(ref _rents);
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			int size = Math.Max(minBufferSize, 1);
-			return Interlocked.Increment(ref _rents) % 2 == 1
-				? new ManagerOwner(this, size)
-				: new ArrayOwner(this, size);
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class ManagerOwner(MixedPool pool, int size)
-			: MemoryManager<ChannelRow>
-		{
-			readonly ChannelRow[] _array = new ChannelRow[size];
-
-			public override Span<ChannelRow> GetSpan() => _array;
-
-			public override MemoryHandle Pin(int elementIndex = 0)
-				=> throw new NotSupportedException();
-
-			public override void Unpin() { }
-
-			protected override void Dispose(bool disposing)
-			{
-				if (disposing) Interlocked.Increment(ref pool._disposes);
-			}
-		}
-
-		sealed class ArrayOwner(MixedPool pool, int size)
-			: IMemoryOwner<ChannelRow>
-		{
-			readonly ChannelRow[] _array = new ChannelRow[size];
-
-			public Memory<ChannelRow> Memory => _array;
-
-			public void Dispose()
-				=> Interlocked.Increment(ref pool._disposes);
-		}
-	}
-
-	[Fact]
-	public static async Task AMixedPool_ArrayBackedAndNot_GivesTheRightRows_OnEveryPath()
-	{
-		var pool = new MixedPool();
-		var run = Rows100();
-
-		await using (var buffer = run.View.ToAsyncBuffer(
-			pool, clearOnDispose: false, Ct))
-		{
-			PooledArray<ChannelRow> items = await buffer.Items.Within();
-			Assert.Equal(100, items.Count);
-			foreach (int i in new[] { 0, 15, 16, 47, 48, 99 })
-				Assert.Equal(i + 1, items[i].Id);
-
-			List<int> viaForeach = [];
-			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
-
-			Assert.Equal(Ids(100), viaForeach);
-			var copy = new ChannelRow[100];
-			items.CopyTo(copy);
-			Assert.Equal(Ids(100), copy.Select(r => r.Id).ToList());
-			Assert.Equal(
-				Ids(100),
-				items.ToArray().Select(r => r.Id).ToList());
-		}
-
-		Assert.Equal(pool.Rents, pool.Disposes);
-
-		var pool2 = new MixedPool();
-		List<int> sizes = [];
-		List<int> ids = [];
-		await foreach (var chunk in run.View.ToAsyncBufferStream(
-			pool2, clearOnReturn: false, Ct))
-		{
-			sizes.Add(chunk.Length);
-			ids.AddRange(chunk.ToArray().Select(r => r.Id));
-		}
-
-		Assert.Equal([16, 32, 52], sizes);
-		Assert.Equal(Ids(100), ids);
-		Assert.Equal(pool2.Rents, pool2.Disposes);
-	}
-
-	// A slab pool: one backing array, every rent an array-backed slice of
-	// it at a NON-ZERO offset, with gaps between the slices.
-	sealed class SlabPool : MemoryPool<ChannelRow>
-	{
-		readonly List<(int Start, int Length)> _given = [];
-		int _next = 5;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public ChannelRow[] Backing { get; } = [.. Enumerable
-			.Range(0, 1 << 12)
-			.Select(_ => new ChannelRow(-1))];
-
-		public int Rents => _given.Count;
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			int size = Math.Max(minBufferSize, 1);
-			int start = _next;
-			_next += size + 3;
-			_given.Add((start, size));
-			return new Owner(this, new Memory<ChannelRow>(Backing, start, size));
-		}
-
-		// Every cell that holds a row lies inside a slice that was given.
-		public bool GapsUntouched()
-		{
-			for (int i = 0; i < Backing.Length; ++i)
-			{
-				if (Backing[i].Id != -1
-					&& !_given.Any(g => i >= g.Start
-						&& i < g.Start + g.Length))
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class Owner(SlabPool pool, Memory<ChannelRow> memory)
-			: IMemoryOwner<ChannelRow>
-		{
-			public Memory<ChannelRow> Memory => memory;
-
-			public void Dispose()
-				=> Interlocked.Increment(ref pool._disposes);
-		}
-	}
-
-	[Fact]
-	public static async Task ASlabPool_ArrayMemoryAtANonZeroOffset_GivesTheRightRows()
-	{
-		var pool = new SlabPool();
-		var run = Rows100();
-
-		await using (var buffer = run.View.ToAsyncBuffer(
-			pool, clearOnDispose: false, Ct))
-		{
-			PooledArray<ChannelRow> items = await buffer.Items.Within();
-			foreach (int i in new[] { 0, 15, 16, 47, 48, 99 })
-				Assert.Equal(i + 1, items[i].Id);
-
-			List<int> viaForeach = [];
-			foreach (ChannelRow row in items) viaForeach.Add(row.Id);
-
-			Assert.Equal(Ids(100), viaForeach);
-		}
-
-		Assert.True(pool.GapsUntouched());
-		Assert.Equal(pool.Rents, pool.Disposes);
-
-		var pool2 = new SlabPool();
-		List<int> ids = [];
-		await foreach (var chunk in run.View.ToAsyncBufferStream(
-			pool2, clearOnReturn: false, Ct))
-		{
-			ids.AddRange(chunk.ToArray().Select(r => r.Id));
-		}
-
-		Assert.Equal(Ids(100), ids);
-		Assert.True(pool2.GapsUntouched());
-		Assert.Equal(pool2.Rents, pool2.Disposes);
-	}
-
 	[Fact]
 	public static async Task TheEnumeratorCopies_AreIndependent()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(
-			clearOnDispose: false, Ct);
+		await using var buffer = run.View.ToAsyncBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		var one = items.GetEnumerator();
@@ -2205,91 +1703,6 @@ public static class PooledBufferTests
 		Assert.Null(boxed.Current);
 	}
 
-	// A pool whose memory cannot be written through its span (a manager
-	// whose GetSpan fails), so the first row of a buffer cannot be stored.
-	sealed class FailingSpanPool : MemoryPool<ChannelRow>
-	{
-		int _rents;
-#pragma warning disable IDE0032 // an Interlocked counter needs a field
-		int _disposes;
-#pragma warning restore IDE0032
-
-		public int Rents => Volatile.Read(ref _rents);
-
-		public int Disposes => Volatile.Read(ref _disposes);
-
-		public override int MaxBufferSize => int.MaxValue;
-
-		public override IMemoryOwner<ChannelRow> Rent(int minBufferSize = -1)
-		{
-			Interlocked.Increment(ref _rents);
-			return new Manager(this, Math.Max(minBufferSize, 1));
-		}
-
-		protected override void Dispose(bool disposing) { }
-
-		sealed class Manager(FailingSpanPool pool, int size)
-			: MemoryManager<ChannelRow>
-		{
-			public override Memory<ChannelRow> Memory
-				=> CreateMemory(size);
-
-			public override Span<ChannelRow> GetSpan()
-				=> throw new InvalidOperationException("span failed");
-
-			public override MemoryHandle Pin(int elementIndex = 0)
-				=> throw new NotSupportedException();
-
-			public override void Unpin() { }
-
-			protected override void Dispose(bool disposing)
-			{
-				if (disposing) Interlocked.Increment(ref pool._disposes);
-			}
-		}
-	}
-
-	[Fact]
-	public static async Task ABufferThatCouldNotStoreItsFirstRow_IsNeverPublishedEmpty()
-	{
-		var pool = new FailingSpanPool();
-		var run = Rows100();
-		List<int> chunks = [];
-
-		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-			async () =>
-			{
-				await foreach (var chunk in run.View.ToAsyncBufferStream(
-					pool, clearOnReturn: false, Ct))
-				{
-					chunks.Add(chunk.Length);
-				}
-			});
-
-		// The read fails with the pool's error (the first one), no empty
-		// chunk reached the consumer, and the owner was released.
-		Assert.Equal("span failed", ex.Message);
-		Assert.Empty(chunks);
-		Assert.Equal(pool.Rents, pool.Disposes);
-	}
-
-	[Fact]
-	public static async Task AnOwnerWhoseMemoryThrowsRightAfterTheRent_IsDisposed()
-	{
-		var pool = new FlakyMemoryPool { ThrowAfter = 0 };
-		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(
-			pool, clearOnDispose: false, Ct);
-
-		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-			() => buffer.Items.Within());
-
-		Assert.Equal("memory failed", ex.Message);
-		await buffer.DisposeAsync();
-		Assert.True(pool.Rents > 0);
-		Assert.Equal(pool.Rents, pool.Disposes);
-	}
-
 	[Fact]
 	public static async Task AStreamWithAnAlreadyCancelledToken_ThrowsNoObjectDisposedException()
 	{
@@ -2318,8 +1731,7 @@ public static class PooledBufferTests
 					async () =>
 					{
 						await foreach (var _ in Rows100().View
-							.ToAsyncBufferStream(
-								clearOnReturn: false, cts.Token)) { }
+							.ToAsyncBufferStream(cts.Token)) { }
 					});
 			}
 		}
@@ -2337,7 +1749,7 @@ public static class PooledBufferTests
 	public static async Task Buffered_YieldsEveryRowInOrder_Once()
 	{
 		var run = Rows100();
-		var stream = run.View.ToBufferedAsyncStream(clearOnReturn: false, Ct);
+		var stream = run.View.ToBufferedAsyncStream(Ct);
 
 		await Task.Delay(100, Ct);
 		Assert.Equal(0, run.Executes);
@@ -2364,7 +1776,7 @@ public static class PooledBufferTests
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
 
-		await foreach (ChannelRow row in run.View.ToBufferedAsyncStream(clearOnReturn: false, Ct))
+		await foreach (ChannelRow row in run.View.ToBufferedAsyncStream(Ct))
 		{
 			if (row.Id != 5) continue;
 

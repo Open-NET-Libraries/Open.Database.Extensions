@@ -275,8 +275,8 @@ static class Views
 		IExecuteReader command,
 		IRowSource<T> source)
 		=> command is SingleResultReader single
-			? new(single.Command, source, 0, -1, true, AsyncReads(single.Command))
-			: new(command, source, 0, -1, false, AsyncReads(command));
+			? NewCore(single.Command, source, true, AsyncReads(single.Command))
+			: NewCore(command, source, false, AsyncReads(command));
 
 	// The command's own choice, made by cmd.AsyncReads() before Map: staged into the view.
 	static bool AsyncReads(IExecuteReader command)
@@ -285,21 +285,52 @@ static class Views
 	internal static MappedQueryCore<T> ReaderCore<T>(
 		IDataReader reader,
 		IRowSource<T> source)
-		=> new(new ReaderExecutor(reader), source, 0, -1, true);
+		=> NewCore(new ReaderExecutor(reader), source, true, false);
 
 	internal static MappedQueryCore<T> CommandCore<T>(
 		IDbCommand command,
 		IRowSource<T> source)
 		=> command is SingleResultDbCommand single
-			? new(new CommandExecutor(single.Command), source, 0, -1, true)
-			: new(new CommandExecutor(command), source, 0, -1, false);
+			? NewCore(new CommandExecutor(single.Command), source, true, false)
+			: NewCore(new CommandExecutor(command), source, false, false);
 
 	internal static MappedQueryCore<T> TableCore<T>(
 		DataTable table,
 		IRowSource<T> source)
-		=> new(new TableExecutor(table), source, 0, -1, true);
-}
+		=> NewCore(new TableExecutor(table), source, true, false);
 
+	// The ONE door every query is made through, and so the one place a default
+	// pool configuration is chosen: when the query is made, before any terminal
+	// runs. Everything after this (a terminal, UsePool, a collector) uses the
+	// query's own configuration and never picks one.
+	static MappedQueryCore<T> NewCore<T>(
+		IExecuteReader command,
+		IRowSource<T> source,
+		bool singleResult,
+		bool asyncReads)
+		=> new(
+			command,
+			source,
+			0,
+			-1,
+			singleResult,
+			asyncReads,
+			Defaults<T>.Config);
+
+	// The shared array pool, the shipped sizes and the default bin, per row type.
+	// Private to Views: nothing else can ask for it.
+	static class Defaults<T>
+	{
+		// Asks for no clearing choice (null): the configuration resolves it, once,
+		// from the app-wide default and the reference-row floor.
+		public static readonly ChunkConfig<T> Config = new(
+			ArrayPool<T>.Shared,
+			null,
+			ChunkSizes.Default,
+			RecycleBin.Default,
+			ChunkConfig<T>.DefaultDeferFromRows);
+	}
+}
 // The two executors let MappedQueryCore<T> run over a reader or a raw command.
 // The core only uses the two state forms; the rest are derived from them.
 abstract class ViewExecutor : IExecuteReader
@@ -412,22 +443,11 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior = CommandBehavior.Default)
 	{
-		IDbConnection? connection = command.Connection;
-		ConnectionState before
-			= connection?.State ?? ConnectionState.Closed;
-		try
-		{
-			connection?.EnsureOpen();
-			using IDataReader reader = command.ExecuteReader(
-				before == ConnectionState.Closed
-					? behavior | CommandBehavior.CloseConnection
-					: behavior);
-			return transform(reader, state);
-		}
-		finally
-		{
-			if (before == ConnectionState.Closed) connection?.Close();
-		}
+		// No connection: nothing to open, and the command says so itself (the
+		// provider throws InvalidOperationException), as it always has.
+		using var scope = command.EnsureOpenScope();
+		using IDataReader reader = command.ExecuteReader(scope.ReaderBehavior(behavior));
+		return transform(reader, state);
 	}
 
 	public override async ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(
@@ -438,45 +458,32 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		IDbConnection? connection = command.Connection;
-		ConnectionState before
-			= connection?.State ?? ConnectionState.Closed;
-		try
+		// No connection: nothing to open, and the command says so itself (the
+		// provider throws InvalidOperationException), as it always has.
+		var scope = await command
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+
+		CommandBehavior b = scope.ReaderBehavior(behavior);
+
+		if (command is DbCommand dbCommand)
 		{
-			// An open connection (the usual case) needs no awaiting at all.
-			if (connection is not null
-				&& (before & (ConnectionState.Open | ConnectionState.Broken))
-					!= ConnectionState.Open)
-			{
-				await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-			}
-
-			CommandBehavior b = before == ConnectionState.Closed
-				? behavior | CommandBehavior.CloseConnection
-				: behavior;
-
-			if (command is DbCommand dbCommand)
-			{
 #if NETSTANDARD2_0
-				using DbDataReader dbReader = await dbCommand
-					.ExecuteReaderAsync(b, cancellationToken)
-					.ConfigureAwait(false);
+			using DbDataReader dbReader = await dbCommand
+				.ExecuteReaderAsync(b, cancellationToken)
+				.ConfigureAwait(false);
 #else
-				DbDataReader dbReader = await dbCommand
-					.ExecuteReaderAsync(b, cancellationToken)
-					.ConfigureAwait(false);
-				await using var dbReaderDisposal = dbReader.ConfigureAwait(false);
+			DbDataReader dbReader = await dbCommand
+				.ExecuteReaderAsync(b, cancellationToken)
+				.ConfigureAwait(false);
+			await using var dbReaderDisposal = dbReader.ConfigureAwait(false);
 #endif
-				return await transform(dbReader, state).ConfigureAwait(false);
-			}
+			return await transform(dbReader, state).ConfigureAwait(false);
+		}
 
-			using IDataReader reader = command.ExecuteReader(b);
-			return await transform(reader, state).ConfigureAwait(false);
-		}
-		finally
-		{
-			if (before == ConnectionState.Closed) connection?.Close();
-		}
+		using IDataReader reader = command.ExecuteReader(b);
+		return await transform(reader, state).ConfigureAwait(false);
 	}
 }
 
@@ -552,6 +559,8 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 public readonly record struct MappedReader<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedReader(MappedQueryCore<T> core)
@@ -725,6 +734,8 @@ public readonly record struct MappedReader<T>
 public readonly record struct MappedCommand<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedCommand(MappedQueryCore<T> core)
@@ -745,6 +756,14 @@ public readonly record struct MappedCommand<T>
 	/// <inheritdoc cref="MappedQuery{T}.AsyncReads"/>
 	public MappedCommand<T> AsyncReads()
 		=> new(_core.WithAsyncReads());
+
+	/// <inheritdoc cref="MappedQuery{T}.UsePool(ArrayPool{T}, bool)"/>
+	public MappedCommand<T> UsePool(ArrayPool<T> pool, bool clearOnReturn)
+		=> new(_core.WithPool(pool, clearOnReturn));
+
+	// A whole configuration, for a test or a benchmark (pool, clear, chunk sizes, bin).
+	internal MappedCommand<T> WithConfig(ChunkConfig<T> config)
+		=> new(_core.WithConfig(config));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler)
@@ -879,65 +898,20 @@ public readonly record struct MappedCommand<T>
 
 	#region Buffer terminals
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(bool, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
 	public PooledBuffer<T> ToAsyncBuffer(
-		bool clearOnDispose,
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(
-			MemoryPool<T>.Shared, clearOnDispose, cancellationToken);
+		=> _core.ToAsyncBuffer(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, CancellationToken)"/>
-	public PooledBuffer<T> ToAsyncBuffer(
-		MemoryPool<T> pool,
-		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(pool, false, cancellationToken);
-
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(MemoryPool{T}, bool, CancellationToken)"/>
-	public PooledBuffer<T> ToAsyncBuffer(
-		MemoryPool<T> pool,
-		bool clearOnDispose,
-		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(pool, clearOnDispose, cancellationToken);
-
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(bool, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
-		bool clearOnReturn,
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(
-			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
+		=> _core.ToAsyncBufferStream(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, CancellationToken)"/>
-	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
-		MemoryPool<T> pool,
-		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(pool, false, cancellationToken);
-
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(MemoryPool{T}, bool, CancellationToken)"/>
-	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
-		MemoryPool<T> pool,
-		bool clearOnReturn,
-		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(pool, clearOnReturn, cancellationToken);
-
-	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(bool, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
-		bool clearOnReturn,
 		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(
-			MemoryPool<T>.Shared, clearOnReturn, cancellationToken);
-
-	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, CancellationToken)"/>
-	public IAsyncEnumerable<T> ToBufferedAsyncStream(
-		MemoryPool<T> pool,
-		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(pool, false, cancellationToken);
-
-	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(MemoryPool{T}, bool, CancellationToken)"/>
-	public IAsyncEnumerable<T> ToBufferedAsyncStream(
-		MemoryPool<T> pool,
-		bool clearOnReturn,
-		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(pool, clearOnReturn, cancellationToken);
+		=> _core.ToBufferedAsyncStream(cancellationToken);
 
 	#endregion
 }
@@ -964,6 +938,8 @@ public readonly record struct MappedCommand<T>
 public readonly record struct MappedTable<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
+	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
+
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedTable(MappedQueryCore<T> core)

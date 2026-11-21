@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 public static partial class ConnectionExtensions
 {
@@ -20,9 +20,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using IDbConnection conn = connectionFactory.Create();
-		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		return action(conn);
+		using var scope = connectionFactory.EnsureOpenScope();
+		return action(scope.Connection);
 	}
 
 	/// <summary>
@@ -40,9 +39,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using IDbConnection conn = connectionFactory.Create();
-		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		action(conn);
+		using var scope = connectionFactory.EnsureOpenScope();
+		action(scope.Connection);
 	}
 
 	/// <summary>
@@ -64,9 +62,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using TConnection conn = connectionFactory.Create();
-		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		return action(conn);
+		using var scope = connectionFactory.EnsureOpenScope();
+		return action(scope.Connection);
 	}
 
 	/// <summary>
@@ -86,9 +83,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using TConnection conn = connectionFactory.Create();
-		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		action(conn);
+		using var scope = connectionFactory.EnsureOpenScope();
+		action(scope.Connection);
 	}
 
 	/// <summary>
@@ -108,15 +104,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		IDbConnection conn = connectionPool.Take();
-		try
-		{
-			return action(conn, conn.EnsureOpen());
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		using var scope = connectionPool.EnsureOpenScope();
+		return action(scope.Connection, scope.PriorState);
 	}
 
 	/// <summary>
@@ -134,15 +123,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		IDbConnection conn = connectionPool.Take();
-		try
-		{
-			action(conn, conn.EnsureOpen());
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		using var scope = connectionPool.EnsureOpenScope();
+		action(scope.Connection, scope.PriorState);
 	}
 
 	/// <summary>
@@ -164,15 +146,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		TConnection conn = connectionPool.Take();
-		try
-		{
-			return action(conn, conn.EnsureOpen());
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		using var scope = connectionPool.EnsureOpenScope();
+		return action(scope.Connection, scope.PriorState);
 	}
 
 	/// <summary>
@@ -192,15 +167,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		TConnection conn = connectionPool.Take();
-		try
-		{
-			action(conn, conn.EnsureOpen());
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		using var scope = connectionPool.EnsureOpenScope();
+		action(scope.Connection, scope.PriorState);
 	}
 
 	/// <summary>
@@ -222,9 +190,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using TConnection conn = connectionFactory();
-		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		return action(conn);
+		using var scope = OpenOwned(connectionFactory(), null);
+		return action(scope.Connection);
 	}
 
 	/// <summary>
@@ -246,9 +213,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using TConnection conn = connectionFactory();
-		conn.EnsureOpen(); // Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		action(conn);
+		using var scope = OpenOwned(connectionFactory(), null);
+		action(scope.Connection);
 	}
 
 	/// <summary>
@@ -270,10 +236,11 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using IDbConnection conn = connectionFactory.Create();
-		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-		return await action(conn).ConfigureAwait(false);
+		var scope = await connectionFactory
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		return await action(scope.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -297,10 +264,11 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using IDbConnection conn = connectionFactory.Create();
-		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-		await action(conn).ConfigureAwait(false);
+		var scope = await connectionFactory
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		await action(scope.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -327,10 +295,11 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using TConnection conn = connectionFactory.Create();
-		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-		return await action(conn).ConfigureAwait(false);
+		var scope = await connectionFactory
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		return await action(scope.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -356,10 +325,11 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using TConnection conn = connectionFactory.Create();
-		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-		await action(conn).ConfigureAwait(false);
+		var scope = await connectionFactory
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		await action(scope.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -381,17 +351,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		IDbConnection conn = connectionPool.Take();
-		try
-		{
-			return await action(conn,
-				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false))
-				.ConfigureAwait(false);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		var scope = await connectionPool.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		return await action(scope.Connection, scope.PriorState).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -412,17 +374,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		IDbConnection conn = connectionPool.Take();
-		try
-		{
-			await action(conn,
-				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false))
-				.ConfigureAwait(false);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		var scope = await connectionPool.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		await action(scope.Connection, scope.PriorState).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -449,17 +403,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		TConnection conn = connectionPool.Take();
-		try
-		{
-			return await action(conn,
-				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false))
-				.ConfigureAwait(false);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		var scope = await connectionPool.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		return await action(scope.Connection, scope.PriorState).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -482,17 +428,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		TConnection conn = connectionPool.Take();
-		try
-		{
-			await action(conn,
-				await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false))
-				.ConfigureAwait(false);
-		}
-		finally
-		{
-			connectionPool.Give(conn);
-		}
+		var scope = await connectionPool.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		await action(scope.Connection, scope.PriorState).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -519,10 +457,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using TConnection conn = connectionFactory();
-		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-		return await action(conn).ConfigureAwait(false);
+		var scope = await OpenOwnedAsync(connectionFactory(), null, cancellationToken).ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		return await action(scope.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -548,9 +485,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using TConnection conn = connectionFactory();
-		// Use EnsureOpen in case the connection factory implementation has it's own pooling.
-		await conn.EnsureOpenAsync(cancellationToken).ConfigureAwait(false);
-		await action(conn).ConfigureAwait(false);
+		var scope = await OpenOwnedAsync(connectionFactory(), null, cancellationToken).ConfigureAwait(false);
+		await using var scopeDisposal = scope.ConfigureAwait(false);
+		await action(scope.Connection).ConfigureAwait(false);
 	}
 }

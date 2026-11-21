@@ -15,7 +15,7 @@ namespace Open.Database.Extensions.Tests;
 // Thread around GetAwaiter().GetResult() sees every byte. Warm-up 50 calls,
 // then the minimum of 3 rounds of 20 calls, in bytes per call.
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
+[Collection("Heap measurements")]
 public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 {
 	public sealed class ClassRow

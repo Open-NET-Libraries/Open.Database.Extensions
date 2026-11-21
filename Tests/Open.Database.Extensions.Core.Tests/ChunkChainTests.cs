@@ -2,6 +2,8 @@ using System.Buffers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Open.Database.Extensions.Core;
+using static Open.Database.Extensions.Tests.ChannelWait;
 
 #nullable enable
 
@@ -10,110 +12,55 @@ namespace Open.Database.Extensions.Tests;
 // ToArrayAsync and ToListAsync read into a chain of pooled arrays and copy
 // ONCE, after the read, into a result of exactly the right size. The
 // pooled arrays go back however the call ends, and are clean when they do.
-// They share the sizing seam (a process-wide static) with the buffer
-// terminals, so they run in its collection.
+// Each test gives its query its own pool and its own chunk sizes (a
+// ChunkConfig): nothing is global.
 /// <summary>The row of the chain tests: a type of its own, so its pool is its own.</summary>
 [ExcludeFromCodeCoverage]
 internal sealed record PoolRow(int Id);
 
 [ExcludeFromCodeCoverage]
-[Collection("ChunkSizing")]
 public static class ChunkChainTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-	// ---- the seams, reached by reflection (no InternalsVisibleTo) ----------
+	// A caller's pool that counts what goes out and what comes back, and
+	// sees whether a row is left in an array when it does. A fresh array
+	// holds -1 rows, so a row with an Id above 0 is one that was written
+	// and not cleared.
+	static CountingPool<PoolRow> NewPool(bool exact = false)
+		=> new()
+		{
+			RoundUp = true,
+			Exact = exact,
+			Sentinel = static () => new PoolRow(-1),
+			IsDirty = static a => a.Any(static r => r is { Id: > 0 }),
+		};
 
-	static readonly Assembly Core = typeof(PooledBuffer<>).Assembly;
-
-	const BindingFlags Internal
-		= BindingFlags.Static | BindingFlags.NonPublic;
-
-	static FieldInfo Sizing(string name)
-		=> Core.GetType("Open.Database.Extensions.Core.ChunkSizing")!
-			.GetField(name, Internal)!;
-
-	static FieldInfo Pool()
-		=> Core.GetType("Open.Database.Extensions.Core.ChunkChain`1")!
-			.MakeGenericType(typeof(PoolRow))
-			.GetField("_pool", Internal)!;
-
-	sealed class CountingArrayPool : ArrayPool<PoolRow>
+	static MappedCommand<PoolRow> Rows(
+		int n,
+		int? failAtRow = null,
+		ArrayPool<PoolRow>? pool = null,
+		ChunkSizes? sizes = null)
 	{
-		readonly List<int> _sizes = [];
-		int _rents;
-		int _returns;
-		int _dirty;
-
-		public int Rents => Volatile.Read(ref _rents);
-		public int Returns => Volatile.Read(ref _returns);
-		public int Dirty => Volatile.Read(ref _dirty);
-		public int[] Sizes
-		{
-			get { lock (_sizes) return [.. _sizes]; }
-		}
-
-		public override PoolRow[] Rent(int minimumLength)
-		{
-			Interlocked.Increment(ref _rents);
-			int size = 16;
-			while (size < minimumLength) size <<= 1;
-			lock (_sizes) _sizes.Add(size);
-			return new PoolRow[size];
-		}
-
-		// A freshly rented array is all null: a row left in one that comes
-		// back is a row the pool would keep alive.
-		public override void Return(PoolRow[] array, bool clearArray = false)
-		{
-			Interlocked.Increment(ref _returns);
-			if (array.Any(static row => row is not null))
-				Interlocked.Increment(ref _dirty);
-		}
-	}
-
-	static async Task WithPool(
-		CountingArrayPool pool,
-		Func<Task> body)
-	{
-		FieldInfo field = Pool();
-		object? before = field.GetValue(null);
-		field.SetValue(null, pool);
-		try { await body(); }
-		finally { field.SetValue(null, before); }
-	}
-
-	static async Task WithSizing(
-		int first,
-		int shift,
-		int max,
-		Func<Task> body)
-	{
-		FieldInfo f = Sizing("_collectFirstRows");
-		FieldInfo s = Sizing("_collectShift");
-		FieldInfo m = Sizing("_collectMaxRows");
-		object? f0 = f.GetValue(null);
-		object? s0 = s.GetValue(null);
-		object? m0 = m.GetValue(null);
-		f.SetValue(null, first);
-		s.SetValue(null, shift);
-		m.SetValue(null, max);
-		try { await body(); }
-		finally
-		{
-			f.SetValue(null, f0);
-			s.SetValue(null, s0);
-			m.SetValue(null, m0);
-		}
-	}
-
-	static MappedCommand<PoolRow> Rows(int n, int? failAtRow = null)
-		=> new FakeDbCommand(
+		MappedCommand<PoolRow> view = new FakeDbCommand(
 			new FakeDbConnection(),
 			() => new ChannelTestReader(n, failAtRow: failAtRow))
 			.Map<PoolRow>()
 			.AsyncReads();
 
+		if (sizes is not null)
+		{
+			return view.WithConfig(
+				TestConfig.Of(
+					pool ?? ArrayPool<PoolRow>.Shared,
+					false,
+					sizes: sizes));
+		}
+
+		return pool is null
+			? view
+			: view.UsePool(pool, clearOnReturn: false);
+	}
 	static void AssertIds(IReadOnlyList<PoolRow> rows, int n, int first = 1)
 	{
 		Assert.Equal(n, rows.Count);
@@ -159,12 +106,9 @@ public static class ChunkChainTests
 	[Fact]
 	public static async Task ATakeOfZero_RentsNothingAndReturnsEmpty()
 	{
-		var pool = new CountingArrayPool();
-		await WithPool(pool, async () =>
-		{
-			Assert.Empty(await Rows(50).Take(0).ToArrayAsync(Ct));
-			Assert.Empty(await Rows(50).Take(0).ToListAsync(Ct));
-		});
+		CountingPool<PoolRow> pool = NewPool();
+		Assert.Empty(await Rows(50, pool: pool).Take(0).ToArrayAsync(Ct));
+		Assert.Empty(await Rows(50, pool: pool).Take(0).ToListAsync(Ct));
 
 		Assert.Equal(0, pool.Rents);
 	}
@@ -174,48 +118,46 @@ public static class ChunkChainTests
 	[Theory, MemberData(nameof(Sizes))]
 	public static async Task EveryArray_GoesBack_AndIsCleanWhenItDoes(int n)
 	{
-		var pool = new CountingArrayPool();
-		await WithPool(pool, async () =>
-		{
-			await Rows(n).ToArrayAsync(Ct);
-			await Rows(n).ToListAsync(Ct);
-		});
+		CountingPool<PoolRow> pool = NewPool();
+		await Rows(n, pool: pool).ToArrayAsync(Ct);
+		await Rows(n, pool: pool).ToListAsync(Ct);
 
+		// A large chunk of reference rows is cleared and returned by the bin.
+		await Until(() => pool.Outstanding == 0, "the arrays back");
 		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(0, pool.Dirty);
+		Assert.Equal(0, pool.DirtyReturns);
 		Assert.Equal(n == 0, pool.Rents == 0);
 	}
 
 	[Fact]
 	public static async Task AFailureMidRead_ReturnsEveryArray_AndThrows()
 	{
-		var pool = new CountingArrayPool();
-		await WithPool(pool, async () =>
-		{
-			await Assert.ThrowsAsync<InvalidOperationException>(
-				async () => await Rows(100, failAtRow: 40).ToArrayAsync(Ct));
-			await Assert.ThrowsAsync<InvalidOperationException>(
-				async () => await Rows(100, failAtRow: 40).ToListAsync(Ct));
-		});
+		CountingPool<PoolRow> pool = NewPool();
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Rows(100, failAtRow: 40, pool: pool)
+				.ToArrayAsync(Ct));
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await Rows(100, failAtRow: 40, pool: pool)
+				.ToListAsync(Ct));
 
+		await Until(() => pool.Outstanding == 0, "the arrays back");
 		Assert.True(pool.Rents > 0);
 		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(0, pool.Dirty);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	[Fact]
 	public static async Task ACancelledToken_ThrowsAndLeavesNothingRented()
 	{
-		var pool = new CountingArrayPool();
+		CountingPool<PoolRow> pool = NewPool();
 		using var cts = new CancellationTokenSource();
 		cts.Cancel();
-		await WithPool(
-			pool,
-			async () => await Assert.ThrowsAnyAsync<OperationCanceledException>(
-				async () => await Rows(100).ToArrayAsync(cts.Token)));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			async () => await Rows(100, pool: pool).ToArrayAsync(cts.Token));
 
+		await Until(() => pool.Outstanding == 0, "the arrays back");
 		Assert.Equal(pool.Rents, pool.Returns);
-		Assert.Equal(0, pool.Dirty);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	// ---- the sizing schedule (a test seam, not an option) --------------------
@@ -223,32 +165,37 @@ public static class ChunkChainTests
 	[Fact]
 	public static async Task TheChunkSizes_FollowTheSchedule()
 	{
-		var pool = new CountingArrayPool();
-		await WithSizing(1024, 2, 16_384, () => WithPool(pool, async () =>
-		{
-			PoolRow[] rows = await Rows(50_000).ToArrayAsync(Ct);
-			AssertIds(rows, 50_000);
-		}));
+		CountingPool<PoolRow> pool = NewPool(exact: true);
+		var sizes = new ChunkSizes(
+			collectFirstRows: 1024,
+			collectShift: 2,
+			collectMaxRows: 16_384);
+		PoolRow[] rows = await Rows(50_000, pool: pool, sizes: sizes)
+			.ToArrayAsync(Ct);
+		AssertIds(rows, 50_000);
 
 		// 1,024 then x4 up to the cap, then the cap: 1,024 + 4,096 +
 		// 16,384 + 16,384 = 37,888, and one more to hold 50,000.
 		Assert.Equal(
 			[1024, 4096, 16_384, 16_384, 16_384],
-			pool.Sizes);
+			pool.Requests);
 	}
 
 	[Fact]
 	public static async Task AValueThatDoesNotFit_FallsBackToTheDefaults()
 	{
-		var pool = new CountingArrayPool();
-		await WithSizing(100, 9, 1000, () => WithPool(pool, async () =>
-		{
-			PoolRow[] rows = await Rows(100).ToArrayAsync(Ct);
-			AssertIds(rows, 100);
-		}));
+		CountingPool<PoolRow> pool = NewPool(exact: true);
+		// A shift of 9 and a max of 1000 do not fit: the defaults are used.
+		var sizes = new ChunkSizes(
+			collectFirstRows: 100,
+			collectShift: 9,
+			collectMaxRows: 1000);
+		PoolRow[] rows = await Rows(100, pool: pool, sizes: sizes)
+			.ToArrayAsync(Ct);
+		AssertIds(rows, 100);
 
 		// Defaults: 16, 32, 64 holds 100 rows (16 + 32 + 64 = 112).
-		Assert.Equal([16, 32, 64], pool.Sizes);
+		Assert.Equal([16, 32, 64], pool.Requests);
 	}
 
 	// ---- the contract: a fresh array nobody else holds -----------------------
@@ -301,8 +248,7 @@ public static class ChunkChainTests
 	public static async Task APooledArray_CopiesItselfToAnExactArrayAndList(
 		int n)
 	{
-		await using var buffer = Rows(n).ToAsyncBuffer(
-			clearOnDispose: false, Ct);
+		await using var buffer = Rows(n).ToAsyncBuffer(Ct);
 		PooledArray<PoolRow> items = await buffer.Items;
 
 		PoolRow[] array = items.ToArray();
@@ -319,8 +265,7 @@ public static class ChunkChainTests
 	{
 		PoolRow[] array;
 		List<PoolRow> list;
-		await using (var buffer = Rows(100).ToAsyncBuffer(
-			clearOnDispose: false, Ct))
+		await using (var buffer = Rows(100).ToAsyncBuffer(Ct))
 		{
 			PooledArray<PoolRow> items = await buffer.Items;
 			array = items.ToArray();
@@ -334,8 +279,7 @@ public static class ChunkChainTests
 	[Fact]
 	public static async Task ADisposedView_ThrowsFromBothCopies()
 	{
-		await using var buffer = Rows(10).ToAsyncBuffer(
-			clearOnDispose: false, Ct);
+		await using var buffer = Rows(10).ToAsyncBuffer(Ct);
 		PooledArray<PoolRow> items = await buffer.Items;
 		items.Dispose();
 
@@ -345,89 +289,88 @@ public static class ChunkChainTests
 
 	// ---- the chain is reused, and never shared -------------------------------
 
-	const BindingFlags Instance
-		= BindingFlags.Instance | BindingFlags.NonPublic;
-
-	static Type ChainOf<T>()
-		=> Core.GetType("Open.Database.Extensions.Core.ChunkChain`1")!
-			.MakeGenericType(typeof(T));
-
-	static object RentChain(Type chain)
-		=> chain.GetMethod("Rent", Internal)!.Invoke(null, null)!;
-
-	static int CountOf(Type chain, object instance)
-		=> (int)chain.GetProperty("Count", Instance)!.GetValue(instance)!;
-
-	// The reflective tests below use a row type no other test uses: the
-	// spare chain is one static slot per row type, so a test elsewhere that
-	// collects rows (in parallel, in another collection) cannot take or
-	// leave the chain these tests are counting on.
+	// These tests use a row type no other test uses: the spare chain is one
+	// static slot per row type, so a test elsewhere that collects rows (in
+	// parallel) cannot take or leave the chain these tests are counting on.
 	sealed class Cell(int value)
 	{
 		public int Value { get; } = value;
 	}
+
+	static ChunkChain<Cell> RentChain()
+		=> ChunkChain<Cell>.Rent(TestConfig.Of(ArrayPool<Cell>.Shared, false));
 
 	// Fills a rented chain past its first chunk, copies it out and gives it
 	// back. Returns the chain and weak references to the rows. Kept out of
 	// line, and the rows kept out of the caller's locals, so a collection
 	// in the caller can tell whether the chain let go of them.
 	[MethodImpl(MethodImplOptions.NoInlining)]
-	static (object Chain, WeakReference[] Rows) UseOnce(int rows)
+	static (ChunkChain<Cell> Chain, WeakReference[] Rows) UseOnce(int rows)
 	{
-		Type type = ChainOf<Cell>();
-		object chain = RentChain(type);
-		MethodInfo add = type.GetMethod("Add", Instance)!;
+		ChunkChain<Cell> chain = RentChain();
 		var weak = new WeakReference[rows];
 		for (int i = 0; i < rows; ++i)
 		{
 			Cell row = new(i);
 			weak[i] = new WeakReference(row);
-			add.Invoke(chain, [row]);
+			chain.Add(row);
 		}
 
-		var list = (List<Cell>)type.GetMethod("ToList", Instance)!
-			.Invoke(chain, null)!;
+		List<Cell> list = chain.ToList();
 		Assert.Equal(rows, list.Count);
-		Assert.Equal(rows, CountOf(type, chain));
-		type.GetMethod("Dispose", Instance | BindingFlags.Public)!.Invoke(chain, null);
+		Assert.Equal(rows, chain.Count);
+		chain.Dispose();
 		return (chain, weak);
 	}
 
 	[MethodImpl(MethodImplOptions.NoInlining)]
-	static void UseAgain(Type type, object chain, int rows)
+	static void UseAgain(ChunkChain<Cell> chain, int rows)
 	{
-		MethodInfo add = type.GetMethod("Add", Instance)!;
 		for (int i = 0; i < rows; ++i)
-			add.Invoke(chain, [new Cell(i * 7)]);
+			chain.Add(new Cell(i * 7));
 
-		var array = (Cell[])type.GetMethod("ToArray", Instance)!
-			.Invoke(chain, null)!;
+		Cell[] array = chain.ToArray();
 		Assert.Equal(rows, array.Length);
 		for (int i = 0; i < rows; ++i)
 			Assert.Equal(i * 7, array[i].Value);
 
-		var list = (List<Cell>)type.GetMethod("ToList", Instance)!
-			.Invoke(chain, null)!;
+		List<Cell> list = chain.ToList();
 		Assert.Equal(array, list);
 	}
 
 	[Fact]
 	public static void ADisposedChain_IsTheNextOneRented_EmptyAndCorrectAgain_AndKeepsNoRows()
 	{
-		Type type = ChainOf<Cell>();
-		(object first, WeakReference[] rows) = UseOnce(40);
+		(ChunkChain<Cell> first, WeakReference[] rows) = UseOnce(40);
 
-		object second = RentChain(type);
+		ChunkChain<Cell> second = RentChain();
 		Assert.Same(first, second);
-		Assert.Equal(0, CountOf(type, second));
+		Assert.Equal(0, second.Count);
 
-		UseAgain(type, second, 40);
-		type.GetMethod("Dispose", Instance | BindingFlags.Public)!.Invoke(second, null);
+		UseAgain(second, 40);
+		second.Dispose();
 
 		GC.Collect();
 		GC.WaitForPendingFinalizers();
 		GC.Collect();
 		Assert.DoesNotContain(rows, static w => w.IsAlive);
+	}
+
+	[Fact]
+	public static void ADisposedTwice_ReturnsEveryArrayOnce()
+	{
+		CountingPool<PoolRow> pool = NewPool();
+		ChunkChain<PoolRow> chain = ChunkChain<PoolRow>.Rent(
+			TestConfig.Of<PoolRow>(pool, false));
+		for (int i = 0; i < 100; ++i) chain.Add(new PoolRow(i + 1));
+
+		chain.Dispose();
+		int returns = pool.Returns;
+		chain.Dispose();
+
+		Assert.Equal(pool.Rents, returns);
+		Assert.Equal(returns, pool.Returns);
+		Assert.Equal(0, pool.Unmatched);
 	}
 
 	// ---- the queue is made from the exact count ------------------------------
@@ -442,34 +385,26 @@ public static class ChunkChainTests
 	[InlineData(5000)]
 	public static void TheQueue_IsOneArrayOfExactlyTheRows_InOrder(int n)
 	{
-		Type type = ChainOf<Cell>();
-		object chain = RentChain(type);
-		try
-		{
-			MethodInfo add = type.GetMethod("Add", Instance)!;
-			for (int i = 0; i < n; ++i) add.Invoke(chain, [new Cell(i)]);
+		using ChunkChain<Cell> chain = RentChain();
+		for (int i = 0; i < n; ++i) chain.Add(new Cell(i));
 
-			var queue = (Queue<Cell>)type.GetMethod("ToQueue", Instance)!
-				.Invoke(chain, null)!;
+		Queue<Cell> queue = chain.ToQueue();
 
-			// Queue's constructor over an ICollection keeps the exact array:
-			// this is what proves the runtime does it (and fails if one
-			// ever stops).
-			var items = (Cell?[])typeof(Queue<Cell>)
-				.GetField("_array", Instance)!.GetValue(queue)!;
-			Assert.Equal(n, items.Length);
-			Assert.Equal(n, queue.Count);
+		// Queue's constructor over an ICollection keeps the exact array:
+		// this is what proves the runtime does it (and fails if one
+		// ever stops). The field is the BCL's own.
+		var items = (Cell?[])typeof(Queue<Cell>)
+			.GetField(
+				"_array",
+				BindingFlags.Instance | BindingFlags.NonPublic)!
+			.GetValue(queue)!;
+		Assert.Equal(n, items.Length);
+		Assert.Equal(n, queue.Count);
 
-			for (int i = 0; i < n; ++i)
-				Assert.Equal(i, queue.Dequeue().Value);
-			Assert.Empty(queue);
-		}
-		finally
-		{
-			type.GetMethod("Dispose", Instance | BindingFlags.Public)!.Invoke(chain, null);
-		}
+		for (int i = 0; i < n; ++i)
+			Assert.Equal(i, queue.Dequeue().Value);
+		Assert.Empty(queue);
 	}
-
 	[Theory]
 	[InlineData(0)]
 	[InlineData(1)]

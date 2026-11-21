@@ -32,8 +32,12 @@ internal class DbConnectionProvider<TConnection>(TConnection connection)
 			throw new ArgumentException("Does not belong to this provider.", nameof(connection));
 		Contract.EndContractBlock();
 
-		if (_takenConnectionState == ConnectionState.Closed)
+		// Not usable as it was found: whoever opened it for the caller closes it again.
+		if (_takenConnectionState is { } taken
+			&& ConnectionExtensions.NeedsOpen(taken))
+		{
 			connection.Close();
+		}
 
 		_takenConnectionState = null;
 	}

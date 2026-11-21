@@ -259,7 +259,9 @@ public static class DbQueryConnectionTests
 		Assert.Equal(1, pool.Gives);
 		TrackedConnection connection = Assert.Single(tally.Connections);
 		Assert.Equal(0, connection.Disposes);
-		Assert.Equal(ConnectionState.Closed, connection.State);
+
+		// What giving it back means is the pool's (as with pool.Open): this pool
+		// only counts, so the connection is left as the run had it.
 	}
 
 	// ---- the source arguments are checked by the call that takes them ----
@@ -362,5 +364,101 @@ public static class DbQueryConnectionTests
 			["@id", "@name"],
 			tally.Commands[^1].Parameters.Cast<DbParameter>()
 				.Select(static p => p.ParameterName));
+	}
+
+	// ---- a source that supplies a connection that is not a DbConnection ----
+
+	// An IDbConnection that is not a DbConnection (nothing opens it).
+	sealed class NotADbConnection : IDbConnection
+	{
+		public int Disposes { get; private set; }
+
+		[AllowNull]
+		public string ConnectionString { get; set; } = "";
+		public int ConnectionTimeout => 0;
+		public string Database => "";
+		public ConnectionState State => ConnectionState.Closed;
+
+		public IDbTransaction BeginTransaction()
+			=> throw new NotSupportedException();
+		public IDbTransaction BeginTransaction(IsolationLevel il)
+			=> throw new NotSupportedException();
+		public void ChangeDatabase(string databaseName)
+			=> throw new NotSupportedException();
+		public void Close() { }
+		public IDbCommand CreateCommand()
+			=> throw new NotSupportedException();
+		public void Open()
+			=> throw new NotSupportedException();
+		public void Dispose() => ++Disposes;
+	}
+
+	// Typed as a factory of DbConnection, but the non-generic interface (which
+	// the run uses) supplies something else: a source that breaks its own type.
+	sealed class OddFactory : IDbConnectionFactory<DbConnection>
+	{
+		public List<NotADbConnection> Made { get; } = [];
+
+		public DbConnection Create()
+			=> throw new NotSupportedException();
+
+		IDbConnection IDbConnectionFactory.Create()
+		{
+			NotADbConnection connection = new();
+			Made.Add(connection);
+			return connection;
+		}
+	}
+
+	sealed class OddPool : IDbConnectionPool<DbConnection>
+	{
+		public List<NotADbConnection> Taken { get; } = [];
+		public List<IDbConnection> Given { get; } = [];
+
+		public DbConnection Take()
+			=> throw new NotSupportedException();
+
+		IDbConnection IDbConnectionPool.Take()
+		{
+			NotADbConnection connection = new();
+			Taken.Add(connection);
+			return connection;
+		}
+
+		public void Give(IDbConnection connection)
+			=> Given.Add(connection);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public static async Task AFactoryConnection_ThatIsNotADbConnection_IsDisposed_AndTheRunFailsNamingTheType(
+		bool async)
+	{
+		var factory = new OddFactory();
+
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			() => Run(Query.Using(factory), async));
+
+		Assert.Contains(typeof(NotADbConnection).FullName!, ex.Message);
+		NotADbConnection made = Assert.Single(factory.Made);
+		Assert.Equal(1, made.Disposes);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public static async Task APoolConnection_ThatIsNotADbConnection_IsGivenBack_AndTheRunFailsNamingTheType(
+		bool async)
+	{
+		var pool = new OddPool();
+
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			() => Run(Query.Using(pool), async));
+
+		Assert.Contains(typeof(NotADbConnection).FullName!, ex.Message);
+		NotADbConnection taken = Assert.Single(pool.Taken);
+		Assert.Same(taken, Assert.Single(pool.Given));
+		Assert.Equal(0, taken.Disposes);
 	}
 }

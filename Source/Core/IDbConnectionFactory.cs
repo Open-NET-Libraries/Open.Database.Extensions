@@ -4,7 +4,7 @@
 /// A common abstraction for creating database connections. Can easily be used with dependency injection.
 /// </summary>
 /// <remarks>
-/// The factory never reuses connections: every call to <see cref="Create"/> returns a new one that the caller owns. Use <see cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/> to present a factory as an <see cref="IDbConnectionPool"/>, which is how the expressive commands consume it.
+/// The factory never reuses connections: every call to <see cref="Create"/> returns a new one that the caller owns. Use <see cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/> to present a factory as an <see cref="IDbConnectionPool"/>, which is how the expressive commands consume it. A factory is the usual connection source: the provider's own connection pool does the pooling behind each connection it creates, so there is nothing for ODX to pool. A custom <see cref="IDbConnectionPool"/> is only for a pooling scheme of your own.
 /// </remarks>
 /// <seealso cref="IDbConnectionFactory{TConnection}"/>
 /// <seealso cref="DbConnectionFactory"/>

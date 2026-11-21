@@ -37,6 +37,15 @@ internal interface IRowSink<in T>
 /// no iterator, no LINQ, no per-row allocation other than the mapped objects themselves.
 /// Skipped rows are advanced without being mapped; a take limit stops reading as soon as it is satisfied.
 /// What happens to each row is the sink's business, so one loop serves every collection type.
+///
+/// Two things hold for every loop here, and they are why the code looks the way it does:
+/// <list type="bullet">
+/// <item>The command has ALREADY run when a loop starts: the caller opened the reader (that is what executes the command, and what
+/// a Take(0) is still expected to do). A take of 0 therefore only means "read no rows": the loops return an empty result at once,
+/// without skipping or mapping anything, and the caller disposes the reader (and reads through later result sets) as for any other call.</item>
+/// <item>A reader that is not a <see cref="DbDataReader"/> (a bare <see cref="IDataReader"/>) takes the <see cref="Stream{T}"/> path:
+/// it has no virtual-call fast path, so one lazy loop reads it, and that loop makes the same take-0 decision, so the result is the same.</item>
+/// </list>
 /// </summary>
 internal static class RowReader
 {
@@ -85,36 +94,37 @@ internal static class RowReader
 		return list;
 	}
 
-	// Buffers mapped rows in a queue so a caller can drain it: each item is released to the GC as it is dequeued.
-	// The rows are collected in a chain of pooled arrays and the queue is made from the exact count in one block copy (no growth copies, no slack).
-	public static Queue<T> ToQueue<T>(IRowSource<T> source, IDataReader reader, int skip, int take)
-		=> Collect<T, QueueBuild<T>, Queue<T>>(
-			source, reader, skip, take, default);
-
 	// The collecting terminals' one sync shape: the rows go into a chain of
-	// pooled arrays, then build makes the result from the chain (the copy
-	// happens right after the last row), and the chain is disposed however
-	// the call ends.
+	// pooled arrays (from the pool of config: the shared array pool by
+	// default), then build makes the result from the chain (the copy happens
+	// right after the last row), and the chain is disposed however the call
+	// ends. config says, among other things, what PoolClearing decided for
+	// this call.
 	public static TResult Collect<T, TBuild, TResult>(
 		IRowSource<T> source, IDataReader reader, int skip, int take,
-		TBuild build, CancellationToken token = default)
+		TBuild build, ChunkConfig<T> config,
+		CancellationToken token = default)
 		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		using var chain = ChunkChain<T>.Rent();
+		using var chain = ChunkChain<T>.Rent(config);
 		var sink = new ChainSink<T>(chain);
 		Fill(source, reader, skip, take, ref sink, token);
 		return build.Build(chain);
 	}
 
-	public static T[] ToArray<T>(IRowSource<T> source, IDataReader reader, int skip, int take, CancellationToken token = default)
+	public static T[] ToArray<T>(
+		IRowSource<T> source, IDataReader reader, int skip, int take,
+		ChunkConfig<T> config, CancellationToken token = default)
 	{
+		// A bare IDataReader has no DbDataReader fast path: Stream reads it (and
+		// treats take 0 the same way as the line below), then ToArray copies.
 		if (reader is not DbDataReader db)
 			return Stream(source, reader, skip, take, false, token).ToArray();
 
 		if (take == 0 || !SkipRows(db, skip) || !db.Read()) return [];
 
 		Func<DbDataReader, T> map = source.Mapper(db);
-		var buffer = new ArraySink<T>();
+		var buffer = new ArraySink<T>(config);
 		try
 		{
 			int n = 0;
@@ -287,12 +297,6 @@ internal static class RowReader
 		return sink;
 	}
 
-	public static ValueTask<Queue<T>> ToQueueAsync<T>(
-		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, CancellationToken cancellationToken)
-		=> CollectAsync<T, QueueBuild<T>, Queue<T>>(
-			source, reader, skip, take, useReadAsync, default,
-			cancellationToken);
-
 	// ONE async method for every collecting terminal (ToList, ToArray, ToQueue,
 	// ToHashSet, ToDictionary): the read loop and the build share a single
 	// state machine, so a read that really suspends boxes one machine, not a
@@ -302,10 +306,11 @@ internal static class RowReader
 	// last row.
 	public static async ValueTask<TResult> CollectAsync<T, TBuild, TResult>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync,
-		TBuild build, CancellationToken cancellationToken)
+		TBuild build, ChunkConfig<T> config,
+		CancellationToken cancellationToken)
 		where TBuild : struct, IChainBuild<T, TResult>
 	{
-		using var chain = ChunkChain<T>.Rent();
+		using var chain = ChunkChain<T>.Rent(config);
 		if (take != 0
 			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 			&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
@@ -491,7 +496,10 @@ internal readonly struct DictionaryValueBuild<T, TKey, TValue>(
 /// <summary>
 /// A pooled, growable buffer so an exact-size array can be produced without the garbage a growing list leaves behind.
 /// </summary>
-internal struct ArraySink<T> : IRowSink<T>
+/// <remarks>
+/// The arrays come from the pool of the <see cref="ChunkConfig{T}"/> (the shared array pool by default) and are as long as the pool makes them: the sink uses all of the array it holds and grows by renting one twice as long. A row is one array store. <see cref="ChunkConfig{T}.ClearOnReturn"/> is what <see cref="PoolClearing"/> decided: the rows that were written are cleared before an array goes back, and nothing else (an array it outgrew is released the same way, since the rows were copied out of it).
+/// </remarks>
+internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 {
 	T[]? _items;
 	int _count;
@@ -499,26 +507,44 @@ internal struct ArraySink<T> : IRowSink<T>
 	public void Add(T item)
 	{
 		T[]? items = _items;
-		if (items is null)
-			_items = items = ArrayPool<T>.Shared.Rent(16);
-		else if (_count == items.Length)
-			_items = items = Grow(items);
+		int count = _count;
+		if (items is not null && (uint)count < (uint)items.Length)
+		{
+			items[count] = item;
+			_count = count + 1;
+			return;
+		}
 
-		items[_count++] = item;
+		AddSlow(item);
 	}
 
-	private readonly T[] Grow(T[] items)
+	// A rent that fails (or is refused) leaves the sink as it was: the
+	// array is kept only once the rent has succeeded.
+	void AddSlow(T item)
 	{
-		T[] bigger = ArrayPool<T>.Shared.Rent(items.Length * 2);
-		Array.Copy(items, bigger, _count);
-		Array.Clear(items, 0, _count);
-		ArrayPool<T>.Shared.Return(items, clearArray: false);
-		return bigger;
+		T[]? old = _items;
+		int rows = _count;
+		T[] bigger = config.Rent(old is null ? 16 : old.Length * 2);
+		if (old is not null) Array.Copy(old, bigger, rows);
+
+		// The sink holds the new array before the old one is released, so
+		// that a release that throws (a pool whose Return throws) leaves
+		// one array held once: Dispose releases the new one, and the old
+		// one is never released a second time.
+		_items = bigger;
+		bigger[rows] = item;
+		_count = rows + 1;
+
+		// The rows were copied: the old array goes back, its rows cleared
+		// first when the rule says so (they are alive in the new one, so the
+		// old must not keep them).
+		if (old is not null) config.Seal(old, rows).Release();
 	}
 
 	public readonly T[] ToArray()
 	{
 		if (_count == 0) return [];
+
 		var result = new T[_count];
 		Array.Copy(_items!, result, _count);
 		return result;
@@ -528,8 +554,8 @@ internal struct ArraySink<T> : IRowSink<T>
 	{
 		T[]? items = _items;
 		if (items is null) return;
+
 		_items = null;
-		Array.Clear(items, 0, _count);
-		ArrayPool<T>.Shared.Return(items, clearArray: false);
+		config.Seal(items, _count).Release();
 	}
 }

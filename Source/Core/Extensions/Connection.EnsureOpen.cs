@@ -1,13 +1,31 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 public static partial class ConnectionExtensions
 {
 	/// <summary>
-	/// Whether a connection found in this state is opened by <see cref="EnsureOpen(IDbConnection)"/>: it is closed, or broken (closed first, then opened again). The one that opened it closes it again afterwards.
+	/// True when a connection found in this state has to be opened by us
+	/// (see <see cref="EnsureOpen(IDbConnection)"/>), so whoever opens it
+	/// closes it again afterwards.
 	/// </summary>
+	/// <remarks>
+	/// <see cref="ConnectionState"/> is a <see cref="FlagsAttribute">[Flags]</see>
+	/// enum: Closed = 0, Open = 1, Connecting = 2, Executing = 4,
+	/// Fetching = 8, Broken = 16. An open connection that is busy is
+	/// <c>Open | Executing</c> or <c>Open | Fetching</c>, which is why the
+	/// Open <em>bit</em> is tested and the state is never compared for equality.
+	/// Closed is zero, so it has no bit: it is found as "the Open bit is not set".
+	/// </remarks>
 	internal static bool NeedsOpen(ConnectionState state)
+		// Open bit not set: the connection is closed (or still connecting), so it has to be opened.
 		=> (state & ConnectionState.Open) == 0
-		|| (state & ConnectionState.Broken) != 0;
+		// Broken bit set: the connection was open and broke; ADO.NET says it may be closed and re-opened,
+		// so it is closed first, then opened.
+		|| IsBroken(state);
+
+	// The Broken bit. Kept in one place so that the check that closes a broken connection first
+	// and the one that decides it needs opening cannot disagree.
+	static bool IsBroken(ConnectionState state)
+		=> (state & ConnectionState.Broken) != 0;
 
 	/// <returns>The prior connection state.</returns>
 	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
@@ -18,18 +36,20 @@ public static partial class ConnectionExtensions
 
 		ConnectionState state = connection.State;
 
-		if ((state & ConnectionState.Broken) != 0)
+		// Already open: nothing to do, and nobody should close it.
+		if (!NeedsOpen(state)) return state;
+
+		// Broken: it is closed first, then opened.
+		if (IsBroken(state))
 			connection.Close();
 
-		if ((connection.State & ConnectionState.Open) == 0)
-			connection.Open();
-
+		connection.Open();
 		return state;
 	}
 
 	/// <summary>
-	/// If the connection isn't open, opens the connection.<br/>
-	/// If the connection is in neither open or close, first closes the connection, then opens it.<br/>
+	/// Opens the connection if it is not open (a broken connection is closed first)
+	/// and returns the prior state, so you can close it afterwards if it was not open.<br/>
 	/// Always awaits with <c>ConfigureAwait(false)</c>: the caller decides whether to return to its context.
 	/// </summary>
 	/// <param name="connection">The connection to transact with.</param>
@@ -45,15 +65,17 @@ public static partial class ConnectionExtensions
 		cancellationToken.ThrowIfCancellationRequested();
 
 		ConnectionState state = connection.State;
-		if ((state & ConnectionState.Broken) != 0)
-			connection.Close();
 
-		if ((connection.State & ConnectionState.Open) != 0)
-			return state;
+		// Already open: nothing to do, and nobody should close it.
+		if (!NeedsOpen(state)) return state;
+
+		// Broken: it is closed first, then opened.
+		if (IsBroken(state))
+			connection.Close();
 
 		await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-		// ConnectionState.Closed is zero, so HasFlag(Closed) is always true: test the state itself.
+		// ConnectionState.Closed is zero (it has no bit), so compare the state itself.
 		if (cancellationToken.IsCancellationRequested && connection.State != ConnectionState.Closed)
 		{
 			connection.Close(); // Fake finally...
@@ -74,6 +96,64 @@ public static partial class ConnectionExtensions
 		cancellationToken.ThrowIfCancellationRequested();
 		return connection.EnsureOpen();
 	}
+
+	// What a reader of a connection that was found in this state is executed with: the connection
+	// that needed opening closes when the reader does (also for the callers that hold no scope).
+	internal static CommandBehavior ReaderBehavior(ConnectionState priorState, CommandBehavior behavior)
+		=> NeedsOpen(priorState) ? behavior | CommandBehavior.CloseConnection : behavior;
+
+	/// <summary>
+	/// Opens the connection if it is not open (a broken connection is closed first) and
+	/// returns a <see cref="ConnectionScope{TConnection}"/> that puts it back when disposed: a
+	/// connection this call opened is closed again, and one that was already open is left open.
+	/// </summary>
+	/// <remarks>
+	/// The same rule as <see cref="EnsureOpen(IDbConnection)"/>, which returns the prior state
+	/// for a caller that wants to do the closing itself; the scope does it, without a
+	/// <c>try</c>/<c>finally</c>. It is safe to call on a connection that is already open.
+	/// You already hold the connection, so the scope is usually only there to be disposed:
+	/// <c>using var _ = connection.EnsureOpenScope();</c>. Prefer
+	/// <see cref="EnsureOpenScopeAsync{TConnection}(TConnection, CancellationToken)"/>.
+	/// </remarks>
+	/// <typeparam name="TConnection">The type of the connection; inferred from the call.</typeparam>
+	/// <param name="connection">The connection to open.</param>
+	/// <returns>The connection and the state it was found in; <see cref="ConnectionScope{TConnection}.Dispose"/> closes it again if the scope opened it.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
+	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(this TConnection connection)
+		where TConnection : IDbConnection
+		=> new(connection, connection.EnsureOpen());
+
+	/// <summary>
+	/// Opens the connection if it is not open (a broken connection is closed first) and
+	/// returns a <see cref="ConnectionScope{TConnection}"/> that puts it back when disposed: a
+	/// connection this call opened is closed again, and one that was already open is left open.
+	/// </summary>
+	/// <remarks>
+	/// <code>
+	/// await using var _ = await connection.EnsureOpenScopeAsync(cancellationToken);
+	/// </code>
+	/// You already hold the connection, so the scope is usually only there to be disposed; keep it
+	/// (<c>var scope = ...</c>, then <c>var (sql, was) = scope;</c>) when you also want the state the
+	/// connection was found in. The same rule as <see cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>,
+	/// which returns the prior state for a caller that wants to do the closing itself. It opens with
+	/// <see cref="DbConnection.OpenAsync(CancellationToken)"/> when the connection is a
+	/// <see cref="DbConnection"/>, and always awaits with <c>ConfigureAwait(false)</c>.
+	/// The scope's <see cref="ConnectionScope{TConnection}.DisposeAsync"/> closes with <c>CloseAsync</c>
+	/// where the target has it (not netstandard2.0, which closes synchronously). If the token
+	/// is cancelled the connection it opened is closed again and no scope is returned.
+	/// </remarks>
+	/// <typeparam name="TConnection">The type of the connection; inferred from the call.</typeparam>
+	/// <param name="connection">The connection to open.</param>
+	/// <param name="cancellationToken">A cancellation token to cancel opening.</param>
+	/// <returns>The connection and the state it was found in; <see cref="ConnectionScope{TConnection}.DisposeAsync"/> closes it again if the scope opened it.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
+	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
+		this TConnection connection,
+		CancellationToken cancellationToken = default)
+		where TConnection : IDbConnection
+		=> new(
+			connection,
+			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false));
 
 	/// <summary>
 	/// If the <paramref name="connection"/> derives from <see cref="DbConnection"/>, this will call <see cref="DbConnection.OpenAsync(CancellationToken)"/>;

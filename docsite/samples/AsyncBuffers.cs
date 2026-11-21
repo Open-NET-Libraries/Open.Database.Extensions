@@ -19,9 +19,7 @@ public static class AsyncBuffers
 		=> connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToAsyncBuffer(
-				clearOnDispose: false,
-				cancellationToken);
+			.ToAsyncBuffer(cancellationToken);
 	#endregion
 
 	#region buffers_controller
@@ -131,11 +129,8 @@ public static class AsyncBuffers
 		await using PooledBuffer<Post> buffer = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.Skip(1)
-			.Take(2)
-			.ToAsyncBuffer(
-				clearOnDispose: false,
-				cancellationToken);
+			.Skip(1).Take(2)
+			.ToAsyncBuffer(cancellationToken);
 
 		PooledArray<Post> posts = await buffer.Items;
 		return [.. posts.Select(static p => p.Id)];
@@ -152,9 +147,7 @@ public static class AsyncBuffers
 		IAsyncEnumerable<ReadOnlyMemory<Post>> chunks = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToAsyncBufferStream(
-				clearOnReturn: false,
-				cancellationToken);
+			.ToAsyncBufferStream(cancellationToken);
 
 		// Each chunk is valid until the next step of the loop:
 		// copy what you keep.
@@ -179,9 +172,7 @@ public static class AsyncBuffers
 		IAsyncEnumerable<Post> posts = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToBufferedAsyncStream(
-				clearOnReturn: false,
-				cancellationToken);
+			.ToBufferedAsyncStream(cancellationToken);
 
 		await foreach (Post post in posts)
 			ids.Add(post.Id);
@@ -213,9 +204,7 @@ public static class AsyncBuffers
 			.Command("select * from posts where author = @author order by id")
 			.AddParam(author)
 			.Map<Post>()
-			.ToBufferedAsyncStream(
-				clearOnReturn: false,
-				cancellationToken)
+			.ToBufferedAsyncStream(cancellationToken)
 			.Select(static post => $"{post.Id}: {post.Title}");
 	#endregion
 
@@ -238,33 +227,28 @@ public static class AsyncBuffers
 
 	public static async Task<int[]> OverloadsAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		MemoryPool<Post> pool,
+		ArrayPool<Post> pool,
 		CancellationToken cancellationToken)
 	{
-		// The shared pool: the flag is required.
+		// The shared pool is the default.
 		await using PooledBuffer<Post> shared = Query(connectionFactory)
-			.ToAsyncBuffer(
-				clearOnDispose: false,
-				cancellationToken);
+			.ToAsyncBuffer(cancellationToken);
 
-		// Your own pool: nothing is cleared.
+		// Your own pool, chosen after Map. Both arguments are required.
 		await using PooledBuffer<Post> own = Query(connectionFactory)
-			.ToAsyncBuffer(
-				pool,
-				cancellationToken);
+			.UsePool(pool, clearOnReturn: false)
+			.ToAsyncBuffer(cancellationToken);
 
-		// Your own pool, and the flag.
-		await using PooledBuffer<Post> both = Query(connectionFactory)
-			.ToAsyncBuffer(
-				pool,
-				clearOnDispose: true,
-				cancellationToken);
+		// The same, and the rows are cleared as the arrays go back.
+		await using PooledBuffer<Post> scrubbed = Query(connectionFactory)
+			.UsePool(pool, clearOnReturn: true)
+			.ToAsyncBuffer(cancellationToken);
 
 		return
 		[
 			(await shared.Items).Count,
 			(await own.Items).Count,
-			(await both.Items).Count,
+			(await scrubbed.Items).Count,
 		];
 	}
 	#endregion
@@ -272,44 +256,63 @@ public static class AsyncBuffers
 	#region buffers_clearing
 	public static async Task ClearingAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		MemoryPool<Post> pool,
+		ArrayPool<int> pool,
+		bool clearOnReturn,
 		CancellationToken cancellationToken)
 	{
-		// The rows are sensitive: scrub each array as it goes back.
-		await using PooledBuffer<Post> buffer = Query(connectionFactory)
-			.ToAsyncBuffer(
-				pool,
-				clearOnDispose: true,
-				cancellationToken);
+		// A row with no references (an int) is cleared only when asked:
+		// the pool is yours, the clear is stated by name.
+		await using PooledBuffer<int> buffer = connectionFactory
+			.Command("select id from posts order by id")
+			.Map<int>()
+			.UsePool(pool, clearOnReturn: clearOnReturn)
+			.ToAsyncBuffer(cancellationToken);
 
-		PooledArray<Post> posts = await buffer.Items;
+		PooledArray<int> ids = await buffer.Items;
 
-		// ... use the rows. The clear runs after the dispose,
-		// on a background loop, not on this path.
-		_ = posts.Count;
+		// ... use the rows. The clear runs as the arrays go back, when the
+		// buffer is disposed.
+		_ = ids.Count;
 	}
 	#endregion
 
-	// Not shown in the article: the same read with nothing cleared.
-	public static async Task KeepsRowsAsync(
+	#region buffers_clearing_shared
+	public static async Task<int> ClearingSharedAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		MemoryPool<Post> pool,
+		CancellationToken cancellationToken)
+	{
+		// The shared pool, and the rows are scrubbed as they go back.
+		await using PooledBuffer<int> buffer = connectionFactory
+			.Command("select id from posts order by id")
+			.Map<int>()
+			.UsePool(ArrayPool<int>.Shared, clearOnReturn: true)
+			.ToAsyncBuffer(cancellationToken);
+
+		return (await buffer.Items).Count;
+	}
+	#endregion
+
+	// Not shown in the article: rows that hold references (a Post) are
+	// cleared whatever the clear argument says.
+	public static async Task ReferenceRowsAsync(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		ArrayPool<Post> pool,
 		CancellationToken cancellationToken)
 	{
 		await using PooledBuffer<Post> buffer = Query(connectionFactory)
-			.ToAsyncBuffer(pool, cancellationToken);
+			.UsePool(pool, clearOnReturn: false)
+			.ToAsyncBuffer(cancellationToken);
 		_ = (await buffer.Items).Count;
 	}
 
 	// Not shown in the article: a null pool is refused at the call.
 	public static bool NullPoolThrows(
-		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		CancellationToken cancellationToken)
+		IDbConnectionFactory<SqliteConnection> connectionFactory)
 	{
 		try
 		{
 			_ = Query(connectionFactory)
-				.ToAsyncBuffer(null!, cancellationToken);
+				.UsePool(null!, clearOnReturn: false);
 			return false;
 		}
 		catch (ArgumentNullException)
@@ -331,9 +334,7 @@ public static class AsyncBuffers
 		await using PooledBuffer<Post> buffer = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToAsyncBuffer(
-				clearOnDispose: false,
-				cts.Token);
+			.ToAsyncBuffer(cts.Token);
 
 		try
 		{
@@ -350,16 +351,15 @@ public static class AsyncBuffers
 	#region buffers_dispose_early
 	public static async Task<bool> DisposeEarlyAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
-		MemoryPool<Post> pool,
+		ArrayPool<Post> pool,
 		CancellationToken cancellationToken)
 	{
 		PooledBuffer<Post> buffer = Query(connectionFactory)
-			.ToAsyncBuffer(
-				pool,
-				cancellationToken);
+			.UsePool(pool, clearOnReturn: false)
+			.ToAsyncBuffer(cancellationToken);
 
 		// Cancels the read if it is still running, waits for the
-		// producer to stop, and returns the arrays to the pool (with clearing on, it hands them to the cleanup queue).
+		// producer to stop, and returns the arrays to the pool (a large chunk of rows that hold references goes to the cleanup queue).
 		await buffer.DisposeAsync();
 
 		// A disposed buffer has no Items.
@@ -386,9 +386,7 @@ public static class AsyncBuffers
 		try
 		{
 			await foreach (Post _ in Query(connectionFactory)
-				.ToBufferedAsyncStream(
-					clearOnReturn: false,
-					cts.Token))
+				.ToBufferedAsyncStream(cts.Token))
 			{
 			}
 
@@ -402,7 +400,7 @@ public static class AsyncBuffers
 
 	// Waits (for a bounded time) until the background clear has handed
 	// every array back to the pool.
-	public static async Task SettleAsync(CountingPool<Post> pool)
+	public static async Task SettleAsync<T>(CountingPool<T> pool)
 	{
 		using CancellationTokenSource limit = new(TimeSpan.FromSeconds(10));
 		while (pool.Returned < pool.Rented)
@@ -413,7 +411,7 @@ public static class AsyncBuffers
 #region buffers_counting_pool
 // A pool of your own. This one counts what it rents and what comes
 // back, and how many returned arrays still held rows.
-public sealed class CountingPool<T> : MemoryPool<T>
+public sealed class CountingPool<T> : ArrayPool<T>
 {
 	int _rented;
 	int _returned;
@@ -423,18 +421,20 @@ public sealed class CountingPool<T> : MemoryPool<T>
 	public int Returned => Volatile.Read(ref _returned);
 	public int Dirty => Volatile.Read(ref _dirty);
 
-	public override int MaxBufferSize => Array.MaxLength;
-
-	public override IMemoryOwner<T> Rent(int minBufferSize = -1)
+	public override T[] Rent(int minimumLength)
 	{
 		Interlocked.Increment(ref _rented);
-		return new Owner(this, new T[Math.Max(minBufferSize, 1)]);
+		return new T[Math.Max(minimumLength, 1)];
 	}
 
-	protected override void Dispose(bool disposing) { }
-
-	void Return(T[] array)
+	public override void Return(T[] array, bool clearArray = false)
 	{
+		// What a pool does with the flag.
+		if (clearArray)
+		{
+			Array.Clear(array);
+		}
+
 		if (Array.Exists(
 			array,
 			static item => !EqualityComparer<T>.Default.Equals(item, default!)))
@@ -443,20 +443,6 @@ public sealed class CountingPool<T> : MemoryPool<T>
 		}
 
 		Interlocked.Increment(ref _returned);
-	}
-
-	sealed class Owner(CountingPool<T> pool, T[] array) : IMemoryOwner<T>
-	{
-		T[]? _array = array;
-
-		public Memory<T> Memory
-			=> _array ?? throw new ObjectDisposedException(nameof(Owner));
-
-		public void Dispose()
-		{
-			T[]? taken = Interlocked.Exchange(ref _array, null);
-			if (taken is not null) pool.Return(taken);
-		}
 	}
 }
 #endregion
