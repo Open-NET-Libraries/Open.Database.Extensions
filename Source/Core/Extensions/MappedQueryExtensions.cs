@@ -48,10 +48,11 @@ public static class MappedQueryExtensions
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-items']/*" />
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-task']/*" />
-	/// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> or <paramref name="handler"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>
 	public static ValueTask ReadAsync<T>(this IMappedQuery<T> query, Func<IAsyncEnumerable<T>, ValueTask> handler, CancellationToken cancellationToken = default)
 	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 		return query.ReadAsync((items, _) => handler(items), cancellationToken);
@@ -73,10 +74,11 @@ public static class MappedQueryExtensions
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-items']/*" />
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-task-result']/*" />
-	/// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> or <paramref name="handler"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="IMappedQuery{T}.ReadAsync{TResult}(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask{TResult}}, CancellationToken)"/>
 	public static ValueTask<TResult> ReadAsync<T, TResult>(this IMappedQuery<T> query, Func<IAsyncEnumerable<T>, ValueTask<TResult>> handler, CancellationToken cancellationToken = default)
 	{
+		if (query is null) throw new ArgumentNullException(nameof(query));
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
 

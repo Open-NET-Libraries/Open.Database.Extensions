@@ -64,27 +64,31 @@ public static class DbConnectionFactoryExtensions
 	/// <summary>
 	/// Presents a connection factory function as an <see cref="IDbConnectionPool"/>: taking a connection invokes the function and giving it back disposes it.
 	/// </summary>
-	/// <param name="factory">The function that creates a new connection each time one is taken.</param>
 	/// <remarks>
 	/// Nothing is pooled. This adapter lets code written against <see cref="IDbConnectionPool"/> accept a plain factory.
 	/// </remarks>
+	/// <param name="factory">The function that creates a new connection each time one is taken.</param>
+	/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="AsPool(IDbConnectionFactory)"/>
 	public readonly struct ConnectionFactoryToPoolAdapter(Func<IDbConnection> factory) : IDbConnectionPool, IConnectionIdentity
 	{
+		readonly Func<IDbConnection> _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+
 		/// <summary>
 		/// Constructs a <see cref="ConnectionFactoryToPoolAdapter"/> from a connection factory.
 		/// </summary>
 		/// <param name="factory">The factory whose <see cref="IDbConnectionFactory.Create"/> method creates each connection.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
 		public ConnectionFactoryToPoolAdapter(IDbConnectionFactory factory)
-			: this(factory.Create) { }
+			: this((factory ?? throw new ArgumentNullException(nameof(factory))).Create) { }
 
 		/// <inheritdoc />
 		/// <remarks>Creates a new connection by invoking the factory function.</remarks>
 		public IDbConnection Take()
-			=> factory();
+			=> _factory();
 
 		/// <inheritdoc cref="ConnectionFactoryToPoolAdapter{TConnection}.Identity"/>
-		internal object Identity => factory.Target ?? factory;
+		internal object Identity => _factory.Target ?? _factory;
 
 		object IConnectionIdentity.Identity => Identity;
 
@@ -98,25 +102,29 @@ public static class DbConnectionFactoryExtensions
 	/// Presents a typed connection factory function as an <see cref="IDbConnectionPool{TConnection}"/>: taking a connection invokes the function and giving it back disposes it.
 	/// </summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="factory">The function that creates a new connection each time one is taken.</param>
 	/// <remarks>
 	/// Nothing is pooled. This adapter lets code written against <see cref="IDbConnectionPool{TConnection}"/> accept a plain factory.
 	/// </remarks>
+	/// <param name="factory">The function that creates a new connection each time one is taken.</param>
+	/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="AsPool{TConnection}(IDbConnectionFactory{TConnection})"/>
 	public readonly struct ConnectionFactoryToPoolAdapter<TConnection>(Func<TConnection> factory) : IDbConnectionPool<TConnection>, IConnectionIdentity
 		where TConnection : IDbConnection
 	{
+		readonly Func<TConnection> _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+
 		/// <summary>
 		/// Constructs a <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> from a typed connection factory.
 		/// </summary>
 		/// <param name="factory">The factory whose <see cref="IDbConnectionFactory{TConnection}.Create"/> method creates each connection.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
 		public ConnectionFactoryToPoolAdapter(IDbConnectionFactory<TConnection> factory)
-			: this(factory.Create) { }
+			: this((factory ?? throw new ArgumentNullException(nameof(factory))).Create) { }
 
 		/// <inheritdoc />
 		/// <remarks>Creates a new connection by invoking the factory function.</remarks>
 		public TConnection Take()
-			=> factory();
+			=> _factory();
 
 		/// <summary>
 		/// Gets what stays the same from one command to the next: the factory object itself
@@ -125,7 +133,7 @@ public static class DbConnectionFactoryExtensions
 		/// <remarks>
 		/// A function with no target (a <see langword="static"/> lambda) has no such identity, and its own delegate is returned.
 		/// </remarks>
-		internal object Identity => factory.Target ?? factory;
+		internal object Identity => _factory.Target ?? _factory;
 
 		object IConnectionIdentity.Identity => Identity;
 
@@ -144,7 +152,9 @@ public static class DbConnectionFactoryExtensions
 	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter"/> that handles this factory.</returns>
 	/// <include file="Extensions/Connections.docs.xml" path="docs/members[@name='as-pool-remarks']/*" />
+	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
 	public static ConnectionFactoryToPoolAdapter AsPool(this IDbConnectionFactory connectionFactory)
+		// The adapter constructor throws ArgumentNullException for a null source.
 		=> new(connectionFactory);
 
 	/// <summary>
@@ -153,7 +163,9 @@ public static class DbConnectionFactoryExtensions
 	/// <param name="connectionFactory">The function that creates a connection.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter"/> that handles this function.</returns>
 	/// <include file="Extensions/Connections.docs.xml" path="docs/members[@name='as-pool-remarks']/*" />
+	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
 	public static ConnectionFactoryToPoolAdapter AsPool(this Func<IDbConnection> connectionFactory)
+		// The adapter constructor throws ArgumentNullException for a null source.
 		=> new(connectionFactory);
 
 	/// <summary>
@@ -163,8 +175,10 @@ public static class DbConnectionFactoryExtensions
 	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> that handles this factory.</returns>
 	/// <include file="Extensions/Connections.docs.xml" path="docs/members[@name='as-pool-remarks']/*" />
+	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
+		// The adapter constructor throws ArgumentNullException for a null source.
 		=> new(connectionFactory);
 
 	/// <summary>
@@ -174,8 +188,10 @@ public static class DbConnectionFactoryExtensions
 	/// <param name="connectionFactory">The function that creates a connection.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> that handles this function.</returns>
 	/// <include file="Extensions/Connections.docs.xml" path="docs/members[@name='as-pool-remarks']/*" />
+	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this Func<TConnection> connectionFactory)
 		where TConnection : IDbConnection
+		// The adapter constructor throws ArgumentNullException for a null source.
 		=> new(connectionFactory);
 
 	/// <summary>

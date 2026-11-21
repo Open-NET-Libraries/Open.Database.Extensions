@@ -170,6 +170,44 @@ public static class TransactionExtensionsTests
 		Assert.Equal(ConnectionState.Closed, c.State);
 	}
 
+	// A provider can report a lost connection as Open | Broken. It is repaired here, so it is a connection this call opened and closes again.
+	[Fact]
+	public static void ExecuteTransaction_OpenAndBrokenConnection_IsRepairedThenClosedAgain()
+	{
+		var c = new FakeDbConnection();
+		c.SetState(ConnectionState.Open | ConnectionState.Broken);
+
+		c.ExecuteTransaction(_ => { }, cancellationToken: TestContext.Current.CancellationToken);
+
+		Assert.Equal(["close", "open", "begin", "commit", "tx-dispose", "close"], c.Log);
+		Assert.Equal(ConnectionState.Closed, c.State);
+	}
+
+	[Fact]
+	public static async Task ExecuteTransactionAsync_OpenAndBrokenConnection_IsRepairedThenClosedAgain()
+	{
+		var c = new FakeDbConnection();
+		c.SetState(ConnectionState.Open | ConnectionState.Broken);
+
+		await c.ExecuteTransactionAsync(_ => default, cancellationToken: TestContext.Current.CancellationToken);
+
+		Assert.Equal(["close", "open", "begin", "commit", "tx-dispose", "close"], c.Log);
+		Assert.Equal(ConnectionState.Closed, c.State);
+	}
+
+	// A plain Open connection is the caller's: it stays open.
+	[Fact]
+	public static void ExecuteTransaction_OpenConnection_StaysOpen()
+	{
+		var c = new FakeDbConnection();
+		c.SetState(ConnectionState.Open);
+
+		c.ExecuteTransaction(_ => { }, cancellationToken: TestContext.Current.CancellationToken);
+
+		Assert.Equal(["begin", "commit", "tx-dispose"], c.Log);
+		Assert.Equal(ConnectionState.Open, c.State);
+	}
+
 	#endregion
 
 	#region Commit and rollback
