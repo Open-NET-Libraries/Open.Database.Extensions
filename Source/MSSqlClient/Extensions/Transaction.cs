@@ -376,7 +376,7 @@ public static partial class SqlTransactionExtensions
 	/// </remarks>
 	static void RestoreConnection(SqlConnection connection, ConnectionState priorState)
 	{
-		if ((priorState & ConnectionState.Open) != 0)
+		if ((priorState & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open)
 			return;
 
 		try
@@ -407,7 +407,7 @@ public static partial class SqlTransactionExtensions
 	/// <inheritdoc cref="RestoreConnection(SqlConnection, ConnectionState)"/>
 	static async ValueTask RestoreConnectionAsync(SqlConnection connection, ConnectionState priorState)
 	{
-		if ((priorState & ConnectionState.Open) != 0)
+		if ((priorState & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open)
 			return;
 
 		try

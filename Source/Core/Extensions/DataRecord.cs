@@ -132,12 +132,14 @@ public static partial class DataRecordExtensions
 	/// <param name="ordinals">The ordinals to look up. The names are returned in this order.</param>
 	/// <returns>An immutable array of column names, one for each ordinal.</returns>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
+	/// <exception cref="ArgumentNullException"><paramref name="ordinals"/> is <see langword="null"/>.</exception>
 	/// <exception cref="IndexOutOfRangeException">An ordinal is not a valid column index for the record.</exception>
 	public static ImmutableArray<string> GetNames(this IDataRecord record, IEnumerable<int> ordinals)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
 
+		// Select throws ArgumentNullException for null ordinals.
 		return ordinals.Select(o => record.GetName(o)).ToImmutableArray();
 	}
 
@@ -156,11 +158,17 @@ public static partial class DataRecordExtensions
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
 	/// <param name="columnNames">The requested column names. The lookup uses <see cref="IDataRecord.GetOrdinal(string)"/>, which tries a case-sensitive match before a case-insensitive one.</param>
 	/// <returns>An enumerable of mappings, in the order requested. Each name is the column's actual name in the record, which can differ in casing from the requested name.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>. It is thrown by the call, not while the result is enumerated.</exception>
 	/// <exception cref="IndexOutOfRangeException">A requested column does not exist. It is thrown while the result is enumerated.</exception>
 	/// <seealso cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/>
 	/// <seealso cref="MatchingOrdinals(IDataRecord, IEnumerable{string}, bool)"/>
 	public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames)
-		=> columnNames.Select(n =>
+	{
+		if (record is null) throw new ArgumentNullException(nameof(record));
+		Contract.EndContractBlock();
+
+		// Select throws ArgumentNullException for null column names.
+		return columnNames.Select(n =>
 		{
 			// Does do a case-insensitive search after a case-sensitive one.
 			// https://docs.microsoft.com/en-us/dotnet/api/system.data.idatarecord.getordinal
@@ -168,6 +176,7 @@ public static partial class DataRecordExtensions
 			string name = record.GetName(ordinal); // Get actual casing.
 			return (name, ordinal);
 		});
+	}
 
 	/// <summary>
 	/// Lazily looks up the ordinal of each requested column, optionally ordered by ordinal.
@@ -176,6 +185,7 @@ public static partial class DataRecordExtensions
 	/// <param name="columnNames">The requested column names.</param>
 	/// <param name="sort"><see langword="true"/> to order the results by ordinal ascending; <see langword="false"/> to keep the requested order.</param>
 	/// <returns>An enumerable of mappings.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>. It is thrown by the call, not while the result is enumerated.</exception>
 	/// <exception cref="IndexOutOfRangeException">A requested column does not exist. It is thrown while the result is enumerated.</exception>
 	/// <seealso cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/>
 	/// <seealso cref="MatchingOrdinals(IDataRecord, IEnumerable{string}, bool)"/>
@@ -191,10 +201,12 @@ public static partial class DataRecordExtensions
 	/// <param name="columnNames">The requested column names.</param>
 	/// <param name="sort"><see langword="true"/> to order the results by ordinal ascending; <see langword="false"/> to keep the requested order.</param>
 	/// <returns>An array of mappings. It is empty if <paramref name="columnNames"/> is an empty collection.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
 	/// <exception cref="IndexOutOfRangeException">One or more requested columns do not exist. The message lists all the invalid names.</exception>
 	/// <seealso cref="GetMatchingOrdinals(IDataRecord, IEnumerable{string}, bool)"/>
 	public static (string Name, int Ordinal)[] GetOrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
+		// An empty list returns before OrdinalMapping, which throws ArgumentNullException for a null record or null column names.
 		if (columnNames is ICollection<string> cn && cn.Count == 0)
 			return [];
 
@@ -380,11 +392,16 @@ public static partial class DataRecordExtensions
 	/// so no upper-cased copy of every requested and every actual column name is allocated.
 	/// </para>
 	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">A requested name is <see langword="null"/>, empty, or white space. It can be thrown when the result is enumerated rather than when this method is called.</exception>
 	public static IEnumerable<(string Name, int Ordinal)> MatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
+		if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
+		Contract.EndContractBlock();
+
 		// Compared with StringComparer.OrdinalIgnoreCase (see the remarks).
 		IEnumerable<string> requestedNames = ValidateColumnNames(columnNames);
+		// OrdinalMapping throws ArgumentNullException for a null record.
 		IEnumerable<(string Name, int Ordinal)> actual = record.OrdinalMapping();
 
 		if (sort)

@@ -26,8 +26,17 @@ public static partial class TransactionExtensions
 		Contract.EndContractBlock();
 
 		IDbCommand command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
-		command.Transaction = transaction;
-		return command;
+		// The caller owns the command only once it is returned: a provider that rejects the transaction must not leave it undisposed.
+		try
+		{
+			command.Transaction = transaction;
+			return command;
+		}
+		catch
+		{
+			command.Dispose();
+			throw;
+		}
 	}
 
 	/// <summary>
@@ -71,8 +80,17 @@ public static partial class TransactionExtensions
 		Contract.EndContractBlock();
 
 		DbCommand command = transaction.Connection.CreateCommand(type, commandText, secondsTimeout);
-		command.Transaction = transaction;
-		return command;
+		// The caller owns the command only once it is returned: a provider that rejects the transaction must not leave it undisposed.
+		try
+		{
+			command.Transaction = transaction;
+			return command;
+		}
+		catch
+		{
+			command.Dispose();
+			throw;
+		}
 	}
 
 	/// <summary>

@@ -215,14 +215,23 @@ public static partial class ConnectionExtensions
 	/// Unlike <see cref="EnsureOpenAsync(IDbConnection, CancellationToken)"/>, this method does not check the
 	/// state of the connection first, and does not return it.
 	/// </remarks>
-	public static async ValueTask OpenAsync(
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>. It is thrown by the call, not through the returned task.</exception>
+	public static ValueTask OpenAsync(
 		this IDbConnection connection,
 		CancellationToken cancellationToken = default)
 	{
-		if (connection is DbConnection c)
-			await c.OpenAsync(cancellationToken).ConfigureAwait(false);
-		else
-			connection.Open();
+		if (connection is null) throw new ArgumentNullException(nameof(connection));
+		Contract.EndContractBlock();
+
+		return OpenCoreAsync(connection, cancellationToken);
+
+		static async ValueTask OpenCoreAsync(IDbConnection connection, CancellationToken cancellationToken)
+		{
+			if (connection is DbConnection c)
+				await c.OpenAsync(cancellationToken).ConfigureAwait(false);
+			else
+				connection.Open();
+		}
 	}
 
 	const string ObsoleteMessage = "The library always uses ConfigureAwait(false), so this argument is ignored. Call the overload without it.";

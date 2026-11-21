@@ -240,11 +240,12 @@ public static partial class ConnectionExtensions
 	/// <include file="Connections.docs.xml" path="docs/members[@name='src-func']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> to configure with parameters and then execute.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
 	public static ExpressiveCommand Command(
 		this Func<IDbConnection> connectionSource,
 		string command,
 		CommandType type = CommandType.Text)
+		// AsPool throws ArgumentNullException for a null source.
 		=> Command(connectionSource.AsPool(), command, type);
 
 	/// <summary>
@@ -257,6 +258,7 @@ public static partial class ConnectionExtensions
 	public static ExpressiveCommand StoredProcedure(
 		this Func<IDbConnection> connectionSource,
 		string procedureName)
+		// DbConnectionFactory.Create throws ArgumentNullException for a null source.
 		=> StoredProcedure(DbConnectionFactory.Create(connectionSource), procedureName);
 
 	/// <summary>
@@ -266,7 +268,7 @@ public static partial class ConnectionExtensions
 	/// <include file="Connections.docs.xml" path="docs/members[@name='src-func']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> to configure with parameters and then execute.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <example>
 	/// <code language="csharp">
 	/// // A new connection is created, opened, and disposed
@@ -281,6 +283,7 @@ public static partial class ConnectionExtensions
 		string command,
 		CommandType type = CommandType.Text)
 		where TConnection : DbConnection
+		// AsPool throws ArgumentNullException for a null source.
 		=> Command(connectionSource.AsPool(), command, type);
 
 	/// <summary>
@@ -290,10 +293,11 @@ public static partial class ConnectionExtensions
 	/// <include file="Connections.docs.xml" path="docs/members[@name='src-func']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="procedureName"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
 	public static ExpressiveDbCommand StoredProcedure<TConnection>(
 		this Func<TConnection> connectionSource,
 		string procedureName)
 		where TConnection : DbConnection
+		// AsPool throws ArgumentNullException for a null source.
 		=> StoredProcedure(connectionSource.AsPool(), procedureName);
 }

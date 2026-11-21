@@ -117,4 +117,147 @@ public static class NullGuardDefectTests
 		Assert.Equal(["a", "c", "b"], record.EnumerateValuesFromOrdinals(0, 2, 1));
 		Assert.Equal(["a"], record.EnumerateValuesFromOrdinals(0, []));
 	}
+
+	// ---- Defects found while the XML documentation was checked against the code. A null argument was a NullReferenceException,
+	// a wrongly named ArgumentNullException (the name of something the method calls), or a failure only later (while enumerated, or when the first connection was taken). ----
+
+	// The call itself refuses a null connection: the exception does not wait for the returned task to be awaited.
+	[Fact]
+	public static void OpenAsync_NullConnection_IsRefusedByTheCall_NamingTheConnection()
+	{
+		var ex = Assert.Throws<ArgumentNullException>(
+			() => { _ = ((IDbConnection)null!).OpenAsync(TestContext.Current.CancellationToken).AsTask(); });
+
+		Assert.Equal("connection", ex.ParamName);
+	}
+
+	// A function or a factory that is null is refused where it is given, not when the first connection is taken.
+	static readonly Dictionary<string, Action> AsPoolOnNull = new()
+	{
+		["AsPool(IDbConnectionFactory)"] = () => ((IDbConnectionFactory)null!).AsPool(),
+		["AsPool(Func)"] = () => ((Func<IDbConnection>)null!).AsPool(),
+		["AsPool(IDbConnectionFactory<T>)"] = () => ((IDbConnectionFactory<DbConnection>)null!).AsPool(),
+		["AsPool(Func<T>)"] = () => ((Func<DbConnection>)null!).AsPool(),
+	};
+
+	public static TheoryData<string> AsPoolNames() => [.. AsPoolOnNull.Keys];
+
+	[Theory]
+	[MemberData(nameof(AsPoolNames))]
+	public static void AsPool_NullSource_NamesTheSource(string call)
+	{
+		// The adapter constructor, which every AsPool ends in, is the one guard.
+		var ex = Assert.Throws<ArgumentNullException>(AsPoolOnNull[call]);
+
+		Assert.Equal("factory", ex.ParamName);
+	}
+
+	[Fact]
+	public static void ConnectionFactoryToPoolAdapter_NullFactory_NamesTheFactory()
+	{
+		Assert.Equal("factory", Assert.Throws<ArgumentNullException>(
+			() => new DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter((IDbConnectionFactory)null!)).ParamName);
+		Assert.Equal("factory", Assert.Throws<ArgumentNullException>(
+			() => new DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<DbConnection>((IDbConnectionFactory<DbConnection>)null!)).ParamName);
+	}
+
+	// The function constructors too: a null function is refused where it is given, not when the first connection is taken.
+	[Fact]
+	public static void ConnectionFactoryToPoolAdapter_NullFunction_NamesTheFactory()
+	{
+		Assert.Equal("factory", Assert.Throws<ArgumentNullException>(
+			() => new DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter((Func<IDbConnection>)null!)).ParamName);
+		Assert.Equal("factory", Assert.Throws<ArgumentNullException>(
+			() => new DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<DbConnection>((Func<DbConnection>)null!)).ParamName);
+	}
+
+	static readonly Dictionary<string, Action> CommandOnNullFunc = new()
+	{
+		["Command(Func<IDbConnection>)"] = () => ((Func<IDbConnection>)null!).Command("select 1"),
+		["StoredProcedure(Func<IDbConnection>)"] = () => ((Func<IDbConnection>)null!).StoredProcedure("proc"),
+		["Command(Func<T>)"] = () => ((Func<DbConnection>)null!).Command("select 1"),
+		["StoredProcedure(Func<T>)"] = () => ((Func<DbConnection>)null!).StoredProcedure("proc"),
+	};
+
+	public static TheoryData<string> CommandOnNullFuncNames() => [.. CommandOnNullFunc.Keys];
+
+	[Theory]
+	[MemberData(nameof(CommandOnNullFuncNames))]
+	public static void Command_NullConnectionFunction_NamesTheConnectionSource(string call)
+	{
+		var ex = Assert.Throws<ArgumentNullException>(CommandOnNullFunc[call]);
+
+		// AsPool (or DbConnectionFactory.Create) and then the adapter or factory constructor is the one guard.
+		Assert.Equal("factory", ex.ParamName);
+	}
+
+	[Fact]
+	public static void ReadAsync_NullQuery_IsRefusedByTheCall_NamingTheQuery()
+	{
+		static ValueTask Handler(IAsyncEnumerable<int> _) => ValueTask.CompletedTask;
+		static ValueTask<int> HandlerOfResult(IAsyncEnumerable<int> _) => new(1);
+
+		Assert.Equal("query", Assert.Throws<ArgumentNullException>(
+			() => { _ = MappedQueryExtensions.ReadAsync<int>(null!, Handler, TestContext.Current.CancellationToken).AsTask(); }).ParamName);
+		Assert.Equal("query", Assert.Throws<ArgumentNullException>(
+			() => { _ = MappedQueryExtensions.ReadAsync<int, int>(null!, HandlerOfResult, TestContext.Current.CancellationToken).AsTask(); }).ParamName);
+	}
+
+	[Fact]
+	public static void GetNames_NullOrdinals_NamesTheOrdinals()
+	{
+		IDataRecord record = Substitute.For<IDataRecord>();
+
+		Assert.Equal("source", Assert.Throws<ArgumentNullException>( // Select is the one guard.
+			() => record.GetNames((IEnumerable<int>)null!)).ParamName);
+	}
+
+	// These are lazy: the refusal comes with the call, not while the result is enumerated.
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public static void OrdinalMapping_NullArguments_AreRefusedByTheCall(bool sort)
+	{
+		IDataRecord record = Substitute.For<IDataRecord>();
+
+		Assert.Equal("record", Assert.Throws<ArgumentNullException>(
+			() => ((IDataRecord)null!).OrdinalMapping(Names, sort)).ParamName);
+		Assert.Equal("source", Assert.Throws<ArgumentNullException>( // Select is the one guard.
+			() => record.OrdinalMapping(null!, sort)).ParamName);
+	}
+
+	[Fact]
+	public static void OrdinalMapping_NullArguments_AreRefusedByTheCall_WithoutSort()
+	{
+		IDataRecord record = Substitute.For<IDataRecord>();
+
+		Assert.Equal("record", Assert.Throws<ArgumentNullException>(
+			() => ((IDataRecord)null!).OrdinalMapping(Names)).ParamName);
+		Assert.Equal("source", Assert.Throws<ArgumentNullException>( // Select is the one guard.
+			() => record.OrdinalMapping(null!)).ParamName);
+	}
+
+	[Fact]
+	public static void GetOrdinalMapping_NullArguments_AreRefusedByOrdinalMapping_ExceptForAnEmptyList()
+	{
+		IDataRecord record = Substitute.For<IDataRecord>();
+
+		// An empty list is the one benign edge: nothing is read, so a null record is not looked at.
+		Assert.Empty(((IDataRecord)null!).GetOrdinalMapping([]));
+		Assert.Equal("record", Assert.Throws<ArgumentNullException>(
+			() => ((IDataRecord)null!).GetOrdinalMapping(Names)).ParamName);
+		Assert.Equal("source", Assert.Throws<ArgumentNullException>( // OrdinalMapping reaches Select, the one guard.
+			() => record.GetOrdinalMapping(null!)).ParamName);
+	}
+
+	[Fact]
+	public static void MatchingOrdinals_NullArguments_AreRefusedByTheCall()
+	{
+		IDataRecord record = Substitute.For<IDataRecord>();
+
+		Assert.Equal("record", Assert.Throws<ArgumentNullException>(
+			() => ((IDataRecord)null!).MatchingOrdinals(Names)).ParamName);
+		Assert.Equal("columnNames", Assert.Throws<ArgumentNullException>(
+			() => record.MatchingOrdinals(null!)).ParamName);
+	}
 }
