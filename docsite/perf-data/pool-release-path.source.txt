@@ -1,0 +1,8 @@
+Benchmark build: library master 6a88b60 (11.0.0-rc.11), BinProof harness commit 1f05bf1 (scratch, never pushed)
+Run date: 2026-11-21
+Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); the probe pinned to 8 logical cores
+Runtime: .NET 10.0.15
+Harness: the BinProof probe program (a scratch harness that is not in the repository), run against the library built from master 6a88b60 (11.0.0-rc.11); Release, server GC off; one process per run
+Benchmark: BinProof part 1: one chunk released three ways, paced so the recycle bin never fills: no clear, an inline clear of the used part, and a hand-off to the bin; int rows with a clear asked, and class rows (an int and a string); chunks of 4,096, 16,384 and 65,536 rows. Int rows never use the bin, so its arm runs the inline path
+Columns: release_ns = median time per array on the releasing thread, over the arrays of one run; run = 1, 2 or 3
+Source: the numbers are copied from binproof-run1, binproof-run2 and binproof-run3 (part 1) of the BinProof console output. The logs are not in the repository.

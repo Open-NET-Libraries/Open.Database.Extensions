@@ -385,8 +385,11 @@ Write-Lf (Join-Path $ImageDir 'perf-channels.svg') (New-BarSvg 'channels' 'Drain
 $ps = Read-Data 'pool-store';      $psSrc = Read-Source 'pool-store'
 $pr = Read-Data 'pool-rent';       $prSrc = Read-Source 'pool-rent'
 $pb = Read-Data 'pool-bytes';      $pbSrc = Read-Source 'pool-bytes'
-$prl = Read-Data 'pool-release';   $prlSrc = Read-Source 'pool-release'
-$prc = Read-Data 'pool-return-clear'; $prcSrc = Read-Source 'pool-return-clear'
+$prp = Read-Data 'pool-release-path';  $prpSrc = Read-Source 'pool-release-path'
+$pcs = Read-Data 'pool-clear-speed';   $pcsSrc = Read-Source 'pool-clear-speed'
+$ppe = Read-Data 'pool-bin-proof-e2e'; $ppeSrc = Read-Source 'pool-bin-proof-e2e'
+$pcpu = Read-Data 'pool-bin-cpu';      $pcpuSrc = Read-Source 'pool-bin-cpu'
+function Med([double[]]$v) { $s = @($v | Sort-Object); if ($s.Count % 2) { $s[[int](($s.Count - 1) / 2)] } else { ($s[$s.Count / 2 - 1] + $s[$s.Count / 2]) / 2 } }
 $pe = Read-Data 'pool-e2e';        $peSrc = Read-Source 'pool-e2e'
 $pbc = Read-Data 'pool-bin-cost';  $pbcSrc = Read-Source 'pool-bin-cost'
 function Spike-Footer($src, [string]$csv) { "Pool spike, $($src.Date), mean of 12 iterations. Numbers: $csv.csv" }
@@ -403,16 +406,19 @@ foreach ($shape in 'collect', 'buffer', 'stream') {
 }
 Write-Lf (Join-Path $ImageDir 'perf-pool-store.svg') (New-BarSvg 'pool-store' 'Where the rows live: arrays or Memory' 'Shorter is better. 10,000 int rows, pool spike, net10.' $storePanels { param($v) (F $v 1) + " ${muX}s" } '' (Spike-Footer $psSrc 'pool-store') 'panel' 200 'Three panels of six bars, each panel on its own scale: the time to collect, buffer or stream 10,000 int rows with six designs of the chunk store. The two array designs are fastest in every panel.' 540)
 
-# Releasing a chunk: three ways, int rows, one panel per size.
-$relPanels = @()
-foreach ($size in 16, 256, 4096, 8192) {
-  $rows = @($prl | Where-Object { $_.element -eq 'int' -and $_.rows -eq "$size" } | ForEach-Object {
-    $fam = switch ($_.way) { 'no clear' { 'p-none' } 'inline clear' { 'p-inline' } default { 'p-bin' } }
-    [pscustomobject]@{ Name = $_.way; Fam = $fam; Value = [double]$_.ns
-      Detail = "$size int rows, $($_.way): $(F ([double]$_.ns) 0) ns on the releasing thread." } })
-  $relPanels += @{ Title = "$(F $size 0) rows"; Rows = $rows }
+# Releasing a chunk of class rows, three ways (the bin proof, paced so the bin never fills): median of three runs, one panel per chunk size.
+$binPanels = @()
+foreach ($size in 4096, 16384, 65536) {
+  $rows = @('none', 'inline', 'bin' | ForEach-Object {
+    $way = $_
+    $vals = @($prp | Where-Object { $_.element -eq 'class' -and $_.chunk_rows -eq "$size" -and $_.way -eq $way } | ForEach-Object { [double]$_.release_ns })
+    $name = switch ($way) { 'none' { 'No clear' } 'inline' { 'Inline clear' } default { 'Hand to the bin' } }
+    $fam = switch ($way) { 'none' { 'p-none' } 'inline' { 'p-inline' } default { 'p-bin' } }
+    [pscustomobject]@{ Name = $name; Fam = $fam; Value = (Med $vals)
+      Detail = "$(F $size 0) class rows, $name`: median $(F (Med $vals) 0) ns on the releasing thread (runs: $(($vals | ForEach-Object { F $_ 0 }) -join ', '))." } })
+  $binPanels += @{ Title = "$(F $size 0) class rows"; Rows = $rows }
 }
-Write-Lf (Join-Path $ImageDir 'perf-pool-release.svg') (New-BarSvg 'pool-release' 'Releasing one chunk: clear it here, or post it to the bin' 'Shorter is better. Time on the releasing thread, int rows, pool spike, net10.' $relPanels { param($v) (F $v 0) + ' ns' } '' (Spike-Footer $prlSrc 'pool-release') 'panel' 110 'Four panels of three bars each, each panel on its own scale: the time on the releasing thread to release one chunk of 16, 256, 4,096 and 8,192 int rows, with no clear, with an inline clear and by posting to the recycle bin.' 520)
+Write-Lf (Join-Path $ImageDir 'perf-pool-bin.svg') (New-BarSvg 'pool-bin' 'Releasing a chunk of class rows: clear it here, or hand it to the bin' 'Shorter is better. Time on the releasing thread, median of 3 runs, bin never full.' $binPanels { param($v) (F $v 0) + ' ns' } '' "Bin proof, $($prpSrc.Date), median of 3 runs. Numbers: pool-release-path.csv" 'panel' 130 'Three panels of three bars each, each panel on its own scale: the time on the releasing thread to release one chunk of 4,096, 16,384 and 65,536 class rows, with no clear, with an inline clear and by handing it to the recycle bin. Handing to the bin costs 95, 75 and 144 nanoseconds; clearing inline costs 550, 1,786 and 6,738.' 520)
 
 # End to end: how much less time than the Memory<T> chunks build.
 $e2eRows = @($pe | Sort-Object { -[double]$_.rows }, terminal -Stable | ForEach-Object {
@@ -526,22 +532,41 @@ $t = @('| What | Bytes |', '|---|---:|')
 foreach ($r in $pb) { $t += "| $(M $r.item) | $($r.bytes) |" }
 Write-Table 'pool-bytes' $t
 
-$t = @('| Rows in the chunk | Int, no clear | Int, inline clear | Int, post to the bin | Class, no clear | Class, inline clear | Class, post to the bin |', '|---:|---:|---:|---:|---:|---:|---:|')
-foreach ($n in 16, 64, 256, 1024, 4096, 8192) {
-  $c = foreach ($el in 'int', 'class') { foreach ($w in 'no clear', 'inline clear', 'bin post') { "$(F ([double]($prl | Where-Object { $_.rows -eq "$n" -and $_.element -eq $el -and $_.way -eq $w }).ns) 0) ns" } }
+# The bin proof tables.
+function Rng([double[]]$v, [string]$fmt) { $m = ($v | Measure-Object -Minimum -Maximum); "$(F (Med $v) $fmt) ($(F $m.Minimum $fmt) to $(F $m.Maximum $fmt))" }
+$t = @('| Rows in the chunk | Int, no clear | Int, inline clear | Class, no clear | Class, inline clear | Class, hand to the bin |', '|---:|---:|---:|---:|---:|---:|')
+foreach ($n in 4096, 16384, 65536) {
+  $c = foreach ($pair in @(@('int', 'none'), @('int', 'inline'), @('class', 'none'), @('class', 'inline'), @('class', 'bin'))) {
+    $v = @($prp | Where-Object { $_.element -eq $pair[0] -and $_.chunk_rows -eq "$n" -and $_.way -eq $pair[1] } | ForEach-Object { [double]$_.release_ns })
+    (Rng $v 0) + ' ns' }
   $t += "| $(F $n 0) | " + ($c -join ' | ') + ' |' }
-Write-Table 'pool-release' $t
+Write-Table 'pool-release-path' $t
 
-$t = @('| What was timed | Rows | Int | Class |', '|---|---|---:|---:|')
-foreach ($test in @($prc | ForEach-Object { $_.test } | Select-Object -Unique)) {
-  foreach ($size in @($prc | Where-Object { $_.test -eq $test } | ForEach-Object { $_.size } | Select-Object -Unique)) {
-    $i = $prc | Where-Object { $_.test -eq $test -and $_.size -eq $size -and $_.element -eq 'int' } | Select-Object -First 1
-    $c = $prc | Where-Object { $_.test -eq $test -and $_.size -eq $size -and $_.element -eq 'class' } | Select-Object -First 1
-    $sz = if ($size -eq 'any') { 'any' } else { F ([double]$size) 0 }
-    $iv = if ($i) { (F ([double]$i.ns) 1) + ' ns' } else { '-' }
-    $cv = if ($c) { (F ([double]$c.ns) 1) + ' ns' } else { '-' }
-    $t += "| $(M $test) | $sz | $iv | $cv |" } }
-Write-Table 'pool-return-clear' $t
+$t = @('| Rows | Array | Rows used | `AsSpan(0, used).Clear()` then `Return(false)` | `AsSpan().Clear()` then `Return(false)` | `Return(clearArray: true)` | `Array.Clear(array, 0, used)` then `Return(false)` |', '|---|---:|---:|---:|---:|---:|---:|')
+foreach ($el in 'int', 'class') {
+  foreach ($key in @($pcs | Where-Object { $_.element -eq $el } | ForEach-Object { "$($_.array_len)/$($_.used_rows)" } | Select-Object -Unique)) {
+    $len, $used = $key.Split('/')
+    $c = foreach ($m in @($pcs | ForEach-Object { $_.method } | Select-Object -Unique)) {
+      $v = @($pcs | Where-Object { $_.element -eq $el -and $_.array_len -eq $len -and $_.used_rows -eq $used -and $_.method -eq $m } | ForEach-Object { [double]$_.ns })
+      "$(F (Med $v) 0) ns" }
+    $t += "| $el | $(F ([double]$len) 0) | $(F ([double]$used) 0) | " + ($c -join ' | ') + ' |' } }
+Write-Table 'pool-clear-speed' $t
+
+$t = @('| Call | Rows | Bin: time | Inline always: time | Time, bin against inline (3 runs) | Bin: CPU | Inline always: CPU | CPU, bin against inline (3 runs) |', '|---|---:|---:|---:|---:|---:|---:|---:|')
+foreach ($term in 'ToListAsync', 'ToAsyncBufferStream') { foreach ($n in 10000, 100000) {
+  $g = @($ppe | Where-Object { $_.terminal -eq $term -and $_.rows -eq "$n" })
+  $b = @($g | Where-Object { $_.arm -eq 'bin' } | Sort-Object { [int]$_.run }); $i = @($g | Where-Object { $_.arm -eq 'inline-always' } | Sort-Object { [int]$_.run })
+  $tr = for ($k = 0; $k -lt 3; $k++) { [double]$b[$k].median_ms / [double]$i[$k].median_ms }
+  $cr = for ($k = 0; $k -lt 3; $k++) { [double]$b[$k].cpu_ms / [double]$i[$k].cpu_ms }
+  $t += "| ``$term`` | $(F $n 0) | $(F (Med ($b | ForEach-Object { [double]$_.median_ms })) 2) ms | $(F (Med ($i | ForEach-Object { [double]$_.median_ms })) 2) ms | $(F (($tr | Measure-Object -Minimum).Minimum) 2)$times to $(F (($tr | Measure-Object -Maximum).Maximum) 2)$times | $(F (Med ($b | ForEach-Object { [double]$_.cpu_ms })) 2) ms | $(F (Med ($i | ForEach-Object { [double]$_.cpu_ms })) 2) ms | $(F (($cr | Measure-Object -Minimum).Minimum) 2)$times to $(F (($cr | Measure-Object -Maximum).Maximum) 2)$times |" } }
+Write-Table 'pool-bin-proof-e2e' $t
+
+$t = @('| Chunk (class rows) | Way | Releasing thread | Total CPU, all threads |', '|---:|---|---:|---:|')
+foreach ($n in 4096, 16384, 65536) { foreach ($w in 'none', 'inline', 'bin') {
+  $v = @($pcpu | Where-Object { $_.element -eq 'class' -and $_.chunk_rows -eq "$n" -and $_.way -eq $w })
+  $name = switch ($w) { 'none' { 'no clear' } 'inline' { 'inline clear' } default { 'hand to the bin' } }
+  $t += "| $(F $n 0) | $name | $(Fmt-Ns (Med ($v | ForEach-Object { [double]$_.releasing_ns }))) | $(Fmt-Ns (Med ($v | ForEach-Object { [double]$_.total_cpu_ns }))) |" } }
+Write-Table 'pool-bin-cpu' $t
 
 foreach ($set in @(@('pool-e2e', $pe), @('pool-bin-cost', $pbc))) {
   $t = @('| Call | Rows | Before | After | Change | Error margins | Memory before | Memory after |', '|---|---:|---:|---:|---:|---:|---:|---:|')
@@ -566,8 +591,10 @@ foreach ($p in @(
     @('pool-store', 'pooling and clearing', $psSrc),
     @('pool-rent', 'pooling and clearing', $prSrc),
     @('pool-bytes', 'pooling and clearing', $pbSrc),
-    @('pool-release', 'pooling and clearing', $prlSrc),
-    @('pool-return-clear', 'pooling and clearing', $prcSrc),
+    @('pool-release-path', 'pooling and clearing', $prpSrc),
+    @('pool-clear-speed', 'pooling and clearing', $pcsSrc),
+    @('pool-bin-proof-e2e', 'pooling and clearing', $ppeSrc),
+    @('pool-bin-cpu', 'pooling and clearing', $pcpuSrc),
     @('pool-e2e', 'pooling and clearing', $peSrc),
     @('pool-bin-cost', 'pooling and clearing', $pbcSrc))) {
   $bld = ($p[2].Build -split ' \(')[0]

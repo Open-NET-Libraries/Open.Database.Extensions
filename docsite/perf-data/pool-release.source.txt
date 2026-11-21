@@ -1,8 +1,0 @@
-Benchmark build: 3c05c47 plus the PoolSpike prototype project (the prototype is not committed to the repository)
-Run date: 2026-11-20
-Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets)
-Runtime: .NET 10.0.15 (net10.0)
-Harness: BenchmarkDotNet 0.15.8, --inprocess, 5 warm-up and 12 measured iterations, one launch, 4 cores at BelowNormal priority, one run at a time
-Benchmark: the pool spike: ThresholdBench, one chunk of the given size released three ways: no clear, an inline clear of the used part, and a post to the recycle bin; int rows and class rows (an int and a string)
-Columns: ns = mean time on the releasing thread, including writing the rows
-Source: the numbers are copied from section 4 (inline clear against the recycle bin) of the pool spike report (foreman session, 2026-11-20) and were spot-checked against the BenchmarkDotNet reports of the runs. The run folders and the report are not in the repository.

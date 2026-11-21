@@ -1,0 +1,8 @@
+Benchmark build: library master 6a88b60 (11.0.0-rc.11), BinProof harness commit 1f05bf1 (scratch, never pushed)
+Run date: 2026-11-21
+Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); the probe pinned to 8 logical cores
+Runtime: .NET 10.0.15
+Harness: the BinProof probe program (a scratch harness that is not in the repository), run against the library built from master 6a88b60 (11.0.0-rc.11); Release, server GC off; one process per run
+Benchmark: BinProof part 4: the total CPU of releasing a chunk, all threads, over a 2 s window per case (rent and fill are in every row, so compare the ways); class rows and int rows; chunks of 4,096, 16,384 and 65,536 rows
+Columns: releasing_ns = time on the releasing thread per array; total_cpu_ns = process CPU per array, all threads; run = 1 or 2
+Source: the numbers are copied from binproof-cpu1 and binproof-cpu2 (part 4) of the BinProof console output. The logs are not in the repository.

@@ -1,0 +1,145 @@
+element,array_len,used_rows,method,run,ns
+int,1024,1024,"AsSpan(0, used).Clear() then Return(false)",1,48
+int,1024,1024,"AsSpan().Clear() then Return(false)",1,50
+int,1024,1024,"Return(clearArray: true)",1,47
+int,1024,1024,"Array.Clear(array, 0, used) then Return(false)",1,50
+int,1024,512,"AsSpan(0, used).Clear() then Return(false)",1,34
+int,1024,512,"AsSpan().Clear() then Return(false)",1,50
+int,1024,512,"Return(clearArray: true)",1,47
+int,1024,512,"Array.Clear(array, 0, used) then Return(false)",1,36
+int,16384,16384,"AsSpan(0, used).Clear() then Return(false)",1,558
+int,16384,16384,"AsSpan().Clear() then Return(false)",1,559
+int,16384,16384,"Return(clearArray: true)",1,558
+int,16384,16384,"Array.Clear(array, 0, used) then Return(false)",1,559
+int,16384,8192,"AsSpan(0, used).Clear() then Return(false)",1,323
+int,16384,8192,"AsSpan().Clear() then Return(false)",1,556
+int,16384,8192,"Return(clearArray: true)",1,555
+int,16384,8192,"Array.Clear(array, 0, used) then Return(false)",1,323
+int,65536,65536,"AsSpan(0, used).Clear() then Return(false)",1,1988
+int,65536,65536,"AsSpan().Clear() then Return(false)",1,1988
+int,65536,65536,"Return(clearArray: true)",1,1994
+int,65536,65536,"Array.Clear(array, 0, used) then Return(false)",1,1994
+int,65536,32768,"AsSpan(0, used).Clear() then Return(false)",1,1038
+int,65536,32768,"AsSpan().Clear() then Return(false)",1,1988
+int,65536,32768,"Return(clearArray: true)",1,1994
+int,65536,32768,"Array.Clear(array, 0, used) then Return(false)",1,1044
+class,1024,1024,"AsSpan(0, used).Clear() then Return(false)",1,133
+class,1024,1024,"AsSpan().Clear() then Return(false)",1,133
+class,1024,1024,"Return(clearArray: true)",1,130
+class,1024,1024,"Array.Clear(array, 0, used) then Return(false)",1,133
+class,1024,512,"AsSpan(0, used).Clear() then Return(false)",1,78
+class,1024,512,"AsSpan().Clear() then Return(false)",1,133
+class,1024,512,"Return(clearArray: true)",1,128
+class,1024,512,"Array.Clear(array, 0, used) then Return(false)",1,83
+class,16384,16384,"AsSpan(0, used).Clear() then Return(false)",1,1744
+class,16384,16384,"AsSpan().Clear() then Return(false)",1,1753
+class,16384,16384,"Return(clearArray: true)",1,1745
+class,16384,16384,"Array.Clear(array, 0, used) then Return(false)",1,1745
+class,16384,8192,"AsSpan(0, used).Clear() then Return(false)",1,919
+class,16384,8192,"AsSpan().Clear() then Return(false)",1,1777
+class,16384,8192,"Return(clearArray: true)",1,1748
+class,16384,8192,"Array.Clear(array, 0, used) then Return(false)",1,928
+class,65536,65536,"AsSpan(0, used).Clear() then Return(false)",1,6738
+class,65536,65536,"AsSpan().Clear() then Return(false)",1,6731
+class,65536,65536,"Return(clearArray: true)",1,6725
+class,65536,65536,"Array.Clear(array, 0, used) then Return(false)",1,6738
+class,65536,32768,"AsSpan(0, used).Clear() then Return(false)",1,3456
+class,65536,32768,"AsSpan().Clear() then Return(false)",1,6731
+class,65536,32768,"Return(clearArray: true)",1,6725
+class,65536,32768,"Array.Clear(array, 0, used) then Return(false)",1,3425
+int,1024,1024,"AsSpan(0, used).Clear() then Return(false)",2,50
+int,1024,1024,"AsSpan().Clear() then Return(false)",2,50
+int,1024,1024,"Return(clearArray: true)",2,50
+int,1024,1024,"Array.Clear(array, 0, used) then Return(false)",2,50
+int,1024,512,"AsSpan(0, used).Clear() then Return(false)",2,36
+int,1024,512,"AsSpan().Clear() then Return(false)",2,50
+int,1024,512,"Return(clearArray: true)",2,50
+int,1024,512,"Array.Clear(array, 0, used) then Return(false)",2,38
+int,16384,16384,"AsSpan(0, used).Clear() then Return(false)",2,566
+int,16384,16384,"AsSpan().Clear() then Return(false)",2,558
+int,16384,16384,"Return(clearArray: true)",2,555
+int,16384,16384,"Array.Clear(array, 0, used) then Return(false)",2,558
+int,16384,8192,"AsSpan(0, used).Clear() then Return(false)",2,322
+int,16384,8192,"AsSpan().Clear() then Return(false)",2,552
+int,16384,8192,"Return(clearArray: true)",2,553
+int,16384,8192,"Array.Clear(array, 0, used) then Return(false)",2,323
+int,65536,65536,"AsSpan(0, used).Clear() then Return(false)",2,1981
+int,65536,65536,"AsSpan().Clear() then Return(false)",2,1981
+int,65536,65536,"Return(clearArray: true)",2,2075
+int,65536,65536,"Array.Clear(array, 0, used) then Return(false)",2,2088
+int,65536,32768,"AsSpan(0, used).Clear() then Return(false)",2,1112
+int,65536,32768,"AsSpan().Clear() then Return(false)",2,2006
+int,65536,32768,"Return(clearArray: true)",2,2006
+int,65536,32768,"Array.Clear(array, 0, used) then Return(false)",2,1056
+class,1024,1024,"AsSpan(0, used).Clear() then Return(false)",2,131
+class,1024,1024,"AsSpan().Clear() then Return(false)",2,133
+class,1024,1024,"Return(clearArray: true)",2,128
+class,1024,1024,"Array.Clear(array, 0, used) then Return(false)",2,133
+class,1024,512,"AsSpan(0, used).Clear() then Return(false)",2,80
+class,1024,512,"AsSpan().Clear() then Return(false)",2,133
+class,1024,512,"Return(clearArray: true)",2,128
+class,1024,512,"Array.Clear(array, 0, used) then Return(false)",2,83
+class,16384,16384,"AsSpan(0, used).Clear() then Return(false)",2,1753
+class,16384,16384,"AsSpan().Clear() then Return(false)",2,1757
+class,16384,16384,"Return(clearArray: true)",2,1755
+class,16384,16384,"Array.Clear(array, 0, used) then Return(false)",2,1744
+class,16384,8192,"AsSpan(0, used).Clear() then Return(false)",2,917
+class,16384,8192,"AsSpan().Clear() then Return(false)",2,1758
+class,16384,8192,"Return(clearArray: true)",2,1778
+class,16384,8192,"Array.Clear(array, 0, used) then Return(false)",2,938
+class,65536,65536,"AsSpan(0, used).Clear() then Return(false)",2,6912
+class,65536,65536,"AsSpan().Clear() then Return(false)",2,6744
+class,65536,65536,"Return(clearArray: true)",2,6719
+class,65536,65536,"Array.Clear(array, 0, used) then Return(false)",2,6700
+class,65536,32768,"AsSpan(0, used).Clear() then Return(false)",2,3431
+class,65536,32768,"AsSpan().Clear() then Return(false)",2,6819
+class,65536,32768,"Return(clearArray: true)",2,6750
+class,65536,32768,"Array.Clear(array, 0, used) then Return(false)",2,3412
+int,1024,1024,"AsSpan(0, used).Clear() then Return(false)",3,48
+int,1024,1024,"AsSpan().Clear() then Return(false)",3,48
+int,1024,1024,"Return(clearArray: true)",3,47
+int,1024,1024,"Array.Clear(array, 0, used) then Return(false)",3,48
+int,1024,512,"AsSpan(0, used).Clear() then Return(false)",3,34
+int,1024,512,"AsSpan().Clear() then Return(false)",3,48
+int,1024,512,"Return(clearArray: true)",3,47
+int,1024,512,"Array.Clear(array, 0, used) then Return(false)",3,36
+int,16384,16384,"AsSpan(0, used).Clear() then Return(false)",3,566
+int,16384,16384,"AsSpan().Clear() then Return(false)",3,562
+int,16384,16384,"Return(clearArray: true)",3,561
+int,16384,16384,"Array.Clear(array, 0, used) then Return(false)",3,567
+int,16384,8192,"AsSpan(0, used).Clear() then Return(false)",3,348
+int,16384,8192,"AsSpan().Clear() then Return(false)",3,586
+int,16384,8192,"Return(clearArray: true)",3,562
+int,16384,8192,"Array.Clear(array, 0, used) then Return(false)",3,328
+int,65536,65536,"AsSpan(0, used).Clear() then Return(false)",3,2081
+int,65536,65536,"AsSpan().Clear() then Return(false)",3,2000
+int,65536,65536,"Return(clearArray: true)",3,2003
+int,65536,65536,"Array.Clear(array, 0, used) then Return(false)",3,2000
+int,65536,32768,"AsSpan(0, used).Clear() then Return(false)",3,1050
+int,65536,32768,"AsSpan().Clear() then Return(false)",3,2000
+int,65536,32768,"Return(clearArray: true)",3,1994
+int,65536,32768,"Array.Clear(array, 0, used) then Return(false)",3,1050
+class,1024,1024,"AsSpan(0, used).Clear() then Return(false)",3,128
+class,1024,1024,"AsSpan().Clear() then Return(false)",3,130
+class,1024,1024,"Return(clearArray: true)",3,128
+class,1024,1024,"Array.Clear(array, 0, used) then Return(false)",3,133
+class,1024,512,"AsSpan(0, used).Clear() then Return(false)",3,77
+class,1024,512,"AsSpan().Clear() then Return(false)",3,128
+class,1024,512,"Return(clearArray: true)",3,127
+class,1024,512,"Array.Clear(array, 0, used) then Return(false)",3,84
+class,16384,16384,"AsSpan(0, used).Clear() then Return(false)",3,1736
+class,16384,16384,"AsSpan().Clear() then Return(false)",3,1745
+class,16384,16384,"Return(clearArray: true)",3,1731
+class,16384,16384,"Array.Clear(array, 0, used) then Return(false)",3,1741
+class,16384,8192,"AsSpan(0, used).Clear() then Return(false)",3,917
+class,16384,8192,"AsSpan().Clear() then Return(false)",3,1756
+class,16384,8192,"Return(clearArray: true)",3,1753
+class,16384,8192,"Array.Clear(array, 0, used) then Return(false)",3,936
+class,65536,65536,"AsSpan(0, used).Clear() then Return(false)",3,6788
+class,65536,65536,"AsSpan().Clear() then Return(false)",3,6794
+class,65536,65536,"Return(clearArray: true)",3,6781
+class,65536,65536,"Array.Clear(array, 0, used) then Return(false)",3,6784
+class,65536,32768,"AsSpan(0, used).Clear() then Return(false)",3,3462
+class,65536,32768,"AsSpan().Clear() then Return(false)",3,6744
+class,65536,32768,"Return(clearArray: true)",3,6688
+class,65536,32768,"Array.Clear(array, 0, used) then Return(false)",3,3412
