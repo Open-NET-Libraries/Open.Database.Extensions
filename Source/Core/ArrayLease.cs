@@ -39,11 +39,16 @@ internal enum ClearMode : byte
 /// </para>
 /// <para>
 /// A lease is released exactly once, by the one party that holds it last
-/// (the holder keeps the once-only guard: a struct cannot null itself).
+/// (the holder keeps the once-only guard: a struct cannot set itself to <see langword="null"/>).
 /// Releasing a copy twice would return the array twice, which hands the
 /// same array to two renters.
 /// </para>
 /// </remarks>
+/// <typeparam name="T">The type of each row.</typeparam>
+/// <param name="array">The pooled array.</param>
+/// <param name="used">How many slots, from the start, hold rows.</param>
+/// <param name="config">The configuration the array came from (its pool).</param>
+/// <param name="mode">What to do with the rows on release.</param>
 internal readonly struct ArrayLease<T>(
 	T[] array,
 	int used,
@@ -70,8 +75,9 @@ internal readonly struct ArrayLease<T>(
 	/// </summary>
 	/// <remarks>
 	/// A full recycle bin does not lose the array: it is cleared and returned
-	/// right here, as an immediate release is. A pool whose Return throws
-	/// throws from an immediate or a plain release.
+	/// right here, as an immediate release is.
+	/// A pool whose <c>Return</c> throws throws from an immediate or a plain
+	/// release, and from a deferred one that the bin refused.
 	/// </remarks>
 	public void Release()
 	{
@@ -105,10 +111,16 @@ internal readonly struct ArrayLease<T>(
 }
 
 /// <summary>The one cached runner per row type: no allocation per post.</summary>
+/// <include file="Internals.docs.xml" path="docs/members[@name='row']/*" />
 internal sealed class ChunkRunner<T> : RecycleBin.IRunner
 {
+	/// <summary>The one runner of this <typeparamref name="T"/>.</summary>
 	public static readonly ChunkRunner<T> Instance = new();
 
+	/// <summary>Clears the first <paramref name="used"/> rows and gives the array back.</summary>
+	/// <param name="array">The array to clear and return.</param>
+	/// <include file="Internals.docs.xml" path="docs/members[@name='used']/*" />
+	/// <param name="config">The <see cref="ChunkConfig{T}"/> the array came from.</param>
 	public void Run(Array array, int used, object config)
 		=> ((ChunkConfig<T>)config).ClearAndReturn((T[])array, used);
 }

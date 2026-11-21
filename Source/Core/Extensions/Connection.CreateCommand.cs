@@ -7,16 +7,12 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="IDbCommand"/> from a connection with the command type, text, and timeout already set.
 	/// </summary>
-	/// <param name="connection">The connection to create the command from.</param>
-	/// <param name="type">The command type: <see cref="CommandType.Text"/>, <see cref="CommandType.StoredProcedure"/>, or <see cref="CommandType.TableDirect"/>.</param>
-	/// <param name="commandText">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="secondsTimeout">The number of seconds to wait before the command times out. The default is 60 seconds.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-connection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-text']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-timeout']/*" />
 	/// <returns>A new <see cref="IDbCommand"/> that the caller owns and disposes. It is not associated with a transaction.</returns>
-	/// <remarks>
-	/// The connection is not opened by this method; open it (see <see cref="EnsureOpen(IDbConnection)"/>) before executing the command.
-	/// </remarks>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-remarks']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="commandText"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="commandText"/> is empty or white space.</exception>
 	public static IDbCommand CreateCommand(this IDbConnection connection,
 		CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 	{
@@ -46,15 +42,12 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates a text <see cref="IDbCommand"/> from a connection.
 	/// </summary>
-	/// <param name="connection">The connection to create the command from.</param>
-	/// <param name="commandText">The command text to use.</param>
-	/// <param name="secondsTimeout">The number of seconds to wait before the command times out. The default is 60 seconds.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-connection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-text-command']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-timeout']/*" />
 	/// <returns>A new <see cref="IDbCommand"/> that the caller owns and disposes. It is not associated with a transaction.</returns>
-	/// <remarks>
-	/// The connection is not opened by this method; open it (see <see cref="EnsureOpen(IDbConnection)"/>) before executing the command.
-	/// </remarks>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-remarks']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="commandText"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="commandText"/> is empty or white space.</exception>
 	public static IDbCommand CreateTextCommand(this IDbConnection connection,
 		string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		=> connection.CreateCommand(CommandType.Text, commandText, secondsTimeout);
@@ -62,15 +55,12 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates a stored procedure <see cref="IDbCommand"/> from a connection.
 	/// </summary>
-	/// <param name="connection">The connection to create the command from.</param>
-	/// <param name="procedureName">The stored procedure name to use.</param>
-	/// <param name="secondsTimeout">The number of seconds to wait before the command times out. The default is 60 seconds.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-connection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-timeout']/*" />
 	/// <returns>A new <see cref="IDbCommand"/> that the caller owns and disposes. It is not associated with a transaction.</returns>
-	/// <remarks>
-	/// The connection is not opened by this method; open it (see <see cref="EnsureOpen(IDbConnection)"/>) before executing the command.
-	/// </remarks>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='create-remarks']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static IDbCommand CreateStoredProcedureCommand(this IDbConnection connection,
 		string procedureName, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		=> connection.CreateCommand(CommandType.StoredProcedure, procedureName, secondsTimeout);
@@ -118,15 +108,8 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates a stored procedure <see cref="DbCommand"/> from a <see cref="DbConnection"/>.
 	/// </summary>
-	/// <param name="connection">The connection to create the command from.</param>
-	/// <param name="procedureName">The stored procedure name to use.</param>
-	/// <param name="secondsTimeout">The number of seconds to wait before the command times out. The default is 60 seconds.</param>
 	/// <returns>A new <see cref="DbCommand"/> that the caller owns and disposes. It is not associated with a transaction.</returns>
-	/// <remarks>
-	/// The connection is not opened by this method; open it (see <see cref="EnsureOpen(IDbConnection)"/>) before executing the command.
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
+	/// <inheritdoc cref="CreateStoredProcedureCommand(IDbConnection, string, int)"/>
 	public static DbCommand CreateStoredProcedureCommand(this DbConnection connection,
 		string procedureName, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		=> connection.CreateCommand(CommandType.StoredProcedure, procedureName, secondsTimeout);

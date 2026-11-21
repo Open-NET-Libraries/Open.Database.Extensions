@@ -2,16 +2,17 @@
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
-/// A container for data reader results that also provides the column names
+/// Represents a container for data reader results that also provides the column names
 /// and other helpful data methods.
 /// </summary>
 /// <typeparam name="TResult">The type of the result property.</typeparam>
 public class QueryResult<TResult>
 {
-	/// <summary>Constructs a <see cref="QueryResult{TResult}"/>.</summary>
-	/// <param name="ordinals">The ordinal values requested</param>
+	/// <summary>Initializes a new instance of the <see cref="QueryResult{TResult}"/> class.</summary>
+	/// <param name="ordinals">The ordinal values requested.</param>
 	/// <param name="names">The column names requested.</param>
 	/// <param name="result">The result.</param>
+	/// <exception cref="ArgumentException"><paramref name="ordinals"/> and <paramref name="names"/> differ in length.</exception>
 	public QueryResult(
 		ImmutableArray<int> ordinals,
 		ImmutableArray<string> names,
@@ -29,6 +30,7 @@ public class QueryResult<TResult>
 	}
 
 	/// <inheritdoc cref="QueryResult{TResult}.QueryResult(ImmutableArray{int}, ImmutableArray{string}, TResult)" />
+	/// <exception cref="ArgumentNullException"><paramref name="ordinals"/> or <paramref name="names"/> is <see langword="null"/>.</exception>
 	public QueryResult(
 		IEnumerable<int> ordinals,
 		IEnumerable<string> names,
@@ -57,31 +59,34 @@ public class QueryResult<TResult>
 	public readonly ImmutableArray<string> Names;
 
 	/// <summary>
-	/// The values requested.  A Queue is used since values are typically used
-	/// first in first out and dequeuing results helps reduced redundant memory
-	/// usage.
+	/// The values requested.
+	/// A queue is typically used since values are used first in, first out,
+	/// and dequeuing results helps reduce redundant memory usage.
 	/// </summary>
 	public readonly TResult Result;
 
 	/// <summary>Implicitly returns the result from this instance.</summary>
 	/// <param name="result">The source of the result.</param>
+	/// <returns>The <see cref="Result"/> of <paramref name="result"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="result"/> is <see langword="null"/>.</exception>
 	public static implicit operator TResult(QueryResult<TResult> result) => (result ?? throw new ArgumentNullException(nameof(result))).Result;
 }
 
 /// <summary>
 /// Obsolete: nothing in the library returns this type; there is no replacement (rows come back as a <see cref="List{T}"/> from <see cref="MappedQuery{T}.ToList"/>).
-/// A container for data reader results that also provides the column names and
+/// Represents a container for data reader results that also provides the column names and
 /// other helpful data methods.
 /// </summary>
-/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.</remarks>
+/// <remarks>
+/// <include file="RowMapping.docs.xml" path="docs/members[@name='obsolete-12']/*" />
+/// </remarks>
 /// <typeparam name="T">The type of the items in the resultant enumerable.</typeparam>
 /// <typeparam name="TResult">The type of the result property.</typeparam>
 [Obsolete(QueryResultExtensions._queryResultCollectionObsolete)]
 public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerable<T>
 	where TResult : IEnumerable<T>
 {
-	/// <summary>Constructs a <see cref="QueryResultCollection{T,
-	/// TResult}"/>.</summary>
+	/// <summary>Initializes a new instance of the <see cref="QueryResultCollection{T, TResult}"/> class.</summary>
 	/// <inheritdoc />
 	public QueryResultCollection(
 		ImmutableArray<int> ordinals,
@@ -112,15 +117,17 @@ public class QueryResultCollection<T, TResult> : QueryResult<TResult>, IEnumerab
 
 /// <summary>
 /// Obsolete: nothing in the library returns this type; there is no replacement (rows come back as a <see cref="List{T}"/> from <see cref="MappedQuery{T}.ToList"/>).
-/// A container for data reader results that also provides the column names and
+/// Represents a container for data reader results that also provides the column names and
 /// other helpful data methods.
 /// </summary>
-/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.</remarks>
+/// <remarks>
+/// <include file="RowMapping.docs.xml" path="docs/members[@name='obsolete-12']/*" />
+/// </remarks>
 /// <typeparam name="T">The type of the items in the resultant enumerable.</typeparam>
 [Obsolete(QueryResultExtensions._queryResultCollectionObsolete)]
 public class QueryResultCollection<T> : QueryResultCollection<T, IEnumerable<T>>
 {
-	/// <summary>Constructs a <see cref="QueryResultCollection{T}"/>.</summary>
+	/// <summary>Initializes a new instance of the <see cref="QueryResultCollection{T}"/> class.</summary>
 	/// <inheritdoc />
 	public QueryResultCollection(
 		ImmutableArray<int> ordinals,
@@ -141,14 +148,13 @@ public class QueryResultCollection<T> : QueryResultCollection<T, IEnumerable<T>>
 }
 
 /// <summary>
-/// A container for data reader results that also provides the column names and
+/// Represents a container for data reader results that also provides the column names and
 /// other helpful data methods.
 /// </summary>
-/// <typeparam name="T">The type of the items in the resultant
-/// enumerable.</typeparam>
+/// <typeparam name="T">The type of the items in the resultant enumerable.</typeparam>
 public class QueryResultQueue<T> : QueryResult<Queue<T>> // Not exposed as enumerable to avoid confusion with the queue.
 {
-	/// <summary>Constructs a <see cref="QueryResult{T}"/>.</summary>
+	/// <summary>Initializes a new instance of the <see cref="QueryResultQueue{T}"/> class.</summary>
 	/// <inheritdoc />
 	public QueryResultQueue(
 		ImmutableArray<int> ordinals,
@@ -178,7 +184,7 @@ public class QueryResultQueue<T> : QueryResult<Queue<T>> // Not exposed as enume
 }
 
 /// <summary>
-/// A set of extensions for getting column data from a QueryResult.
+/// Provides extensions for getting column data from a <see cref="QueryResult{TResult}"/>.
 /// </summary>
 public static class QueryResultExtensions
 {
@@ -192,12 +198,12 @@ public static class QueryResultExtensions
 	const string DequeueAsAsyncObsolete = "Use await cmd.Map<T>().ToListAsync() instead of (await cmd.RetrieveAsync()).DequeueAs<T>(), or cmd.Map(map).ToListAsync() when you passed a RowMap (DequeueAs accepted a null map; Map(map) throws on null). On a DbCommand use await command.ResultsAsync<T>(). " + DequeueAsTail;
 	/// <summary>
 	/// Returns an enumerable that dequeues the results and returns a column
-	/// mapped dictionary for each entry.<see cref="DBNull"/> values are converted to null.
+	/// mapped dictionary for each entry.
 	/// </summary>
-	/// <param name="source">The query result.  Typically produced by a
-	/// .Retrieve method.</param>
-	/// <returns>An enumerable that dequeues the results and returns a column
-	/// mapped dictionary for each entry</returns>
+	/// <remarks><see cref="DBNull"/> values are converted to <see langword="null"/>.</remarks>
+	/// <param name="source">The query result. Typically produced by a <c>Retrieve</c> method.</param>
+	/// <returns>An enumerable that dequeues the results and returns a column mapped dictionary for each entry.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
 	public static IEnumerable<Dictionary<string, object?>> DequeueAsMappedDictionaries(this QueryResult<Queue<object[]>> source)
 	{
 		return source is null
@@ -233,16 +239,27 @@ public static class QueryResultExtensions
 	/// <summary>
 	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader)"/> then <see cref="MappedQuery{T}.ToList"/> (async: <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>).
 	/// Returns an enumerable that dequeues the results and attempts to map the
-	/// fields to type T.
+	/// fields to type <typeparamref name="T"/>.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. Replace the whole chain <c>cmd.Retrieve().DequeueAs&lt;T&gt;()</c>: on an <c>IExecuteReader</c> use <c>cmd.Map&lt;T&gt;().ToList()</c> (<c>cmd.Map(map).ToList()</c> with a <see cref="RowMap{T}"/>); on an <c>IDbCommand</c> use <c>Results&lt;T&gt;()</c>; on an <c>IDataReader</c> use <c>ResultsBuffered&lt;T&gt;()</c>; on a <c>DbCommand</c> async use <c>ResultsAsync&lt;T&gt;()</c>. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the differences and a before/after example.</remarks>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <remarks>DBNull values are converted to null.</remarks>
-	/// <param name="source">The query result.  Typically produced by a
-	/// .Retrieve method.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	/// <remarks>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='obsolete-12']/*" />
+	/// <para>
+	/// Replace the whole chain <c>cmd.Retrieve().DequeueAs&lt;T&gt;()</c>:
+	/// on an <c>IExecuteReader</c> use <c>cmd.Map&lt;T&gt;().ToList()</c> (<c>cmd.Map(map).ToList()</c> with a <see cref="RowMap{T}"/>);
+	/// on an <c>IDbCommand</c> use <c>Results&lt;T&gt;()</c>;
+	/// on an <c>IDataReader</c> use <c>ResultsBuffered&lt;T&gt;()</c>;
+	/// on a <c>DbCommand</c> async use <c>ResultsAsync&lt;T&gt;()</c>.
+	/// The "Deprecated in 11.0" page has the differences and a before/after example.
+	/// </para>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map-declare-once']/*" />
+	/// <para><see cref="DBNull"/> values are converted to <see langword="null"/>.</para>
+	/// </remarks>
+	/// <typeparam name="T">The type of the entity to create.</typeparam>
+	/// <param name="source">The query result. Typically produced by a <c>Retrieve</c> method.</param>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map']/*" />
 	/// <returns>An enumerable that dequeues the results and returns an entity
-	/// of type T.</returns>
+	/// of type <typeparamref name="T"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	[Obsolete(DequeueAsObsolete)]
 	public static IEnumerable<T> DequeueAs<T>(
@@ -256,9 +273,9 @@ public static class QueryResultExtensions
 		return x.AsDequeueingEnumerable(source);
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <seealso cref="RowMap{T}"/>
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" path="/*[not(self::param)]" />
+	/// <param name="source">The task that produces the query result.</param>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map']/*" />
 	[Obsolete(DequeueAsAsyncObsolete)]
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object[]>>> source,
@@ -271,9 +288,9 @@ public static class QueryResultExtensions
 		return x.AsDequeueingEnumerable(await source.ConfigureAwait(false));
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <seealso cref="RowMap{T}"/>
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" path="/*[not(self::param) and not(self::exception)]" />
+	/// <param name="source">The value task that produces the query result.</param>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map']/*" />
 	[Obsolete(DequeueAsAsyncObsolete)]
 	public static async ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this ValueTask<QueryResult<Queue<object[]>>> source,
@@ -283,14 +300,16 @@ public static class QueryResultExtensions
 		return x.AsDequeueingEnumerable(await source.ConfigureAwait(false));
 	}
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" path="/*[not(self::param)]" />
+	/// <param name="source">The task that produces the query result.</param>
 	[Obsolete(DequeueAsAsyncObsolete)]
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
 		this Task<QueryResult<Queue<object[]>>> source)
 		=> DequeueAs<T>(source, null);
 
-	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" />
+	/// <inheritdoc cref="DequeueAs{T}(QueryResult{Queue{object[]}}, RowMap{T}?)" path="/*[not(self::param) and not(self::exception)]" />
+	/// <param name="source">The value task that produces the query result.</param>
 	[Obsolete(DequeueAsAsyncObsolete)]
 	[OverloadResolutionPriority(1)]
 	public static ValueTask<IEnumerable<T>> DequeueAs<T>(
@@ -299,14 +318,15 @@ public static class QueryResultExtensions
 
 	/// <summary>
 	/// Obsolete: nothing produces the source this takes. Use <see cref="DequeueAsMappedDictionaries(QueryResult{Queue{object[]}})"/> on a <c>Retrieve()</c> result, or <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/> with your own selector.
-	/// Returns an enumerable that dequeues the results and returns a column
-	/// mapped dictionary for each entry.<see cref="DBNull"/> values are converted to null.
+	/// Returns an enumerable of column mapped dictionaries, one for each entry.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.</remarks>
-	/// <param name="source">The query result.  Typically produced by a
-	/// .Retrieve method.</param>
-	/// <returns>An enumerable that dequeues the results and returns a column
-	/// mapped dictionary for each entry</returns>
+	/// <remarks>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='obsolete-12']/*" />
+	/// <para><see cref="DBNull"/> values are converted to <see langword="null"/>.</para>
+	/// </remarks>
+	/// <param name="source">The query result. Typically produced by a <c>Retrieve</c> method.</param>
+	/// <returns>An enumerable of column mapped dictionaries, one for each entry.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
 	[Obsolete(AsMappedDictionariesObsolete)]
 	public static IEnumerable<Dictionary<string, object?>> AsMappedDictionaries(this QueryResult<IEnumerable<object?[]>> source)
 	{

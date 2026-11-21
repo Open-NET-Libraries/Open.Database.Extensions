@@ -1,12 +1,18 @@
 namespace Open.Database.Extensions;
 
-// EnsureOpenScope / EnsureOpenScopeAsync: the factory and pool forms of Open / OpenAsync, handing back the
-// connection and how it ends instead of taking a callback. They follow the callbacks exactly:
-// a factory's connection is created, opened if needed, and disposed; a pool's is taken, opened
-// if needed, and given back (the pool decides what that means). If the open throws or is
-// cancelled the connection is released the same way before the exception goes on.
 public static partial class ConnectionExtensions
 {
+	/// <summary>
+	/// Wraps a connection in a scope that ends the way its source calls for.
+	/// </summary>
+	/// <typeparam name="TConnection">The type of the connection.</typeparam>
+	/// <param name="connection">The connection to wrap.</param>
+	/// <param name="priorState">The state the connection was found in.</param>
+	/// <param name="pool">The pool the connection was taken from, or <see langword="null"/> when a factory created it.</param>
+	/// <returns>
+	/// A scope that gives the connection back to <paramref name="pool"/> when it is disposed,
+	/// or disposes the connection when there is no pool.
+	/// </returns>
 	static ConnectionScope<TConnection> Seal<TConnection>(
 		TConnection connection,
 		ConnectionState priorState,
@@ -16,7 +22,17 @@ public static partial class ConnectionExtensions
 		? new(connection, priorState, ScopeEnd.Dispose)
 		: new(connection, priorState, pool);
 
-	// Opens a connection that is not the caller's, and releases it if that fails.
+	/// <summary>
+	/// Opens a connection that is not the caller's, and releases it if that fails.
+	/// </summary>
+	/// <typeparam name="TConnection">The type of the connection.</typeparam>
+	/// <param name="connection">The connection to open.</param>
+	/// <param name="pool">The pool the connection was taken from, or <see langword="null"/> when a factory created it.</param>
+	/// <returns>The connection, and the state it was in before it was opened.</returns>
+	/// <remarks>
+	/// Releasing means giving the connection back to <paramref name="pool"/>, or disposing it when there is no pool.
+	/// The exception that made opening fail is rethrown after that.
+	/// </remarks>
 	internal static ConnectionScope<TConnection> OpenOwned<TConnection>(
 		TConnection connection,
 		IDbConnectionPool? pool)
@@ -34,6 +50,14 @@ public static partial class ConnectionExtensions
 		}
 	}
 
+	/// <summary>
+	/// Asynchronously opens a connection that is not the caller's, and releases it if that fails or is canceled.
+	/// </summary>
+	/// <typeparam name="TConnection">The type of the connection.</typeparam>
+	/// <param name="connection">The connection to open.</param>
+	/// <param name="pool">The pool the connection was taken from, or <see langword="null"/> when a factory created it.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='cancel-open']/*" />
+	/// <inheritdoc cref="OpenOwned{TConnection}(TConnection, IDbConnectionPool)" path="/*[not(self::summary) and not(self::param) and not(self::typeparam)]"/>
 	internal static async ValueTask<ConnectionScope<TConnection>> OpenOwnedAsync<TConnection>(
 		TConnection connection,
 		IDbConnectionPool? pool,
@@ -55,14 +79,22 @@ public static partial class ConnectionExtensions
 		}
 	}
 
-	// A connection rented from a pool and not opened (the Using forms): the state it is in is
-	// recorded, it is never opened or closed here, and it is given back when disposed.
+	/// <summary>
+	/// Takes a connection from the pool without opening it (the <c>Using</c> forms).
+	/// </summary>
+	/// <param name="connectionPool">The pool to take the connection from.</param>
+	/// <returns>A scope that holds the connection and the state it is in, and gives it back when it is disposed.</returns>
+	/// <remarks>
+	/// The state the connection is in is recorded; it is never opened or closed here.
+	/// </remarks>
 	internal static ConnectionScope<IDbConnection> Rent(this IDbConnectionPool connectionPool)
 	{
 		IDbConnection connection = connectionPool.Take();
 		return new(connection, connection.State, connectionPool);
 	}
 
+	/// <typeparam name="TConnection">The type of the connection.</typeparam>
+	/// <inheritdoc cref="Rent(IDbConnectionPool)"/>
 	internal static ConnectionScope<TConnection> Rent<TConnection>(
 		this IDbConnectionPool<TConnection> connectionPool)
 		where TConnection : IDbConnection
@@ -81,9 +113,8 @@ public static partial class ConnectionExtensions
 	/// <see cref="EnsureOpenScopeAsync(IDbConnectionFactory, CancellationToken)"/>. If opening throws the
 	/// connection is disposed before the exception propagates.
 	/// </remarks>
-	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
-	/// <returns>The connection, and the state it was in before it was opened.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='scope-factory']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-scope']/*" />
 	public static ConnectionScope<IDbConnection> EnsureOpenScope(
 		this IDbConnectionFactory connectionFactory)
 	{
@@ -97,11 +128,10 @@ public static partial class ConnectionExtensions
 	/// Creates a connection from the factory, opens it if needed, and returns a
 	/// <see cref="ConnectionScope{TConnection}"/> that disposes it when the scope is disposed.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <inheritdoc cref="EnsureOpenScope(IDbConnectionFactory)" path="/remarks"/>
-	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
-	/// <returns>The connection, and the state it was in before it was opened.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>.</exception>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='scope-factory']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-scope']/*" />
 	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(
 		this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
@@ -117,20 +147,18 @@ public static partial class ConnectionExtensions
 	/// <see cref="ConnectionScope{TConnection}"/> that disposes it when the scope is disposed.
 	/// </summary>
 	/// <remarks>
-	/// <code>
+	/// <code language="csharp">
 	/// await using var scope = await factory.EnsureOpenScopeAsync(cancellationToken);
 	/// var connection = scope.Connection;
 	/// </code>
 	/// The scope form of <see cref="OpenAsync{T}(IDbConnectionFactory, Func{IDbConnection, ValueTask{T}}, CancellationToken)"/>.
 	/// The scope's <see cref="ConnectionScope{TConnection}.DisposeAsync"/> calls <c>DisposeAsync</c> on a connection
-	/// that has one. If opening throws or <paramref name="cancellationToken"/> is cancelled, the connection is
+	/// that has one. If opening throws or <paramref name="cancellationToken"/> is canceled, the connection is
 	/// disposed before the exception propagates.
 	/// </remarks>
-	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
-	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
-	/// <returns>The connection, and the state it was in before it was opened.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled while the connection was being opened.</exception>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='scope-factory-async']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='cancel-open']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-scope']/*" />
 	public static async ValueTask<ConnectionScope<IDbConnection>> EnsureOpenScopeAsync(
 		this IDbConnectionFactory connectionFactory,
 		CancellationToken cancellationToken = default)
@@ -146,13 +174,11 @@ public static partial class ConnectionExtensions
 	/// Creates a connection from the factory, asynchronously opens it if needed, and returns a
 	/// <see cref="ConnectionScope{TConnection}"/> that disposes it when the scope is disposed.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <inheritdoc cref="EnsureOpenScopeAsync(IDbConnectionFactory, CancellationToken)" path="/remarks"/>
-	/// <param name="connectionFactory">The connection factory to create the connection from.</param>
-	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
-	/// <returns>The connection, and the state it was in before it was opened.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionFactory"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled while the connection was being opened.</exception>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='scope-factory-async']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='cancel-open']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-scope']/*" />
 	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
 		this IDbConnectionFactory<TConnection> connectionFactory,
 		CancellationToken cancellationToken = default)
@@ -175,9 +201,8 @@ public static partial class ConnectionExtensions
 	/// connection, keep it, or dispose it. Prefer <see cref="EnsureOpenScopeAsync(IDbConnectionPool, CancellationToken)"/>.
 	/// If opening throws the connection is given back before the exception propagates.
 	/// </remarks>
-	/// <param name="connectionPool">The connection pool to take the connection from.</param>
-	/// <returns>The connection, and the state it was in before it was opened.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>.</exception>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='scope-pool']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-scope']/*" />
 	public static ConnectionScope<IDbConnection> EnsureOpenScope(this IDbConnectionPool connectionPool)
 	{
 		if (connectionPool is null) throw new ArgumentNullException(nameof(connectionPool));
@@ -190,11 +215,10 @@ public static partial class ConnectionExtensions
 	/// Takes a connection from the pool, opens it if needed, and returns a
 	/// <see cref="ConnectionScope{TConnection}"/> that gives it back to the pool when the scope is disposed.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <inheritdoc cref="EnsureOpenScope(IDbConnectionPool)" path="/remarks"/>
-	/// <param name="connectionPool">The connection pool to take the connection from.</param>
-	/// <returns>The connection, and the state it was in before it was opened.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>.</exception>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='scope-pool']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-scope']/*" />
 	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(
 		this IDbConnectionPool<TConnection> connectionPool)
 		where TConnection : IDbConnection
@@ -210,19 +234,17 @@ public static partial class ConnectionExtensions
 	/// <see cref="ConnectionScope{TConnection}"/> that gives it back to the pool when the scope is disposed.
 	/// </summary>
 	/// <remarks>
-	/// <code>
+	/// <code language="csharp">
 	/// await using var scope = await pool.EnsureOpenScopeAsync(cancellationToken);
 	/// var connection = scope.Connection;
 	/// </code>
 	/// The scope form of <see cref="OpenAsync{T}(IDbConnectionPool, Func{IDbConnection, ConnectionState, ValueTask{T}}, CancellationToken)"/>.
 	/// Giving back is the pool's, and is synchronous. If opening throws or <paramref name="cancellationToken"/> is
-	/// cancelled, the connection is given back before the exception propagates.
+	/// canceled, the connection is given back before the exception propagates.
 	/// </remarks>
-	/// <param name="connectionPool">The connection pool to take the connection from.</param>
-	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
-	/// <returns>The connection, and the state it was in before it was opened.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled while the connection was being opened.</exception>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='scope-pool-async']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='cancel-open']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-scope']/*" />
 	public static async ValueTask<ConnectionScope<IDbConnection>> EnsureOpenScopeAsync(
 		this IDbConnectionPool connectionPool,
 		CancellationToken cancellationToken = default)
@@ -238,13 +260,11 @@ public static partial class ConnectionExtensions
 	/// Takes a connection from the pool, asynchronously opens it if needed, and returns a
 	/// <see cref="ConnectionScope{TConnection}"/> that gives it back to the pool when the scope is disposed.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <inheritdoc cref="EnsureOpenScopeAsync(IDbConnectionPool, CancellationToken)" path="/remarks"/>
-	/// <param name="connectionPool">The connection pool to take the connection from.</param>
-	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
-	/// <returns>The connection, and the state it was in before it was opened.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
-	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled while the connection was being opened.</exception>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='scope-pool-async']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='cancel-open']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-scope']/*" />
 	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
 		this IDbConnectionPool<TConnection> connectionPool,
 		CancellationToken cancellationToken = default)

@@ -3,7 +3,7 @@ namespace Open.Database.Extensions;
 /// <summary>
 /// A deferred query whose rows are mapped to <typeparamref name="T"/>. Nothing runs until one of the terminal methods is called.
 /// </summary>
-/// <typeparam name="T">The type each row is mapped to.</typeparam>
+/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 /// <remarks>
 /// <para>
 /// The <c>Read</c> and <c>ReadAsync</c> methods are the primitive terminals: they execute the command, hand the handler a forward-only stream of mapped rows backed by the open data reader, and release the connection when the handler returns. The convenience terminals in <see cref="MappedQueryExtensions"/> (for example <see cref="MappedQueryExtensions.ToList{T}(IMappedQuery{T})"/> and <see cref="MappedQueryExtensions.FirstOrDefault{T}(IMappedQuery{T})"/>) are built on them.
@@ -24,7 +24,7 @@ public interface IMappedQuery<T>
 	/// <paramref name="handler"/> as they are read;
 	/// the connection is held while each row is processed.
 	/// </summary>
-	/// <param name="handler">Receives a forward-only sequence of mapped rows. Enumerate it inside the handler; it is not valid after the handler returns.</param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='handler-sync']/*" />
 	/// <remarks>
 	/// <note type="caution">
 	/// <b>This is not the recommended way to read rows: it holds the
@@ -33,7 +33,7 @@ public interface IMappedQuery<T>
 	/// your code takes per row, added up over all the rows.
 	/// <br/>
 	/// <br/>
-	/// In async code that time has no bound: every <c>await</c> in the
+	/// In async code that time has no bound: every <see langword="await"/> in the
 	/// loop body can yield, and nothing says when the loop resumes.
 	/// Until it does, the connection is on hold: a pooled connection is
 	/// not returned to the pool, and the server may keep its locks and the
@@ -53,7 +53,7 @@ public interface IMappedQuery<T>
 	/// (the producer is unbounded: it reads without waiting for the
 	/// consumer and frees the connection while the consumer takes its
 	/// time, and the rows wait in memory until the consumer takes them;
-	/// dispose the enumerator, as <c>await foreach</c> does).
+	/// dispose the enumerator, as <see langword="await"/> <see langword="foreach"/> does).
 	/// </note>
 	/// <para>
 	/// The connection is opened if it is not already open and is released when the handler returns, whether the handler completes or throws. Exceptions from the provider propagate unchanged.
@@ -67,8 +67,8 @@ public interface IMappedQuery<T>
 	/// and returns the handler's result;
 	/// the connection is held while each row is processed.
 	/// </summary>
-	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
-	/// <param name="handler">Receives a forward-only sequence of mapped rows. Enumerate it inside the handler; it is not valid after the handler returns.</param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='handler-result']/*" />
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='handler-sync']/*" />
 	/// <returns>The value returned by <paramref name="handler"/>. Materialize it before returning (for example into a list) rather than returning the lazy sequence.</returns>
 	/// <inheritdoc cref="Read(Action{IEnumerable{T}})" path="/remarks"/>
 	TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler);
@@ -78,10 +78,9 @@ public interface IMappedQuery<T>
 	/// <paramref name="handler"/> as they are read;
 	/// the connection is held while each row is processed.
 	/// </summary>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; the sequence and the token are not valid after the handler returns.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
-	/// <returns>A task that completes after the handler has completed and the connection has been released.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='handler-async']/*" />
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='returns-task']/*" />
 	/// <inheritdoc cref="Read(Action{IEnumerable{T}})" path="/remarks"/>
 	ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken);
 
@@ -91,11 +90,10 @@ public interface IMappedQuery<T>
 	/// and returns the handler's result;
 	/// the connection is held while each row is processed.
 	/// </summary>
-	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; the sequence and the token are not valid after the handler returns.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
-	/// <returns>A task that produces the value returned by <paramref name="handler"/> after the connection has been released.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='handler-result']/*" />
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='handler-async']/*" />
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='returns-task-result']/*" />
 	/// <inheritdoc cref="Read(Action{IEnumerable{T}})" path="/remarks"/>
 	ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken);
 }

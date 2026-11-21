@@ -11,9 +11,9 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the values of the current row into a new array sized to the record's <see cref="IDataRecord.FieldCount"/>.
 	/// </summary>
-	/// <param name="record">The record (typically a data reader positioned on a row) to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <returns>A new array containing the value of each column in ordinal order.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <seealso cref="GetValues(IDataRecord, ArrayPool{object})"/>
 	public static object[] GetValues(this IDataRecord record)
 	{
@@ -28,10 +28,10 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the values of the current row into a new array of the specified length.
 	/// </summary>
-	/// <param name="record">The record (typically a data reader positioned on a row) to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="arrayLength">The size of the resultant array. If it is smaller than the field count, only that many leading values are copied; if it is larger, the extra elements are <see langword="null"/>.</param>
 	/// <returns>A new array containing the values in ordinal order.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	public static object[] GetValues(this IDataRecord record, int arrayLength)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
@@ -45,8 +45,8 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the values of the current row into an array rented from <paramref name="arrayPool"/>.
 	/// </summary>
-	/// <param name="record">The record (typically a data reader positioned on a row) to read the values from.</param>
-	/// <param name="minimumArrayLength">The minimum size of the rented array. If it is smaller than the field count, only that many leading values are copied.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
+	/// <param name="minimumArrayLength">The minimum size of the rented array. If it is smaller than the field count, at least that many leading values are copied (more when the rented array is longer).</param>
 	/// <param name="arrayPool">The array pool to rent the buffer from.</param>
 	/// <returns>The rented array containing the values in ordinal order.</returns>
 	/// <remarks>
@@ -66,7 +66,7 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the values of the current row into an array rented from <paramref name="arrayPool"/>, sized for the record's <see cref="IDataRecord.FieldCount"/>.
 	/// </summary>
-	/// <param name="record">The record (typically a data reader positioned on a row) to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="arrayPool">The array pool to rent the buffer from.</param>
 	/// <returns>The rented array containing the values in ordinal order.</returns>
 	/// <remarks>
@@ -87,9 +87,9 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Lazily enumerates the column names of the current result set in ordinal order.
 	/// </summary>
-	/// <param name="record">The record to get the column names from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-names']/*" />
 	/// <returns>An enumerable of column names. The names are read from the record as the enumerable is enumerated.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <seealso cref="GetNames(IDataRecord)"/>
 	public static IEnumerable<string> ColumnNames(this IDataRecord record)
 	{
@@ -108,9 +108,9 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Gets all the column names of the current result set in ordinal order.
 	/// </summary>
-	/// <param name="record">The record to get the column names from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-names']/*" />
 	/// <returns>An immutable array of column names.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <seealso cref="ColumnNames(IDataRecord)"/>
 	public static ImmutableArray<string> GetNames(this IDataRecord record)
 	{
@@ -128,10 +128,10 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Gets the column names at the specified ordinals.
 	/// </summary>
-	/// <param name="record">The record to get the column names from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-names']/*" />
 	/// <param name="ordinals">The ordinals to look up. The names are returned in this order.</param>
 	/// <returns>An immutable array of column names, one for each ordinal.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <exception cref="IndexOutOfRangeException">An ordinal is not a valid column index for the record.</exception>
 	public static ImmutableArray<string> GetNames(this IDataRecord record, IEnumerable<int> ordinals)
 	{
@@ -144,16 +144,16 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Lazily enumerates the (name, ordinal) pairs of every column in the current result set.
 	/// </summary>
-	/// <param name="record">The record to get the column names from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-names']/*" />
 	/// <returns>An enumerable of the mappings in ordinal order.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record)
 		=> record.ColumnNames().Select((n, o) => (Name: n, Ordinal: o));
 
 	/// <summary>
 	/// Lazily looks up the ordinal of each requested column.
 	/// </summary>
-	/// <param name="record">The record to query the ordinals from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
 	/// <param name="columnNames">The requested column names. The lookup uses <see cref="IDataRecord.GetOrdinal(string)"/>, which tries a case-sensitive match before a case-insensitive one.</param>
 	/// <returns>An enumerable of mappings, in the order requested. Each name is the column's actual name in the record, which can differ in casing from the requested name.</returns>
 	/// <exception cref="IndexOutOfRangeException">A requested column does not exist. It is thrown while the result is enumerated.</exception>
@@ -172,7 +172,7 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Lazily looks up the ordinal of each requested column, optionally ordered by ordinal.
 	/// </summary>
-	/// <param name="record">The record to query the ordinals from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
 	/// <param name="columnNames">The requested column names.</param>
 	/// <param name="sort"><see langword="true"/> to order the results by ordinal ascending; <see langword="false"/> to keep the requested order.</param>
 	/// <returns>An enumerable of mappings.</returns>
@@ -187,7 +187,7 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Looks up the ordinal of each requested column and returns the mappings as an array.
 	/// </summary>
-	/// <param name="record">The record to query the ordinals from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
 	/// <param name="columnNames">The requested column names.</param>
 	/// <param name="sort"><see langword="true"/> to order the results by ordinal ascending; <see langword="false"/> to keep the requested order.</param>
 	/// <returns>An array of mappings. It is empty if <paramref name="columnNames"/> is an empty collection.</returns>
@@ -217,9 +217,9 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Lazily enumerates the value of every column of the current row in ordinal order.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <returns>An enumerable of values. The values are read from the record as the enumerable is enumerated.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	public static IEnumerable<object> EnumerateValues(this IDataRecord record)
 	{
 		return record is null
@@ -237,7 +237,7 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Lazily enumerates the values of the columns at the specified ordinals.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="ordinals">The ordinals to read. The values are returned in this order.</param>
 	/// <returns>An enumerable of values matching the ordinals requested. The values are read from the record as the enumerable is enumerated.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinals"/> is <see langword="null"/>.</exception>
@@ -278,11 +278,11 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Lazily enumerates the values of the columns at the specified ordinals.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="firstOrdinal">The first ordinal to read.</param>
 	/// <param name="remainingOrdinals">The remaining ordinals to read, in order.</param>
 	/// <returns>An enumerable of values matching the ordinals requested. The values are read from the record as the enumerable is enumerated.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <exception cref="IndexOutOfRangeException">An ordinal is not a valid column index for the record. It is thrown while the result is enumerated.</exception>
 	public static IEnumerable<object> EnumerateValuesFromOrdinals(this IDataRecord record, int firstOrdinal, params IEnumerable<int> remainingOrdinals)
 	{
@@ -302,11 +302,11 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the values of the columns at the specified ordinals into the provided span.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="ordinals">The ordinals to read.</param>
 	/// <param name="values">The span that receives the values. It must be at least as long as <paramref name="ordinals"/>.</param>
 	/// <returns>The provided span, updated with values matching the ordinal positions requested.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <exception cref="IndexOutOfRangeException"><paramref name="values"/> is shorter than <paramref name="ordinals"/>, or an ordinal is not a valid column index for the record.</exception>
 	public static Span<object> GetValuesFromOrdinals(this IDataRecord record, ReadOnlySpan<int> ordinals, Span<object> values)
 	{
@@ -323,7 +323,7 @@ public static partial class DataRecordExtensions
 	/// Reads the values of the columns at the specified ordinals into the provided list.
 	/// </summary>
 	/// <typeparam name="TList">The type of the list that receives the values.</typeparam>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="ordinals">The ordinals to read.</param>
 	/// <param name="values">The list that receives the values. It must already have at least as many elements as <paramref name="ordinals"/>.</param>
 	/// <returns>The provided list, updated with values matching the ordinal positions requested.</returns>
@@ -344,7 +344,7 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the values of the columns at the specified ordinals into a new array.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="ordinals">The ordinals to read. The values are returned in this order.</param>
 	/// <returns>A new array of values matching the ordinal positions requested. It is empty if <paramref name="ordinals"/> is empty.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinals"/> is <see langword="null"/>.</exception>
@@ -367,18 +367,23 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Finds the requested columns that exist in the record, matching names case-insensitively.
 	/// </summary>
-	/// <param name="record">The record to query the ordinals from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
 	/// <param name="columnNames">The requested column names. Names that do not exist in the record are skipped rather than reported.</param>
 	/// <param name="sort"><see langword="true"/> to return the mappings in the record's column order; <see langword="false"/> to return them in the requested order.</param>
 	/// <returns>An enumerable of (name, ordinal) mappings, where each name is the column's actual name in the record.</returns>
 	/// <remarks>
+	/// <para>
 	/// Use <see cref="OrdinalMapping(IDataRecord, IEnumerable{string})"/> or <see cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/> instead when a missing column should be an error.
+	/// </para>
+	/// <para>
+	/// Names are compared with an <see cref="StringComparer.OrdinalIgnoreCase"/> comparer,
+	/// so no upper-cased copy of every requested and every actual column name is allocated.
+	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentException">A requested name is <see langword="null"/>, empty, or white space. It can be thrown when the result is enumerated rather than when this method is called.</exception>
 	public static IEnumerable<(string Name, int Ordinal)> MatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
-		// Match case-insensitively via an OrdinalIgnoreCase comparer instead of allocating an
-		// upper-cased copy of every requested and every actual column name.
+		// Compared with StringComparer.OrdinalIgnoreCase (see the remarks).
 		IEnumerable<string> requestedNames = ValidateColumnNames(columnNames);
 		IEnumerable<(string Name, int Ordinal)> actual = record.OrdinalMapping();
 
@@ -413,7 +418,7 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Finds the requested columns that exist in the record, matching names case-insensitively, and returns the mappings as an array.
 	/// </summary>
-	/// <param name="record">The record to query the ordinals from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
 	/// <param name="columnNames">The requested column names. Names that do not exist in the record are skipped rather than reported.</param>
 	/// <param name="sort"><see langword="true"/> to return the mappings in the record's column order; <see langword="false"/> to return them in the requested order.</param>
 	/// <returns>An array of (name, ordinal) mappings, where each name is the column's actual name in the record.</returns>
@@ -429,7 +434,7 @@ public static partial class DataRecordExtensions
 	/// </summary>
 	/// <param name="record">The record to get the data type names from.</param>
 	/// <returns>An enumerable of data type names, such as <c>nvarchar</c> for SQL Server. The names are read from the record as the enumerable is enumerated.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	public static IEnumerable<string> DataTypeNames(this IDataRecord record)
 	{
 		return record is null
@@ -449,7 +454,7 @@ public static partial class DataRecordExtensions
 	/// </summary>
 	/// <param name="record">The record to get the data type names from.</param>
 	/// <returns>An array of data type names, such as <c>nvarchar</c> for SQL Server.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	public static string[] GetDataTypeNames(this IDataRecord record)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
@@ -465,10 +470,11 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the specified columns of the current row into a dictionary keyed by the supplied names.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="columnMap">The ordinals to read, paired with the key to store each value under.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentException">Two entries have the same key.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="columnMap"/> is <see langword="null"/>.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<KeyValuePair<int, string>> columnMap)
 	{
 		if (columnMap is null) throw new ArgumentNullException(nameof(columnMap));
@@ -483,10 +489,11 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the specified columns of the current row into a dictionary keyed by column name.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="ordinalMapping">The (name, ordinal) pairs to read, as produced by <see cref="OrdinalMapping(IDataRecord)"/>.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentException">Two entries have the same name.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="ordinalMapping"/> is <see langword="null"/>.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<(string Name, int Ordinal)> ordinalMapping)
 	{
 		if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
@@ -501,7 +508,7 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the specified columns of the current row into a dictionary keyed by column name.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="ordinalMapping">The (name, ordinal) pairs to read, as produced by <see cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/>.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinalMapping"/> is <see langword="null"/>.</exception>
@@ -526,10 +533,10 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the specified columns of the current row into a dictionary keyed by column name.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="ordinalMapping">The (name, ordinal) pairs to read.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <exception cref="ArgumentException">Two entries have the same name.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, ReadOnlySpan<(string Name, int Ordinal)> ordinalMapping)
 	{
@@ -550,7 +557,7 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the named columns of the current row into a dictionary keyed by column name.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="columnNames">The names of the columns to read. Each name is looked up with the record's string indexer.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
@@ -589,10 +596,10 @@ public static partial class DataRecordExtensions
 	/// <summary>
 	/// Reads the named columns of the current row into a dictionary keyed by column name.
 	/// </summary>
-	/// <param name="record">The record to read the values from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="columnNames">The names of the columns to read. Each name is looked up with the record's string indexer.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> is <see langword="null"/>.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <exception cref="ArgumentException">A name is repeated.</exception>
 	/// <exception cref="IndexOutOfRangeException">A name is not a column of the record.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, ReadOnlySpan<string> columnNames)

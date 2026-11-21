@@ -8,12 +8,12 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a parameter with the given name and value to the command, leaving the provider to infer the database type from the value.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-target']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-name']/*" />
 	/// <param name="value">The value of the parameter. It is assigned as given: a <see langword="null"/> is not converted to <see cref="DBNull.Value"/>, and providers differ in how they treat it, so pass <see cref="DBNull.Value"/> to send a database null.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-created']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-target-name']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='blank-name']/*" />
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -37,12 +37,12 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a string parameter (<see cref="DbType.String"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-target']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-name']/*" />
 	/// <param name="value">The value of the parameter. A <see langword="null"/> is assigned as given and is not converted to <see cref="DBNull.Value"/>.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-created']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-target-name']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='blank-name']/*" />
 	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
@@ -52,12 +52,12 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a 32-bit integer parameter (<see cref="DbType.Int32"/>) with the given name and value to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-target']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-name']/*" />
 	/// <param name="value">The value of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-created']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-target-name']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='blank-name']/*" />
 	/// <seealso cref="AddParameter(IDbCommand, string, object, DbType, ParameterDirection)"/>
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
@@ -130,14 +130,14 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a typed parameter with the given name, value, and direction to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-target']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-name']/*" />
 	/// <param name="value">The value of the parameter. It is assigned as given: a <see langword="null"/> is not converted to <see cref="DBNull.Value"/>, so pass <see cref="DBNull.Value"/> to send a database null.</param>
-	/// <param name="type">The <see cref="DbType"/> of the parameter.</param>
-	/// <param name="direction">The direction of the parameter.</param>
-	/// <returns>The created parameter, which has already been added to the command's parameter collection.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-type']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-direction']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-created']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-target-name']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='blank-name']/*" />
 	public static IDbDataParameter AddParameter(
 		this IDbCommand target,
 		string name,
@@ -154,13 +154,13 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a parameter of the given type and direction to the command without assigning a value.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-target']/*" />
 	/// <param name="name">The name of the parameter. It can be <see langword="null"/> only when <paramref name="direction"/> is <see cref="ParameterDirection.ReturnValue"/>.</param>
-	/// <param name="type">The <see cref="DbType"/> of the parameter.</param>
-	/// <param name="direction">The direction of the parameter.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-type']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-direction']/*" />
 	/// <returns>The created parameter, which has already been added to the command's parameter collection. Set its value afterwards if it is an input parameter.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="target"/> is <see langword="null"/>, or <paramref name="name"/> is <see langword="null"/> and <paramref name="direction"/> is not <see cref="ParameterDirection.ReturnValue"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='blank-name']/*" />
 	public static IDbDataParameter AddParameterType(
 		this IDbCommand target,
 		string? name,
@@ -186,12 +186,12 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a typed return-value parameter to the command.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
-	/// <param name="type">The <see cref="DbType"/> of the parameter.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-target']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-type']/*" />
 	/// <param name="name">The optional name of the parameter.</param>
 	/// <returns>The created parameter, which has already been added to the command's parameter collection. Read its value after the command has executed.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="name"/> is empty or white space.</exception>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='blank-name']/*" />
 	public static IDbDataParameter AddReturnParameter(
 		this IDbCommand target,
 		DbType type,
@@ -201,7 +201,7 @@ public static partial class CommandExtensions
 	/// <summary>
 	/// Adds a return-value parameter to the command, leaving the provider to determine its type.
 	/// </summary>
-	/// <param name="target">The command to add the parameter to.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='param-target']/*" />
 	/// <param name="name">The optional name of the parameter. It is ignored if it is <see langword="null"/>, empty, or white space.</param>
 	/// <returns>The created parameter, which has already been added to the command's parameter collection. Read its value after the command has executed.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="target"/> is <see langword="null"/>.</exception>

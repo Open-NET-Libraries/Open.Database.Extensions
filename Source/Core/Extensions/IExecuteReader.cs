@@ -1,7 +1,8 @@
 ﻿namespace Open.Database.Extensions;
 
 /// <summary>
-/// Core non-DB-specific extensions for retrieving data from a command using best practices.
+/// Provides extension methods that read data from an
+/// <see cref="IExecuteReader"/>.
 /// </summary>
 public static class IExecuteReaderExtensions
 {
@@ -19,7 +20,7 @@ public static class IExecuteReaderExtensions
 	const string IterateReaderObsolete = "Use .Map(transform).Read(selector) instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use cmd.ExecuteReader(r => selector(r.Select(transform)), behavior | CommandBehavior.SingleResult). Removed in 12.";
 
 	/// <summary>
-	/// Iterates a reader on a command with a handler function;
+	/// Calls <paramref name="handler"/> for each record of the first result set;
 	/// the connection is held while each row is processed.
 	/// </summary>
 	/// <remarks>
@@ -30,7 +31,7 @@ public static class IExecuteReaderExtensions
 	/// your code takes per row, added up over all the rows.
 	/// <br/>
 	/// <br/>
-	/// In async code that time has no bound: every <c>await</c> in the
+	/// In async code that time has no bound: every <see langword="await"/> in the
 	/// loop body can yield, and nothing says when the loop resumes.
 	/// Until it does, the connection is on hold: a pooled connection is
 	/// not returned to the pool, and the server may keep its locks and the
@@ -51,12 +52,13 @@ public static class IExecuteReaderExtensions
 	/// (the producer is unbounded: it reads without waiting for the
 	/// consumer and frees the connection while the consumer takes its
 	/// time, and the rows wait in memory until the consumer takes them;
-	/// dispose the enumerator, as <c>await foreach</c> does).
+	/// dispose the enumerator, as <see langword="await"/> <see langword="foreach"/> does).
 	/// </note>
 	/// </remarks>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="handler">The handler function for each IDataRecord.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="handler">The action called for each <see cref="IDataRecord"/>.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static void IterateReader(this IExecuteReader command, Action<IDataRecord> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -69,15 +71,17 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a reader on a command while the handler function returns true;
+	/// Calls <paramref name="handler"/> for each record of the first result set
+	/// while it returns <see langword="true"/>;
 	/// the connection is held while each row is processed.
 	/// </summary>
 	/// <inheritdoc
 	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
 	/// path="/remarks"/>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="handler">The handler function for each IDataRecord.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="handler">The function called for each <see cref="IDataRecord"/>; it returns <see langword="true"/> to continue and <see langword="false"/> to stop.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static void IterateReaderWhile(this IExecuteReader command, Func<IDataRecord, bool> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -90,22 +94,19 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a reader on a command with a handler function;
+	/// Asynchronously calls <paramref name="handler"/> for each record of the
+	/// first result set;
 	/// the connection is held while each row is processed.
 	/// </summary>
 	/// <inheritdoc
 	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
 	/// path="/remarks"/>
-	/// <param name="command">The command to iterate.</param>
-	/// <param name="handler">The handler function for each IDataRecord.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">
-	/// A token that can cancel the call.
-	/// It is used together with the command's own token; either one cancels.
-	/// It comes after the optional <paramref name="behavior"/>:
-	/// pass it by name (<c>cancellationToken: token</c>)
-	/// or pass the behavior too.
-	/// </param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="handler">The action called for each <see cref="IDataRecord"/>.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token-behavior']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static ValueTask IterateReaderAsync(
 		this IExecuteReaderAsync command,
 		Action<IDataRecord> handler,
@@ -146,22 +147,19 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a reader on a command while the handler function returns true;
+	/// Asynchronously calls <paramref name="handler"/> for each record of the
+	/// first result set while it returns <see langword="true"/>;
 	/// the connection is held while each row is processed.
 	/// </summary>
 	/// <inheritdoc
 	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
 	/// path="/remarks"/>
-	/// <param name="command">The command to iterate.</param>
-	/// <param name="handler">The handler function for each IDataRecord.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">
-	/// A token that can cancel the call.
-	/// It is used together with the command's own token; either one cancels.
-	/// It comes after the optional <paramref name="behavior"/>:
-	/// pass it by name (<c>cancellationToken: token</c>)
-	/// or pass the behavior too.
-	/// </param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="handler">The function called for each <see cref="IDataRecord"/>; it returns <see langword="true"/> to continue and <see langword="false"/> to stop.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token-behavior']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static ValueTask IterateReaderWhileAsync(
 		this IExecuteReaderAsync command,
 		Func<IDataRecord, bool> handler,
@@ -202,22 +200,19 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a reader on a command while the handler function returns true;
+	/// Asynchronously calls <paramref name="handler"/> for each record of the
+	/// first result set while its task produces <see langword="true"/>;
 	/// the connection is held while each row is processed.
 	/// </summary>
 	/// <inheritdoc
 	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
 	/// path="/remarks"/>
-	/// <param name="command">The command to iterate.</param>
-	/// <param name="handler">The handler function for each IDataRecord.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">
-	/// A token that can cancel the call.
-	/// It is used together with the command's own token; either one cancels.
-	/// It comes after the optional <paramref name="behavior"/>:
-	/// pass it by name (<c>cancellationToken: token</c>)
-	/// or pass the behavior too.
-	/// </param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="handler">The asynchronous function called for each <see cref="IDataRecord"/>; its task produces <see langword="true"/> to continue and <see langword="false"/> to stop.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token-behavior']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static ValueTask IterateReaderWhileAsync(
 		this IExecuteReaderAsync command,
 		Func<IDataRecord, ValueTask<bool>> handler,
@@ -247,17 +242,21 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use .Map(transform).Read(selector).
-	/// Executes a reader on a command with a transform function.
+	/// Obsolete: use <c>.Map(transform).Read(selector)</c>.
+	/// Transforms each record and passes the sequence of results to
+	/// <paramref name="selector"/>, returning its result.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <typeparam name="TEntity">The type the transform returns for each record.</typeparam>
 	/// <typeparam name="TResult">The type returned by the selector.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="transform">The transform function for each IDataRecord.</param>
-	/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <returns>The result of the transform.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="transform">The function that converts each <see cref="IDataRecord"/> to a <typeparamref name="TEntity"/>.</param>
+	/// <param name="selector">The function that receives the sequence of transformed records and produces the result.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
+	/// <returns>The result of <paramref name="selector"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/>, <paramref name="transform"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
 	[Obsolete(IterateReaderObsolete)]
 	public static TResult IterateReader<TEntity, TResult>(
 		this IExecuteReader command,
@@ -275,12 +274,13 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates an IDataReader and returns the first result through a transform function.  Throws if none.
+	/// Returns the value the transform produces for the first record;
+	/// throws if there is none.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="transform">The transform function to process each IDataRecord.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
 	/// <returns>The value from the transform.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="InvalidOperationException">The command returns no records.</exception>
 	public static T First<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -294,13 +294,15 @@ public static class IExecuteReaderExtensions
 
 	/// <summary>
 	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/> then <see cref="MappedQuery{T}.FirstOrDefault"/>.
-	/// Iterates an IDataReader and returns the first result through a transform function.  Returns default(T) if none.
+	/// Returns the value the transform produces for the first record,
+	/// or <see langword="default"/> if there is none.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="transform">The transform function to process each IDataRecord.</param>
-	/// <returns>The value from the transform.</returns>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
+	/// <returns>The value from the transform, or <see langword="default"/> if there is no record.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	[Obsolete(FirstOrDefaultObsolete)]
 	public static T? FirstOrDefault<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
 	{
@@ -314,13 +316,13 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates a IDataReader and returns the first result through a transform function.
-	/// Throws if none or more than one entry.
+	/// Returns the value the transform produces for the only record;
+	/// throws if there is none or more than one.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="transform">The transform function to process each IDataRecord.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
 	/// <returns>The value from the transform.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="InvalidOperationException">The command returns no records, or more than one.</exception>
 	public static T Single<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -334,15 +336,16 @@ public static class IExecuteReaderExtensions
 
 	/// <summary>
 	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/> then <see cref="MappedQuery{T}.SingleOrDefault"/>.
-	/// Iterates an IDataReader and returns the first result through a transform function.
-	/// Returns default(T) if none.
-	/// Throws if more than one entry.
+	/// Returns the value the transform produces for the only record,
+	/// or <see langword="default"/> if there is none.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="transform">The transform function to process each IDataRecord.</param>
-	/// <returns>The value from the transform.</returns>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
+	/// <returns>The value from the transform, or <see langword="default"/> if there is no record.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="InvalidOperationException">The command returns more than one record.</exception>
 	[Obsolete(SingleOrDefaultObsolete)]
 	public static T? SingleOrDefault<T>(this IExecuteReader command, Func<IDataRecord, T> transform)
 	{
@@ -357,14 +360,17 @@ public static class IExecuteReaderExtensions
 
 	/// <summary>
 	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/>, then <see cref="MappedQuery{T}.Take(int)"/>, then <see cref="MappedQueryWithTake{T}.ToList"/>.
-	/// Iterates an IDataReader and returns the first number of results defined by the count.
+	/// Returns the values the transform produces for the first
+	/// <paramref name="count"/> records.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
 	/// <param name="count">The maximum number of records to return.</param>
-	/// <param name="transform">The transform function to process each IDataRecord.</param>
 	/// <returns>The results from the transform limited by the take count.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
 	[Obsolete(TakeObsolete)]
 	public static List<T> Take<T>(this IExecuteReader command, int count, Func<IDataRecord, T> transform)
 	{
@@ -380,14 +386,17 @@ public static class IExecuteReaderExtensions
 
 	/// <summary>
 	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/>, then <see cref="MappedQuery{T}.Skip(int)"/>, then <see cref="MappedQueryWithSkip{T}.ToList"/>.
-	/// Iterates an IDataReader and skips the first number of results defined by the count.
+	/// Returns the values the transform produces for the records after the
+	/// first <paramref name="count"/>.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
 	/// <param name="count">The number of records to skip.</param>
-	/// <param name="transform">The transform function to process each IDataRecord.</param>
 	/// <returns>The results from the transform after the skip count.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
 	[Obsolete(SkipObsolete)]
 	public static List<T> Skip<T>(this IExecuteReader command, int count, Func<IDataRecord, T> transform)
 	{
@@ -405,15 +414,18 @@ public static class IExecuteReaderExtensions
 
 	/// <summary>
 	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/>, then <see cref="MappedQuery{T}.Skip(int)"/>, <see cref="MappedQueryWithSkip{T}.Take(int)"/> and <see cref="MappedQueryWithTake{T}.ToList"/>.
-	/// Iterates an IDataReader and skips by the skip parameter returns the maximum remaining defined by the take parameter.
+	/// Returns the values the transform produces for the records after the
+	/// first <paramref name="skip"/>, at most <paramref name="take"/> of them.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="skip">The number of entries to skip before starting to take results.</param>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
+	/// <param name="skip">The number of records to skip before starting to take results.</param>
 	/// <param name="take">The maximum number of records to return.</param>
-	/// <param name="transform">The transform function to process each IDataRecord.</param>
 	/// <returns>The results from the skip, transform and take operation.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="skip"/> or <paramref name="take"/> is negative.</exception>
 	[Obsolete(SkipThenTakeObsolete)]
 	public static List<T> SkipThenTake<T>(this IExecuteReader command, int skip, int take, Func<IDataRecord, T> transform)
 	{
@@ -431,15 +443,16 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use .Map(transform).ToList().
-	/// Converts all IDataRecords into a list using a transform function.
+	/// Obsolete: use <c>.Map(transform).ToList()</c>.
+	/// Converts every record into a list item using a transform function.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The expected return type.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="transform">The transform function.</param>
-	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
 	/// <returns>The list of transformed records.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	[Obsolete(ToListObsolete)]
 	public static List<T> ToList<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
@@ -453,15 +466,16 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use .Map(transform).ToArray().
-	/// Converts all IDataRecords into an array using a transform function.
+	/// Obsolete: use <c>.Map(transform).ToArray()</c>.
+	/// Converts every record into an array item using a transform function.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The expected return type.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="transform">The transform function.</param>
-	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
 	/// <returns>The array of transformed records.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	[Obsolete(ToArrayObsolete)]
 	public static T[] ToArray<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
@@ -475,15 +489,17 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use .Map(transform).ToImmutableArray().
-	/// Converts all IDataRecords into an immutable array using a transform function.
+	/// Obsolete: use <c>.Map(transform).ToImmutableArray()</c>.
+	/// Converts every record into an item of an immutable array using a
+	/// transform function.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The expected return type.</typeparam>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <param name="transform">The transform function.</param>
-	/// <param name="behavior">The command behavior for once the command the reader is complete.</param>
-	/// <returns>The array of transformed records.</returns>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command-transform']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='behavior-single']/*" />
+	/// <returns>The immutable array of transformed records.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	[Obsolete(ToImmutableArrayObsolete)]
 	public static ImmutableArray<T> ToImmutableArray<T>(this IExecuteReader command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
@@ -534,8 +550,8 @@ public static class IExecuteReaderExtensions
 	/// which is the one member that still wins over these extensions.
 	/// </remarks>
 	/// <typeparam name="T">The model type to map the rows to, or the single value to read from the first column.</typeparam>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>The rows as a list.</returns>
 	/// <exception cref="ArgumentNullException">
 	/// <paramref name="command"/> is <see langword="null"/>.
@@ -556,8 +572,8 @@ public static class IExecuteReaderExtensions
 	/// Equivalent to <c>command.Map&lt;T&gt;().ToArrayAsync(cancellationToken)</c>.
 	/// </summary>
 	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>The rows as an array.</returns>
 	public static ValueTask<T[]> ToArrayAsync<T>(
 		this IExecuteReader command,
@@ -569,8 +585,8 @@ public static class IExecuteReaderExtensions
 	/// Equivalent to <c>command.Map&lt;T&gt;().ToImmutableArrayAsync(cancellationToken)</c>.
 	/// </summary>
 	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>The rows as an immutable array.</returns>
 	public static ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(
 		this IExecuteReader command,
@@ -583,8 +599,8 @@ public static class IExecuteReaderExtensions
 	/// Equivalent to <c>command.Map&lt;T&gt;().FirstOrDefaultAsync(cancellationToken)</c>.
 	/// </summary>
 	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>The first row, or <see langword="default"/>.</returns>
 	public static ValueTask<T?> FirstOrDefaultAsync<T>(
 		this IExecuteReader command,
@@ -597,8 +613,8 @@ public static class IExecuteReaderExtensions
 	/// Equivalent to <c>command.Map&lt;T&gt;().SingleOrDefaultAsync(cancellationToken)</c>.
 	/// </summary>
 	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>The only row, or <see langword="default"/>.</returns>
 	/// <exception cref="InvalidOperationException">
 	/// There is more than one row.
@@ -613,8 +629,8 @@ public static class IExecuteReaderExtensions
 	/// Equivalent to <c>command.Map&lt;T&gt;().FirstAsync(cancellationToken)</c>.
 	/// </summary>
 	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>The first row.</returns>
 	/// <exception cref="InvalidOperationException">
 	/// There is no row.
@@ -630,8 +646,8 @@ public static class IExecuteReaderExtensions
 	/// Equivalent to <c>command.Map&lt;T&gt;().SingleAsync(cancellationToken)</c>.
 	/// </summary>
 	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
-	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>The only row.</returns>
 	/// <exception cref="InvalidOperationException">
 	/// There is no row, or more than one.
@@ -649,9 +665,9 @@ public static class IExecuteReaderExtensions
 	/// <c>ToHashSetAsync&lt;int&gt;(cancellationToken: ct)</c>.
 	/// </summary>
 	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
-	/// <param name="command">The command to read from.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="comparer">The comparer of the set, or <see langword="null"/> for the default.</param>
-	/// <param name="cancellationToken">A token combined with the command's own.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>The rows as a hash set.</returns>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(
 		this IExecuteReader command,
@@ -662,11 +678,12 @@ public static class IExecuteReaderExtensions
 	#endregion
 
 	/// <summary>
-	/// Iterates all records within the first result set using an IDataReader and returns the results.
+	/// Reads every record of the first result set and returns the results.
 	/// <see cref="DBNull"/> values are left unchanged (retained).
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-queue']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -678,12 +695,14 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+	/// Reads the columns at the given ordinals from every record of the result
+	/// set and returns the results.
 	/// <see cref="DBNull"/> values are left unchanged (retained).
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
-	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-queue']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, IEnumerable<int> ordinals)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -695,13 +714,15 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+	/// Reads the columns at the given ordinals from every record of the result
+	/// set and returns the results.
 	/// <see cref="DBNull"/> values are left unchanged (retained).
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-queue']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, int n, params IEnumerable<int> others)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -713,12 +734,14 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates all records within the first result set using an IDataReader and returns the desired results as a list of Dictionaries containing only the specified column values.
+	/// Reads the named columns from every record of the first result set and
+	/// returns the results.
 	/// <see cref="DBNull"/> values are left unchanged (retained).
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="columnNames">The column names to select.</param>
-	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-queue']/*" />
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
 	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, IEnumerable<string> columnNames)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -731,13 +754,15 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates all records within the current result set using an IDataReader and returns the desired results.
+	/// Reads the named columns from every record of the result set and returns
+	/// the results.
 	/// <see cref="DBNull"/> values are left unchanged (retained).
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="others">The remaining column names to request from the reader for each record.</param>
-	/// <returns>The QueryResult that contains all the results and the column mappings.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-queue']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static QueryResultQueue<object[]> Retrieve(this IExecuteReader command, string c, params IEnumerable<string> others)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -752,15 +777,22 @@ public static class IExecuteReaderExtensions
 
 	/// <summary>
 	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader)"/> then <see cref="MappedQuery{T}.ToList"/>.
-	/// Iterates each record and attempts to map the fields to type T.
-	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
+	/// Iterates each record and maps the fields to type <typeparamref name="T"/>.
+	/// The data is buffered in its entirety in a queue before the transform is
+	/// applied for each iteration.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// <para>
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.
+	/// </para>
+	/// </remarks>
 	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped; this is thrown before the command runs.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	[Obsolete(ResultsObsolete)]
 	public static IEnumerable<T> Results<T>(this IExecuteReader command, RowMap<T>? map = null)
@@ -777,11 +809,13 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Reads the first column from every record and returns the results as a list..
-	/// <see cref="DBNull"/> values are converted to null.
+	/// Reads the first column from every record and returns the results as a
+	/// list.
+	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
 	/// <returns>The list of transformed records.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static IEnumerable<object?> FirstOrdinalResults(this IExecuteReader command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -793,11 +827,14 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Reads the first column from every record..
-	/// <see cref="DBNull"/> values are converted to null.
+	/// Reads the first column from every record and returns the values cast to
+	/// <typeparamref name="T0"/>.
+	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <returns>The enumerable of casted values.</returns>
+	/// <typeparam name="T0">The type the values are cast to.</typeparam>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <returns>The enumerable of cast values.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IExecuteReader command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -809,10 +846,11 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Imports all data using an IDataReader into a DataTable.
+	/// Loads the records of the first result set into a <see cref="DataTable"/>.
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <returns>The resultant DataTable.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <returns>The resultant <see cref="DataTable"/>.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static DataTable LoadTable(this IExecuteReader command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -824,11 +862,12 @@ public static class IExecuteReaderExtensions
 	}
 
 	/// <summary>
-	/// Loads all data from a command through an IDataReader into a DataTables.
-	/// Each result set is loaded into its own table. Calls .NextResult() to check for more results.
+	/// Loads each result set of the command into its own <see cref="DataTable"/>.
+	/// Calls <see cref="IDataReader.NextResult"/> to check for more results.
 	/// </summary>
-	/// <param name="command">The IExecuteReader to iterate.</param>
-	/// <returns>The resultant list of DataTables.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
+	/// <returns>The resultant list of tables.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static List<DataTable> LoadTables(this IExecuteReader command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));

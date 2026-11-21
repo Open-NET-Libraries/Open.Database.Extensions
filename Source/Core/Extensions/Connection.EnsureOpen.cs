@@ -3,17 +3,22 @@ namespace Open.Database.Extensions;
 public static partial class ConnectionExtensions
 {
 	/// <summary>
-	/// True when a connection found in this state has to be opened by us
-	/// (see <see cref="EnsureOpen(IDbConnection)"/>), so whoever opens it
+	/// Returns <see langword="true"/> if a connection found in this state has to be opened by us, so whoever opens it
 	/// closes it again afterwards.
 	/// </summary>
+	/// <param name="state">The state the connection was found in.</param>
+	/// <returns>
+	/// <see langword="true"/> if the connection is closed, still connecting, or broken;
+	/// otherwise, <see langword="false"/>.
+	/// </returns>
 	/// <remarks>
 	/// <see cref="ConnectionState"/> is a <see cref="FlagsAttribute">[Flags]</see>
-	/// enum: Closed = 0, Open = 1, Connecting = 2, Executing = 4,
-	/// Fetching = 8, Broken = 16. An open connection that is busy is
-	/// <c>Open | Executing</c> or <c>Open | Fetching</c>, which is why the
-	/// Open <em>bit</em> is tested and the state is never compared for equality.
-	/// Closed is zero, so it has no bit: it is found as "the Open bit is not set".
+	/// enum: <see cref="ConnectionState.Closed"/> = 0, <see cref="ConnectionState.Open"/> = 1,
+	/// <see cref="ConnectionState.Connecting"/> = 2, <see cref="ConnectionState.Executing"/> = 4,
+	/// <see cref="ConnectionState.Fetching"/> = 8, <see cref="ConnectionState.Broken"/> = 16.
+	/// An open connection that is busy is <c>Open | Executing</c> or <c>Open | Fetching</c>,
+	/// which is why the <see cref="ConnectionState.Open"/> <em>bit</em> is tested and the state is never compared for equality.
+	/// <see cref="ConnectionState.Closed"/> is zero, so it has no bit: it is found as "the Open bit is not set".
 	/// </remarks>
 	internal static bool NeedsOpen(ConnectionState state)
 		// Open bit not set: the connection is closed (or still connecting), so it has to be opened.
@@ -22,13 +27,32 @@ public static partial class ConnectionExtensions
 		// so it is closed first, then opened.
 		|| IsBroken(state);
 
-	// The Broken bit. Kept in one place so that the check that closes a broken connection first
-	// and the one that decides it needs opening cannot disagree.
+	/// <summary>
+	/// Returns <see langword="true"/> if the <see cref="ConnectionState.Broken"/> bit of the state is set.
+	/// </summary>
+	/// <param name="state">The state of the connection.</param>
+	/// <returns>
+	/// <see langword="true"/> if the connection is broken; otherwise, <see langword="false"/>.
+	/// </returns>
+	/// <remarks>
+	/// Kept in one place so that the check that closes a broken connection first
+	/// and the one that decides it needs opening cannot disagree.
+	/// </remarks>
 	static bool IsBroken(ConnectionState state)
 		=> (state & ConnectionState.Broken) != 0;
 
-	/// <returns>The prior connection state.</returns>
-	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
+	/// <summary>
+	/// Opens the connection if it is not open (a broken connection is closed first)
+	/// and returns the prior state, so you can close it afterwards if it was not open.
+	/// </summary>
+	/// <param name="connection">The connection to open.</param>
+	/// <returns>The state the connection was in before this call.</returns>
+	/// <remarks>
+	/// A connection that is already open is left as it is, whatever it is doing.
+	/// Nothing here closes it afterwards; use
+	/// <see cref="EnsureOpenScope{TConnection}(TConnection)"/> for a scope that does.
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
 	public static ConnectionState EnsureOpen(this IDbConnection connection)
 	{
 		if (connection is null) throw new ArgumentNullException(nameof(connection));
@@ -48,13 +72,21 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Opens the connection if it is not open (a broken connection is closed first)
-	/// and returns the prior state, so you can close it afterwards if it was not open.<br/>
-	/// Always awaits with <c>ConfigureAwait(false)</c>: the caller decides whether to return to its context.
+	/// Asynchronously opens the connection if it is not open (a broken connection is closed first)
+	/// and returns the prior state, so you can close it afterwards if it was not open.
 	/// </summary>
-	/// <param name="connection">The connection to transact with.</param>
-	/// <param name="cancellationToken">An cancellation token to cancel opening.</param>
-	/// <returns>A task containing the prior connection state.</returns>
+	/// <param name="connection">The connection to open.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='cancel-open']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation; its result is the
+	/// state the connection was in before this call.
+	/// </returns>
+	/// <remarks>
+	/// Always awaits with <c>ConfigureAwait(false)</c>: the caller decides whether to return to its context.
+	/// If the token is canceled after the connection has been opened, the connection is closed again
+	/// before the exception is thrown.
+	/// </remarks>
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	public static async ValueTask<ConnectionState> EnsureOpenAsync(
 		this DbConnection connection,
 		CancellationToken cancellationToken = default)
@@ -85,6 +117,14 @@ public static partial class ConnectionExtensions
 		return state;
 	}
 
+	/// <summary>
+	/// Opens the connection if it is not open (a broken connection is closed first)
+	/// and returns the prior state, asynchronously when the connection is a <see cref="DbConnection"/>.
+	/// </summary>
+	/// <remarks>
+	/// A connection that is not a <see cref="DbConnection"/> is opened synchronously by
+	/// <see cref="EnsureOpen(IDbConnection)"/>, after the token has been checked.
+	/// </remarks>
 	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
 	public static async ValueTask<ConnectionState> EnsureOpenAsync(
 		this IDbConnection connection,
@@ -97,8 +137,17 @@ public static partial class ConnectionExtensions
 		return connection.EnsureOpen();
 	}
 
-	// What a reader of a connection that was found in this state is executed with: the connection
-	// that needed opening closes when the reader does (also for the callers that hold no scope).
+	/// <summary>
+	/// Returns the behavior to execute a reader with: <paramref name="behavior"/>, plus
+	/// <see cref="CommandBehavior.CloseConnection"/> when a connection found in <paramref name="priorState"/> had to be opened.
+	/// </summary>
+	/// <param name="priorState">The state the connection was found in.</param>
+	/// <param name="behavior">The behavior to start from.</param>
+	/// <returns>The behavior to pass to the command.</returns>
+	/// <remarks>
+	/// A reader of a connection that needed opening closes the connection when the reader does,
+	/// also for the callers that hold no scope.
+	/// </remarks>
 	internal static CommandBehavior ReaderBehavior(ConnectionState priorState, CommandBehavior behavior)
 		=> NeedsOpen(priorState) ? behavior | CommandBehavior.CloseConnection : behavior;
 
@@ -110,12 +159,12 @@ public static partial class ConnectionExtensions
 	/// <remarks>
 	/// The same rule as <see cref="EnsureOpen(IDbConnection)"/>, which returns the prior state
 	/// for a caller that wants to do the closing itself; the scope does it, without a
-	/// <c>try</c>/<c>finally</c>. It is safe to call on a connection that is already open.
+	/// <see langword="try"/>/<see langword="finally"/>. It is safe to call on a connection that is already open.
 	/// You already hold the connection, so the scope is usually only there to be disposed:
 	/// <c>using var _ = connection.EnsureOpenScope();</c>. Prefer
 	/// <see cref="EnsureOpenScopeAsync{TConnection}(TConnection, CancellationToken)"/>.
 	/// </remarks>
-	/// <typeparam name="TConnection">The type of the connection; inferred from the call.</typeparam>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <param name="connection">The connection to open.</param>
 	/// <returns>The connection and the state it was found in; <see cref="ConnectionScope{TConnection}.Dispose"/> closes it again if the scope opened it.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
@@ -124,12 +173,12 @@ public static partial class ConnectionExtensions
 		=> new(connection, connection.EnsureOpen());
 
 	/// <summary>
-	/// Opens the connection if it is not open (a broken connection is closed first) and
+	/// Asynchronously opens the connection if it is not open (a broken connection is closed first) and
 	/// returns a <see cref="ConnectionScope{TConnection}"/> that puts it back when disposed: a
 	/// connection this call opened is closed again, and one that was already open is left open.
 	/// </summary>
 	/// <remarks>
-	/// <code>
+	/// <code language="csharp">
 	/// await using var _ = await connection.EnsureOpenScopeAsync(cancellationToken);
 	/// </code>
 	/// You already hold the connection, so the scope is usually only there to be disposed; keep it
@@ -140,11 +189,11 @@ public static partial class ConnectionExtensions
 	/// <see cref="DbConnection"/>, and always awaits with <c>ConfigureAwait(false)</c>.
 	/// The scope's <see cref="ConnectionScope{TConnection}.DisposeAsync"/> closes with <c>CloseAsync</c>
 	/// where the target has it (not netstandard2.0, which closes synchronously). If the token
-	/// is cancelled the connection it opened is closed again and no scope is returned.
+	/// is canceled the connection it opened is closed again and no scope is returned.
 	/// </remarks>
-	/// <typeparam name="TConnection">The type of the connection; inferred from the call.</typeparam>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <param name="connection">The connection to open.</param>
-	/// <param name="cancellationToken">A cancellation token to cancel opening.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='cancel-open']/*" />
 	/// <returns>The connection and the state it was found in; <see cref="ConnectionScope{TConnection}.DisposeAsync"/> closes it again if the scope opened it.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
 	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
@@ -156,10 +205,16 @@ public static partial class ConnectionExtensions
 			await connection.EnsureOpenAsync(cancellationToken).ConfigureAwait(false));
 
 	/// <summary>
-	/// If the <paramref name="connection"/> derives from <see cref="DbConnection"/>, this will call <see cref="DbConnection.OpenAsync(CancellationToken)"/>;
-	/// otherwise it will call <see cref="IDbConnection.Open()"/>.
+	/// Opens the connection by calling <see cref="DbConnection.OpenAsync(CancellationToken)"/> if it is a
+	/// <see cref="DbConnection"/>, and <see cref="IDbConnection.Open()"/> otherwise.
 	/// </summary>
-	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
+	/// <param name="connection">The connection to open.</param>
+	/// <param name="cancellationToken">A token that cancels opening a <see cref="DbConnection"/>. It is ignored for any other connection.</param>
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <remarks>
+	/// Unlike <see cref="EnsureOpenAsync(IDbConnection, CancellationToken)"/>, this method does not check the
+	/// state of the connection first, and does not return it.
+	/// </remarks>
 	public static async ValueTask OpenAsync(
 		this IDbConnection connection,
 		CancellationToken cancellationToken = default)
@@ -172,8 +227,10 @@ public static partial class ConnectionExtensions
 
 	const string ObsoleteMessage = "The library always uses ConfigureAwait(false), so this argument is ignored. Call the overload without it.";
 
-	/// <summary>The <paramref name="configureAwait"/> argument is ignored: the library always uses <c>ConfigureAwait(false)</c>.</summary>
-	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='configure-await-ignored']/*" />
+	/// <param name="connection">The connection to open.</param>
+	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
+	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)" path="/*[not(self::summary) and not(self::param)]"/>
 	[Obsolete(ObsoleteMessage)]
 	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
 	public static ValueTask<ConnectionState> EnsureOpenAsync(
@@ -182,8 +239,10 @@ public static partial class ConnectionExtensions
 		CancellationToken cancellationToken = default)
 		=> connection.EnsureOpenAsync(cancellationToken);
 
-	/// <summary>The <paramref name="configureAwait"/> argument is ignored: the library always uses <c>ConfigureAwait(false)</c>.</summary>
-	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='configure-await-ignored']/*" />
+	/// <param name="connection">The connection to open.</param>
+	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
+	/// <inheritdoc cref="EnsureOpenAsync(IDbConnection, CancellationToken)" path="/*[not(self::summary) and not(self::param)]"/>
 	[Obsolete(ObsoleteMessage)]
 	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
 	public static ValueTask<ConnectionState> EnsureOpenAsync(
@@ -192,8 +251,10 @@ public static partial class ConnectionExtensions
 		CancellationToken cancellationToken = default)
 		=> connection.EnsureOpenAsync(cancellationToken);
 
-	/// <summary>The <paramref name="configureAwait"/> argument is ignored: the library always uses <c>ConfigureAwait(false)</c>.</summary>
-	/// <inheritdoc cref="OpenAsync(IDbConnection, CancellationToken)"/>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='configure-await-ignored']/*" />
+	/// <param name="connection">The connection to open.</param>
+	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
+	/// <inheritdoc cref="OpenAsync(IDbConnection, CancellationToken)" path="/*[not(self::summary) and not(self::param)]"/>
 	[Obsolete(ObsoleteMessage)]
 	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
 	public static ValueTask OpenAsync(

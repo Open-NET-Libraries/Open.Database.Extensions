@@ -2,77 +2,117 @@ using System.Threading.Channels;
 
 namespace Open.Database.Extensions.Core;
 
-// The chunk stream behind ToAsyncBufferStream (and, flattened, behind
-// ToBufferedAsyncStream): one consumer, one chunk at a time.
-//
-// Who does what.
-// The consumer runs the iterator below. The first MoveNextAsync starts
-// ONE producer (ChunkProducer) on a thread-pool thread; the producer is
-// the only writer. The channel between them is unbounded and has one
-// writer and one reader, so the producer never waits for the consumer:
-// the query is read at full speed and the connection ODX opened is
-// closed when the read ends, however slowly the consumer goes.
-//
-// Who owns each array.
-// The producer owns the buffer it is filling. Publish (a channel write)
-// hands it over; the channel owns it until the consumer takes it; the
-// consumer owns it until the next step (or the end of the iterator),
-// which releases it. An array therefore goes back to its pool exactly
-// once, and only when nothing can write or read it any more.
-//
-// How it ends.
-// The iterator's finally runs when the consumer finishes, fails, breaks
-// out of its loop, or disposes the enumerator (await foreach does that
-// for a break). It marks the target disposed FIRST (so the producer
-// treats the cancel it is about to receive as asked for, and does not
-// report it), cancels the producer (the linked token reaches the query
-// itself), waits for the producer (so nothing can write any more), and
-// only then releases every array still in the channel.
-// The wait has NO timeout, on purpose (an await in a finally is
-// legal; only a yield is not): correctness, meaning no array goes back
-// while the producer might still write, comes before promptness. So a
-// break or a dispose waits for the provider call in progress (the
-// execute, or a read) to return. A provider that ignores the cancel
-// token delays it by that call. After that the producer stops at the
-// next chunk boundary at the latest: the read loop checks the token
-// per row in the default Read mode, the provider does in ReadAsync
-// mode, and the producer checks once per chunk (a stream's chunks are
-// by default 16 to 4,096 rows).
-// A pool whose Return throws surfaces at the release (the next step,
-// or the dispose) and replaces what the consumer was already about to
-// see; with clearing on, one that throws inside the background queue is
-// swallowed there instead. The remaining arrays go to the garbage
-// collector.
-// A caller's own cancel is different: the producer reports it through
-// the channel, so the consumer's next step throws it, after the chunks
-// that were already delivered.
-//
-// Invariants worth knowing.
-// - target.Dispose() BEFORE producer.Cancel() is required: the producer
-//   swallows a cancel only while its target says it is disposed;
-//   otherwise a cancel that we caused would reach the consumer as an
-//   error.
-// - StreamTarget never refuses a Publish (an unbounded channel with one
-//   writer always accepts), so every published array is in the channel
-//   or with the consumer; nothing is returned until the producer has
-//   ended, and Drain (after it) releases what the consumer did not
-//   take.
-// - The producer's first step runs on a thread of the current
-//   scheduler (see ChunkProducer).
-//
-// An iterator that was never started starts nothing and owns nothing.
-// So does one whose token was already cancelled at its first step:
-// that is checked BEFORE the producer starts, so no command is run and
-// no connection is opened.
-//
-// Abandoning.
-// A stream whose enumerator is abandoned without being disposed gives
-// nothing back (there is no finalizer): the producer keeps reading the
-// WHOLE query into the unbounded channel, so the connection is held
-// until that read ends, and the arrays stay reachable until the
-// producer exits and the channel is garbage; they are then collected,
-// not returned to the pool. Always dispose the enumerator
-// (await foreach does).
+/// <summary>
+/// The chunk stream behind <c>ToAsyncBufferStream</c> (and, flattened,
+/// behind <c>ToBufferedAsyncStream</c>): one consumer, one chunk at a time.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <em>Who does what.</em>
+/// The consumer runs the iterator.
+/// The first <c>MoveNextAsync</c> starts one <see cref="ChunkProducer{T}"/>
+/// on a thread of the ambient task scheduler (normally the thread pool); the
+/// producer is the only writer.
+/// The channel between them is unbounded and has one writer and one reader,
+/// so the producer never waits for the consumer: the query is read at full
+/// speed and the connection ODX opened is closed when the read ends, however
+/// slowly the consumer goes.
+/// </para>
+/// <para>
+/// <em>Who owns each array.</em>
+/// The producer owns the buffer it is filling.
+/// Publishing it (a channel write) hands it over; the channel owns it until
+/// the consumer takes it; the consumer owns it until the next step (or the
+/// end of the iterator), which releases it.
+/// An array therefore goes back to its pool exactly once, and only when
+/// nothing can write or read it any more.
+/// </para>
+/// <para>
+/// <em>How it ends.</em>
+/// The iterator's <see langword="finally"/> runs when the consumer finishes,
+/// fails, breaks out of its loop, or disposes the enumerator
+/// (<see langword="await"/> <see langword="foreach"/> does that for a
+/// <see langword="break"/>).
+/// It marks the target disposed first (so the producer treats the cancel it
+/// is about to receive as asked for, and does not report it), cancels the
+/// producer (the linked token reaches the query itself), waits for the
+/// producer (so nothing can write any more), and only then releases every
+/// array still in the channel.
+/// </para>
+/// <para>
+/// The wait has no timeout, on purpose (an <see langword="await"/> in a
+/// <see langword="finally"/> is legal; only a <see langword="yield"/> is
+/// not): correctness, meaning no array goes back while the producer might
+/// still write, comes before promptness.
+/// So a break or a dispose waits for the provider call in progress (the
+/// execute, or a read) to return.
+/// A provider that ignores the cancel token delays it by that call.
+/// After that the producer stops at the next chunk boundary at the latest:
+/// the read loop checks the token per row in the default read mode, the
+/// provider does in the async read mode, and the producer checks once per
+/// chunk (a stream's chunks are by default 16 to 4,096 rows).
+/// </para>
+/// <para>
+/// A pool whose <c>Return</c> throws surfaces at the release (the next step,
+/// or the dispose) and replaces what the consumer was already about to see;
+/// with clearing on, a large chunk of rows that hold references goes through
+/// the background queue, where one that throws is swallowed instead.
+/// Every other chunk is still released; an array the pool refused to take is
+/// left to the garbage collector.
+/// A caller's own cancel is different: the producer reports it through the
+/// channel, so the consumer's next step throws it, after the chunks that
+/// were already delivered.
+/// </para>
+/// <para>
+/// An iterator that was never started starts nothing and owns nothing.
+/// So does one whose token was already cancelled at its first step: that is
+/// checked <em>before</em> the producer starts, so no command is run and no
+/// connection is opened.
+/// </para>
+/// <para>
+/// <em>Invariants worth knowing.</em>
+/// </para>
+/// <list type="bullet">
+/// <item>
+/// <description>
+/// The target must be disposed <em>before</em> the producer is cancelled:
+/// the producer swallows a cancel only while its target says it is
+/// disposed; otherwise a cancel that the stream caused would reach the
+/// consumer as an error.
+/// </description>
+/// </item>
+/// <item>
+/// <description>
+/// <see cref="StreamTarget{T}"/> never refuses a publish (an unbounded
+/// channel with one writer always accepts), so every published array is in
+/// the channel or with the consumer; nothing is returned until the producer
+/// has ended, and the drain (after it) releases what the consumer did not
+/// take.
+/// </description>
+/// </item>
+/// <item>
+/// <description>
+/// The producer's first step runs on a thread of the current scheduler (see
+/// <see cref="ChunkProducer{T}"/>).
+/// </description>
+/// </item>
+/// </list>
+/// <para>
+/// <em>Abandoning.</em>
+/// A stream whose enumerator is abandoned without being disposed gives
+/// nothing back (there is no finalizer): the producer keeps reading the
+/// <em>whole</em> query into the unbounded channel, so the connection is held
+/// until that read ends, and the arrays stay reachable until the producer
+/// exits and the channel is garbage; they are then collected, not returned
+/// to the pool.
+/// Always dispose the enumerator (<see langword="await"/>
+/// <see langword="foreach"/> does).
+/// </para>
+/// </remarks>
+/// <typeparam name="T">The type of each row.</typeparam>
+/// <param name="query">The query to read.</param>
+/// <param name="config">Rents, seals and releases the pooled chunks.</param>
+/// <param name="caller">The caller's cancellation token.</param>
 internal sealed class ChunkStream<T>(
 	MappedQueryCore<T> query,
 	ChunkConfig<T> config,
@@ -81,9 +121,16 @@ internal sealed class ChunkStream<T>(
 {
 	int _taken;
 
-	// The one-shot guard is here, not in the iterator: an iterator
-	// body runs at the first step, and the second call must throw at
-	// the call.
+	/// <summary>Starts the one enumeration this stream allows.</summary>
+	/// <remarks>
+	/// The one-shot guard is here, not in the iterator: an iterator body runs
+	/// at the first step, and the second call must throw at the call.
+	/// </remarks>
+	/// <param name="cancellationToken">Stops the enumeration.</param>
+	/// <returns>The enumerator over the chunks.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// The stream was enumerated before.
+	/// </exception>
 	public IAsyncEnumerator<ReadOnlyMemory<T>> GetAsyncEnumerator(
 		CancellationToken cancellationToken = default)
 	{
@@ -97,6 +144,13 @@ internal sealed class ChunkStream<T>(
 		return Read(cancellationToken);
 	}
 
+	/// <summary>The iterator: starts the producer and yields its chunks.</summary>
+	/// <param name="cancellationToken">Stops the enumeration.</param>
+	/// <returns>The enumerator over the chunks.</returns>
+	/// <exception cref="OperationCanceledException">
+	/// The token is already cancelled (nothing starts), or it is cancelled
+	/// during the enumeration.
+	/// </exception>
 	async IAsyncEnumerator<ReadOnlyMemory<T>> Read(
 		CancellationToken cancellationToken)
 	{
@@ -151,9 +205,13 @@ internal sealed class ChunkStream<T>(
 	}
 }
 
-// The stream's side of the producer: an unbounded channel with one
-// writer (the producer) and one reader (the consumer), and the flag
-// the consumer sets when it is done.
+/// <summary>
+/// The stream's side of the producer: an unbounded channel with one writer
+/// (the producer) and one reader (the consumer), and the flag the consumer
+/// sets when it is done.
+/// </summary>
+/// <typeparam name="T">The type of each row.</typeparam>
+/// <param name="sizes">The chunk sizes.</param>
 internal sealed class StreamTarget<T>(ChunkSizes sizes) : IChunkTarget<T>
 {
 	readonly Channel<ArrayLease<T>> _channel
@@ -172,9 +230,14 @@ internal sealed class StreamTarget<T>(ChunkSizes sizes) : IChunkTarget<T>
 	bool IChunkTarget<T>.IsDisposed
 		=> Volatile.Read(ref _disposed) != 0;
 
-	// FirstRows, twice that ... StreamMaxRows rows (16, 32 ... 4096), then
-	// the maximum again. Read once, when the stream is made.
+	/// <summary>The rows of the first chunk, read once, when the stream is made.</summary>
+	/// <remarks>
+	/// The chunks hold this many rows, twice that, and so on up to the
+	/// stream's maximum (16, 32 ... 4,096 by default), then the maximum
+	/// again.
+	/// </remarks>
 	readonly int _first = sizes.FirstRows;
+	/// <summary>The doublings before the maximum is reached, read once.</summary>
 	readonly int _lastDoubling = sizes.LastStreamDoubling;
 
 	int IChunkTarget<T>.CapacityOf(int index)
@@ -189,7 +252,11 @@ internal sealed class StreamTarget<T>(ChunkSizes sizes) : IChunkTarget<T>
 	public void Dispose()
 		=> Volatile.Write(ref _disposed, 1);
 
-	// Only after the producer ended: nothing can write any more.
+	/// <summary>Releases every chunk the consumer did not take.</summary>
+	/// <remarks>
+	/// Only after the producer ended: nothing can write any more.
+	/// <include file="Internals.docs.xml" path="docs/members[@name='release-all']/*" />
+	/// </remarks>
 	public void Drain()
 	{
 		// A release that throws (a pool whose Return throws) does not stop

@@ -1,7 +1,8 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// A <see cref="DbQuery"/> bound to a source with some values added.
+/// Represents a <see cref="DbQuery"/> bound to a source with some values
+/// added.
 /// Immutable: each <c>AddParam</c> returns a new one and leaves this one as
 /// it was, so a call can be kept and branched.
 /// </summary>
@@ -11,14 +12,20 @@ namespace Open.Database.Extensions;
 /// </remarks>
 public abstract class DbQueryCall : IExecuteReaderAsync
 {
-	// How a node's parameters are named.
-	// Explicit: the name the caller wrote.
-	// Derived: the argument's text, resolved to the real name when it runs.
-	// Members: the public members of the value, each resolved the same way.
+	/// <summary>
+	/// How a node's parameters are named.
+	/// </summary>
 	enum NameKind
 	{
+		/// <summary>The name the caller wrote.</summary>
 		Explicit,
+		/// <summary>
+		/// The argument's text, resolved to the real name when it runs.
+		/// </summary>
 		Derived,
+		/// <summary>
+		/// The public members of the value, each resolved the same way.
+		/// </summary>
 		Members,
 	}
 
@@ -28,21 +35,51 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 
 	internal abstract object SourceCore { get; }
 
-	// Whether any node needs the real names (a derived name or members).
+	/// <summary>
+	/// Gets whether any node needs the real names (a derived name or members).
+	/// </summary>
 	internal abstract bool NeedsNames { get; }
 
-	// False when a node that needs a name matches none of the remembered names
-	// (see ExpressiveCommandBase.Fits).
+	/// <summary>
+	/// Determines whether the remembered names fit the nodes.
+	/// </summary>
+	/// <remarks>
+	/// <see langword="false"/> when a node that needs a name matches none of
+	/// the remembered names (see <c>ExpressiveCommandBase.Fits</c>).
+	/// </remarks>
+	/// <param name="names">The remembered names.</param>
+	/// <param name="command">The command text or procedure name.</param>
+	/// <returns>
+	/// <see langword="true"/> if the names fit; otherwise,
+	/// <see langword="false"/>.
+	/// </returns>
 	internal abstract bool Fits(NameSet names, string command);
 
-	// Whether a node of the whole call claims the name with a name of its own
-	// (one written or derived, not a member of an AddParams object): such a
-	// parameter wins over a member that resolves to the same name, whichever was
-	// added first, as on a command.
+	/// <summary>
+	/// Determines whether a node of the whole call claims the name with a name
+	/// of its own.
+	/// </summary>
+	/// <remarks>
+	/// A name of its own is one written or derived, not a member of an
+	/// <c>AddParams</c> object: such a parameter wins over a member that
+	/// resolves to the same name, whichever was added first, as on a command.
+	/// </remarks>
+	/// <param name="name">The real name.</param>
+	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
+	/// <param name="definition">The query definition.</param>
+	/// <returns>
+	/// <see langword="true"/> if a node claims the name; otherwise,
+	/// <see langword="false"/>.
+	/// </returns>
 	internal abstract bool Claims(string name, NameSet? names, DbQuery definition);
 
-	// Binds this node's parameters after its parent's, in the order added.
-	// `whole` is the call that runs: the node last added.
+	/// <summary>
+	/// Binds this node's parameters after its parent's, in the order added.
+	/// </summary>
+	/// <param name="command">The command to add the parameters to.</param>
+	/// <param name="definition">The query definition.</param>
+	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
+	/// <param name="whole">The call that runs: the node last added.</param>
 	internal abstract void BindAll(
 		DbCommand command,
 		DbQuery definition,
@@ -52,6 +89,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 	/// <summary>
 	/// The connection, transaction, pool or factory the query is bound to.
 	/// </summary>
+	/// <value>The connection, transaction, pool or factory the query was bound to with <c>Using</c>.</value>
 	public object Source => SourceCore;
 
 	/// <inheritdoc cref="DbQueryUsing.AddParams{T}(T)"/>
@@ -101,9 +139,17 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		return name;
 	}
 
-	// The text of the argument of AddParam(value), which the compiler
-	// supplies; the facts of an expression are worked out once per text.
-	// The name it stands for is settled when the query runs.
+	/// <summary>
+	/// Checks the text of the argument of <c>AddParam(value)</c>, which the
+	/// compiler supplies.
+	/// </summary>
+	/// <remarks>
+	/// The facts of an expression are worked out once per text.
+	/// The name it stands for is settled when the query runs.
+	/// </remarks>
+	/// <param name="expression">The text of the argument.</param>
+	/// <returns>The expression.</returns>
+	/// <exception cref="ArgumentException">A name cannot be derived from the expression.</exception>
 	[SuppressMessage(
 		"Usage",
 		"CA2208:Instantiate argument exceptions correctly")]
@@ -118,7 +164,14 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 					$"Cannot derive a parameter name from the argument '{expression}'. Pass a variable or a chain of members such as filter.AuthorId, or name the parameter: AddParam(\"name\", value).",
 					"value"));
 
-	// The real name an argument of AddParam(value) stands for.
+	/// <summary>
+	/// Gets the real name an argument of <c>AddParam(value)</c> stands for.
+	/// </summary>
+	/// <param name="expression">The text of the argument.</param>
+	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
+	/// <param name="definition">The query definition.</param>
+	/// <returns>The real name; the last member as written when the names are not known.</returns>
+	/// <exception cref="InvalidOperationException">The expression matches none of the names, or more than one equally well.</exception>
 	static string ResolveDerived(
 		string expression,
 		NameSet? names,
@@ -142,7 +195,9 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 			_ => false,
 		};
 
-	// How many (values type, set of names) matches a definition keeps.
+	/// <summary>
+	/// How many (values type, set of names) matches a definition keeps.
+	/// </summary>
 	const int MaxMatches = 4;
 
 	static bool Known(NameSet? names)
@@ -210,10 +265,22 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		}
 	}
 
-	// The members of the values, found once per type. When the real names are
-	// known a member the command does not take is not sent, and a member
-	// whose name another parameter claims (one written or derived, added before
-	// or after) is left to that parameter. Two members of one name collide.
+	/// <summary>
+	/// Adds the members of the values as parameters.
+	/// </summary>
+	/// <remarks>
+	/// The members of the values are found once per type.
+	/// When the real names are known a member the command does not take is
+	/// not sent, and a member whose name another parameter claims (one written
+	/// or derived, added before or after) is left to that parameter.
+	/// Two members of one name collide.
+	/// </remarks>
+	/// <typeparam name="T">The type of the values.</typeparam>
+	/// <param name="command">The command to add the parameters to.</param>
+	/// <param name="value">The values.</param>
+	/// <param name="definition">The query definition.</param>
+	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
+	/// <param name="whole">The call that runs.</param>
 	static void BindMembers<T>(
 		DbCommand command,
 		T value,
@@ -261,8 +328,15 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		}
 	}
 
-	// The real name of each member in member order, matched once per
-	// definition, values type and set of names.
+	/// <summary>
+	/// Gets the real name of each member in member order, matched once per
+	/// definition, values type and set of names.
+	/// </summary>
+	/// <typeparam name="T">The type of the values.</typeparam>
+	/// <param name="definition">The query definition, which keeps the matches.</param>
+	/// <param name="names">The remembered names.</param>
+	/// <param name="members">The names of the members.</param>
+	/// <returns>The real name of each member, or <see langword="null"/> for one the command does not take.</returns>
 	static string?[] Resolved<T>(
 		DbQuery definition,
 		NameSet names,
@@ -303,8 +377,17 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		Append(command, name, value, clrType);
 	}
 
-	// A NULL carries no type, so it is sent with the type of its argument,
-	// as the command builders do.
+	/// <summary>
+	/// Adds a parameter to the command.
+	/// </summary>
+	/// <remarks>
+	/// A NULL carries no type, so it is sent with the type of its argument,
+	/// as the command builders do.
+	/// </remarks>
+	/// <param name="command">The command to add the parameter to.</param>
+	/// <param name="name">The name of the parameter.</param>
+	/// <param name="value">The value of the parameter.</param>
+	/// <param name="clrType">The CLR type of the argument.</param>
 	static void Append(
 		DbCommand command,
 		string name,
@@ -327,9 +410,20 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		command.Parameters.Add(parameter);
 	}
 
-	// Two parameters of one name would overwrite each other.
-	// The names are compared without an @ and ignoring case, as the
-	// command builders compare them.
+	/// <summary>
+	/// Determines whether the command already has a parameter of the name,
+	/// since two parameters of one name would overwrite each other.
+	/// </summary>
+	/// <remarks>
+	/// The names are compared without an <c>@</c> and ignoring case, as the
+	/// command builders compare them.
+	/// </remarks>
+	/// <param name="command">The command.</param>
+	/// <param name="name">The name.</param>
+	/// <returns>
+	/// <see langword="true"/> if the command has the parameter; otherwise,
+	/// <see langword="false"/>.
+	/// </returns>
 	static bool Has(DbCommand command, string name)
 	{
 		DbParameterCollection parameters = command.Parameters;
@@ -365,9 +459,15 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		DbQuery definition)
 		=> new($"The argument '{expression}' matches none of the parameters of '{definition.CommandText}' (tried {string.Join(", ", ParameterNames.Candidates(expression))}). It declares: {string.Join(", ", names.Names)}. Name the parameter explicitly: AddParam(\"name\", value).");
 
-	// The first node, which AddParam or AddParams on a bound query returns.
-	// It alone holds the definition and the source.
-	// For a derived name `name` holds the argument's text (see DerivedRoot).
+	/// <summary>
+	/// The first node, which <c>AddParam</c> or <c>AddParams</c> on a bound
+	/// query returns.
+	/// </summary>
+	/// <remarks>
+	/// It alone holds the definition and the source.
+	/// For a derived name <c>name</c> holds the argument's text (see
+	/// <c>DerivedRoot</c>).
+	/// </remarks>
 	class Root<T>(
 		DbQuery definition,
 		object source,
@@ -425,8 +525,13 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		}
 	}
 
-	// The same fields as a root: which kind it is comes from the type, so a
-	// node is no larger for it.
+	/// <summary>
+	/// A root whose name is derived from the argument's text.
+	/// </summary>
+	/// <remarks>
+	/// The same fields as a root: which kind it is comes from the type, so a
+	/// node is no larger for it.
+	/// </remarks>
 	sealed class DerivedRoot<T>(
 		DbQuery definition,
 		object source,
@@ -437,8 +542,10 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 		public override NameKind Kind => NameKind.Derived;
 	}
 
-	// Every later node: its parent, a name and a value.
-	// The value stays typed, so this layer boxes nothing.
+	/// <summary>
+	/// Every later node: its parent, a name and a value.
+	/// </summary>
+	/// <remarks>The value stays typed, so this layer boxes nothing.</remarks>
 	class Node<T>(DbQueryCall parent, string? name, T value)
 		: DbQueryCall
 	{

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The texts the members that take or build a RowMap share, written here once
+  so they cannot drift apart. A member includes one with
+  <include file="RowMapping.docs.xml" path="docs/members[@name='key']/*" />
+  (the file path is relative to the source file). A key may carry several
+  elements; an include inside <remarks> brings paragraphs.
+
+  map                 The optional "map" parameter of the query methods.
+  map-declare-once    The paragraph that says to declare a map once.
+  declare-once        The same, for a member that builds a map.
+  mappings            The "mappings" parameter of the members that build a map.
+  mapping-exceptions  The two exceptions every member that builds a map raises.
+  obsolete-12         The paragraph of every member obsolete in 11.0.
+-->
+<docs>
+  <members name="map">
+    <param name="map">
+      An optional prebuilt <see cref="RowMap{T}"/>;
+      <see langword="null"/> reads by column name.
+    </param>
+  </members>
+
+  <members name="map-declare-once">
+    <para>
+      Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the
+      call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in
+      the argument) is rebuilt, and its row reader compiled, on every call.
+    </para>
+  </members>
+
+  <members name="declare-once">
+    <para>
+      Declare the map once: a map built in a call is rebuilt, and its row
+      reader compiled, on every call.
+    </para>
+  </members>
+
+  <members name="mappings">
+    <param name="mappings">
+      The (property name, column name) pairs;
+      a <see langword="null"/> column means "do not map this property".
+    </param>
+  </members>
+
+  <members name="mapping-exceptions">
+    <exception cref="System.ArgumentException">
+      A pair is invalid: an unknown or unsettable property or constructor
+      parameter, a member named twice, an empty column name,
+      a <see langword="null"/> column for a required property,
+      or two members reading one column (see <see cref="RowMap{T}"/>).
+    </exception>
+    <exception cref="System.InvalidOperationException">
+      The model type cannot be mapped (see <see cref="RowMap{T}"/>).
+    </exception>
+  </members>
+
+  <members name="obsolete-12">
+    <para>
+      Obsolete in 11.0, removed in 12. See
+      <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.
+    </para>
+  </members>
+</docs>

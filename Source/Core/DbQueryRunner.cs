@@ -2,25 +2,43 @@ using System.Diagnostics;
 
 namespace Open.Database.Extensions;
 
-// The one run path of a DbQuery: take the connection, open it if it is not
-// open, build one DbCommand with the bound parameters, run the caller's
-// function on the reader, release the connection.
-// A connection that was closed when taken is closed again (never disposed
-// unless it came from a factory); one that was open stays open.
-// Open happens before the command is created, as some providers need.
+/// <summary>
+/// The one run path of a <see cref="DbQuery"/>.
+/// </summary>
+/// <remarks>
+/// A run takes the connection, opens it if it is not open, builds one
+/// <see cref="DbCommand"/> with the bound parameters, runs the caller's
+/// function on the reader, and releases the connection.
+/// A connection that was closed when taken is closed again (never disposed
+/// unless it came from a factory); one that was open stays open.
+/// The connection is opened before the command is created, as some providers
+/// need.
+/// </remarks>
 static class DbQueryRunner
 {
+	/// <summary>
+	/// Makes the exception thrown when a default (unbound) value is used.
+	/// </summary>
+	/// <returns>The exception.</returns>
 	public static InvalidOperationException Unbound()
 		=> new("This query was not created by Using(...); a default value cannot be used.");
 
-	// What one run holds: the connection, and what is owed when the run ends,
-	// which Dispose does (so a run is `using Lease lease = Lease.Open(...)`).
-	// It is a ConnectionScope, so it ends the way the source calls for: a
-	// connection of the caller's is closed again if the run opened it (and is
-	// never disposed), one from a factory is disposed, one from a pool is given
-	// back (and what that means is the pool's, as in pool.Open). A transaction's
-	// connection is the transaction's: it is never opened, closed or given back
-	// here. All of this holds when the run throws.
+	/// <summary>
+	/// What one run holds: the connection, and what is owed when the run ends.
+	/// </summary>
+	/// <remarks>
+	/// <see cref="Dispose"/> settles what is owed, so a run is
+	/// <c>using Lease lease = Lease.Open(...)</c>.
+	/// It wraps a <c>ConnectionScope</c>, so it ends the way the source calls
+	/// for:
+	/// <list type="bullet">
+	/// <item>a connection of the caller's is closed again if the run opened it, and is never disposed;</item>
+	/// <item>a connection from a factory is disposed;</item>
+	/// <item>a connection from a pool is given back (and what that means is the pool's, as in <c>pool.Open</c>);</item>
+	/// <item>a transaction's connection is the transaction's: it is never opened, closed or given back here.</item>
+	/// </list>
+	/// All of this holds when the run throws.
+	/// </remarks>
 	public readonly struct Lease : IDisposable
 	{
 		readonly ConnectionScope<DbConnection> _scope;
@@ -39,7 +57,9 @@ static class DbQueryRunner
 
 		public DbTransaction? Transaction { get; }
 
-		// What a source supplies, before anything is opened.
+		/// <summary>
+		/// What a source supplies, before anything is opened.
+		/// </summary>
 		readonly struct Taken(
 			DbConnection connection,
 			DbTransaction? transaction,
@@ -55,6 +75,16 @@ static class DbQueryRunner
 			public IDbConnectionPool? Pool => pool;
 		}
 
+		/// <summary>
+		/// Takes a connection from the source and opens it if it needs to be.
+		/// </summary>
+		/// <param name="source">The connection, transaction, pool or factory.</param>
+		/// <returns>The lease.</returns>
+		/// <exception cref="InvalidOperationException">
+		/// The source supplied no connection, or one that is not a
+		/// <see cref="DbConnection"/>; or the transaction has completed or its
+		/// connection is not open.
+		/// </exception>
 		public static Lease Open(object source)
 		{
 			Taken taken = Take(source);
@@ -63,6 +93,14 @@ static class DbQueryRunner
 				: Of(Open(taken), taken);
 		}
 
+		/// <summary>
+		/// Asynchronously takes a connection from the source and opens it if it
+		/// needs to be.
+		/// </summary>
+		/// <param name="source">The connection, transaction, pool or factory.</param>
+		/// <param name="cancellationToken">The token that governs the call.</param>
+		/// <returns>A task that represents the asynchronous operation; its result is the lease.</returns>
+		/// <inheritdoc cref="Open(object)" path="/exception"/>
 		public static async ValueTask<Lease> OpenAsync(
 			object source,
 			CancellationToken cancellationToken)
@@ -78,8 +116,15 @@ static class DbQueryRunner
 		static Lease Of(ConnectionScope<DbConnection> scope, Taken taken)
 			=> new(scope, taken.Connection, null);
 
-		// Opened if it needs to be, after the supplied type is known to be right:
-		// a source that gave the wrong kind of connection never has it opened.
+		/// <summary>
+		/// Opens the connection if it needs to be.
+		/// </summary>
+		/// <remarks>
+		/// Done after the supplied type is known to be right: a source that
+		/// gave the wrong kind of connection never has it opened.
+		/// </remarks>
+		/// <param name="taken">What the source supplied.</param>
+		/// <returns>The scope that settles the connection when the run ends.</returns>
 		static ConnectionScope<DbConnection> Open(Taken taken)
 			=> taken.End == ScopeEnd.Close
 				? taken.Connection.EnsureOpenScope()
@@ -122,10 +167,20 @@ static class DbQueryRunner
 		static InvalidOperationException NoConnection()
 			=> new("The connection source supplied no connection.");
 
-		// A source that supplies something that is not a DbConnection: it is
-		// let go the way its source lets go of a connection (disposed for a
-		// factory, given back to a pool), not leaked, and the run fails with
-		// the type named. Null is left to the caller's check.
+		/// <summary>
+		/// Casts what a source supplied to a <see cref="DbConnection"/>.
+		/// </summary>
+		/// <remarks>
+		/// A source that supplies something that is not a
+		/// <see cref="DbConnection"/> has it let go the way its source lets go
+		/// of a connection (disposed for a factory, given back to a pool), not
+		/// leaked, and the run fails with the type named.
+		/// <see langword="null"/> is left to the caller's check.
+		/// </remarks>
+		/// <param name="supplied">What the source supplied.</param>
+		/// <param name="source">The factory or pool it came from.</param>
+		/// <returns>The connection, or <see langword="null"/> when none was supplied.</returns>
+		/// <exception cref="InvalidOperationException">The source supplied something that is not a <see cref="DbConnection"/>.</exception>
 		static DbConnection? AsDbConnection(IDbConnection? supplied, object source)
 		{
 			if (supplied is null or DbConnection)
@@ -141,8 +196,16 @@ static class DbQueryRunner
 				+ "which is not a DbConnection.");
 		}
 
-		// A transaction is begun on an open connection and holds it: it is
-		// neither opened nor reopened here.
+		/// <summary>
+		/// Gets the connection of a transaction.
+		/// </summary>
+		/// <remarks>
+		/// A transaction is begun on an open connection and holds it: it is
+		/// neither opened nor reopened here.
+		/// </remarks>
+		/// <param name="transaction">The transaction.</param>
+		/// <returns>The transaction's open connection.</returns>
+		/// <exception cref="InvalidOperationException">The transaction has completed, or its connection is not open.</exception>
 		static DbConnection OpenConnectionOf(DbTransaction transaction)
 		{
 			DbConnection connection = transaction.Connection
@@ -155,7 +218,14 @@ static class DbQueryRunner
 				: connection;
 		}
 
-		// A transaction's connection is never opened here, so it adds nothing.
+		/// <summary>
+		/// Gets the behavior to run the reader with.
+		/// </summary>
+		/// <remarks>
+		/// A transaction's connection is never opened here, so it adds nothing.
+		/// </remarks>
+		/// <param name="behavior">The behavior the caller asked for.</param>
+		/// <returns>The behavior to use.</returns>
 		public CommandBehavior Behavior(CommandBehavior behavior)
 			=> Transaction is null
 				? _scope.ReaderBehavior(behavior)
@@ -163,8 +233,15 @@ static class DbQueryRunner
 
 		public void Dispose() => _scope.Dispose();
 
-		// For `await using`: the scope's own ConfigureAwait, which exists only so that this
-		// struct is not boxed (it holds no setting; the library never returns to a context).
+		/// <summary>
+		/// Gets the scope's own awaitable, for <see langword="await"/> <see langword="using"/>.
+		/// </summary>
+		/// <remarks>
+		/// It exists only so that this struct is not boxed (it holds no
+		/// setting; the library never returns to a context).
+		/// </remarks>
+		/// <param name="continueOnCapturedContext">The value passed on to the scope's own <c>ConfigureAwait</c>.</param>
+		/// <returns>The configured scope.</returns>
 		public ConfiguredConnectionScope<DbConnection> ConfigureAwait(
 			bool continueOnCapturedContext)
 			=> _scope.ConfigureAwait(continueOnCapturedContext);
@@ -195,15 +272,18 @@ static class DbQueryRunner
 	}
 
 	// ---- the real names of derived parameters ----
-	// The same rules as a command (ExpressiveCommandBase): a text definition
-	// has the @name markers it found when it was made; a procedure's names
-	// are remembered per source (ProcedureNameCache) for five minutes, and are
-	// read again once when they do not fit what is asked of them, so a hit
-	// costs no schema lookup.
 
-	// Remembered names belong to the object connections come from: the factory
-	// or pool (not the adapter AsPool makes around a factory), or the
-	// connection itself.
+	/// <summary>
+	/// Gets the object that remembered names belong to: the object
+	/// connections come from.
+	/// </summary>
+	/// <remarks>
+	/// That is the factory or pool (not the adapter <c>AsPool</c> makes around
+	/// a factory), or the connection itself.
+	/// </remarks>
+	/// <param name="source">The connection, transaction, pool or factory.</param>
+	/// <param name="connection">The connection of the run.</param>
+	/// <returns>The owner of the remembered names.</returns>
 	static object NameCacheOwner(object source, DbConnection connection)
 		=> source switch
 		{
@@ -212,9 +292,17 @@ static class DbQueryRunner
 			_ => source,
 		};
 
-	// The server and the database are part of the key: one connection can be
-	// switched to another database, and one factory can hand out connections
-	// to different servers.
+	/// <summary>
+	/// Makes the key a procedure's names are remembered under.
+	/// </summary>
+	/// <remarks>
+	/// The server and the database are part of the key: one connection can be
+	/// switched to another database, and one factory can hand out connections
+	/// to different servers.
+	/// </remarks>
+	/// <param name="connection">The connection of the run.</param>
+	/// <param name="definition">The query definition.</param>
+	/// <returns>The key.</returns>
 	static ProcedureKey KeyOf(DbConnection connection, DbQuery definition)
 		=> new(connection.DataSource, connection.Database, definition.CommandText);
 
@@ -227,6 +315,22 @@ static class DbQueryRunner
 			? null
 			: ProcedureNameCache.Set(owner, key, names, afterMiss);
 
+	/// <summary>
+	/// Finds the real names that the derived parameters are matched to.
+	/// </summary>
+	/// <remarks>
+	/// The same rules as a command (<c>ExpressiveCommandBase</c>): a text
+	/// definition has the <c>@name</c> markers it found when it was made; a
+	/// procedure's names are remembered per source
+	/// (<c>ProcedureNameCache</c>) for five minutes, and are read again once
+	/// when they do not fit what is asked of them, so a hit costs no schema
+	/// lookup.
+	/// </remarks>
+	/// <param name="definition">The query definition.</param>
+	/// <param name="source">The connection, transaction, pool or factory.</param>
+	/// <param name="connection">The connection of the run.</param>
+	/// <param name="call">The call whose parameters are matched.</param>
+	/// <returns>The set of names, or <see langword="null"/> when they are not known.</returns>
 	static NameSet? Resolve(
 		DbQuery definition,
 		object source,
@@ -250,8 +354,21 @@ static class DbQueryRunner
 			found);
 	}
 
-	// Not an async method itself: when the names are remembered (the usual
-	// case) it finishes without a state machine; only reading them is async.
+	/// <summary>
+	/// Asynchronously finds the real names that the derived parameters are
+	/// matched to. See <see cref="Resolve"/>.
+	/// </summary>
+	/// <remarks>
+	/// Not an <see langword="async"/> method itself: when the names are
+	/// remembered (the usual case) it finishes without a state machine; only
+	/// reading them is asynchronous.
+	/// </remarks>
+	/// <param name="definition">The query definition.</param>
+	/// <param name="source">The connection, transaction, pool or factory.</param>
+	/// <param name="connection">The connection of the run.</param>
+	/// <param name="call">The call whose parameters are matched.</param>
+	/// <param name="cancellationToken">The token that governs the call.</param>
+	/// <returns>A task that represents the asynchronous operation; its result is the set of names, or <see langword="null"/> when they are not known.</returns>
 	static ValueTask<NameSet?> ResolveAsync(
 		DbQuery definition,
 		object source,
@@ -294,11 +411,36 @@ static class DbQueryRunner
 				.ConfigureAwait(false),
 			afterMiss);
 
-	// "Not known" (no names) fits anything: each argument keeps its last
-	// member as written.
+	/// <summary>
+	/// Determines whether the remembered names fit the call.
+	/// </summary>
+	/// <remarks>
+	/// "Not known" (no names) fits anything: each argument keeps its last
+	/// member as written.
+	/// </remarks>
+	/// <param name="remembered">The remembered names, or <see langword="null"/>.</param>
+	/// <param name="call">The call.</param>
+	/// <param name="definition">The query definition.</param>
+	/// <returns>
+	/// <see langword="true"/> if the names fit; otherwise,
+	/// <see langword="false"/>.
+	/// </returns>
 	static bool Fits(NameSet? remembered, DbQueryCall call, DbQuery definition)
 		=> remembered is null || call.Fits(remembered, definition.CommandText);
 
+	/// <summary>
+	/// Runs the query and passes the reader to a function.
+	/// </summary>
+	/// <typeparam name="TState">The type of the state passed to the function.</typeparam>
+	/// <typeparam name="TResult">The type of the result.</typeparam>
+	/// <param name="definition">The query definition.</param>
+	/// <param name="source">The connection, transaction, pool or factory.</param>
+	/// <param name="call">The bound parameters, or <see langword="null"/> for none.</param>
+	/// <param name="state">The state to pass to <paramref name="transform"/>.</param>
+	/// <param name="transform">The function that reads the reader.</param>
+	/// <param name="behavior">The behavior to run the reader with.</param>
+	/// <returns>The result of <paramref name="transform"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
 	public static TResult Run<TState, TResult>(
 		DbQuery definition,
 		object source,
@@ -325,6 +467,21 @@ static class DbQueryRunner
 		return transform(reader, state);
 	}
 
+	/// <summary>
+	/// Asynchronously runs the query and passes the reader to a function.
+	/// </summary>
+	/// <typeparam name="TState">The type of the state passed to the function.</typeparam>
+	/// <typeparam name="TResult">The type of the result.</typeparam>
+	/// <param name="definition">The query definition.</param>
+	/// <param name="source">The connection, transaction, pool or factory.</param>
+	/// <param name="call">The bound parameters, or <see langword="null"/> for none.</param>
+	/// <param name="state">The state to pass to <paramref name="transform"/>.</param>
+	/// <param name="transform">The function that reads the reader.</param>
+	/// <param name="behavior">The behavior to run the reader with.</param>
+	/// <param name="cancellationToken">The token that governs the call.</param>
+	/// <returns>A task that represents the asynchronous operation; its result is the result of <paramref name="transform"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
+	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> is already canceled.</exception>
 	public static async ValueTask<TResult> RunAsync<TState, TResult>(
 		DbQuery definition,
 		object source,

@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// The public instance properties and fields of a RUNTIME type and a compiled getter for each, built once per type, for <c>AddParams(object)</c> when the argument is typed <see cref="object"/>
+/// The public instance properties and fields of a runtime type and a compiled getter for each, built once per type, for <c>AddParams(object)</c> when the argument is typed <see cref="object"/>
 /// and the static type has no members of its own. The members are found the way <see cref="ParamSource{T}"/> finds them.
 /// </summary>
 /// <remarks>One immutable entry per type, kept for as long as the type is alive (so a type that is unloaded takes its entry with it); the getters take the object, so no reflection runs after the first time a type is seen.</remarks>
@@ -12,10 +12,16 @@ sealed class RuntimeParamSource
 	static readonly ConditionalWeakTable<Type, RuntimeParamSource> Cache = new();
 	static readonly ConditionalWeakTable<Type, RuntimeParamSource>.CreateValueCallback Create = type => new RuntimeParamSource(type);
 
+	/// <summary>Gets the members of a runtime type, found once per type.</summary>
+	/// <param name="type">The runtime type.</param>
+	/// <returns>The members of <paramref name="type"/>.</returns>
 	internal static RuntimeParamSource Of(Type type) => Cache.GetValue(type, Create);
 
+	/// <summary>Gets the names of the members.</summary>
 	internal string[] Names { get; }
+	/// <summary>Gets the compiled getter of each member, in the order of <see cref="Names"/>.</summary>
 	internal Func<object, object?>[] Getters { get; }
+	/// <summary>Gets the type of each member, in the order of <see cref="Names"/>.</summary>
 	internal Type[] Types { get; }
 
 	RuntimeParamSource(Type type)

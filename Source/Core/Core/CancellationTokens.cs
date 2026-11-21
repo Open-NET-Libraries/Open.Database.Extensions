@@ -3,7 +3,8 @@ namespace Open.Database.Extensions.Core;
 internal static class CancellationTokens
 {
 	/// <summary>
-	/// The one token that governs a call made with two: it is cancelled when either is.
+	/// Returns the one token that governs a call made with two:
+	/// it is canceled when either is.
 	/// </summary>
 	/// <param name="commandToken">The command's own token.</param>
 	/// <param name="callToken">The token passed to the call.</param>
@@ -42,12 +43,18 @@ internal static class CancellationTokens
 	/// Pass a <see langword="static"/> lambda and a state,
 	/// so a call with no token or one token allocates nothing.
 	/// </remarks>
+	/// <typeparam name="TState">The type of the state.</typeparam>
+	/// <typeparam name="TResult">The type of the call's result.</typeparam>
 	/// <param name="commandToken">The command's own token.</param>
 	/// <param name="callToken">The token passed to the call.</param>
 	/// <param name="state">
 	/// The state handed to <paramref name="start"/>.
 	/// </param>
 	/// <param name="start">Starts the call with the governing token.</param>
+	/// <returns>
+	/// A task that represents the call;
+	/// its result is the result of <paramref name="start"/>.
+	/// </returns>
 	[SuppressMessage(
 		"Design", "CA1068:CancellationToken parameters must come last")]
 	public static ValueTask<TResult> RunAsync<TState, TResult>(
@@ -75,7 +82,10 @@ internal static class CancellationTokens
 		}
 	}
 
-	/// <inheritdoc cref="RunAsync{TState, TResult}(CancellationToken, CancellationToken, TState, Func{TState, CancellationToken, ValueTask{TResult}})"/>
+	/// <inheritdoc cref="RunAsync{TState, TResult}(CancellationToken, CancellationToken, TState, Func{TState, CancellationToken, ValueTask{TResult}})"
+	/// path="/*[not(self::typeparam) and not(self::returns)]"/>
+	/// <typeparam name="TState">The type of the state.</typeparam>
+	/// <returns>A task that represents the call.</returns>
 	[SuppressMessage(
 		"Design", "CA1068:CancellationToken parameters must come last")]
 	public static ValueTask RunAsync<TState>(

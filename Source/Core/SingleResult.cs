@@ -23,8 +23,8 @@ public static partial class CoreExtensions
 	/// <para>
 	/// <c>command.SingleResult().Map&lt;T&gt;()</c> is exactly
 	/// <c>command.Map&lt;T&gt;().SingleResult()</c>, which still works,
-	/// and the five <c>Map</c> overloads that follow are the ones that
-	/// <see cref="Map{T}(IExecuteReader, RowMap{T}?)"/> has.
+	/// and the <c>Map</c> overloads that follow are the ones of
+	/// <see cref="Map{T}(IExecuteReader, RowMap{T}?)"/>.
 	/// The command is not changed, so it can be used again without the opt-out.
 	/// </para>
 	/// <para>
@@ -71,8 +71,8 @@ public static partial class CoreExtensions
 	/// <para>
 	/// <c>command.SingleResult().Map&lt;T&gt;()</c> is exactly
 	/// <c>command.Map&lt;T&gt;().SingleResult()</c>, which still works,
-	/// and the five <c>Map</c> overloads that follow are the ones that
-	/// <see cref="Map{T}(IDbCommand, RowMap{T}?)"/> has.
+	/// and the <c>Map</c> overloads that follow are the ones of
+	/// <see cref="Map{T}(IDbCommand, RowMap{T}?)"/>.
 	/// The command is not changed and belongs to the caller; the query never disposes it.
 	/// A caller that uses the returned view directly as a command should know
 	/// that disposing the view disposes the command, so dispose one or the other.
@@ -103,13 +103,20 @@ public static partial class CoreExtensions
 	}
 }
 
-// What `command.SingleResult()` returns for an expressive command:
-// the flag, carried to the `Map` that follows.
-// Map unwraps it and runs the query against the command itself
-// with the core's singleResult flag set (see Views.QueryCore),
-// so nothing here runs on that path.
-// Used as an IExecuteReader on its own it is the command
-// with SingleResult added to each behavior, so the name holds either way.
+/// <summary>
+/// What <c>command.SingleResult()</c> returns for an expressive command:
+/// the flag, carried to the <c>Map</c> that follows.
+/// </summary>
+/// <remarks>
+/// <c>Map</c> unwraps it and runs the query against the command itself with
+/// the core's <c>singleResult</c> flag set
+/// (see <see cref="Views.QueryCore{T}(IExecuteReader, IRowSource{T})"/>),
+/// so nothing here runs on that path.
+/// Used as an <see cref="IExecuteReader"/> on its own it is the command with
+/// <see cref="CommandBehavior.SingleResult"/> added to each behavior, so the
+/// name holds either way.
+/// </remarks>
+/// <param name="command">The command to read from.</param>
 sealed class SingleResultReader(IExecuteReader command)
 	: IExecuteReaderAsync
 {
@@ -179,10 +186,17 @@ sealed class SingleResultReader(IExecuteReader command)
 			cancellationToken);
 }
 
-// What `command.SingleResult()` returns for a raw command:
-// every member forwards to the caller's command,
-// and Map unwraps it as it does the one above (see Views.CommandCore).
-// The two ExecuteReader members add SingleResult to the behavior.
+/// <summary>
+/// What <c>command.SingleResult()</c> returns for a raw command:
+/// every member forwards to the caller's command.
+/// </summary>
+/// <remarks>
+/// <c>Map</c> unwraps it as it does <see cref="SingleResultReader"/>
+/// (see <see cref="Views.CommandCore{T}(IDbCommand, IRowSource{T})"/>).
+/// The two <c>ExecuteReader</c> members add
+/// <see cref="CommandBehavior.SingleResult"/> to the behavior.
+/// </remarks>
+/// <param name="command">The command every member forwards to.</param>
 sealed class SingleResultDbCommand(IDbCommand command)
 	: IDbCommand
 {

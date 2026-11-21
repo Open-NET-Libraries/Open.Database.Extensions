@@ -2,7 +2,7 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// Core non-DB-specific extensions for retrieving data from a command using best practices.
+/// Provides extension methods that execute a command and read its results.
 /// </summary>
 public static partial class CommandExtensions
 {
@@ -27,9 +27,16 @@ public static partial class CommandExtensions
 		return command.Connection!.EnsureOpenAsync(cancellationToken);
 	}
 
-	// The scope of the command's own connection (opened if needed, closed again if the scope opened it).
-	// A command with no connection gets the empty scope, and the command reports the missing connection
-	// itself when it is executed, as it always has.
+	/// <summary>
+	/// Gets the scope of the command's own connection:
+	/// it is opened if needed, and closed again if the scope opened it.
+	/// </summary>
+	/// <remarks>
+	/// A command with no connection gets the empty scope,
+	/// and the command reports the missing connection itself when it is executed, as it always has.
+	/// </remarks>
+	/// <param name="command">The command whose connection to scope.</param>
+	/// <returns>The scope of the connection.</returns>
 	internal static ConnectionScope<IDbConnection> EnsureOpenScope(this IDbCommand command)
 		=> command.Connection is { } connection
 			? connection.EnsureOpenScope()
@@ -42,12 +49,30 @@ public static partial class CommandExtensions
 			? await connection.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false)
 			: default;
 
-	// These open a closed connection and execute the reader in one step. CommandBehavior.CloseConnection closes the connection when the
-	// reader is disposed, but when the provider fails to execute there is no reader, so the connection that was opened here is closed here
-	// (never disposed). One the caller had opened is left as it was. A failure to close is ignored so that it cannot replace the exception
-	// being reported.
-	//
-	// The two generic helpers are shared by the other packages (SqlClient passes SqlCommand and SqlDataReader and keeps its exact reader type).
+	/// <summary>
+	/// Opens the command's connection if it is closed and executes the reader in one step.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// <see cref="CommandBehavior.CloseConnection"/> closes the connection when the reader is disposed.
+	/// When the provider fails to execute there is no reader,
+	/// so the connection that was opened here is closed here (never disposed).
+	/// A connection the caller had opened is left as it was.
+	/// A failure to close is ignored so that it cannot replace the exception being reported.
+	/// </para>
+	/// <para>
+	/// The two generic helpers are shared by the other packages
+	/// (SqlClient passes <c>SqlCommand</c> and <c>SqlDataReader</c> and keeps its exact reader type).
+	/// The execute delegate is passed in rather than a virtual call
+	/// so that it can be a static lambda: no closure, no cast and no continuation.
+	/// </para>
+	/// </remarks>
+	/// <typeparam name="TCommand">The type of the command.</typeparam>
+	/// <typeparam name="TReader">The type of the reader.</typeparam>
+	/// <param name="command">The command to execute.</param>
+	/// <param name="behavior">The behavior to run the reader with.</param>
+	/// <param name="execute">The function that executes the reader.</param>
+	/// <returns>The reader.</returns>
 	// The execute delegate is passed in rather than a virtual call so that it can be a static lambda: no closure, no cast and no continuation.
 	internal static TReader OpenAndExecuteReader<TCommand, TReader>(TCommand command, CommandBehavior behavior, Func<TCommand, CommandBehavior, TReader> execute)
 		where TCommand : IDbCommand
@@ -91,6 +116,11 @@ public static partial class CommandExtensions
 	static ValueTask<DbDataReader> OpenAndExecuteReaderAsync(this DbCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
 		=> OpenAndExecuteReaderAsync(command, behavior, static (c, b, ct) => c.ExecuteReaderAsync(b, ct), cancellationToken);
 
+	/// <summary>
+	/// Closes, never disposes, the command's connection.
+	/// A failure to close is ignored, so that it cannot replace the exception being reported.
+	/// </summary>
+	/// <param name="command">The command whose connection to close.</param>
 	internal static void CloseOpened(IDbCommand command)
 	{
 		try
@@ -104,12 +134,14 @@ public static partial class CommandExtensions
 	}
 
 #if NETSTANDARD2_0
+	/// <inheritdoc cref="CloseOpened(IDbCommand)"/>
 	internal static ValueTask CloseOpenedAsync(IDbCommand command)
 	{
 		CloseOpened(command);
 		return default;
 	}
 #else
+	/// <inheritdoc cref="CloseOpened(IDbCommand)"/>
 	internal static async ValueTask CloseOpenedAsync(IDbCommand command)
 	{
 		try
@@ -128,12 +160,18 @@ public static partial class CommandExtensions
 	#endregion
 
 	/// <summary>
-	/// Iterates all records using an <see cref="IDataReader"/> and returns the desired results as a list.
+	/// Executes a reader and returns the results of a transform function for each record as a list.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='first-set']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <returns>A list of the transformed results.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static List<T> ToList<T>(
 		this IDbCommand command,
 		CommandBehavior behavior,
@@ -153,7 +191,25 @@ public static partial class CommandExtensions
 		CommandBehavior behavior = CommandBehavior.Default)
 		=> ToList(command, behavior, transform);
 
-	/// <inheritdoc cref="ToListAsync{T}(DbCommand, CommandBehavior, Func{IDataRecord, T}, bool, CancellationToken)"/>
+	/// <summary>
+	/// Asynchronously executes a reader and returns the results of an asynchronous transform for each record as a list.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='first-set']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior-required']/*" />
+	/// <param name="transform">
+	/// The asynchronous function to transform each <see cref="IDataRecord"/> into a result.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is a list of the transformed results.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static async ValueTask<List<T>> ToListAsync<T>(this DbCommand command,
 		CommandBehavior behavior,
 		Func<IDataRecord, ValueTask<T>> transform,
@@ -173,7 +229,7 @@ public static partial class CommandExtensions
 		return await reader.ToListAsync(transform, cancellationToken).ConfigureAwait(false);
 	}
 
-	/// <inheritdoc cref="ToListAsync{T}(DbCommand, CommandBehavior, Func{IDataRecord, T}, bool, CancellationToken)"/>
+	/// <inheritdoc cref="ToListAsync{T}(DbCommand, CommandBehavior, Func{IDataRecord, ValueTask{T}}, CancellationToken)"/>
 	public static ValueTask<List<T>> ToListAsync<T>(this DbCommand command,
 		Func<IDataRecord, ValueTask<T>> transform,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -181,17 +237,34 @@ public static partial class CommandExtensions
 		=> ToListAsync(command, behavior, transform, cancellationToken);
 
 	/// <summary>
-	/// Obsolete: use await command.Map(transform).ToListAsync(cancellationToken).
-	/// Asynchronously iterates all records using an <see cref="IDataReader"/> and returns the desired results as a list.
+	/// Asynchronously executes a reader and returns the transformed results as a list.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>A task containing a list of all results.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
+	/// <para>
+	/// Use <c>await command.Map(transform).ToListAsync(cancellationToken)</c> instead.
+	/// <c>Map</c> also reads the later result sets, so a failure in one is thrown;
+	/// to read only the first, as this method does,
+	/// call <c>.SingleResult()</c> before <c>Map</c>
+	/// (<c>command.SingleResult().Map(transform)</c>; <c>.Map(transform).SingleResult()</c> still works).
+	/// <c>Map</c> executes asynchronously and then reads the rows with <c>Read</c>,
+	/// as <paramref name="useReadAsync"/> set to <see langword="false"/> did.
+	/// It has no <see cref="CommandBehavior"/> argument:
+	/// if you passed one, run the map inside <c>ExecuteReaderAsync</c> with that behavior
+	/// combined with <see cref="CommandBehavior.SingleResult"/>.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is a list of the transformed results.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	[Obsolete(ToListAsyncObsolete)]
 	public static async ValueTask<List<T>> ToListAsync<T>(this DbCommand command,
 		CommandBehavior behavior,
@@ -233,12 +306,18 @@ public static partial class CommandExtensions
 		=> ToListAsync(command, behavior, transform, useReadAsync, cancellationToken);
 
 	/// <summary>
-	/// Iterates all records using an <see cref="IDataReader"/> and returns the desired results as an array.
+	/// Executes a reader and returns the results of a transform function for each record as an array.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='first-set']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <returns>An array of the transformed results.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static T[] ToArray<T>(this IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -253,7 +332,11 @@ public static partial class CommandExtensions
 	public static T[] ToArray<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		=> ToArray(command, behavior, transform);
 
-	/// <inheritdoc cref="ToArray{T}(IDbCommand, CommandBehavior, Func{IDataRecord, T})" />
+	/// <summary>
+	/// Executes a reader and returns the results of a transform function for each record as an immutable array.
+	/// </summary>
+	/// <returns>An immutable array of the transformed results.</returns>
+	/// <inheritdoc cref="ToArray{T}(IDbCommand, CommandBehavior, Func{IDataRecord, T})" path="/*[not(self::summary) and not(self::returns)]"/>
 	public static ImmutableArray<T> ToImmutableArray<T>(this IDbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -264,16 +347,23 @@ public static partial class CommandExtensions
 		return reader.Select(transform).ToImmutableArray();
 	}
 
-	/// <inheritdoc cref="ToArray{T}(IDbCommand, CommandBehavior, Func{IDataRecord, T})" />
+	/// <inheritdoc cref="ToImmutableArray{T}(IDbCommand, CommandBehavior, Func{IDataRecord, T})"/>
 	public static ImmutableArray<T> ToImmutableArray<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 		=> ToImmutableArray(command, behavior, transform);
 
 	/// <summary>
-	/// Loads all data from a command through an <see cref="IDataReader"/> into a DataTable.
+	/// Executes a reader and loads its first result set into a <see cref="DataTable"/>.
 	/// </summary>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <returns>The resultant DataTable.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.SequentialAccess"/>.
+	/// </param>
+	/// <returns>A <see cref="DataTable"/> that holds the result set.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static DataTable ToDataTable(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -284,12 +374,21 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Loads all data from a command through an <see cref="IDataReader"/> into a DataTables.
-	/// Each result set is loaded into its own table. Calls .NextResult() to check for more results.
+	/// Executes a reader and loads each result set into its own <see cref="DataTable"/>.
 	/// </summary>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <returns>The resultant list of DataTables.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <para>
+	/// It calls <see cref="IDataReader.NextResult"/> to check for more results.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.SequentialAccess"/>.
+	/// </param>
+	/// <returns>A list of tables, one for each result set.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static List<DataTable> ToDataTables(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -300,11 +399,15 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Executes a reader on a command with a handler function.
+	/// Executes a reader and passes it to a handler.
 	/// </summary>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static void ExecuteReader(this IDbCommand command, Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -316,14 +419,17 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Executes a reader on a command with a transform function.
+	/// Executes a reader and returns the result of a transform function applied to it.
 	/// </summary>
-	/// <remarks>The default behavior will open a connection, execute the reader and close the connection it if was not already open.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="transform">The transform function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
 	/// <returns>The result of the transform.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static T ExecuteReader<T>(this IDbCommand command, Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -335,12 +441,22 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// If the <paramref name="command"/> is derived from <see cref="DbCommand"/>, this will call <see cref="DbCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)"/>;
-	/// otherwise it will call <see cref="IDbCommand.ExecuteReader(CommandBehavior)"/>.
+	/// Asynchronously executes a reader, calling <see cref="DbCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)"/>
+	/// if the <paramref name="command"/> is derived from <see cref="DbCommand"/>;
+	/// otherwise it calls <see cref="IDbCommand.ExecuteReader(CommandBehavior)"/>.
 	/// </summary>
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <remarks>
+	/// Unlike the other members, this one does not open the connection:
+	/// it must already be open, and the caller owns and disposes the reader.
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is the reader.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static async ValueTask<IDataReader> ExecuteReaderAsync(this IDbCommand command,
 		CommandBehavior behavior = CommandBehavior.Default,
 		CancellationToken cancellationToken = default)
@@ -354,12 +470,17 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously executes a reader on a command with a handler function.
+	/// Asynchronously executes a reader and passes it to a handler.
 	/// </summary>
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static async ValueTask ExecuteReaderAsync(this DbCommand command,
 		Action<DbDataReader> handler,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -379,13 +500,17 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously executes a reader on a command with a handler function.
+	/// Asynchronously executes a reader and passes it to an asynchronous handler.
 	/// </summary>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Action{DbDataReader}, CommandBehavior, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static async ValueTask ExecuteReaderAsync(this IDbCommand command,
 		Func<IDataReader, ValueTask> handler,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -405,11 +530,18 @@ public static partial class CommandExtensions
 		await handler(reader).ConfigureAwait(false);
 	}
 
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="handler">The handler function for the <see cref="DbDataReader"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Action{DbDataReader}, CommandBehavior, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <summary>
+	/// Asynchronously executes a reader and passes it to an asynchronous handler.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static async ValueTask ExecuteReaderAsync(this DbCommand command,
 		Func<DbDataReader, ValueTask> handler,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -429,14 +561,21 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously executes a reader on a command with a transform function.
+	/// Asynchronously executes a reader and returns the result of a transform function applied to it.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="transform">The transform function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>The result of the transform.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is the result of the transform.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static async ValueTask<T> ExecuteReaderAsync<T>(this DbCommand command,
 		Func<DbDataReader, T> transform,
 		CommandBehavior behavior = CommandBehavior.Default,
@@ -455,10 +594,10 @@ public static partial class CommandExtensions
 		return transform(reader);
 	}
 
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="transform">The transform function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
 	/// <inheritdoc cref="ExecuteReaderAsync{T}(DbCommand, Func{DbDataReader, T}, CommandBehavior, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<T> ExecuteReaderAsync<T>(this IDbCommand command,
 		Func<IDataReader, ValueTask<T>> transform,
@@ -508,54 +647,29 @@ public static partial class CommandExtensions
 		=> IterateReader(command, behavior, transform, selector);
 
 	/// <summary>
-	/// Executes a reader on a command with a transform function;
+	/// Executes a reader and passes its records, transformed by a function, to a selector;
 	/// the connection is held while each row is processed.
 	/// </summary>
 	/// <remarks>
-	/// <note type="caution">
-	/// <b>This is not the recommended way to read rows: it holds the
-	/// connection while your code runs for each row.</b>
-	/// The reader, and the connection under it, stay open for as long as
-	/// your code takes per row, added up over all the rows.
-	/// <br/>
-	/// <br/>
-	/// In async code that time has no bound: every <c>await</c> in the
-	/// loop body can yield, and nothing says when the loop resumes.
-	/// Until it does, the connection is on hold: a pooled connection is
-	/// not returned to the pool, and the server may keep its locks and the
-	/// open result set.
-	/// <br/>
-	/// <br/>
-	/// These members suit work that must happen while the connection is
-	/// open, for example a result too large to buffer or a row-by-row
-	/// pipeline.
-	/// Otherwise use a call that lets go of the connection first:
-	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// and
-	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// buffer the rows and release the connection
-	/// (call <c>.Map&lt;T&gt;()</c> first), and
-	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
-	/// streams them to a consumer without holding it
-	/// (the producer is unbounded: it reads without waiting for the
-	/// consumer and frees the connection while the consumer takes its
-	/// time, and the rows wait in memory until the consumer takes them;
-	/// dispose the enumerator, as <c>await foreach</c> does).
-	/// </note>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
 	/// <para>
-	/// The default behavior will open a connection, execute the reader
-	/// and close the connection if it was not already open.
+	/// The enumerable the selector receives is lazy and valid only while the selector runs:
+	/// the reader is disposed when it returns.
 	/// </para>
 	/// </remarks>
 	/// <typeparam name="TEntity">The return type of the transform function applied to each record.</typeparam>
 	/// <typeparam name="TResult">The type returned by the selector.</typeparam>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="transform">The transform function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="selector">Provides an IEnumerable&lt;TEntity&gt; to select individual results by.</param>
-	/// <inheritdoc
-	/// cref="ExecuteReader{T}(IDbCommand, Func{IDataReader, T}, CommandBehavior)"
-	/// path="/*[not(self::param) and not(self::remarks)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <param name="selector">
+	/// The function that receives the transformed records as an <see cref="IEnumerable{T}"/> of <typeparamref name="TEntity"/> and returns the result.
+	/// </param>
+	/// <returns>The result of the selector.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/>, <paramref name="transform"/> or <paramref name="selector"/> is <see langword="null"/>.
+	/// </exception>
 	public static TResult IterateReader<TEntity, TResult>(
 		this IDbCommand command,
 		CommandBehavior behavior,
@@ -572,16 +686,17 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> on a command
-	/// with a handler function;
+	/// Executes a reader and calls a handler for each record;
 	/// the connection is held while each row is processed.
 	/// </summary>
-	/// <inheritdoc
-	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
-	/// path="/remarks"/>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static void IterateReader(
 		this IDbCommand command,
 		CommandBehavior behavior,
@@ -619,16 +734,19 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> on a command
-	/// while the predicate returns true;
+	/// Executes a reader and iterates its records while a predicate returns <see langword="true"/>;
 	/// the connection is held while each row is processed.
 	/// </summary>
-	/// <inheritdoc
-	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
-	/// path="/remarks"/>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='predicate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="predicate"/> is <see langword="null"/>.
+	/// </exception>
 	public static void IterateReaderWhile(this IDbCommand command,
 		Func<IDataRecord, bool> predicate,
 		CommandBehavior behavior = CommandBehavior.Default)
@@ -642,17 +760,23 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously iterates all records from an <see cref="IDataReader"/>;
+	/// Asynchronously executes a reader and calls a handler for each record;
 	/// the connection is held while each row is processed.
 	/// </summary>
-	/// <inheritdoc
-	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
-	/// path="/remarks"/>
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled before the reader was executed.
+	/// </exception>
 	public static async ValueTask ForEachAsync(this DbCommand command,
 		Action<IDataRecord> handler,
 		CommandBehavior behavior,
@@ -710,18 +834,26 @@ public static partial class CommandExtensions
 		=> ForEachAsync(command, handler, CommandBehavior.Default, useReadAsync, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously iterates an <see cref="IDataReader"/> on a command
-	/// while the predicate returns true;
+	/// Asynchronously executes a reader and iterates its records while an asynchronous predicate returns <see langword="true"/>;
 	/// the connection is held while each row is processed.
 	/// </summary>
-	/// <inheritdoc
-	/// cref="IExecuteReaderExtensions.IterateReader(IExecuteReader, Action{IDataRecord}, CommandBehavior)"
-	/// path="/remarks"/>
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <param name="predicate">
+	/// The asynchronous function to call for each <see cref="IDataRecord"/>.
+	/// It returns <see langword="true"/> to continue with the next record,
+	/// or <see langword="false"/> to stop.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="predicate"/> is <see langword="null"/>.
+	/// </exception>
 	public static async ValueTask IterateReaderWhileAsync(this DbCommand command, Func<IDataRecord, ValueTask<bool>> predicate, CommandBehavior behavior = CommandBehavior.Default, bool useReadAsync = true, CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -738,14 +870,24 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and returns the first result through a transform function.
+	/// Executes a reader and returns the transformed first record.
 	/// </summary>
-	/// <remarks>Throws an <see cref="InvalidOperationException"/> if there are no results.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.Default"/>.
+	/// <see cref="CommandBehavior.SingleRow"/> is added to it.
+	/// </param>
 	/// <returns>The value from the transform.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="InvalidOperationException">
+	/// The result has no records.
+	/// </exception>
 	public static T First<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -756,8 +898,26 @@ public static partial class CommandExtensions
 		return reader.Select(transform).First();
 	}
 
-	/// <remarks>Returns <c>default(T)</c> if thre are no results.</remarks>
-	/// <inheritdoc cref="First{T}(IDbCommand, Func{IDataRecord, T}, CommandBehavior)"/>
+	/// <summary>
+	/// Executes a reader and returns the transformed first record,
+	/// or the default value if the result has no records.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.Default"/>.
+	/// <see cref="CommandBehavior.SingleRow"/> is added to it.
+	/// </param>
+	/// <returns>
+	/// The value from the transform,
+	/// or <see langword="default"/> for <typeparamref name="T"/> if the result has no records.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static T? FirstOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -768,8 +928,21 @@ public static partial class CommandExtensions
 		return reader.Select(transform).FirstOrDefault();
 	}
 
-	/// <remarks>Throws an <see cref="InvalidOperationException"/> if there is anything other than a single result.</remarks>
-	/// <inheritdoc cref="First{T}(IDbCommand, Func{IDataRecord, T}, CommandBehavior)"/>
+	/// <summary>
+	/// Executes a reader and returns the transformed record of a result that has exactly one.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <returns>The value from the transform.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="InvalidOperationException">
+	/// The result has no records, or more than one.
+	/// </exception>
 	public static T Single<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -780,11 +953,25 @@ public static partial class CommandExtensions
 		return reader.Select(transform).Single();
 	}
 
+	/// <summary>
+	/// Executes a reader and returns the transformed record of a result that has at most one,
+	/// or the default value if the result has no records.
+	/// </summary>
 	/// <remarks>
-	/// Returns <c>default(T)</c> if thre are no results.
-	/// Throws an <see cref="InvalidOperationException"/> if there is more than one result.
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
 	/// </remarks>
-	/// <inheritdoc cref="FirstOrDefault{T}(IDbCommand, Func{IDataRecord, T}, CommandBehavior)"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <returns>
+	/// The value from the transform,
+	/// or <see langword="default"/> for <typeparamref name="T"/> if the result has no records.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
+	/// <exception cref="InvalidOperationException">
+	/// The result has more than one record.
+	/// </exception>
 	public static T? SingleOrDefault<T>(this IDbCommand command, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -796,14 +983,19 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and returns the first number of results defined by the count.
+	/// Executes a reader and returns the transformed results of its first records, up to a count.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='first-set']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="count">The maximum number of records to return.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <returns>The results from the transform limited by the take count.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <returns>A list of the transformed results, limited by <paramref name="count"/>.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static List<T> Take<T>(this IDbCommand command, int count, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -815,14 +1007,19 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and skips the first number of results defined by the count.
+	/// Executes a reader, skips its first records, and returns the transformed results of the rest.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='first-set']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="count">The number of records to skip.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <returns>The results from the transform after the skip count.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <returns>A list of the transformed results after the skipped records.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static List<T> Skip<T>(this IDbCommand command, int count, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -835,15 +1032,20 @@ public static partial class CommandExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> and skips by the skip parameter returns the maximum remaining defined by the take parameter.
+	/// Executes a reader, skips its first records, and returns the transformed results of the next ones, up to a count.
 	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="skip">The number of entries to skip before starting to take results.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='first-set']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="skip">The number of records to skip before starting to take results.</param>
 	/// <param name="take">The maximum number of records to return.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <returns>The results from the skip, transform and take operation.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
+	/// <returns>A list of the transformed results after the skipped records, limited by <paramref name="take"/>.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static List<T> SkipThenTake<T>(this IDbCommand command, int skip, int take, Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -855,22 +1057,74 @@ public static partial class CommandExtensions
 		return reader.Select(transform).Take(take).ToList();
 	}
 
-	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
-	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
+	/// <summary>
+	/// Executes a reader and reads the first column of every record of its result.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.SequentialAccess"/>.
+	/// <see cref="CommandBehavior.SingleResult"/> is added to it.
+	/// </param>
+	/// <returns>An enumerable of the values of the first column.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static IEnumerable<object?> FirstOrdinalResults(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 	{
 		var results = new Queue<object>(IterateReaderInternal(command, behavior | CommandBehavior.SingleResult, r => r.GetValue(0)));
 		return results.DequeueEach().DBNullToNull();
 	}
 
-	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
+	/// <summary>
+	/// Executes a reader and reads the first column of every record of its result as type <typeparamref name="T0"/>.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// If the command is a <see cref="DbCommand"/>, a database null becomes <see langword="default"/> for <typeparamref name="T0"/>;
+	/// otherwise <see cref="DBNull"/> values are converted to <see langword="null"/> and then cast to <typeparamref name="T0"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <typeparam name="T0">The expected type of the first column.</typeparam>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.SequentialAccess"/>.
+	/// <see cref="CommandBehavior.SingleResult"/> is added to it.
+	/// </param>
+	/// <returns>An enumerable of the values of the first column, as <typeparamref name="T0"/>.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 		=> command is DbCommand dbc
 		? dbc.FirstOrdinalResults<T0>(behavior)
 		: command.FirstOrdinalResults(behavior | CommandBehavior.SingleResult).Cast<T0>();
 
-	/// <typeparam name="T0">The expected type of the first ordinal.</typeparam>
-	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)" path="/*[not(self::typeparam)]"/>
+	/// <summary>
+	/// Executes a reader and reads the first column of every record of its result as type <typeparamref name="T0"/>.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// A database null becomes <see langword="default"/> for <typeparamref name="T0"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <typeparam name="T0">The expected type of the first column.</typeparam>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.SequentialAccess"/>.
+	/// <see cref="CommandBehavior.SingleResult"/> is added to it.
+	/// </param>
+	/// <returns>An enumerable of the values of the first column, as <typeparamref name="T0"/>.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -880,21 +1134,56 @@ public static partial class CommandExtensions
 		return reader.FirstOrdinalResults<T0>();
 	}
 
-	/// <remarks><see cref="DBNull"/> values are converted to null.</remarks>
-	/// <inheritdoc cref="FirstOrdinalResultsAsync{T0}(DbCommand, CommandBehavior, bool, CancellationToken)"/>
+	/// <summary>
+	/// Asynchronously executes a reader and reads the first column of every record of its result.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.SequentialAccess"/>.
+	/// <see cref="CommandBehavior.SingleResult"/> is added to it.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is an enumerable of the values of the first column.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default)
 		=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync(useReadAsync, cancellationToken), behavior | CommandBehavior.SingleResult, cancellationToken);
 
 	/// <summary>
-	/// Reads the first column from every record.
+	/// Asynchronously executes a reader and reads the first column of every record of its result as type <typeparamref name="T0"/>.
 	/// </summary>
-	/// <typeparam name="T0">The expected type of the first ordinal.</typeparam>
-	/// <remarks>Any <see cref="DBNull"/> values are then converted to null and casted to type <typeparamref name="T0"/>.</remarks>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>The enumerable of casted values.</returns>
+	/// <remarks>
+	/// <para>
+	/// A database null becomes <see langword="default"/> for <typeparamref name="T0"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <typeparam name="T0">The expected type of the first column.</typeparam>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// The default is <see cref="CommandBehavior.SequentialAccess"/>.
+	/// <see cref="CommandBehavior.SingleResult"/> is added to it.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is an enumerable of the values of the first column, as <typeparamref name="T0"/>.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbCommand command, CommandBehavior behavior = CommandBehavior.SequentialAccess, bool useReadAsync = true, CancellationToken cancellationToken = default)
 		=> command.ExecuteReaderAsync(reader => reader.FirstOrdinalResultsAsync<T0>(useReadAsync, cancellationToken), behavior | CommandBehavior.SingleResult, cancellationToken);
 }

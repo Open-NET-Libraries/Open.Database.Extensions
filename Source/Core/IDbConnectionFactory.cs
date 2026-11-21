@@ -4,7 +4,16 @@
 /// A common abstraction for creating database connections. Can easily be used with dependency injection.
 /// </summary>
 /// <remarks>
-/// The factory never reuses connections: every call to <see cref="Create"/> returns a new one that the caller owns. Use <see cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/> to present a factory as an <see cref="IDbConnectionPool"/>, which is how the expressive commands consume it. A factory is the usual connection source: the provider's own connection pool does the pooling behind each connection it creates, so there is nothing for ODX to pool. A custom <see cref="IDbConnectionPool"/> is only for a pooling scheme of your own.
+/// <para>
+/// The factory never reuses connections: every call to <see cref="Create"/> returns a new one that the caller owns.
+/// Use <see cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/> to present a factory as an
+/// <see cref="IDbConnectionPool"/>, which is how the expressive commands consume it.
+/// </para>
+/// <para>
+/// A factory is the usual connection source: the provider's own connection pool does the pooling behind each
+/// connection it creates, so there is nothing for ODX to pool.
+/// A custom <see cref="IDbConnectionPool"/> is only for a pooling scheme of your own.
+/// </para>
 /// </remarks>
 /// <seealso cref="IDbConnectionFactory{TConnection}"/>
 /// <seealso cref="DbConnectionFactory"/>
@@ -36,9 +45,14 @@ public interface IDbConnectionFactory<out TConnection> : IDbConnectionFactory
 	new TConnection Create();
 }
 
-// What a pool made from a factory (AsPool) stands for: the factory object itself, which remembered names belong to.
+/// <summary>
+/// Identifies what a pool made from a factory (see <see cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/>) stands for.
+/// </summary>
 interface IConnectionIdentity
 {
+	/// <summary>
+	/// Gets the factory object itself, which remembered names belong to.
+	/// </summary>
 	object Identity { get; }
 }
 
@@ -69,7 +83,7 @@ public static class DbConnectionFactoryExtensions
 		public IDbConnection Take()
 			=> factory();
 
-		// See the typed adapter: the factory object that commands made from it share.
+		/// <inheritdoc cref="ConnectionFactoryToPoolAdapter{TConnection}.Identity"/>
 		internal object Identity => factory.Target ?? factory;
 
 		object IConnectionIdentity.Identity => Identity;
@@ -104,8 +118,13 @@ public static class DbConnectionFactoryExtensions
 		public TConnection Take()
 			=> factory();
 
-		// What stays the same from one command to the next: the factory object itself (the target of its Create method), which is what remembered
-		// procedure names belong to. A function with no target (a static lambda) has no such identity, and its own delegate is returned.
+		/// <summary>
+		/// Gets what stays the same from one command to the next: the factory object itself
+		/// (the target of its <c>Create</c> method), which is what remembered procedure names belong to.
+		/// </summary>
+		/// <remarks>
+		/// A function with no target (a <see langword="static"/> lambda) has no such identity, and its own delegate is returned.
+		/// </remarks>
 		internal object Identity => factory.Target ?? factory;
 
 		object IConnectionIdentity.Identity => Identity;
@@ -124,9 +143,7 @@ public static class DbConnectionFactoryExtensions
 	/// </summary>
 	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter"/> that handles this factory.</returns>
-	/// <remarks>
-	/// This is the "get in, get out" model: every command execution creates its own connection, opens it only if needed, and disposes it when the command is finished.
-	/// </remarks>
+	/// <include file="Extensions/Connections.docs.xml" path="docs/members[@name='as-pool-remarks']/*" />
 	public static ConnectionFactoryToPoolAdapter AsPool(this IDbConnectionFactory connectionFactory)
 		=> new(connectionFactory);
 
@@ -135,9 +152,7 @@ public static class DbConnectionFactoryExtensions
 	/// </summary>
 	/// <param name="connectionFactory">The function that creates a connection.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter"/> that handles this function.</returns>
-	/// <remarks>
-	/// This is the "get in, get out" model: every command execution creates its own connection, opens it only if needed, and disposes it when the command is finished.
-	/// </remarks>
+	/// <include file="Extensions/Connections.docs.xml" path="docs/members[@name='as-pool-remarks']/*" />
 	public static ConnectionFactoryToPoolAdapter AsPool(this Func<IDbConnection> connectionFactory)
 		=> new(connectionFactory);
 
@@ -147,9 +162,7 @@ public static class DbConnectionFactoryExtensions
 	/// <typeparam name="TConnection">The connection type.</typeparam>
 	/// <param name="connectionFactory">The connection factory to generate connections from.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> that handles this factory.</returns>
-	/// <remarks>
-	/// This is the "get in, get out" model: every command execution creates its own connection, opens it only if needed, and disposes it when the command is finished.
-	/// </remarks>
+	/// <include file="Extensions/Connections.docs.xml" path="docs/members[@name='as-pool-remarks']/*" />
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this IDbConnectionFactory<TConnection> connectionFactory)
 		where TConnection : IDbConnection
 		=> new(connectionFactory);
@@ -160,9 +173,7 @@ public static class DbConnectionFactoryExtensions
 	/// <typeparam name="TConnection">The connection type.</typeparam>
 	/// <param name="connectionFactory">The function that creates a connection.</param>
 	/// <returns>A <see cref="ConnectionFactoryToPoolAdapter{TConnection}"/> that handles this function.</returns>
-	/// <remarks>
-	/// This is the "get in, get out" model: every command execution creates its own connection, opens it only if needed, and disposes it when the command is finished.
-	/// </remarks>
+	/// <include file="Extensions/Connections.docs.xml" path="docs/members[@name='as-pool-remarks']/*" />
 	public static ConnectionFactoryToPoolAdapter<TConnection> AsPool<TConnection>(this Func<TConnection> connectionFactory)
 		where TConnection : IDbConnection
 		=> new(connectionFactory);

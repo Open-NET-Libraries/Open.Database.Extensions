@@ -5,27 +5,23 @@ namespace Open.Database.Extensions;
 public static partial class CoreExtensions
 {
 	/// <summary>
-	/// Locks in a mapping to model type <typeparamref name="T"/> over a data reader the caller owns and returns a deferred <see cref="MappedReader{T}"/>.
-	/// Nothing runs until a terminal (<c>ToList</c>, <c>FirstOrDefault</c>, and so on) is invoked.
+	/// Locks in a mapping to model type <typeparamref name="T"/> over a data
+	/// reader the caller owns and returns a deferred
+	/// <see cref="MappedReader{T}"/>.
+	/// Nothing runs until a terminal, such as
+	/// <see cref="MappedReader{T}.ToListAsync(CancellationToken)"/>, is invoked.
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// The reader belongs to the caller: it is never opened, closed or disposed, and <see cref="IDataReader.NextResult"/> is never called on it.
-	/// Rows are read from the current position of the current result set, and the rows read stay read.
+	/// The reader belongs to the caller: it is never opened, closed or disposed,
+	/// and <see cref="IDataReader.NextResult"/> is never called on it.
+	/// Rows are read from the current position of the current result set, and
+	/// the rows read stay read.
 	/// </para>
-	/// <para>
-	/// How <typeparamref name="T"/> is mapped is the same as for
-	/// <see cref="Map{T}(IExecuteReader, RowMap{T}?)"/>:
-	/// a <see cref="RowMap{T}"/> reads columns whose names differ from the properties,
-	/// and the overload without one reads by column name
-	/// (exactly, else ignoring case, else ignoring case and underscores, so <c>author_id</c> feeds <c>AuthorId</c>).
-	/// A single value such as <see cref="int"/> is read from the first column.
-	/// </para>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-how']/*" />
 	/// </remarks>
-	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="reader">The reader to read from, positioned on the result set to map.</param>
-	/// <param name="map">The prebuilt <see cref="RowMap{T}"/> to read with; <see langword="null"/> reads as <c>Map&lt;T&gt;()</c> does (before 11.0.0-rc.4 it threw).</param>
-	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-overload']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(1)]
@@ -59,20 +55,21 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Locks in a custom projection over a data reader the caller owns and returns a deferred <see cref="MappedReader{T}"/>.
+	/// Locks in a custom projection over a data reader the caller owns and
+	/// returns a deferred <see cref="MappedReader{T}"/>.
 	/// Nothing runs until a terminal is invoked;
 	/// <paramref name="selector"/> is applied per row as the reader streams.
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// The reader belongs to the caller: it is never opened, closed or disposed, and <see cref="IDataReader.NextResult"/> is never called on it.
-	/// Rows are read from the current position of the current result set, and the rows read stay read.
+	/// The reader belongs to the caller: it is never opened, closed or disposed,
+	/// and <see cref="IDataReader.NextResult"/> is never called on it.
+	/// Rows are read from the current position of the current result set, and
+	/// the rows read stay read.
 	/// </para>
 	/// </remarks>
-	/// <typeparam name="T">The type each record is projected to.</typeparam>
 	/// <param name="reader">The reader to read from, positioned on the result set to map.</param>
-	/// <param name="selector">The transform applied to each <see cref="IDataRecord"/>.</param>
-	/// <returns>A deferred query whose results are produced by <paramref name="selector"/>.</returns>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-selector']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="reader"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
 	[OverloadResolutionPriority(-1)]
 	public static MappedReader<T> Map<T>(
@@ -88,30 +85,26 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Locks in a mapping to model type <typeparamref name="T"/> over a command and returns a deferred <see cref="MappedCommand{T}"/>.
-	/// Nothing runs until a terminal (<c>ToList</c>, <c>FirstOrDefault</c>, and so on) is invoked.
+	/// Locks in a mapping to model type <typeparamref name="T"/> over a command
+	/// and returns a deferred <see cref="MappedCommand{T}"/>.
+	/// Nothing runs until a terminal, such as
+	/// <see cref="MappedCommand{T}.ToListAsync(CancellationToken)"/>, is invoked.
 	/// </summary>
 	/// <remarks>
 	/// <para>
 	/// The command belongs to the caller and is never disposed.
-	/// The connection is opened only if it is closed, and a connection this call opened is closed (not disposed) when it ends; one that was already open is left open.
-	/// Like an expressive command,
-	/// a terminal reads through the later result sets after the first, so a failure in a later statement is thrown;
-	/// <c>command.SingleResult().Map&lt;T&gt;()</c> turns that off (<c>.SingleResult()</c> after <c>Map</c> does too).
+	/// The connection is opened only if it is closed, and a connection this call
+	/// opened is closed (not disposed) when it ends; one that was already open
+	/// is left open.
+	/// Like an expressive command, a terminal reads through the later result
+	/// sets after the first, so a failure in a later statement is thrown;
+	/// <c>command.SingleResult().Map&lt;T&gt;()</c> turns that off
+	/// (<see cref="MappedCommand{T}.SingleResult"/> after <c>Map</c> does too).
 	/// </para>
-	/// <para>
-	/// How <typeparamref name="T"/> is mapped is the same as for
-	/// <see cref="Map{T}(IExecuteReader, RowMap{T}?)"/>:
-	/// a <see cref="RowMap{T}"/> reads columns whose names differ from the properties,
-	/// and the overload without one reads by column name
-	/// (exactly, else ignoring case, else ignoring case and underscores, so <c>author_id</c> feeds <c>AuthorId</c>).
-	/// A single value such as <see cref="int"/> is read from the first column.
-	/// </para>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-how']/*" />
 	/// </remarks>
-	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to execute.</param>
-	/// <param name="map">The prebuilt <see cref="RowMap{T}"/> to read with; <see langword="null"/> reads as <c>Map&lt;T&gt;()</c> does (before 11.0.0-rc.4 it threw).</param>
-	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-overload']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(1)]
@@ -145,23 +138,25 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Locks in a custom projection over a command and returns a deferred <see cref="MappedCommand{T}"/>.
+	/// Locks in a custom projection over a command and returns a deferred
+	/// <see cref="MappedCommand{T}"/>.
 	/// Nothing runs until a terminal is invoked;
 	/// <paramref name="selector"/> is applied per row as the reader streams.
 	/// </summary>
 	/// <remarks>
 	/// <para>
 	/// The command belongs to the caller and is never disposed.
-	/// The connection is opened only if it is closed, and a connection this call opened is closed (not disposed) when it ends; one that was already open is left open.
-	/// Like an expressive command,
-	/// a terminal reads through the later result sets after the first, so a failure in a later statement is thrown;
-	/// <c>command.SingleResult().Map&lt;T&gt;()</c> turns that off (<c>.SingleResult()</c> after <c>Map</c> does too).
+	/// The connection is opened only if it is closed, and a connection this call
+	/// opened is closed (not disposed) when it ends; one that was already open
+	/// is left open.
+	/// Like an expressive command, a terminal reads through the later result
+	/// sets after the first, so a failure in a later statement is thrown;
+	/// <c>command.SingleResult().Map&lt;T&gt;()</c> turns that off
+	/// (<see cref="MappedCommand{T}.SingleResult"/> after <c>Map</c> does too).
 	/// </para>
 	/// </remarks>
-	/// <typeparam name="T">The type each record is projected to.</typeparam>
 	/// <param name="command">The command to execute.</param>
-	/// <param name="selector">The transform applied to each <see cref="IDataRecord"/>.</param>
-	/// <returns>A deferred query whose results are produced by <paramref name="selector"/>.</returns>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-selector']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
 	[OverloadResolutionPriority(-1)]
 	public static MappedCommand<T> Map<T>(
@@ -177,28 +172,25 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Locks in a mapping to model type <typeparamref name="T"/> over the rows of a <see cref="DataTable"/> you already have and returns a deferred <see cref="MappedTable{T}"/>.
-	/// A shortcut for <c>table.CreateDataReader().Map&lt;T&gt;()</c>, with the difference that the view owns and disposes the readers it creates.
-	/// Nothing runs until a terminal (<c>ToList</c>, <c>FirstOrDefault</c>, and so on) is invoked.
+	/// Locks in a mapping to model type <typeparamref name="T"/> over the rows of
+	/// a <see cref="DataTable"/> you already have and returns a deferred
+	/// <see cref="MappedTable{T}"/>.
+	/// Nothing runs until a terminal, such as
+	/// <see cref="MappedTable{T}.ToListAsync(CancellationToken)"/>, is invoked.
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// Each terminal reads the table's current rows through a new <see cref="DataTableReader"/> and disposes it.
-	/// The table is not changed or cleared, so the view can be read more than once.
+	/// A shortcut for <c>table.CreateDataReader().Map&lt;T&gt;()</c>, with the
+	/// difference that the view owns and disposes the readers it creates.
+	/// Each terminal reads the table's current rows through a new
+	/// <see cref="DataTableReader"/> and disposes it.
+	/// The table is not changed or cleared, so the view can be read more than
+	/// once.
 	/// </para>
-	/// <para>
-	/// How <typeparamref name="T"/> is mapped is the same as for
-	/// <see cref="Map{T}(IExecuteReader, RowMap{T}?)"/>:
-	/// a <see cref="RowMap{T}"/> reads columns whose names differ from the properties,
-	/// and the overload without one reads by column name
-	/// (exactly, else ignoring case, else ignoring case and underscores, so <c>author_id</c> feeds <c>AuthorId</c>).
-	/// A single value such as <see cref="int"/> is read from the first column.
-	/// </para>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-how']/*" />
 	/// </remarks>
-	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="table">The table whose rows are mapped.</param>
-	/// <param name="map">The prebuilt <see cref="RowMap{T}"/> to read with; <see langword="null"/> reads as <c>Map&lt;T&gt;()</c> does.</param>
-	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-overload']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="table"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(1)]
@@ -232,20 +224,21 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Locks in a custom projection over the rows of a <see cref="DataTable"/> you already have and returns a deferred <see cref="MappedTable{T}"/>.
+	/// Locks in a custom projection over the rows of a <see cref="DataTable"/>
+	/// you already have and returns a deferred <see cref="MappedTable{T}"/>.
 	/// Nothing runs until a terminal is invoked;
 	/// <paramref name="selector"/> is applied per row as the table is read.
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// Each terminal reads the table's current rows through a new <see cref="DataTableReader"/> and disposes it.
-	/// The table is not changed or cleared, so the view can be read more than once.
+	/// Each terminal reads the table's current rows through a new
+	/// <see cref="DataTableReader"/> and disposes it.
+	/// The table is not changed or cleared, so the view can be read more than
+	/// once.
 	/// </para>
 	/// </remarks>
-	/// <typeparam name="T">The type each record is projected to.</typeparam>
 	/// <param name="table">The table whose rows are projected.</param>
-	/// <param name="selector">The transform applied to each <see cref="IDataRecord"/>.</param>
-	/// <returns>A deferred query whose results are produced by <paramref name="selector"/>.</returns>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-selector']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="table"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
 	[OverloadResolutionPriority(-1)]
 	public static MappedTable<T> Map<T>(
@@ -261,14 +254,18 @@ public static partial class CoreExtensions
 	}
 }
 
-// Builds the core a view runs over.
-// A caller's reader is read from where it stands and is never read through,
-// so it takes the single-result path of the core,
-// which never calls NextResult.
-// A command takes the same path as an expressive command.
-// A command that came through SingleResult() is unwrapped here:
-// the query runs against the command itself
-// with the core's singleResult flag set.
+/// <summary>
+/// Builds the core a view runs over.
+/// </summary>
+/// <remarks>
+/// A caller's reader is read from where it stands and is never read through,
+/// so it takes the single-result path of the core, which never calls
+/// <see cref="IDataReader.NextResult"/>.
+/// A command takes the same path as an expressive command.
+/// A command that came through <c>SingleResult()</c> is unwrapped here:
+/// the query runs against the command itself with the core's
+/// <c>singleResult</c> flag set.
+/// </remarks>
 static class Views
 {
 	internal static MappedQueryCore<T> QueryCore<T>(
@@ -278,7 +275,12 @@ static class Views
 			? NewCore(single.Command, source, true, AsyncReads(single.Command))
 			: NewCore(command, source, false, AsyncReads(command));
 
-	// The command's own choice, made by cmd.AsyncReads() before Map: staged into the view.
+	/// <summary>
+	/// Gets the command's own choice, made by <c>cmd.AsyncReads()</c> before
+	/// <c>Map</c>, which is staged into the view.
+	/// </summary>
+	/// <param name="command">The command.</param>
+	/// <returns><see langword="true"/> if the command reads its rows asynchronously; otherwise, <see langword="false"/>.</returns>
 	static bool AsyncReads(IExecuteReader command)
 		=> command is IExecuteReaderAsync { UseAsyncRead: true };
 
@@ -299,10 +301,21 @@ static class Views
 		IRowSource<T> source)
 		=> NewCore(new TableExecutor(table), source, true, false);
 
-	// The ONE door every query is made through, and so the one place a default
-	// pool configuration is chosen: when the query is made, before any terminal
-	// runs. Everything after this (a terminal, UsePool, a collector) uses the
-	// query's own configuration and never picks one.
+	/// <summary>
+	/// Makes a query core: the one door every query is made through.
+	/// </summary>
+	/// <remarks>
+	/// It is the one place a default pool configuration is chosen: when the query
+	/// is made, before any terminal runs.
+	/// Everything after this (a terminal, <c>UsePool</c>, a collector) uses the
+	/// query's own configuration and never picks one.
+	/// </remarks>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
+	/// <param name="command">The command the rows are read from.</param>
+	/// <param name="source">Reads and maps one row.</param>
+	/// <param name="singleResult"><see langword="true"/> to stop after the first result set and not read through the later ones; otherwise, <see langword="false"/>.</param>
+	/// <param name="asyncReads"><see langword="true"/> to read the rows of an asynchronous terminal with <c>ReadAsync</c>; otherwise, <see langword="false"/>.</param>
+	/// <returns>The new query core, with the default configuration for <typeparamref name="T"/>.</returns>
 	static MappedQueryCore<T> NewCore<T>(
 		IExecuteReader command,
 		IRowSource<T> source,
@@ -317,12 +330,24 @@ static class Views
 			asyncReads,
 			Defaults<T>.Config);
 
-	// The shared array pool, the shipped sizes and the default bin, per row type.
-	// Private to Views: nothing else can ask for it.
+	/// <summary>
+	/// Holds the shared array pool, the shipped sizes and the default bin, per
+	/// row type.
+	/// </summary>
+	/// <remarks>
+	/// Private to <see cref="Views"/>: nothing else can ask for it.
+	/// </remarks>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 	static class Defaults<T>
 	{
-		// Asks for no clearing choice (null): the configuration resolves it, once,
-		// from the app-wide default and the reference-row floor.
+		/// <summary>
+		/// The default configuration for the row type.
+		/// </summary>
+		/// <remarks>
+		/// It asks for no clearing choice (<see langword="null"/>): the
+		/// configuration resolves it, once, from the app-wide default and the
+		/// reference-row floor.
+		/// </remarks>
 		public static readonly ChunkConfig<T> Config = new(
 			ArrayPool<T>.Shared,
 			null,
@@ -331,8 +356,14 @@ static class Views
 			ChunkConfig<T>.DefaultDeferFromRows);
 	}
 }
-// The two executors let MappedQueryCore<T> run over a reader or a raw command.
-// The core only uses the two state forms; the rest are derived from them.
+/// <summary>
+/// Lets <see cref="MappedQueryCore{T}"/> run over a caller's reader, a raw
+/// command or a <see cref="DataTable"/>.
+/// </summary>
+/// <remarks>
+/// The core only uses the two state forms of <c>ExecuteReader</c>; the rest
+/// are derived from them.
+/// </remarks>
 abstract class ViewExecutor : IExecuteReader
 {
 	public CancellationToken CancellationToken => default;
@@ -404,9 +435,15 @@ abstract class ViewExecutor : IExecuteReader
 		=> ExecuteReaderAsync(state, transform, behavior, default);
 }
 
-// The caller's reader: handed to the transform as it is.
-// It is never opened, closed or disposed here,
-// and NextResult is never called on it.
+/// <summary>
+/// Runs a query over the caller's reader, handing it to the transform as it
+/// is.
+/// </summary>
+/// <remarks>
+/// The reader is never opened, closed or disposed here, and
+/// <see cref="IDataReader.NextResult"/> is never called on it.
+/// </remarks>
+/// <param name="reader">The caller's reader.</param>
 sealed class ReaderExecutor(IDataReader reader) : ViewExecutor
 {
 	public override TResult ExecuteReader<TState, TResult>(
@@ -432,10 +469,15 @@ sealed class ReaderExecutor(IDataReader reader) : ViewExecutor
 	}
 }
 
-// The caller's command, run as an expressive command runs:
-// the connection is opened only if it is closed
-// and closed again (not disposed) only if it was closed when the call began.
-// The command is never disposed.
+/// <summary>
+/// Runs a query over the caller's command, as an expressive command runs.
+/// </summary>
+/// <remarks>
+/// The connection is opened only if it is closed and closed again (not
+/// disposed) only if it was closed when the call began.
+/// The command is never disposed.
+/// </remarks>
+/// <param name="command">The caller's command.</param>
 sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 {
 	public override TResult ExecuteReader<TState, TResult>(
@@ -487,11 +529,17 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 	}
 }
 
-// A DataTable the caller has: each call reads it through a new
-// DataTableReader, which is disposed when the call is done.
-// There is no connection, and a table has one result set,
-// so NextResult is never called.
-// The rows are in memory, so the asynchronous form completes synchronously.
+/// <summary>
+/// Runs a query over a <see cref="DataTable"/> the caller has.
+/// </summary>
+/// <remarks>
+/// Each call reads the table through a new <see cref="DataTableReader"/>,
+/// which is disposed when the call is done.
+/// There is no connection, and a table has one result set, so
+/// <see cref="IDataReader.NextResult"/> is never called.
+/// The rows are in memory, so the asynchronous form completes synchronously.
+/// </remarks>
+/// <param name="table">The caller's table.</param>
 sealed class TableExecutor(DataTable table) : ViewExecutor
 {
 	public override TResult ExecuteReader<TState, TResult>(
@@ -537,7 +585,7 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 /// A deferred, type-locked read over a data reader the caller owns.
 /// Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.
 /// </summary>
-/// <typeparam name="T">The type each record is mapped to.</typeparam>
+/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 /// <remarks>
 /// <para>
 /// The reader belongs to the caller.
@@ -545,13 +593,13 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 /// and never calls <see cref="IDataReader.NextResult"/> on it:
 /// it reads the rows of the current result set from the reader's current position and stops,
 /// leaving the reader open and positioned after that set's last row.
-/// A caller who wants the next result set calls <c>NextResult</c> and maps again.
-/// The asynchronous terminals read the rows with <c>Read()</c>,
+/// A caller who wants the next result set calls <see cref="IDataReader.NextResult"/> and maps again.
+/// The asynchronous terminals read the rows with <see cref="IDataReader.Read"/>,
 /// as an expressive command does by default.
 /// </para>
 /// <para>
-/// <c>Skip</c> and <c>Take</c> return the types of <see cref="MappedQuery{T}"/>;
-/// the <c>SingleResult</c> they carry changes nothing here, since a reader view never reads through later result sets.
+/// <see cref="Skip(int)"/> and <see cref="Take(int)"/> return the types of <see cref="MappedQuery{T}"/>;
+/// the <see cref="MappedQuery{T}.SingleResult"/> they carry changes nothing here, since a reader view never reads through later result sets.
 /// </para>
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
@@ -710,16 +758,16 @@ public readonly record struct MappedReader<T>
 /// A deferred, type-locked query over a raw <see cref="IDbCommand"/>.
 /// Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.
 /// </summary>
-/// <typeparam name="T">The type each record is mapped to.</typeparam>
+/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 /// <remarks>
 /// <para>
 /// The command belongs to the caller and is never disposed.
 /// Each terminal executes it again.
 /// The connection is opened only if it is closed,
-/// and a connection the terminal opened is closed (<c>Close</c>, not <c>Dispose</c>) when it ends;
+/// and a connection the terminal opened is closed (<see cref="IDbConnection.Close"/>, not <see cref="IDisposable.Dispose"/>) when it ends;
 /// one that was already open is left open.
 /// The asynchronous terminals open and execute asynchronously when the command is a <see cref="DbCommand"/>,
-/// then read the rows with <c>Read()</c>, as an expressive command does by default.
+/// then read the rows with <see cref="IDataReader.Read"/>, as an expressive command does by default.
 /// </para>
 /// <para>
 /// A terminal returns the rows of the first result set only,
@@ -761,7 +809,7 @@ public readonly record struct MappedCommand<T>
 	public MappedCommand<T> UsePool(ArrayPool<T> pool, bool clearOnReturn)
 		=> new(_core.WithPool(pool, clearOnReturn));
 
-	// A whole configuration, for a test or a benchmark (pool, clear, chunk sizes, bin).
+	/// <inheritdoc cref="MappedQuery{T}.WithConfig(ChunkConfig{T})"/>
 	internal MappedCommand<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
 
@@ -920,7 +968,7 @@ public readonly record struct MappedCommand<T>
 /// A deferred, type-locked read over the rows of a <see cref="DataTable"/>.
 /// Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.
 /// </summary>
-/// <typeparam name="T">The type each record is mapped to.</typeparam>
+/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 /// <remarks>
 /// <para>
 /// Each terminal reads the table's current rows through a new <see cref="DataTableReader"/> and disposes it.
@@ -929,8 +977,8 @@ public readonly record struct MappedCommand<T>
 /// The asynchronous terminals complete synchronously: the rows are already in memory.
 /// </para>
 /// <para>
-/// <c>Skip</c> and <c>Take</c> return the types of <see cref="MappedQuery{T}"/>;
-/// the <c>SingleResult</c> they carry changes nothing here, since a table has one result set.
+/// <see cref="Skip(int)"/> and <see cref="Take(int)"/> return the types of <see cref="MappedQuery{T}"/>;
+/// the <see cref="MappedQuery{T}.SingleResult"/> they carry changes nothing here, since a table has one result set.
 /// </para>
 /// </remarks>
 /// <seealso cref="MappedQuery{T}"/>
