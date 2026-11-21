@@ -55,15 +55,15 @@ public static partial class ConnectionExtensions
 		}
 	}
 
-	// A connection lent by a pool and not opened (the Using forms): the state it is in is
+	// A connection rented from a pool and not opened (the Using forms): the state it is in is
 	// recorded, it is never opened or closed here, and it is given back when disposed.
-	internal static ConnectionScope<IDbConnection> Lend(this IDbConnectionPool connectionPool)
+	internal static ConnectionScope<IDbConnection> Rent(this IDbConnectionPool connectionPool)
 	{
 		IDbConnection connection = connectionPool.Take();
 		return new(connection, connection.State, connectionPool);
 	}
 
-	internal static ConnectionScope<TConnection> Lend<TConnection>(this IDbConnectionPool<TConnection> connectionPool)
+	internal static ConnectionScope<TConnection> Rent<TConnection>(this IDbConnectionPool<TConnection> connectionPool)
 		where TConnection : IDbConnection
 	{
 		TConnection connection = connectionPool.Take();

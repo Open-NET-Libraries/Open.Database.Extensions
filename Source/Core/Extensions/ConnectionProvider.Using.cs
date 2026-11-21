@@ -103,8 +103,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var lent = connectionPool.Lend();
-		return action(lent.Connection);
+		using var lease = connectionPool.Rent();
+		return action(lease.Connection);
 	}
 
 	/// <summary>
@@ -122,8 +122,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var lent = connectionPool.Lend();
-		action(lent.Connection);
+		using var lease = connectionPool.Rent();
+		action(lease.Connection);
 	}
 
 	/// <summary>
@@ -145,8 +145,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var lent = connectionPool.Lend();
-		return action(lent.Connection);
+		using var lease = connectionPool.Rent();
+		return action(lease.Connection);
 	}
 
 	/// <summary>
@@ -166,8 +166,8 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		using var lent = connectionPool.Lend();
-		action(lent.Connection);
+		using var lease = connectionPool.Rent();
+		action(lease.Connection);
 	}
 
 	/// <summary>
@@ -317,9 +317,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var lent = connectionPool.Lend();
-		await using var lentDisposal = lent.ConfigureAwait(false);
-		return await action(lent.Connection).ConfigureAwait(false);
+		var lease = connectionPool.Rent();
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		return await action(lease.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -338,9 +338,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var lent = connectionPool.Lend();
-		await using var lentDisposal = lent.ConfigureAwait(false);
-		await action(lent.Connection).ConfigureAwait(false);
+		var lease = connectionPool.Rent();
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		await action(lease.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -362,9 +362,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var lent = connectionPool.Lend();
-		await using var lentDisposal = lent.ConfigureAwait(false);
-		return await action(lent.Connection).ConfigureAwait(false);
+		var lease = connectionPool.Rent();
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		return await action(lease.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -385,9 +385,9 @@ public static partial class ConnectionExtensions
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
 
-		var lent = connectionPool.Lend();
-		await using var lentDisposal = lent.ConfigureAwait(false);
-		await action(lent.Connection).ConfigureAwait(false);
+		var lease = connectionPool.Rent();
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		await action(lease.Connection).ConfigureAwait(false);
 	}
 
 	/// <summary>

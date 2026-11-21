@@ -913,9 +913,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 
 		// Take, open if needed, give back when done (the pool decides what that means).
 		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
-		using var lent = pool.EnsureOpenScope();
-		using TCommand cmd = PrepareResolved(lent.Connection);
-		return func(cmd, lent.PriorState, state);
+		using var lease = pool.EnsureOpenScope();
+		using TCommand cmd = PrepareResolved(lease.Connection);
+		return func(cmd, lease.PriorState, state);
 	}
 
 	// The terminals that take a token:
@@ -961,19 +961,19 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}
 
 		var pool = (IDbConnectionPool<TConnection>)_poolOrConnection;
-		var lent = await EnsureOpenScopeUnlessOpenAsync(pool.Take(), pool, cancellationToken).ConfigureAwait(false);
-		await using var lentDisposal = lent.ConfigureAwait(false);
-		NameSet? lentNames = null;
+		var lease = await EnsureOpenScopeUnlessOpenAsync(pool.Take(), pool, cancellationToken).ConfigureAwait(false);
+		await using var leaseDisposal = lease.ConfigureAwait(false);
+		NameSet? leaseNames = null;
 		if (_hasDerivedParams)
 		{
-			lentNames = await ResolveDerivedNamesAsync(lent.Connection, cancellationToken)
+			leaseNames = await ResolveDerivedNamesAsync(lease.Connection, cancellationToken)
 				.ConfigureAwait(false);
 		}
 
-		using TCommand lentCommand = _hasDerivedParams
-			? PrepareDerived(lent.Connection, lentNames)
-			: PrepareCommand(lent.Connection);
-		return await func(lentCommand, lent.PriorState, state).ConfigureAwait(false);
+		using TCommand leaseCommand = _hasDerivedParams
+			? PrepareDerived(lease.Connection, leaseNames)
+			: PrepareCommand(lease.Connection);
+		return await func(leaseCommand, lease.PriorState, state).ConfigureAwait(false);
 	}
 
 	// The scope of a connection taken from a pool (given back when it is disposed) or, with no pool, the

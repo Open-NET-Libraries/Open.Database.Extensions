@@ -9,7 +9,7 @@ enum ScopeEnd : byte
 	// A connection a factory created: dispose it.
 	Dispose,
 
-	// A connection a pool lent: give it back; the pool decides what that means.
+	// A connection rented from a pool: give it back; the pool decides what that means.
 	Give,
 }
 
@@ -42,7 +42,7 @@ enum ScopeEnd : byte
 /// <item>
 /// <term><see cref="ConnectionExtensions.EnsureOpenScope(IDbConnectionPool)"/> /
 /// <see cref="ConnectionExtensions.EnsureOpenScopeAsync(IDbConnectionPool, CancellationToken)"/> (on a pool)</term>
-/// <description>The pool lent it; gives it back with <see cref="IDbConnectionPool.Give(IDbConnection)"/>, as
+/// <description>The pool leased it; gives it back with <see cref="IDbConnectionPool.Give(IDbConnection)"/>, as
 /// <c>pool.Open(...)</c> does. What giving back means (close it, keep it, dispose it) is the pool's.</description>
 /// </item>
 /// </list>
@@ -108,7 +108,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 		: this(connection, priorState)
 		=> _end = end;
 
-	// A connection a pool lent: given back to that pool.
+	// A connection rented from a pool: given back to that pool.
 	internal ConnectionScope(
 		TConnection connection,
 		ConnectionState priorState,
