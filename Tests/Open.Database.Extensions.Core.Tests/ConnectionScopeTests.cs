@@ -13,7 +13,7 @@ public static class ConnectionScopeTests
 	static CancellationToken Ct => TestContext.Current.CancellationToken;
 
 	// A DbConnection that tells Close from CloseAsync, and can fail to open.
-	sealed class ScopeConnection : DbConnection
+	internal sealed class ScopeConnection : DbConnection
 	{
 		ConnectionState _state = ConnectionState.Closed;
 
@@ -68,8 +68,16 @@ public static class ConnectionScopeTests
 
 		protected override void Dispose(bool disposing)
 		{
+			if (disposing) Log.Add("dispose");
 			WasDisposed = true;
 			base.Dispose(disposing);
+		}
+
+		public override ValueTask DisposeAsync()
+		{
+			Log.Add("disposeAsync");
+			WasDisposed = true;
+			return default;
 		}
 
 		protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
@@ -80,7 +88,7 @@ public static class ConnectionScopeTests
 	}
 
 	// An IDbConnection that is not a DbConnection: no async at all.
-	sealed class PlainConnection : IDbConnection
+	internal sealed class PlainConnection : IDbConnection
 	{
 		public List<string> Log { get; } = [];
 
@@ -310,10 +318,13 @@ public static class ConnectionScopeTests
 		Assert.Equal(ConnectionState.Closed, was);
 	}
 
+	public static IDbConnection Create(Func<IDbConnection> make) => make();
+
 	[Fact]
 	public static async Task AConnection_HeldAsTheInterface_StillGetsAScope()
 	{
-		IDbConnection connection = new ScopeConnection();
+		// Held as the interface, as a caller who was handed one would hold it.
+		IDbConnection connection = Create(() => new ScopeConnection());
 
 		await using ConnectionScope<IDbConnection> scope
 			= await connection.EnsureOpenScopeAsync(Ct);
