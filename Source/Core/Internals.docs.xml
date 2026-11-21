@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Documentation text shared by the pooled-chunk machinery: the chain, the
+  producer, the stream, the buffer and its array view, the leases and the
+  recycle bin.
+  A member pulls in what it needs with
+  <include file="Internals.docs.xml" path="docs/members[@name='key']/*" />
+  (the file path is relative to the source file that includes it), so a
+  sentence used by many members is written here once and cannot drift between
+  them.
+  The text about pooled memory that users read is the other file,
+  PooledMemory.docs.xml.
+  Every key is a fragment: parameters, type parameters, exceptions or
+  paragraphs that go into the including member's own docs.
+-->
+<docs>
+  <members name="row">
+    <typeparam name="T">The type of each row.</typeparam>
+  </members>
+
+  <members name="used">
+    <param name="used">How many slots, from the start, hold rows.</param>
+  </members>
+
+  <members name="chunk-read">
+    <param name="query">The query to read.</param>
+    <param name="config">Rents, seals and releases the pooled chunks.</param>
+  </members>
+
+  <members name="array-disposed">
+    <exception cref="System.ObjectDisposedException">
+      The array is disposed.
+    </exception>
+  </members>
+
+  <members name="release-all">
+    <para>
+      A release that throws (a pool whose <c>Return</c> throws) does not stop
+      the others: every array is released, and the first exception is thrown
+      after the last.
+    </para>
+  </members>
+</docs>

@@ -1,76 +1,7 @@
 namespace Open.Database.Extensions;
 
-// How this works (notes for a reader of the code; not the contract).
-//
-// Who does what.
-// The constructor starts ONE producer (ChunkProducer) on a thread-pool
-// thread. That producer is the only code that rents buffers and writes
-// rows. It calls Publish for each filled buffer and Finish once, last.
-// Everyone else (Items, Dispose) runs on callers' threads. The buffer is
-// not readable while it fills: the rows are reachable only through the
-// completed view (Items); overlapping reads are the stream terminals.
-//
-// There is no lock. These fields are shared, each with one rule:
-// - _chunks and _total are written only by the producer (Publish), and
-//   read by others only after _done is set, which publishes them.
-// - _error is written once, before _done is set.
-// - _done is set by Finish with an Interlocked.Exchange (a full fence).
-// - _disposed is set by Dispose with an Interlocked.Exchange: the
-//   dispose-once guard.
-// - _items (the Items task source) is published with a CompareExchange:
-//   see Items, below.
-// Finish and Dispose each set their flag, THEN read the other's. With
-// full fences on both writes, at least one of them sees the other's
-// flag, so the arrays are always released by someone; both may see it,
-// and ReleaseAll takes the list with an Interlocked.Exchange, so the
-// arrays are released exactly once.
-//
-// Who owns each array.
-// The producer owns the buffer it is filling. Publish appends it to
-// _chunks (or refuses once the buffer is disposed, and the producer
-// releases it itself). From then on _chunks owns it, until ReleaseAll
-// takes the list and releases each one. An array is therefore released
-// exactly once, and only when nothing can write or add to it: ReleaseAll
-// runs in Finish (the producer's last act) when the buffer was disposed
-// while the read ran, and in Dispose when the read had already finished.
-//
-// Why dispose is ordered the way it is.
-// 1. Set _disposed. From then on Publish refuses and Items throws.
-// 2. Cancel Items if it is still pending.
-// 3. If the read is still going, Cancel the producer: its linked token
-//    cancels the query itself. The producer then ends, swallows that
-//    cancel (the owner asked for it: IsDisposed), and Finish releases
-//    the arrays. If the read already finished, Dispose releases them.
-// DisposeAsync additionally awaits the producer, so its arrays are back
-// when it returns; the sync Dispose does not wait. The await has NO
-// timeout, on purpose: correctness (no array goes back while the
-// producer might still write) comes before promptness. So a dispose
-// waits for the provider call in progress (the execute, or a read) to
-// return; a provider that ignores the cancel token delays it by that
-// call. After that the producer stops at the next chunk boundary at the
-// latest: the read loop checks the token per row in the default Read
-// mode, the provider does in ReadAsync mode, and the producer itself
-// checks once per chunk. So with AsyncReads() and a provider that
-// ignores the token, a dispose or a cancel is seen at the next chunk
-// (a buffer's chunks double: up to the rows of the current chunk).
-// A caller's own cancel is the opposite: it is NOT swallowed. Finish
-// stores it, and Items is cancelled with the caller's token.
-//
-// Items is lazy. The view (the PooledArray, with its snapshot of the
-// owners) is built only if someone asks, and then once. The task source
-// is published with a CompareExchange (the winner is taken); the field
-// is read into a local first, so a repeat access is one volatile read.
-// Finish sets _done and THEN reads the field; Items publishes the
-// source and THEN reads _done: one of them sees the other, and both
-// complete with idempotent TrySet, so no completion is lost. It is not
-// LazyInitializer or Lazy<T> because those take a delegate. The snapshot
-// is safe because no Publish follows Finish.
-//
-// The connection ODX opened is closed by the query when the read ends,
-// which is before Finish: slow readers never hold it.
-
 /// <summary>
-/// Every row of a query, held in pooled arrays until the buffer is
+/// Holds every row of a query in pooled arrays until the buffer is
 /// disposed.
 /// </summary>
 /// <remarks>
@@ -84,42 +15,41 @@ namespace Open.Database.Extensions;
 /// done: the buffer is not readable while it fills.
 /// To read while the query is still running, use
 /// <c>ToAsyncBufferStream()</c> or <c>ToBufferedAsyncStream()</c>.
+/// The connection ODX opened is closed by the query when the read ends,
+/// which is before the result is complete: slow readers never hold it.
 /// </para>
 /// <para>
-/// The rows live in arrays rented from the pool the caller passed
-/// (<see cref="ArrayPool{T}.Shared"/> when none was).
-/// There is no finalizer: arrays of a buffer that is never disposed are
-/// just garbage-collected.
-/// Returning an array to a custom pool must not throw. If it does,
-/// every other array is still returned, and the first exception
-/// propagates from <see cref="DisposeAsync"/>, and
-/// from <see cref="Dispose"/> when the read had already finished;
+/// While the buffer is not disposed its rows stay reachable, and every
+/// <see cref="PooledArray{T}"/> it hands out is valid.
+/// The arrays go back to the pool when the buffer is disposed, and not
+/// before.
+/// Dispose the buffer (<see langword="await"/> <see langword="using"/>) when you are done.
+/// There is no finalizer: a buffer that is never disposed is not a leak, but
+/// it holds its arrays (and the finished read) until the garbage collector
+/// takes it, and the pool does not get them back.
+/// </para>
+/// <para>
+/// Returning an array to a custom pool must not throw.
+/// If it does, every other array is still returned, and the first exception
+/// propagates from <see cref="DisposeAsync"/>, and from
+/// <see cref="Dispose"/> when the read had already finished;
 /// from <see cref="Dispose"/> while the read is still running it
 /// ends in the producer's task, which nobody observes.
-/// With clearing on, a large array of rows that hold references is cleared and
-/// returned by an internal background queue, where a return that throws is
-/// swallowed and costs only that array. When the queue is full the array is
-/// cleared and returned by the caller that releases it instead.
-/// While the buffer is not disposed its rows stay reachable; a row that
-/// holds a reference is cleared before its array goes back to the pool.
-/// They are returned to the pool when the buffer is disposed,
-/// and not before: every <see cref="PooledArray{T}"/> it hands out
-/// is valid until then.
-/// Dispose the buffer (<c>await using</c>) when you are done.
-/// A buffer that is never disposed is not a leak: it holds its
-/// arrays (and the finished read) until the garbage collector
-/// takes it, and the pool does not get them back (there is no
-/// finalizer).
+/// With clearing on, a large array of rows that hold references is cleared
+/// and returned by an internal background queue, where a return that throws
+/// is swallowed and costs only that array.
+/// When the queue is full the array is cleared and returned by the caller
+/// that releases it instead.
 /// </para>
 /// <para>
-/// When the rows are to be cleared (see UsePool), they
-/// are cleared as the arrays go back to the pool, and that happens
-/// when the buffer, or the <see cref="PooledArray{T}"/> view of it,
-/// is disposed (not when the read completes). Only the rows that were
-/// written are cleared. A small array, and any array of rows with no
-/// references, is cleared where it is released; a large array of rows that
-/// hold references is cleared off the caller's path, on an internal background
-/// queue. (If that queue is ever full, it is cleared where it is released.)
+/// When the rows are to be cleared (see <c>UsePool</c>), they are cleared as
+/// the arrays go back to the pool, and that happens when the buffer, or the
+/// <see cref="PooledArray{T}"/> view of it, is disposed (not when the read
+/// completes).
+/// A small array, and any array of rows with no references, is cleared where
+/// it is released; a large array of rows that hold references is cleared off
+/// the caller's path, on an internal background queue.
+/// (If that queue is ever full, it is cleared where it is released.)
 /// </para>
 /// <para>
 /// Disposing the buffer while it is still reading cancels the query,
@@ -128,29 +58,110 @@ namespace Open.Database.Extensions;
 /// the dispose by that call.
 /// After the read finished, disposing only releases the arrays.
 /// </para>
+/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 /// </remarks>
-/// <typeparam name="T">The type each row is mapped to.</typeparam>
+/// <include file="Internals.docs.xml" path="docs/members[@name='row']/*" />
 public sealed class PooledBuffer<T>
 	: IDisposable,
 		IAsyncDisposable,
 		IChunkTarget<T>
 {
-	// The first array holds FirstRows rows (a power of two, 16 unless a
-	// test changed it: see ChunkSizing); each next one doubles. So row i
-	// is in array floor(log2(i / FirstRows + 1)): O(1).
+	/// <summary>The rows of the first array.</summary>
+	/// <remarks>
+	/// A power of two, 16 unless a test changed it (see
+	/// <see cref="ChunkSizes"/>); each next array doubles. So row <c>i</c> is
+	/// in array <c>floor(log2(i / FirstRows + 1))</c>: O(1).
+	/// </remarks>
 	readonly int _firstRows;
 
+	/// <summary>The one producer of this buffer.</summary>
+	/// <remarks>
+	/// <para>
+	/// The constructor starts it on a thread of the ambient task scheduler
+	/// (normally the thread pool). It is the only code
+	/// that rents buffers and writes rows. It calls
+	/// <see cref="IChunkTarget{T}.Publish"/> for each filled buffer and
+	/// <see cref="IChunkTarget{T}.Finish"/> once, last.
+	/// Everyone else (<see cref="Items"/>, dispose) runs on callers' threads.
+	/// The buffer is not readable while it fills: the rows are reachable only
+	/// through the completed view (<see cref="Items"/>); overlapping reads are
+	/// the stream terminals.
+	/// </para>
+	/// <para>
+	/// There is no lock. The fields that are shared each have one rule, given
+	/// on each of them.
+	/// </para>
+	/// </remarks>
 	readonly ChunkProducer<T> _producer;
+	/// <summary>The producer's task: it completes when the producer has exited.</summary>
 	readonly Task _producerTask;
 
-	// Producer only, until _done; then read-only. Null once released.
+	/// <summary>The filled chunks.</summary>
+	/// <remarks>
+	/// <para>
+	/// Written only by the producer (in <see cref="IChunkTarget{T}.Publish"/>),
+	/// and read by others only after <c>_done</c> is set, which publishes it.
+	/// <see langword="null"/> once released.
+	/// </para>
+	/// <para>
+	/// <em>Who owns each array.</em>
+	/// The producer owns the buffer it is filling.
+	/// Publish appends it here (or refuses once the buffer is disposed, and the
+	/// producer releases it itself).
+	/// From then on this list owns it, until <c>ReleaseAll</c> takes the list
+	/// and releases each one.
+	/// An array is therefore released exactly once, and only when nothing can
+	/// write or add to it: <c>ReleaseAll</c> runs in
+	/// <see cref="IChunkTarget{T}.Finish"/> (the producer's last act) when the
+	/// buffer was disposed while the read ran, and in <see cref="Dispose"/>
+	/// when the read had already finished.
+	/// </para>
+	/// </remarks>
 	List<ArrayLease<T>>? _chunks = [];
+	/// <summary>The source of the <see cref="Items"/> task.</summary>
+	/// <remarks>
+	/// <para>
+	/// Items is lazy. The view (the <see cref="PooledArray{T}"/>, with its
+	/// snapshot of the leases) is built only if someone asks, and then once.
+	/// The task source is published with a <c>CompareExchange</c> (the winner is
+	/// taken); the field is read into a local first, so a repeat access is one
+	/// volatile read.
+	/// </para>
+	/// <para>
+	/// Finish sets <c>_done</c> and <em>then</em> reads this field; Items
+	/// publishes the source and <em>then</em> reads <c>_done</c>: one of them
+	/// sees the other, and both complete with idempotent <c>TrySet</c>, so no
+	/// completion is lost.
+	/// It is not <c>LazyInitializer</c> or <see cref="Lazy{T}"/> because those
+	/// take a delegate.
+	/// The snapshot is safe because no Publish follows Finish.
+	/// </para>
+	/// </remarks>
 	TaskCompletionSource<PooledArray<T>>? _items;
+	/// <summary>How the read failed, if it did.</summary>
+	/// <remarks>Written once, before <c>_done</c> is set.</remarks>
 	Exception? _error;
+	/// <summary>The number of rows in the published chunks.</summary>
+	/// <remarks>Written only by the producer, like <c>_chunks</c>.</remarks>
 	int _total;
+	/// <summary>Whether the read is over (<see cref="IChunkTarget{T}.Finish"/> ran).</summary>
+	/// <remarks>
+	/// Set by Finish with an <c>Interlocked.Exchange</c> (a full fence).
+	/// Finish and dispose each set their flag, <em>then</em> read the other's.
+	/// With full fences on both writes, at least one of them sees the other's
+	/// flag, so the arrays are always released by someone; both may see it,
+	/// and <c>ReleaseAll</c> takes the list with an <c>Interlocked.Exchange</c>,
+	/// so the arrays are released exactly once.
+	/// </remarks>
 	int _done;
+	/// <summary>Whether the buffer is disposed: the dispose-once guard.</summary>
+	/// <remarks>Set by dispose with an <c>Interlocked.Exchange</c>.</remarks>
 	int _disposed;
 
+	/// <summary>Creates the buffer and starts its read.</summary>
+	/// <remarks>The read starts now, whether or not anyone reads yet.</remarks>
+	/// <include file="Internals.docs.xml" path="docs/members[@name='chunk-read']/*" />
+	/// <param name="cancellationToken">The caller's cancellation token.</param>
 	internal PooledBuffer(
 		MappedQueryCore<T> query,
 		ChunkConfig<T> config,
@@ -164,8 +175,11 @@ public sealed class PooledBuffer<T>
 	}
 
 	/// <summary>
-	/// The complete result, once the read is done.
+	/// Gets a task that completes with the rows, once the read is done.
 	/// </summary>
+	/// <value>
+	/// A task whose result is the <see cref="PooledArray{T}"/> over the rows.
+	/// </value>
 	/// <remarks>
 	/// The read started with the buffer; this never starts another.
 	/// The task is the same on every access, and the view is built
@@ -216,9 +230,9 @@ public sealed class PooledBuffer<T>
 	/// the buffer.
 	/// </summary>
 	/// <remarks>
-	/// Does not throw and does not wait: the producer returns the
-	/// arrays to the pool when it exits.
-	/// For a pool whose Return throws, see the remarks of the class.
+	/// Does not wait: while the read is running the producer returns the
+	/// arrays to the pool when it exits, and nothing is thrown.
+	/// For a pool whose <c>Return</c> throws, see the remarks of the class.
 	/// Use <see cref="DisposeAsync"/> to wait for that.
 	/// Calling it again does nothing.
 	/// After it, <see cref="Items"/> throws
@@ -236,7 +250,7 @@ public sealed class PooledBuffer<T>
 	/// progress returns, so a provider that ignores cancellation
 	/// delays it by that call.
 	/// Does not throw for a well-behaved pool; for a pool whose
-	/// Return throws, see the remarks of the class.
+	/// <c>Return</c> throws, see the remarks of the class.
 	/// Calling it again does nothing: it only observes the producer's task,
 	/// so it throws again only if that task faulted.
 	/// After it, <see cref="Items"/> throws
@@ -250,7 +264,11 @@ public sealed class PooledBuffer<T>
 	public async ValueTask DisposeAsync()
 		=> await DisposeCore().ConfigureAwait(false);
 
-	// The check is load, compare, branch: the throw is out of line.
+	/// <summary>Throws if the buffer is disposed.</summary>
+	/// <remarks>The check is load, compare, branch: the throw is out of line.</remarks>
+	/// <exception cref="ObjectDisposedException">
+	/// The buffer is disposed.
+	/// </exception>
 	internal void ThrowIfDisposed()
 	{
 		if (Volatile.Read(ref _disposed) != 0) ThrowDisposed();
@@ -260,10 +278,57 @@ public sealed class PooledBuffer<T>
 	static void ThrowDisposed()
 		=> throw new ObjectDisposedException(nameof(PooledBuffer<>));
 
-	// The producer's task: it completes when the producer has exited.
+	/// <summary>Disposes the buffer, once.</summary>
+	/// <remarks>
+	/// <para>
+	/// <em>Why dispose is ordered the way it is.</em>
+	/// </para>
+	/// <list type="number">
+	/// <item>
+	/// <description>
+	/// Set <c>_disposed</c>. From then on Publish refuses and
+	/// <see cref="Items"/> throws.
+	/// </description>
+	/// </item>
+	/// <item>
+	/// <description>
+	/// Cancel <see cref="Items"/> if it is still pending.
+	/// </description>
+	/// </item>
+	/// <item>
+	/// <description>
+	/// If the read is still going, cancel the producer: its linked token
+	/// cancels the query itself. The producer then ends, swallows that cancel
+	/// (the owner asked for it: <see cref="IChunkTarget{T}.IsDisposed"/>), and
+	/// Finish releases the arrays. If the read already finished, dispose
+	/// releases them.
+	/// </description>
+	/// </item>
+	/// </list>
+	/// <para>
+	/// <see cref="DisposeAsync"/> additionally awaits the producer, so its
+	/// arrays are back when it returns; <see cref="Dispose"/> does not wait.
+	/// The <see langword="await"/> has no timeout, on purpose: correctness (no array goes back
+	/// while the producer might still write) comes before promptness.
+	/// So a dispose waits for the provider call in progress (the execute, or a
+	/// read) to return; a provider that ignores the cancel token delays it by
+	/// that call.
+	/// After that the producer stops at the next chunk boundary at the latest:
+	/// the read loop checks the token per row in the default read mode, the
+	/// provider does in the async read mode, and the producer itself checks
+	/// once per chunk.
+	/// So with <c>AsyncReads()</c> and a provider that ignores the token, a
+	/// dispose or a cancel is seen at the next chunk (a buffer's chunks double:
+	/// up to the rows of the current chunk).
+	/// A caller's own cancel is the opposite: it is <em>not</em> swallowed.
+	/// Finish stores it, and <see cref="Items"/> is cancelled with the
+	/// caller's token.
+	/// </para>
+	/// </remarks>
+	/// <returns>The producer's task, which completes when it has exited.</returns>
 	Task DisposeCore()
 	{
-		// The dispose-once guard (a full fence: see the notes).
+		// The dispose-once guard (a full fence: see the remarks of this method).
 		if (Interlocked.Exchange(ref _disposed, 1) != 0)
 			return _producerTask;
 
@@ -277,9 +342,11 @@ public sealed class PooledBuffer<T>
 		return _producerTask;
 	}
 
-	// Every chunk is released, once (the list is taken with an exchange).
-	// A release that throws (a pool whose Return throws) does not stop the
-	// others: the first exception is thrown after the last.
+	/// <summary>Releases every chunk, once.</summary>
+	/// <remarks>
+	/// The list is taken with an exchange, so a second call does nothing.
+	/// <include file="Internals.docs.xml" path="docs/members[@name='release-all']/*" />
+	/// </remarks>
 	void ReleaseAll()
 	{
 		List<ArrayLease<T>>? chunks
@@ -297,8 +364,12 @@ public sealed class PooledBuffer<T>
 			System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(first).Throw();
 	}
 
-	// Completes the Items source from the finished read. Idempotent
-	// (TrySet), so Finish and the first accessor may both call it.
+	/// <summary>Completes the <see cref="Items"/> source from the finished read.</summary>
+	/// <remarks>
+	/// Idempotent (<c>TrySet</c>), so Finish and the first accessor may both
+	/// call it.
+	/// </remarks>
+	/// <param name="items">The source to complete.</param>
 	void Complete(TaskCompletionSource<PooledArray<T>> items)
 	{
 		if (items.Task.IsCompleted) return;
@@ -326,16 +397,19 @@ public sealed class PooledBuffer<T>
 		}
 	}
 
+	/// <inheritdoc/>
 	bool IChunkTarget<T>.IsDisposed
 		=> Volatile.Read(ref _disposed) != 0;
 
+	/// <inheritdoc/>
 	int IChunkTarget<T>.CapacityOf(int index)
 		=> index < 31 - ChunkSizing.Log2(_firstRows)
 			? _firstRows << index
 			: throw new InvalidOperationException(
 				"A buffer cannot hold more rows than an int counts.");
 
-	// Producer thread only, before Finish.
+	/// <inheritdoc/>
+	/// <remarks>Called on the producer thread only, before Finish.</remarks>
 	bool IChunkTarget<T>.Publish(ArrayLease<T> chunk)
 	{
 		if (Volatile.Read(ref _disposed) != 0) return false;
@@ -345,12 +419,13 @@ public sealed class PooledBuffer<T>
 		return true;
 	}
 
+	/// <inheritdoc/>
 	void IChunkTarget<T>.Finish(Exception? error)
 	{
 		_error = error;
 		Interlocked.Exchange(ref _done, 1);
 
-		// Done is set, then the field is read (see the notes).
+		// Done is set, then the field is read (see the remarks of the fields).
 		TaskCompletionSource<PooledArray<T>>? items
 			= Volatile.Read(ref _items);
 		if (items is not null) Complete(items);

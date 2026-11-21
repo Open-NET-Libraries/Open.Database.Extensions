@@ -1,11 +1,26 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// The database type a CLR type is sent as, for a <see langword="NULL"/> parameter whose value cannot tell the provider (a null carries no type).
+/// The database type a CLR type is sent as, for a <c>NULL</c> parameter whose
+/// value cannot tell the provider (a <see langword="null"/> carries no type).
 /// </summary>
-/// <remarks>The same choices Dapper makes. <see langword="null"/> means no choice: the provider infers as it always did.</remarks>
+/// <remarks>
+/// The same choices Dapper makes.
+/// <see langword="null"/> means no choice: the provider infers as it always
+/// did.
+/// </remarks>
 static class ClrDbTypes
 {
+	/// <summary>Gets the database type a value of a CLR type is sent as.</summary>
+	/// <remarks>
+	/// A <see cref="Nullable{T}"/> is treated as its underlying type, and an
+	/// enum as its underlying integral type.
+	/// </remarks>
+	/// <param name="type">The CLR type of the parameter's value.</param>
+	/// <returns>
+	/// The database type, or <see langword="null"/> if there is no choice and
+	/// the provider should infer it.
+	/// </returns>
 	internal static DbType? From(Type type)
 	{
 		type = Nullable.GetUnderlyingType(type) ?? type;

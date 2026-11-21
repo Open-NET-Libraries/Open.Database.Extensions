@@ -8,8 +8,11 @@ namespace Open.Database.Extensions;
 /// <remarks>One immutable copy per type, like the tables of <c>RowMap&lt;T&gt;</c>: a getter for a type is the same for every command, so there is nothing to key or expire.</remarks>
 static class ParamSource<T>
 {
+	/// <summary>The names of the members.</summary>
 	internal static readonly string[] Names;
+	/// <summary>The compiled getter of each member, in the order of <see cref="Names"/>.</summary>
 	internal static readonly Func<T, object?>[] Getters;
+	/// <summary>The type of each member, in the order of <see cref="Names"/>.</summary>
 	internal static readonly Type[] Types;
 
 	static ParamSource()

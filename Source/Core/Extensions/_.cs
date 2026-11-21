@@ -50,6 +50,12 @@ public static partial class CoreExtensions
 	/// to the <paramref name="target"/> span
 	/// with any <see cref="DBNull"/> values converted to <see langword="null"/>.
 	/// </summary>
+	/// <param name="values">The source values.</param>
+	/// <param name="target">The span that receives the values.</param>
+	/// <returns>The <paramref name="target"/> span.</returns>
+	/// <exception cref="IndexOutOfRangeException">
+	/// <paramref name="target"/> is shorter than <paramref name="values"/>.
+	/// </exception>
 	public static Span<object?> CopyToDBNullAsNull(this ReadOnlySpan<object?> values, Span<object?> target)
 	{
 		int len = values.Length;
@@ -72,9 +78,13 @@ public static partial class CoreExtensions
 		=> CopyToDBNullAsNull((ReadOnlySpan<object?>)values, target.Span);
 
 	/// <summary>
-	/// Any <see cref="DBNull"/> values are yielded as null.
+	/// Yields each value of an enumerable, with any <see cref="DBNull"/> converted to <see langword="null"/>.
 	/// </summary>
 	/// <param name="values">The source enumerable.</param>
+	/// <returns>An enumerable of the converted values.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="values"/> is <see langword="null"/>.
+	/// </exception>
 	public static IEnumerable<object?> DBNullToNull(this IEnumerable<object?> values)
 	{
 		return DBNullToNullCore(values ?? throw new ArgumentNullException(nameof(values)));
@@ -87,9 +97,13 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Returns a copy of <paramref name="values"/> with any <see cref="DBNull"/> values converted to null.
+	/// Returns a copy of <paramref name="values"/> with any <see cref="DBNull"/> values converted to <see langword="null"/>.
 	/// </summary>
 	/// <param name="values">The source values.</param>
+	/// <returns>A new array of the converted values.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="values"/> is <see langword="null"/>.
+	/// </exception>
 	public static object?[] DBNullToNullCopy(this object?[] values)
 	{
 		if (values is null) throw new ArgumentNullException(nameof(values));
@@ -101,9 +115,10 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Returns a copy of the contents of this span as an array with any <see cref="DBNull"/> values converted to null.
+	/// Returns a copy of the contents of this span as an array with any <see cref="DBNull"/> values converted to <see langword="null"/>.
 	/// </summary>
-	/// <inheritdoc cref="DBNullToNullCopy(object[])"/>
+	/// <param name="values">The source values.</param>
+	/// <returns>A new array of the converted values.</returns>
 	public static object?[] DBNullToNullCopy(this ReadOnlySpan<object?> values)
 	{
 		object?[] result = new object?[values.Length];
@@ -116,9 +131,10 @@ public static partial class CoreExtensions
 		=> DBNullToNullCopy((ReadOnlySpan<object?>)values);
 
 	/// <summary>
-	/// Replaces any <see cref="DBNull"/> in the <paramref name="values"/> with null;
+	/// Replaces any <see cref="DBNull"/> in the <paramref name="values"/> with <see langword="null"/>.
 	/// </summary>
-	/// <param name="values">The source values.</param>
+	/// <param name="values">The values to update in place.</param>
+	/// <returns>The <paramref name="values"/>, updated in place.</returns>
 	public static Span<object?> ReplaceDBNullWithNull(this Span<object?> values)
 		=> CopyToDBNullAsNull(values, values);
 
@@ -130,6 +146,9 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ReplaceDBNullWithNull(Span{object?})"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="values"/> is <see langword="null"/>.
+	/// </exception>
 	public static object?[] ReplaceDBNullWithNull(this object?[] values)
 	{
 		if (values is null) throw new ArgumentNullException(nameof(values));
@@ -140,6 +159,9 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ReplaceDBNullWithNull(Span{object?})"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="values"/> is <see langword="null"/>.
+	/// </exception>
 	public static List<object?> ReplaceDBNullWithNull(this List<object?> values)
 	{
 		if (values is null) throw new ArgumentNullException(nameof(values));
@@ -164,10 +186,13 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Generic enumerable extension for <see cref="DataColumnCollection"/>.
+	/// Enumerates a <see cref="DataColumnCollection"/> as a generic <see cref="IEnumerable{T}"/>.
 	/// </summary>
 	/// <param name="columns">The column collection.</param>
 	/// <returns>An enumerable of <see cref="DataColumn"/>s.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="columns"/> is <see langword="null"/>.
+	/// </exception>
 	public static IEnumerable<DataColumn> AsEnumerable(this DataColumnCollection columns)
 	{
 		return columns is null
@@ -182,10 +207,13 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Generic enumerable extension for <see cref="DataRowCollection"/>.
+	/// Enumerates a <see cref="DataRowCollection"/> as a generic <see cref="IEnumerable{T}"/>.
 	/// </summary>
 	/// <param name="rows">The row collection.</param>
 	/// <returns>An enumerable of <see cref="DataRow"/>s.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="rows"/> is <see langword="null"/>.
+	/// </exception>
 	public static IEnumerable<DataRow> AsEnumerable(this DataRowCollection rows)
 	{
 		return rows is null
@@ -200,21 +228,23 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use table.Map(map).ToList().
-	/// Loads all data into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
+	/// Loads all the data of a <see cref="DataTable"/> into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
 	/// </summary>
 	/// <remarks>
-	/// <para>Obsolete in 11.0, removed in 12.
-	/// See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>
-	/// for the difference and a before/after example.</para>
-	/// <para>Declare the <see cref="RowMap{T}"/> once and pass it:
-	/// a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument)
-	/// is rebuilt, and its row reader compiled, on every call.</para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
+	/// <para>
+	/// Use <c>table.Map(map)</c> instead.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
 	/// </remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
 	/// <param name="table">The <see cref="DataTable"/> to read from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <param name="clearSourceTable">Clears the source table before providing the enumeration.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
+	/// <param name="clearSourceTable">
+	/// <see langword="true"/> to clear the source table before providing the enumeration;
+	/// otherwise, <see langword="false"/>.
+	/// The default is <see langword="false"/>.
+	/// </param>
 	/// <returns>An enumerable used to iterate the results.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	[Obsolete(ToDataTableObsolete)]
@@ -224,11 +254,17 @@ public static partial class CoreExtensions
 		.Results(table, clearSourceTable);
 
 	/// <summary>
-	/// Useful extension for dequeuing items from a queue.
-	/// Not thread safe but queueing/dequeuing items in between items is supported.
+	/// Dequeues and yields each item of a queue until it is empty.
 	/// </summary>
-	/// <typeparam name="T">Return type of the source queue</typeparam>
+	/// <remarks>
+	/// It is not thread safe, but queueing and dequeuing items in between items is supported.
+	/// </remarks>
+	/// <typeparam name="T">The type of the items in the queue.</typeparam>
+	/// <param name="source">The queue to dequeue from.</param>
 	/// <returns>An enumerable of the items contained within the queue.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="source"/> is <see langword="null"/>. It is thrown when the enumeration starts.
+	/// </exception>
 	public static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));

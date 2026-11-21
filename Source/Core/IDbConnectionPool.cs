@@ -61,17 +61,24 @@ public interface IDbConnectionPool<out TConnection> : IDbConnectionPool
 /// </summary>
 public static class ConnectionPoolExtensions
 {
+	/// <summary>
+	/// Presents a non-generic pool as an <see cref="IDbConnectionPool{TConnection}"/> of <see cref="IDbConnection"/> by forwarding to it.
+	/// </summary>
+	/// <param name="source">The pool to forward to.</param>
+	/// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
 	class GenericPool(IDbConnectionPool source) : IDbConnectionPool<IDbConnection>
 	{
 		private readonly IDbConnectionPool _source
 			= source ?? throw new ArgumentNullException(nameof(source));
 
+		/// <inheritdoc />
 		public IDbConnection Take()
 			=> _source.Take();
 
 		IDbConnection IDbConnectionPool.Take()
 			=> _source.Take();
 
+		/// <inheritdoc />
 		public void Give(IDbConnection connection)
 			=> _source.Give(connection);
 	}

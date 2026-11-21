@@ -3,7 +3,8 @@ using System.Diagnostics;
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// A <see cref="DbQuery"/> bound to where its connections come from.
+/// Represents a <see cref="DbQuery"/> bound to where its connections come
+/// from.
 /// A <see langword="struct"/>: binding allocates nothing.
 /// </summary>
 /// <remarks>
@@ -38,6 +39,8 @@ public readonly struct DbQueryUsing
 	/// <summary>
 	/// The connection, transaction, pool or factory the query is bound to.
 	/// </summary>
+	/// <value>The connection, transaction, pool or factory the query was bound to with <c>Using</c>.</value>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public object Source => SourceOrThrow;
 
 	/// <summary>
@@ -69,6 +72,9 @@ public readonly struct DbQueryUsing
 	/// </returns>
 	/// <exception cref="ArgumentNullException">
 	/// <paramref name="name"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="ArgumentException">
+	/// <paramref name="name"/> is empty or white space.
 	/// </exception>
 	public DbQueryCall AddParam<T>(string name, T value)
 		=> DbQueryCall.NewRoot(
@@ -127,17 +133,17 @@ public readonly struct DbQueryUsing
 	public override bool Equals(object? obj)
 		=> obj is DbQueryUsing other && Equals(other);
 
-	/// <summary>Whether two bound queries are the same definition on the same source.</summary>
-	/// <param name="left">The first.</param>
-	/// <param name="right">The second.</param>
-	/// <returns><see langword="true"/> when they are equal.</returns>
+	/// <summary>Determines whether two bound queries are the same definition on the same source.</summary>
+	/// <param name="left">The first bound query.</param>
+	/// <param name="right">The second bound query.</param>
+	/// <returns><see langword="true"/> if they are equal; otherwise, <see langword="false"/>.</returns>
 	public static bool operator ==(DbQueryUsing left, DbQueryUsing right)
 		=> left.Equals(right);
 
-	/// <summary>Whether two bound queries differ.</summary>
-	/// <param name="left">The first.</param>
-	/// <param name="right">The second.</param>
-	/// <returns><see langword="true"/> when they are not equal.</returns>
+	/// <summary>Determines whether two bound queries differ.</summary>
+	/// <param name="left">The first bound query.</param>
+	/// <param name="right">The second bound query.</param>
+	/// <returns><see langword="true"/> if they are not equal; otherwise, <see langword="false"/>.</returns>
 	public static bool operator !=(DbQueryUsing left, DbQueryUsing right)
 		=> !left.Equals(right);
 
@@ -236,8 +242,9 @@ public readonly struct DbQueryUsing
 }
 
 /// <summary>
-/// A <see cref="DbQuery{TParams}"/> bound to where its connections come
-/// from. The values are given in one call, checked at compile time.
+/// Represents a <see cref="DbQuery{TParams}"/> bound to where its
+/// connections come from.
+/// The values are given in one call, checked at compile time.
 /// </summary>
 /// <typeparam name="TParams">The type of the values.</typeparam>
 public readonly struct DbQueryUsing<TParams>

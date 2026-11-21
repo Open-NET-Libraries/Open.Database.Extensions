@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The texts the expressive commands (ExpressiveCommandBase,
+  ExpressiveDbCommandBase, ExpressiveCommand, ExpressiveDbCommand) share, so
+  each is written here once and cannot drift between the members that use it.
+  A member pulls one in with an include of the compiler:
+  <include file="Commands.docs.xml" path="docs/members[@name='token']/*" />.
+  A key holds the elements it names (params, exceptions, remarks); the member
+  keeps its own summary and whatever differs.
+-->
+<docs>
+  <members name="obsolete">
+    <para>
+      Obsolete in 11.0, removed in 12.
+      See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.
+    </para>
+  </members>
+
+  <members name="token">
+    <param name="cancellationToken">
+      A token that can cancel the call.
+      It is used together with the command's own token
+      (see <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.UseCancellationToken(CancellationToken)"/>); either one cancels.
+    </param>
+  </members>
+
+  <members name="behavior">
+    <param name="behavior">
+      The behavior to run the reader with.
+      The default is <see cref="CommandBehavior.Default"/>.
+    </param>
+  </members>
+
+  <members name="behaviorToken">
+    <param name="behavior">
+      The behavior to run the reader with.
+      The default is <see cref="CommandBehavior.Default"/>.
+    </param>
+    <param name="cancellationToken">
+      A token that can cancel the call.
+      It is used together with the command's own token
+      (see <see cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.UseCancellationToken(CancellationToken)"/>); either one cancels.
+    </param>
+  </members>
+
+  <members name="noBehavior">
+    <para>
+      This overload has no <c>behavior</c> parameter: to pass both a behavior
+      and a token, use the overload that takes the behavior and then the token.
+    </para>
+  </members>
+
+  <members name="condition">
+    <param name="condition">
+      <see langword="true"/> to add the parameter; otherwise,
+      <see langword="false"/>.
+    </param>
+  </members>
+
+  <members name="ctorCommon">
+    <param name="type">The command type.</param>
+    <param name="command">
+      The command text, or the stored procedure name when
+      <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.
+    </param>
+    <param name="params">
+      The initial parameters.
+      They are copied, so later changes to the source collection do not affect
+      the command.
+    </param>
+    <exception cref="ArgumentException">
+      <paramref name="command"/> is empty or white space.
+    </exception>
+  </members>
+
+  <members name="ctorPool">
+    <param name="connectionPool">
+      The pool to take connections from.
+      Each execution takes one and gives it back when finished.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connectionPool"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctorFactory">
+    <param name="connFactory">
+      The factory that creates the connections.
+      Each execution creates a connection, opens it if needed, and disposes it
+      when finished.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connFactory"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctorFunc">
+    <param name="connFactory">
+      The function that creates the connections.
+      Each execution invokes it, opens the connection if needed, and disposes
+      it when finished.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connFactory"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctorConnectionTx">
+    <param name="connection">
+      The connection to execute on.
+      It is opened only if it is closed, closed again afterwards if the
+      command opened it, and never disposed.
+    </param>
+    <param name="transaction">
+      The optional transaction to execute the command in.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connection"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctorConnection">
+    <param name="connection">
+      The connection to execute on.
+      It is opened only if it is closed, closed again afterwards if the
+      command opened it, and never disposed.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connection"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctorTx">
+    <param name="transaction">
+      The transaction to execute the command in.
+      Its <see cref="IDbTransaction.Connection"/> is used for execution.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="transaction"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+</docs>

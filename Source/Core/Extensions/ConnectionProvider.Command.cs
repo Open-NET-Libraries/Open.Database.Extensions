@@ -24,23 +24,14 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that executes on the given connection.
 	/// </summary>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-connection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> to configure with parameters and then execute.</returns>
 	/// <remarks>
 	/// The command is not validated against the database when it is created; problems with the SQL surface as provider exceptions when it is executed. A command created from a connection supports one execution at a time.
 	/// </remarks>
-	/// <example>
-	/// <code>
-	/// // Synchronous: a command on an IDbConnection has no
-	/// // ExecuteNonQueryAsync; use a DbConnection for the async form.
-	/// int rows = connection
-	///     .Command("UPDATE Customers SET Region = @region WHERE Id = @id")
-	///     .AddParam("region", "West")
-	///     .AddParam("id", 42)
-	///     .ExecuteNonQuery();
-	/// </code>
-	/// </example>
+	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="StoredProcedure(IDbConnection, string)"/>
-	/// <inheritdoc cref="Command(DbConnection, string, CommandType)"/>
 	public static ExpressiveCommand Command(
 		this IDbConnection connection,
 		string command, CommandType type = CommandType.Text)
@@ -49,12 +40,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that executes within the given transaction.
 	/// </summary>
-	/// <param name="transaction">The transaction to execute in. The command runs on the transaction's <see cref="IDbTransaction.Connection"/>.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-transaction']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="transaction"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public static ExpressiveCommand Command(
 		this IDbTransaction transaction,
 		string command, CommandType type = CommandType.Text)
@@ -63,12 +52,20 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveDbCommand"/> that executes on the given connection.
 	/// </summary>
-	/// <param name="connection">The connection to execute on. It is opened only if it is closed, closed again afterwards if the command opened it, and never disposed.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-connection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> to configure with parameters and then execute.</returns>
+	/// <inheritdoc cref="Command(IDbConnection, string, CommandType)" path="/remarks"/>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
+	/// <example>
+	/// <code language="csharp">
+	/// int rows = await connection
+	///     .Command("UPDATE Posts SET Title = @title WHERE Id = @id")
+	///     .AddParam("title", "Hello")
+	///     .AddParam("id", 42)
+	///     .ExecuteNonQueryAsync(cancellationToken);
+	/// </code>
+	/// </example>
 	public static ExpressiveDbCommand Command(
 	   this DbConnection connection,
 	   string command, CommandType type = CommandType.Text)
@@ -87,11 +84,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that calls a stored procedure on the given connection.
 	/// </summary>
-	/// <param name="connection">The connection to execute on. It is opened only if it is closed, closed again afterwards if the command opened it, and never disposed.</param>
-	/// <param name="procedureName">The stored procedure name.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-connection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static ExpressiveCommand StoredProcedure(
 		this IDbConnection connection,
 		string procedureName)
@@ -100,11 +96,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that calls a stored procedure within the given transaction.
 	/// </summary>
-	/// <param name="transaction">The transaction to execute in. The command runs on the transaction's <see cref="IDbTransaction.Connection"/>.</param>
-	/// <param name="procedureName">The stored procedure name.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-transaction']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="transaction"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static ExpressiveCommand StoredProcedure(
 		this IDbTransaction transaction,
 		string procedureName)
@@ -133,12 +128,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that creates a new connection from a connection factory for every execution.
 	/// </summary>
-	/// <param name="connectionSource">The factory that creates the connections. Each execution creates a connection, opens it if needed, and disposes it when finished.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-factory']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	/// <seealso cref="DbConnectionFactoryExtensions.AsPool(IDbConnectionFactory)"/>
 	public static ExpressiveCommand Command(
 		this IDbConnectionFactory connectionSource,
@@ -149,11 +142,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that calls a stored procedure, creating a new connection from a connection factory for every execution.
 	/// </summary>
-	/// <param name="connectionSource">The factory that creates the connections. Each execution creates a connection, opens it if needed, and disposes it when finished.</param>
-	/// <param name="procedureName">The stored procedure name.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-factory']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static ExpressiveCommand StoredProcedure(
 		this IDbConnectionFactory connectionSource,
 		string procedureName)
@@ -162,12 +154,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that takes its connections from a connection pool.
 	/// </summary>
-	/// <param name="connectionSource">The pool to take connections from. Each execution takes one, opens it if needed, and gives it back when finished.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-pool']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public static ExpressiveCommand Command(
 		this IDbConnectionPool connectionSource,
 		string command,
@@ -177,11 +167,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that calls a stored procedure, taking its connections from a connection pool.
 	/// </summary>
-	/// <param name="connectionSource">The pool to take connections from. Each execution takes one, opens it if needed, and gives it back when finished.</param>
-	/// <param name="procedureName">The stored procedure name.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-pool']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static ExpressiveCommand StoredProcedure(
 		this IDbConnectionPool connectionSource,
 		string procedureName)
@@ -190,13 +179,11 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveDbCommand"/> that creates a new connection from a connection factory for every execution.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="connectionSource">The factory that creates the connections. Each execution creates a connection, opens it if needed, and disposes it when finished.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-factory']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public static ExpressiveDbCommand Command<TConnection>(
 		this IDbConnectionFactory<TConnection> connectionSource,
 		string command,
@@ -207,12 +194,11 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveDbCommand"/> that calls a stored procedure, creating a new connection from a connection factory for every execution.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="connectionSource">The factory that creates the connections. Each execution creates a connection, opens it if needed, and disposes it when finished.</param>
-	/// <param name="procedureName">The stored procedure name.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-factory']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static ExpressiveDbCommand StoredProcedure<TConnection>(
 		this IDbConnectionFactory<TConnection> connectionSource,
 		string procedureName)
@@ -222,13 +208,11 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveDbCommand"/> that takes its connections from a connection pool.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="connectionSource">The pool to take connections from. Each execution takes one, opens it if needed, and gives it back when finished.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-pool']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public static ExpressiveDbCommand Command<TConnection>(
 		this IDbConnectionPool<TConnection> connectionSource,
 		string command,
@@ -239,12 +223,11 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveDbCommand"/> that calls a stored procedure, taking its connections from a connection pool.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="connectionSource">The pool to take connections from. Each execution takes one, opens it if needed, and gives it back when finished.</param>
-	/// <param name="procedureName">The stored procedure name.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-pool']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static ExpressiveDbCommand StoredProcedure<TConnection>(
 		this IDbConnectionPool<TConnection> connectionSource,
 		string procedureName)
@@ -254,12 +237,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that invokes a function to create a new connection for every execution.
 	/// </summary>
-	/// <param name="connectionSource">The function that creates the connections. Each execution invokes it, opens the connection if needed, and disposes it when finished.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-func']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	public static ExpressiveCommand Command(
 		this Func<IDbConnection> connectionSource,
 		string command,
@@ -269,11 +250,10 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveCommand"/> that calls a stored procedure, invoking a function to create a new connection for every execution.
 	/// </summary>
-	/// <param name="connectionSource">The function that creates the connections. Each execution invokes it, opens the connection if needed, and disposes it when finished.</param>
-	/// <param name="procedureName">The stored procedure name.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-func']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connectionSource"/> or <paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static ExpressiveCommand StoredProcedure(
 		this Func<IDbConnection> connectionSource,
 		string procedureName)
@@ -282,19 +262,17 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveDbCommand"/> that invokes a function to create a new connection for every execution.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="connectionSource">The function that creates the connections. Each execution invokes it, opens the connection if needed, and disposes it when finished.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-func']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='command-text']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
 	/// <example>
-	/// <code>
+	/// <code language="csharp">
 	/// // A new connection is created, opened, and disposed
 	/// // for every execution.
 	/// int count = await createConnection
-	///     .Command("SELECT COUNT(*) FROM Customers")
+	///     .Command("SELECT COUNT(*) FROM Posts")
 	///     .ExecuteScalarAsync&lt;int&gt;(cancellationToken);
 	/// </code>
 	/// </example>
@@ -308,12 +286,11 @@ public static partial class ConnectionExtensions
 	/// <summary>
 	/// Creates an <see cref="ExpressiveDbCommand"/> that calls a stored procedure, invoking a function to create a new connection for every execution.
 	/// </summary>
-	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="connectionSource">The function that creates the connections. Each execution invokes it, opens the connection if needed, and disposes it when finished.</param>
-	/// <param name="procedureName">The stored procedure name.</param>
+	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='src-func']/*" />
+	/// <include file="Connections.docs.xml" path="docs/members[@name='procedure']/*" />
 	/// <returns>A new <see cref="ExpressiveDbCommand"/> with <see cref="CommandType.StoredProcedure"/> to configure with parameters and then execute.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="procedureName"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="procedureName"/> is empty or white space.</exception>
 	public static ExpressiveDbCommand StoredProcedure<TConnection>(
 		this Func<TConnection> connectionSource,
 		string procedureName)

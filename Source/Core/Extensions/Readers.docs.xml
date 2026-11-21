@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The texts the reader, record, command and result extensions share
+  (DataReader.cs, DataRecord.cs, Command._.cs, Command.AddParameter.cs,
+  Retrieve.cs, Results.cs, _.cs), so each is written here once and cannot
+  drift between the members that use it.
+  A member pulls one in with an include of the compiler:
+  <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />.
+  A key holds the elements it names (params, exceptions, remarks); the member
+  keeps its own summary and whatever differs.
+  The crefs resolve where the key is included.
+-->
+<docs>
+  <!-- Remarks. -->
+
+  <members name="obsolete">
+    <para>
+      Obsolete in 11.0, removed in 12.
+      See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>
+      for the difference and a before/after example.
+    </para>
+  </members>
+
+  <members name="held">
+    <note type="caution">
+      <b>
+        This is not the recommended way to read rows: it holds the
+        connection while your code runs for each row.
+      </b>
+      The reader, and the connection under it, stay open for as long as
+      your code takes per row, added up over all the rows.
+      <br/>
+      <br/>
+      In async code that time has no bound: every
+      <see langword="await"/> in the loop body can yield, and nothing says
+      when the loop resumes.
+      Until it does, the connection is on hold: a pooled connection is
+      not returned to the pool, and the server may keep its locks and the
+      open result set.
+      <br/>
+      <br/>
+      These members suit work that must happen while the connection is
+      open, for example a result too large to buffer or a row-by-row
+      pipeline.
+      Otherwise use a call that lets go of the connection first:
+      <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+      and
+      <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+      buffer the rows and release the connection
+      (call <c>.Map&lt;T&gt;()</c> first), and
+      <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
+      streams them to a consumer without holding it
+      (the producer is unbounded: it reads without waiting for the
+      consumer and frees the connection while the consumer takes its
+      time, and the rows wait in memory until the consumer takes them;
+      dispose the enumerator, as <see langword="await"/>
+      <see langword="foreach"/> does).
+    </note>
+  </members>
+
+  <members name="held-reader">
+    <para>
+      The same holds when you pass in a reader you opened yourself:
+      the connection under it is held.
+    </para>
+  </members>
+
+  <members name="connection">
+    <para>
+      The connection is opened if it is closed, and closed again when the
+      call finishes; a connection that was already open is left as it was.
+      A connection this call opened is also closed, never disposed, when the
+      reader cannot be created.
+    </para>
+  </members>
+
+  <members name="row-pool">
+    <para>
+      When <paramref name="arrayPool"/> is not <see langword="null"/>, each
+      row array is rented from it, can be longer than the number of values,
+      and is yielded to the caller, who is responsible for returning it to the
+      pool.
+    </para>
+  </members>
+
+  <members name="buffered-once">
+    <para>
+      The values are read into a queue first, so the reader and its
+      connection can be released before the result is consumed.
+      Each value is removed as it is enumerated, so the result can be
+      enumerated only once.
+    </para>
+  </members>
+
+  <members name="first-set">
+    <para>
+      Only the first result set is read.
+    </para>
+  </members>
+
+  <members name="rowmap-once">
+    <para>
+      Declare the <see cref="RowMap{T}"/> once and pass it: a map built in
+      the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression
+      in the argument) is rebuilt, and its row reader compiled, on every call.
+    </para>
+  </members>
+
+  <!-- Parameters of readers and commands. -->
+
+  <members name="command">
+    <param name="command">
+      The <see cref="IDbCommand"/> to generate a reader from.
+    </param>
+  </members>
+
+  <members name="dbCommand">
+    <param name="command">
+      The <see cref="DbCommand"/> to generate a reader from.
+    </param>
+  </members>
+
+  <members name="behavior">
+    <param name="behavior">
+      The behavior to use with the data reader.
+      The default is <see cref="CommandBehavior.Default"/>.
+    </param>
+  </members>
+
+  <members name="behavior-required">
+    <param name="behavior">The behavior to use with the data reader.</param>
+  </members>
+
+  <members name="cancellationToken">
+    <param name="cancellationToken">
+      The token to monitor for cancellation requests.
+      The default is <see cref="CancellationToken.None"/>.
+    </param>
+  </members>
+
+  <members name="cancellationToken-required">
+    <param name="cancellationToken">
+      The token to monitor for cancellation requests.
+    </param>
+  </members>
+
+  <members name="useReadAsync">
+    <param name="useReadAsync">
+      <see langword="true"/> to read the rows with <c>ReadAsync</c>, so the
+      provider can cancel a read itself; <see langword="false"/> to read them
+      with <c>Read</c>, checking the token before each read.
+      The default is <see langword="true"/>.
+    </param>
+  </members>
+
+  <members name="useReadAsync-required">
+    <param name="useReadAsync">
+      <see langword="true"/> to read the rows with <c>ReadAsync</c>, so the
+      provider can cancel a read itself; <see langword="false"/> to read them
+      with <c>Read</c>, checking the token before each read.
+    </param>
+  </members>
+
+  <members name="transform">
+    <param name="transform">
+      The function to transform each <see cref="IDataRecord"/> into a result.
+    </param>
+  </members>
+
+  <members name="transform-T">
+    <typeparam name="T">The return type of the transform function.</typeparam>
+  </members>
+
+  <members name="handler">
+    <param name="handler">
+      The function to call for each <see cref="IDataRecord"/>.
+    </param>
+  </members>
+
+  <members name="predicate">
+    <param name="predicate">
+      The function to call for each <see cref="IDataRecord"/>.
+      It returns <see langword="true"/> to continue with the next record,
+      or <see langword="false"/> to stop.
+    </param>
+  </members>
+
+  <members name="reader-handler">
+    <param name="handler">The function that receives the reader.</param>
+  </members>
+
+  <members name="reader-transform">
+    <param name="transform">
+      The function that receives the reader and returns the result.
+    </param>
+  </members>
+
+  <members name="reader-enumerate">
+    <param name="reader">The reader to enumerate.</param>
+  </members>
+
+  <members name="reader-iterate">
+    <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
+  </members>
+
+  <members name="reader-results">
+    <param name="reader">
+      The <see cref="IDataReader"/> to read results from.
+    </param>
+  </members>
+
+  <members name="n-others">
+    <param name="n">
+      The first ordinal to include in the request to the reader for each record.
+    </param>
+    <param name="others">
+      The remaining ordinals to request from the reader for each record.
+    </param>
+  </members>
+
+  <members name="c-others">
+    <param name="c">
+      The first column name to include in the request to the reader for each record.
+    </param>
+    <param name="others">
+      The remaining column names to request from the reader for each record.
+    </param>
+  </members>
+
+  <members name="ordinals-limited">
+    <param name="ordinals">
+      The limited set of ordinals to include.
+      If none are specified, the returned arrays are empty.
+    </param>
+  </members>
+
+  <members name="columnNames-select">
+    <param name="columnNames">The column names to select.</param>
+  </members>
+
+  <members name="arrayPool">
+    <param name="arrayPool">
+      The pool to rent the row arrays from, or <see langword="null"/> to
+      allocate them.
+    </param>
+  </members>
+
+  <!-- Exceptions of readers and commands. -->
+
+  <members name="null-command">
+    <exception cref="ArgumentNullException">
+      <paramref name="command"/> is <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="null-command-transform">
+    <exception cref="ArgumentNullException">
+      <paramref name="command"/> or <paramref name="transform"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="null-command-handler">
+    <exception cref="ArgumentNullException">
+      <paramref name="command"/> or <paramref name="handler"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="null-reader">
+    <exception cref="ArgumentNullException">
+      <paramref name="reader"/> is <see langword="null"/>.
+    </exception>
+  </members>
+
+  <!-- Records. -->
+
+  <members name="record-values">
+    <param name="record">
+      The record (typically a data reader positioned on a row) to read the
+      values from.
+    </param>
+  </members>
+
+  <members name="record-names">
+    <param name="record">The record to get the column names from.</param>
+  </members>
+
+  <members name="record-ordinals">
+    <param name="record">The record to query the ordinals from.</param>
+  </members>
+
+  <members name="null-record">
+    <exception cref="ArgumentNullException">
+      <paramref name="record"/> is <see langword="null"/>.
+    </exception>
+  </members>
+
+  <!-- Parameters added to a command. -->
+
+  <members name="param-target">
+    <param name="target">The command to add the parameter to.</param>
+  </members>
+
+  <members name="param-name">
+    <param name="name">The name of the parameter.</param>
+  </members>
+
+  <members name="param-type">
+    <param name="type">The <see cref="DbType"/> of the parameter.</param>
+  </members>
+
+  <members name="param-direction">
+    <param name="direction">The direction of the parameter.</param>
+  </members>
+
+  <members name="param-created">
+    <returns>
+      The created parameter, which has already been added to the command's
+      parameter collection.
+    </returns>
+  </members>
+
+  <members name="null-target-name">
+    <exception cref="ArgumentNullException">
+      <paramref name="target"/> or <paramref name="name"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="blank-name">
+    <exception cref="ArgumentException">
+      <paramref name="name"/> is empty or white space.
+    </exception>
+  </members>
+
+  <!-- Results mapped to a model. -->
+
+  <members name="map-T">
+    <typeparam name="T">
+      The model type to map the values to (using reflection).
+    </typeparam>
+  </members>
+
+  <members name="map">
+    <param name="map">
+      An optional prebuilt <see cref="RowMap{T}"/>;
+      <see langword="null"/> reads by column name.
+    </param>
+  </members>
+</docs>

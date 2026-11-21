@@ -3,7 +3,7 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// Extension methods for Data Readers.
+/// Provides extension methods that read rows and result sets from an <see cref="IDataReader"/> or <see cref="DbDataReader"/>.
 /// </summary>
 #pragma warning disable IDE0079 // Remove unnecessary suppression
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload provided for convienience.")]
@@ -17,42 +17,12 @@ public static class DataReaderExtensions
 	const string ReaderToListAsyncObsolete = "Use await reader.Map(transform).ToListAsync(cancellationToken) instead. It reads the current result set, as this method does, but with Read() where this method used ReadAsync. Removed in 12.";
 
 	/// <summary>
-	/// Iterates all records from an <see cref="IDataReader"/>;
+	/// Calls a handler for each remaining record of the current result set of an <see cref="IDataReader"/>;
 	/// the reader's connection is held while each row is processed.
 	/// </summary>
 	/// <remarks>
-	/// <note type="caution">
-	/// <b>This is not the recommended way to read rows: it holds the
-	/// connection while your code runs for each row.</b>
-	/// The reader, and the connection under it, stay open for as long as
-	/// your code takes per row, added up over all the rows.
-	/// The same holds when you pass in a reader you opened yourself:
-	/// the connection under it is held.
-	/// <br/>
-	/// <br/>
-	/// In async code that time has no bound: every <c>await</c> in the
-	/// loop body can yield, and nothing says when the loop resumes.
-	/// Until it does, the connection is on hold: a pooled connection is
-	/// not returned to the pool, and the server may keep its locks and the
-	/// open result set.
-	/// <br/>
-	/// <br/>
-	/// These members suit work that must happen while the connection is
-	/// open, for example a result too large to buffer or a row-by-row
-	/// pipeline.
-	/// Otherwise use a call that lets go of the connection first:
-	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// and
-	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// buffer the rows and release the connection
-	/// (call <c>.Map&lt;T&gt;()</c> first), and
-	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
-	/// streams them to a consumer without holding it
-	/// (the producer is unbounded: it reads without waiting for the
-	/// consumer and frees the connection while the consumer takes its
-	/// time, and the rows wait in memory until the consumer takes them;
-	/// dispose the enumerator, as <c>await foreach</c> does).
-	/// </note>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
 	/// <para>
 	/// The token is checked before each read:
 	/// a cancel throws, and the read is not made.
@@ -62,12 +32,16 @@ public static class DataReaderExtensions
 	/// and a cancel after that is not an error.
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception,
-	/// use <c>IterateWhile</c> and return <see langword="false"/>.
+	/// use <see cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"/>
+	/// and return <see langword="false"/>.
 	/// </para>
 	/// </remarks>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="handler"/> is <see langword="null"/>.
+	/// </exception>
 	/// <exception cref="OperationCanceledException">
 	/// The token was canceled.
 	/// </exception>
@@ -92,10 +66,22 @@ public static class DataReaderExtensions
 		}
 	}
 
-	// Checks the token at the top of a loop, then reads.
-	// A canceled token throws before the read is made.
-	// Once a read has returned no row the result is complete,
-	// and the token is not looked at again.
+	/// <summary>
+	/// Reads the next row after checking the token:
+	/// a canceled token throws before the read is made.
+	/// </summary>
+	/// <remarks>
+	/// Once a read has returned no row the result is complete,
+	/// and the token is not looked at again.
+	/// </remarks>
+	/// <param name="reader">The reader to read from.</param>
+	/// <param name="cancellationToken">The token to check before the read.</param>
+	/// <returns>
+	/// <see langword="true"/> if a row was read; otherwise, <see langword="false"/>.
+	/// </returns>
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled.
+	/// </exception>
 	static bool ReadNext(
 		IDataReader reader,
 		CancellationToken cancellationToken)
@@ -105,46 +91,16 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates all records from an <see cref="DbDataReader"/>;
+	/// Asynchronously calls a handler for each remaining record of the current result set of a <see cref="DbDataReader"/>;
 	/// the reader's connection is held while each row is processed.
 	/// </summary>
 	/// <remarks>
-	/// <note type="caution">
-	/// <b>This is not the recommended way to read rows: it holds the
-	/// connection while your code runs for each row.</b>
-	/// The reader, and the connection under it, stay open for as long as
-	/// your code takes per row, added up over all the rows.
-	/// The same holds when you pass in a reader you opened yourself:
-	/// the connection under it is held.
-	/// <br/>
-	/// <br/>
-	/// In async code that time has no bound: every <c>await</c> in the
-	/// loop body can yield, and nothing says when the loop resumes.
-	/// Until it does, the connection is on hold: a pooled connection is
-	/// not returned to the pool, and the server may keep its locks and the
-	/// open result set.
-	/// <br/>
-	/// <br/>
-	/// These members suit work that must happen while the connection is
-	/// open, for example a result too large to buffer or a row-by-row
-	/// pipeline.
-	/// Otherwise use a call that lets go of the connection first:
-	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// and
-	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// buffer the rows and release the connection
-	/// (call <c>.Map&lt;T&gt;()</c> first), and
-	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
-	/// streams them to a consumer without holding it
-	/// (the producer is unbounded: it reads without waiting for the
-	/// consumer and frees the connection while the consumer takes its
-	/// time, and the rows wait in memory until the consumer takes them;
-	/// dispose the enumerator, as <c>await foreach</c> does).
-	/// </note>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
 	/// <para>
 	/// The token is passed to <c>ReadAsync</c>, so the provider
-	/// cancels the read itself. Without <paramref name="useReadAsync"/>
-	/// it is checked before each <c>Read</c> instead.
+	/// cancels the read itself. When <paramref name="useReadAsync"/>
+	/// is <see langword="false"/> it is checked before each <c>Read</c> instead.
 	/// A cancel throws, and rows already handed out stay handed out.
 	/// A cancel during the handler of a row throws at the next read,
 	/// even if that row was the last.
@@ -152,13 +108,17 @@ public static class DataReaderExtensions
 	/// and a cancel after that is not an error.
 	/// </para>
 	/// </remarks>
+	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="handler"/> is <see langword="null"/>.
+	/// </exception>
 	/// <exception cref="OperationCanceledException">
 	/// The token was canceled and cut the read short.
 	/// </exception>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="handler">The handler function for each <see cref="IDataRecord"/>.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
 	public static async ValueTask ForEachAsync(this DbDataReader reader,
 		Action<IDataRecord> handler,
 		bool useReadAsync = true,
@@ -210,7 +170,10 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)"/>
+	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
 	public static ValueTask ForEachAsync(this DbDataReader reader, Func<IDataRecord, ValueTask> handler, CancellationToken cancellationToken)
 		=> ForEachAsync(reader, handler, true, cancellationToken);
 
@@ -247,13 +210,25 @@ public static class DataReaderExtensions
 		} while (reader.Read());
 	}
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::exception) and not(self::remarks)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: AsEnumerableCore(reader);
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})"/>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
@@ -341,76 +316,80 @@ public static class DataReaderExtensions
 			: AsEnumerableInternalCore(reader, ordinals, readStarted, arrayPool);
 	}
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, IEnumerable{int}, ArrayPool{object?})"/>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals)
-		=> AsEnumerableInternal(reader, ordinals, false);
-
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params IEnumerable<int> others)
-		=> AsEnumerableInternal(reader, others.Prepend(n), false);
-
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool)
-		=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
-
-	/// <summary>
-	/// Provides an enumerable for iterating all the remaining values
-	/// of the current result set of a data reader;
-	/// the reader's connection is held while each row is processed.
-	/// </summary>
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::exception) and not(self::remarks)]"/>
 	/// <remarks>
-	/// <note type="caution">
-	/// <b>This is not the recommended way to read rows: it holds the
-	/// connection while your code runs for each row.</b>
-	/// The reader, and the connection under it, stay open for as long as
-	/// your code takes per row, added up over all the rows.
-	/// The same holds when you pass in a reader you opened yourself:
-	/// the connection under it is held.
-	/// <br/>
-	/// <br/>
-	/// In async code that time has no bound: every <c>await</c> in the
-	/// loop body can yield, and nothing says when the loop resumes.
-	/// Until it does, the connection is on hold: a pooled connection is
-	/// not returned to the pool, and the server may keep its locks and the
-	/// open result set.
-	/// <br/>
-	/// <br/>
-	/// These members suit work that must happen while the connection is
-	/// open, for example a result too large to buffer or a row-by-row
-	/// pipeline.
-	/// Otherwise use a call that lets go of the connection first:
-	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// and
-	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// buffer the rows and release the connection
-	/// (call <c>.Map&lt;T&gt;()</c> first), and
-	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
-	/// streams them to a consumer without holding it
-	/// (the producer is unbounded: it reads without waiting for the
-	/// consumer and frees the connection while the consumer takes its
-	/// time, and the rows wait in memory until the consumer takes them;
-	/// dispose the enumerator, as <c>await foreach</c> does).
-	/// </note>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
 	/// <para>
 	/// <see cref="DBNull"/> values are retained.
 	/// </para>
 	/// </remarks>
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <returns>An enumerable of the values returned from a data reader.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="ordinals"/> is <see langword="null"/>.
+	/// </exception>
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals)
+		=> AsEnumerableInternal(reader, ordinals, false);
+
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::remarks)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// </remarks>
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params IEnumerable<int> others)
+		=> AsEnumerableInternal(reader, others.Prepend(n), false);
+
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
+	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="ordinals"/> is <see langword="null"/>.
+	/// </exception>
+	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool)
+		=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
+
+	/// <summary>
+	/// Enumerates the remaining records of the current result set of a data reader as arrays of values;
+	/// the reader's connection is held while each row is processed.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='row-pool']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <returns>
+	/// An enumerable of arrays, one for each record, holding its values.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
 	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool, int n, params IEnumerable<int> others)
 		=> AsEnumerable(reader, others.Prepend(n), arrayPool);
 
-	/// <inheritdoc
-	/// cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken)"/>
+	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken)" path="/*[not(self::param) and not(self::remarks) and not(self::exception)]"/>
+	/// <remarks>
+	/// The iteration is deferred: nothing is read until the result is enumerated.
+	/// Rows already handed out stay handed out.
+	/// To stop early, stop enumerating.
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
+	/// </exception>
 	public static IEnumerable<T> Select<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 	{
 		return reader is null
@@ -427,7 +406,7 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates records from an <see cref="IDataReader"/> and passes the IDataRecord to a transform function.
+	/// Lazily transforms each remaining record of an <see cref="IDataReader"/> through a function.
 	/// </summary>
 	/// <remarks>
 	/// The iteration is deferred: nothing is read,
@@ -443,11 +422,14 @@ public static class DataReaderExtensions
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception, stop enumerating.
 	/// </remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The reader to iterate.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="cancellationToken">A cancellation token for stopping the iteration.</param>
-	/// <returns>An enumerable used to iterate the results.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
+	/// <returns>An enumerable of the transformed results.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
+	/// </exception>
 	/// <exception cref="OperationCanceledException">
 	/// The token was canceled (thrown by the enumeration).
 	/// </exception>
@@ -524,9 +506,21 @@ public static class DataReaderExtensions
 		while (!cancellationToken.IsCancellationRequested && await reader.ReadAsync().ConfigureAwait(false));
 	}
 
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception) and not(self::remarks)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// <para>
+	/// A canceled token ends the enumeration without an exception,
+	/// and rows already yielded stay yielded.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
 		this DbDataReader reader,
 		CancellationToken cancellationToken = default)
@@ -534,10 +528,11 @@ public static class DataReaderExtensions
 			? throw new ArgumentNullException(nameof(reader))
 			: AsAsyncEnumerableCore(reader, cancellationToken);
 
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="arrayPool">An optional array pool to acquire buffers from.</param>
-	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
 		this DbDataReader reader,
 		ArrayPool<object>? arrayPool,
@@ -635,47 +630,114 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)"/>
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::remarks)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// <para>
+	/// A canceled token ends the enumeration without an exception,
+	/// and rows already yielded stay yielded.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, CancellationToken cancellationToken = default)
 		=> AsAsyncEnumerableInternal(reader, ordinals, false, cancellationToken);
 
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <param name="cancellationToken">Optional iteration cancellation token.</param>
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <summary>
+	/// Asynchronously enumerates the remaining records of the current result set of a <see cref="DbDataReader"/> as arrays of values;
+	/// the reader's connection is held while each row is processed.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='row-pool']/*" />
+	/// <para>
+	/// A canceled token ends the enumeration without an exception,
+	/// and rows already yielded stay yielded.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// An asynchronous enumerable of arrays, one for each record,
+	/// holding the values of the requested ordinals.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="ordinals"/> is <see langword="null"/>.
+	/// </exception>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool, CancellationToken cancellationToken = default)
 		=> arrayPool is null
 		? AsAsyncEnumerableInternal(reader, ordinals, false, cancellationToken)
 		: AsAsyncEnumerableInternal(reader, ordinals, false, arrayPool, cancellationToken);
 
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="cancellationToken">The iteration cancellation token.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}?, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception) and not(self::remarks)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// <para>
+	/// A canceled token ends the enumeration without an exception,
+	/// and rows already yielded stay yielded.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken, int n, params IEnumerable<int> others)
 		=> AsAsyncEnumerable(reader, others.Prepend(n), cancellationToken);
 
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="arrayPool">The array pool to acquire buffers from.</param>
-	/// <param name="cancellationToken">The iteration cancellation token.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, CancellationToken cancellationToken, int n, params IEnumerable<int> others)
 		=> AsAsyncEnumerable(reader, others.Prepend(n), arrayPool, cancellationToken);
 
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, IEnumerable{int})"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, IEnumerable{int})" path="/*[not(self::param) and not(self::remarks)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// <see cref="DBNull"/> values are retained.
+	/// </para>
+	/// <para>
+	/// A canceled token ends the enumeration without an exception,
+	/// and rows already yielded stay yielded.
+	/// </para>
+	/// </remarks>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params IEnumerable<int> others)
 		=> AsAsyncEnumerable(reader, others.Prepend(n));
 
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, IEnumerable{int})"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, IEnumerable{int})" path="/*[not(self::param)]"/>
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, int n, params IEnumerable<int> others)
 		=> AsAsyncEnumerable(reader, others.Prepend(n), arrayPool);
 
 	/// <summary>
-	/// Asyncronously iterates all records from a data reader..]
+	/// Asynchronously and lazily transforms each remaining record of a <see cref="DbDataReader"/> through a function.
 	/// </summary>
 	/// <remarks>
 	/// The iteration is deferred until the result is enumerated.
@@ -690,11 +752,14 @@ public static class DataReaderExtensions
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception, leave the loop.
 	/// </remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The DbDataReader to iterate.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>An enumerable used to iterate the results.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>An asynchronous enumerable of the transformed results.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
+	/// </exception>
 	/// <exception cref="OperationCanceledException">
 	/// The token was canceled (thrown by the enumeration).
 	/// </exception>
@@ -722,8 +787,12 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <inheritdoc
-	/// cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, CancellationToken)"/>
+	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <param name="transform">
+	/// The asynchronous function to transform each <see cref="IDataRecord"/> into a result.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
 	public static IAsyncEnumerable<T> SelectAsync<T>(this IDataReader reader,
 		Func<IDataRecord, ValueTask<T>> transform,
 		CancellationToken cancellationToken = default)
@@ -757,30 +826,55 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use reader.Map(transform).ToList().
-	/// Shortcut for .Iterate(transform).ToList();
+	/// Iterates the remaining records of the current result set and returns the transformed results as a list.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
+	/// <para>
+	/// Use <c>reader.Map(transform)</c> and its <c>ToList</c> terminal instead.
+	/// It reads the current result set, as this method does,
+	/// but takes no token: to pass one, use
+	/// <c>reader.Select(transform, cancellationToken)</c> in its place.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
 	/// <returns>A list of the transformed results.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="OperationCanceledException">
+	/// The token was canceled.
+	/// </exception>
 	[Obsolete(ReaderToListObsolete)]
 	public static List<T> ToList<T>(this IDataReader reader,
 		Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
 		=> reader.Select(transform, cancellationToken).ToList();
 
 	/// <summary>
-	/// Obsolete: use await reader.Map(transform).ToListAsync(cancellationToken).
-	/// Asynchronously iterates all records using the data reader and returns the desired results as a list.
+	/// Asynchronously iterates the remaining records of the current result set and returns the transformed results as a list.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The SqlDataReader to read from.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <returns>A task containing a list of all results.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
+	/// <para>
+	/// Use <c>await reader.Map(transform).ToListAsync(cancellationToken)</c> instead.
+	/// It reads the current result set, as this method does,
+	/// but with <c>Read</c> where this method used <c>ReadAsync</c>.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <param name="reader">The <see cref="DbDataReader"/> to read from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is a list of the transformed results.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
+	/// </exception>
 	[Obsolete(ReaderToListAsyncObsolete)]
 	public static ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
 		Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
@@ -798,7 +892,22 @@ public static class DataReaderExtensions
 		return list;
 	}
 
-	/// <inheritdoc cref="ToListAsync{T}(DbDataReader, Func{IDataRecord, T}, CancellationToken)"/>
+	/// <summary>
+	/// Asynchronously iterates the remaining records of the current result set and returns the results of an asynchronous transform as a list.
+	/// </summary>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <param name="reader">The <see cref="DbDataReader"/> to read from.</param>
+	/// <param name="transform">
+	/// The asynchronous function to transform each <see cref="IDataRecord"/> into a result.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is a list of the transformed results.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
+	/// </exception>
 	public static async ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
 		Func<IDataRecord, ValueTask<T>> transform, CancellationToken cancellationToken = default)
 	{
@@ -812,55 +921,78 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use reader.Map(transform).ToArray().
-	/// Shortcut for .Select(transform).ToArray();
+	/// Iterates the remaining records of the current result set and returns the transformed results as an array.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
+	/// <para>
+	/// Use <c>reader.Map(transform)</c> and its <c>ToArray</c> terminal instead.
+	/// It reads the current result set, as this method does.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
 	/// <returns>An array of the transformed results.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
+	/// </exception>
 	[Obsolete(ReaderToArrayObsolete)]
 	public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 		=> reader.Select(transform).ToArray();
 
 	/// <summary>
-	/// Obsolete: use reader.Map(transform).ToImmutableArray().
-	/// Shortcut for .Select(transform).ToImmutableArray();
+	/// Iterates the remaining records of the current result set and returns the transformed results as an immutable array.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
+	/// <para>
+	/// Use <c>reader.Map(transform)</c> and its <c>ToImmutableArray</c> terminal instead.
+	/// It reads the current result set, as this method does.
+	/// </para>
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
 	/// <returns>An immutable array of the transformed results.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
+	/// </exception>
 	[Obsolete(ReaderToImmutableArrayObsolete)]
 	public static ImmutableArray<T> ToImmutableArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
 		=> reader.Select(transform).ToImmutableArray();
 
 	/// <summary>
-	/// Loads the current result set of an <see cref="IDataReader"/> into a DataTable.
+	/// Loads the current result set of an <see cref="IDataReader"/> into a <see cref="DataTable"/>.
 	/// The reader stays open and is left on that result set, so <see cref="IDataReader.NextResult"/> moves to the next one.
 	/// </summary>
-	/// <param name="reader">The IDataReader to load data from.</param>
-	/// <returns>The resultant DataTable.</returns>
+	/// <remarks>
+	/// <see cref="DataTable.Load(IDataReader)"/> asks the reader for the next result set and closes it after the last one.
+	/// A forwarder makes both a no-op, so the caller's <c>NextResult</c> still decides where the reader goes.
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <returns>A <see cref="DataTable"/> that holds the result set.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static DataTable ToDataTable(this IDataReader reader)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
 		Contract.EndContractBlock();
 
 		var table = new DataTable();
-		// DataTable.Load asks the reader for the next result set and closes it after the last one.
-		// The forwarder makes both a no-op, so the caller's NextResult still decides where the reader goes.
+		// The forwarder keeps Load from moving or closing the reader.
 		table.Load(new SingleResultSetReader(reader));
 		return table;
 	}
 
 	/// <summary>
-	/// Loads all data from a command through an <see cref="IDataReader"/> into a DataTables.
-	/// Each result set is loaded into its own table. Calls .NextResult() to check for more results.
+	/// Loads every result set of an <see cref="IDataReader"/>, from the current one on, into its own <see cref="DataTable"/>.
 	/// </summary>
-	/// <param name="reader">The IDataReader to load data from.</param>
-	/// <returns>The resultant list of DataTables.</returns>
+	/// <remarks>
+	/// It calls <see cref="IDataReader.NextResult"/> to check for more results, so the reader is left past the last one.
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <returns>A list of tables, one for each result set.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static List<DataTable> ToDataTables(this IDataReader reader)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -875,10 +1007,18 @@ public static class DataReaderExtensions
 		return results;
 	}
 
-	// Hands DataTable.Load one result set of a reader without letting it move the real reader.
-	// Load calls NextResult after the set and Close after the last one; here NextResult says there is no more
-	// (a true would make Load loop forever on a result set without columns) and Close does nothing,
-	// so the caller's NextResult and Close still work. Everything else goes to the real reader.
+	/// <summary>
+	/// Hands <see cref="DataTable.Load(IDataReader)"/> one result set of a reader without letting it move the real reader.
+	/// </summary>
+	/// <remarks>
+	/// <c>Load</c> calls <c>NextResult</c> after the set and <c>Close</c> after the last one.
+	/// Here <c>NextResult</c> says there is no more
+	/// (returning <see langword="true"/> would make <c>Load</c> loop forever on a result set without columns)
+	/// and <c>Close</c> does nothing,
+	/// so the caller's <c>NextResult</c> and <c>Close</c> still work.
+	/// Everything else goes to the real reader.
+	/// </remarks>
+	/// <param name="reader">The reader to forward to.</param>
 	private sealed class SingleResultSetReader(IDataReader reader) : IDataReader
 	{
 		public object this[int i] => reader[i];
@@ -917,42 +1057,12 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Iterates an <see cref="IDataReader"/> while the predicate returns true;
+	/// Iterates the remaining records of the current result set of an <see cref="IDataReader"/> while a predicate returns <see langword="true"/>;
 	/// the reader's connection is held while each row is processed.
 	/// </summary>
 	/// <remarks>
-	/// <note type="caution">
-	/// <b>This is not the recommended way to read rows: it holds the
-	/// connection while your code runs for each row.</b>
-	/// The reader, and the connection under it, stay open for as long as
-	/// your code takes per row, added up over all the rows.
-	/// The same holds when you pass in a reader you opened yourself:
-	/// the connection under it is held.
-	/// <br/>
-	/// <br/>
-	/// In async code that time has no bound: every <c>await</c> in the
-	/// loop body can yield, and nothing says when the loop resumes.
-	/// Until it does, the connection is on hold: a pooled connection is
-	/// not returned to the pool, and the server may keep its locks and the
-	/// open result set.
-	/// <br/>
-	/// <br/>
-	/// These members suit work that must happen while the connection is
-	/// open, for example a result too large to buffer or a row-by-row
-	/// pipeline.
-	/// Otherwise use a call that lets go of the connection first:
-	/// <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// and
-	/// <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// buffer the rows and release the connection
-	/// (call <c>.Map&lt;T&gt;()</c> first), and
-	/// <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
-	/// streams them to a consumer without holding it
-	/// (the producer is unbounded: it reads without waiting for the
-	/// consumer and frees the connection while the consumer takes its
-	/// time, and the rows wait in memory until the consumer takes them;
-	/// dispose the enumerator, as <c>await foreach</c> does).
-	/// </note>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
 	/// <para>
 	/// The token is checked before each read:
 	/// a cancel throws, and the read is not made.
@@ -965,9 +1075,12 @@ public static class DataReaderExtensions
 	/// that ends the iteration without an exception.
 	/// </para>
 	/// </remarks>
-	/// <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
-	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
-	/// <param name="cancellationToken">An optional cancellation token for stopping the iteration.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='predicate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="predicate"/> is <see langword="null"/>.
+	/// </exception>
 	/// <exception cref="OperationCanceledException">
 	/// The token was canceled.
 	/// </exception>
@@ -993,6 +1106,7 @@ public static class DataReaderExtensions
 		}
 	}
 
+	/// <returns>A task that represents the asynchronous iteration.</returns>
 	/// <inheritdoc
 	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"/>
 	public static async ValueTask IterateWhileAsync(
@@ -1010,10 +1124,11 @@ public static class DataReaderExtensions
 			&& predicate(reader)) { }
 	}
 
-	/// <param name="reader">The DbDataReader to load data from.</param>
-	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
-	/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
+	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='predicate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>A task that represents the asynchronous iteration.</returns>
 	/// <inheritdoc
 	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"
 	/// path="/*[not(self::param)]"/>
@@ -1051,6 +1166,7 @@ public static class DataReaderExtensions
 		}
 	}
 
+	/// <returns>A task that represents the asynchronous iteration.</returns>
 	/// <inheritdoc
 	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"/>
 	public static async ValueTask IterateWhileAsync(
@@ -1076,10 +1192,21 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <param name="reader">The <see cref="IDataReader"/> to iterate.</param>
-	/// <param name="predicate">The handler function that processes each <see cref="IDataRecord"/> and decides if iteration should continue.</param>
-	/// <param name="useReadAsync">If true will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <param name="predicate">
+	/// The asynchronous function to call for each <see cref="IDataRecord"/>.
+	/// It returns <see langword="true"/> to continue with the next record,
+	/// or <see langword="false"/> to stop.
+	/// </param>
+	/// <param name="useReadAsync">
+	/// <see langword="true"/> to read the rows with <c>ReadAsync</c>, so the
+	/// provider can cancel a read itself (a reader that is not a
+	/// <see cref="DbDataReader"/> is always read with <c>Read</c>);
+	/// <see langword="false"/> to read them with <c>Read</c>, checking the
+	/// token before each read.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>A task that represents the asynchronous iteration.</returns>
 	/// <inheritdoc
 	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"
 	/// path="/*[not(self::param)]"/>
@@ -1096,10 +1223,17 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Reads the first column values from every record.
-	/// <see cref="DBNull"/> values are then converted to null.
+	/// Reads the first column of every remaining record of the current result set.
 	/// </summary>
-	/// <returns>The enumerable first ordinal values.</returns>
+	/// <remarks>
+	/// <para>
+	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <returns>An enumerable of the values of the first column.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static IEnumerable<object?> FirstOrdinalResults(this IDataReader reader)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -1114,20 +1248,39 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Reads the first column values from every record.
-	/// Any<see cref="DBNull"/> values are then converted to null and casted to type T0;
+	/// Reads the first column of every remaining record of the current result set as type <typeparamref name="T0"/>.
 	/// </summary>
-	/// <returns>The enumerable of casted values.</returns>
+	/// <remarks>
+	/// <para>
+	/// If the reader is a <see cref="DbDataReader"/>, a database null
+	/// becomes <see langword="default"/> for <typeparamref name="T0"/>;
+	/// otherwise <see cref="DBNull"/> values are converted to
+	/// <see langword="null"/> and then cast to <typeparamref name="T0"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <typeparam name="T0">The expected type of the first column.</typeparam>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
+	/// <returns>An enumerable of the values of the first column, cast to <typeparamref name="T0"/>.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDataReader reader)
 		=> reader is DbDataReader dbr
 		? dbr.FirstOrdinalResults<T0>()
 		: reader.FirstOrdinalResults().Cast<T0>();
 
 	/// <summary>
-	/// Reads the first column values from every record.
-	/// Any<see cref="DBNull"/> values are then converted to null and casted to type T0;
+	/// Reads the first column of every remaining record of the current result set as type <typeparamref name="T0"/>.
 	/// </summary>
-	/// <returns>The enumerable of casted values.</returns>
+	/// <remarks>
+	/// <para>
+	/// A database null becomes <see langword="default"/> for <typeparamref name="T0"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <typeparam name="T0">The expected type of the first column.</typeparam>
+	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
+	/// <returns>An enumerable of the values of the first column, as <typeparamref name="T0"/>.</returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbDataReader reader)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -1141,13 +1294,22 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Reads the first column values from every record.
-	/// <see cref="DBNull"/> values are converted to null.
+	/// Asynchronously reads the first column of every remaining record of the current result set.
 	/// </summary>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <returns>The list of values.</returns>
+	/// <remarks>
+	/// <para>
+	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is an enumerable of the values of the first column.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static async ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -1159,13 +1321,23 @@ public static class DataReaderExtensions
 	}
 
 	/// <summary>
-	/// Reads the first column values from every record.
-	/// Any<see cref="DBNull"/> values are then converted to null and casted to type T0;
+	/// Asynchronously reads the first column of every remaining record of the current result set as type <typeparamref name="T0"/>.
 	/// </summary>
-	/// <param name="reader">The IDataReader to iterate.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <returns>The enumerable of casted values.</returns>
+	/// <remarks>
+	/// <para>
+	/// A database null becomes <see langword="default"/> for <typeparamref name="T0"/>.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <typeparam name="T0">The expected type of the first column.</typeparam>
+	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is an enumerable of the values of the first column, as <typeparamref name="T0"/>.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static async ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));

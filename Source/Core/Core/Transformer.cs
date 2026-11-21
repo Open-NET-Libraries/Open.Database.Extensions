@@ -2,13 +2,19 @@
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
-/// Utility of transforming retrieved data into models matching the type parameter provided.
+/// Transforms retrieved data into models of type <typeparamref name="T"/>.
 /// </summary>
 /// <remarks>
-/// The mapping is a compiled, cached <see cref="RowMap{T}"/>: constructing a transformer and applying it to
-/// a result no longer rebuilds lookups or property setters per query.
-/// A model is built as <c>Map&lt;T&gt;()</c> builds it: a type with a public parameterless constructor with <c>new T()</c>, then its properties are set; any other type through its one public constructor, then the properties it does not cover.
+/// <para>
+/// The mapping is a compiled, cached <see cref="RowMap{T}"/>:
+/// constructing a transformer and applying it to a result does not rebuild lookups or property setters per query.
+/// </para>
+/// <para>
+/// A model is built as <c>Map&lt;T&gt;()</c> builds it:
+/// a type with a public parameterless constructor with <c>new T()</c>, then its properties are set;
+/// any other type through its one public constructor, then the properties it does not cover.
 /// A type that cannot be mapped throws <see cref="InvalidOperationException"/> when the transformer is created (see <see cref="RowMap{T}"/>).
+/// </para>
 /// </remarks>
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
 public class Transformer<T>
@@ -16,71 +22,84 @@ public class Transformer<T>
 	const string ResultsObsolete = "Use table.Map(map).ToList() instead, where map is the RowMap<T> you gave Transformer<T>.Create. It returns a List<T>, not a lazy enumerable, and has no clearTable argument: clear the table yourself after reading it. Removed in 12.";
 
 	/// <summary>
-	/// Maximum number of arrays to hold in the local array pool per bucket.
-	/// May also define how many records are pre buffered before transforming.
+	/// The maximum number of arrays to hold in the local array pool per bucket.
+	/// May also define how many records are pre-buffered before transforming.
 	/// </summary>
 	protected const int MaxArrayBuffer = 1024;
 
 	/// <summary>
-	/// Buffers for transforming.
+	/// The pool of buffers for transforming.
 	/// </summary>
 	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter.", Justification = "<Pending>")]
 	protected internal static readonly ArrayPool<object> LocalPool = ArrayPool<object>.Create(1024, MaxArrayBuffer);
 
 	/// <summary>
-	/// The type of <typeparamref name="T"/>.
+	/// Gets the <see cref="System.Type"/> of <typeparamref name="T"/>.
 	/// </summary>
+	/// <value>The type of the model that the transformer creates.</value>
 	public Type Type => typeof(T);
 
 	readonly RowMap<T> _plan;
 
 	/// <summary>
-	/// The property names.
+	/// Gets the property names.
 	/// </summary>
+	/// <value>The names of the properties of <typeparamref name="T"/> that the map reads a column into.</value>
 	public IEnumerable<string> PropertyNames => _plan.PropertyNames;
 
 	/// <summary>
-	/// The column names.
+	/// Gets the column names.
 	/// </summary>
+	/// <value>The names of the columns that the mapped properties read.</value>
 	public IEnumerable<string> ColumnNames => _plan.ColumnNames;
 
 	/// <summary>
-	/// The columns of the record that feed a property, as their ordinals in ascending order and, aligned with them, their names, matched exactly as a row read matches them (exactly, ignoring case, then ignoring underscores).
+	/// Finds the columns of the record that feed a property.
 	/// </summary>
+	/// <remarks>
+	/// The columns are returned as their ordinals in ascending order and, aligned with them, their names,
+	/// matched exactly as a row read matches them (exactly, ignoring case, then ignoring underscores).
+	/// </remarks>
+	/// <param name="record">The record whose columns are matched.</param>
+	/// <param name="ordinals">The ordinals of the columns that feed a property, in ascending order.</param>
+	/// <param name="names">The names of those columns, aligned with <paramref name="ordinals"/>.</param>
 	internal void MatchingColumns(IDataRecord record, out int[] ordinals, out ImmutableArray<string> names) => _plan.MatchingColumns(record, out ordinals, out names);
 
 	/// <summary>
-	/// Constructs a transformer using the optional map.
+	/// Initializes a new instance of the <see cref="Transformer{T}"/> class using the optional map.
 	/// </summary>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map']/*" />
 	protected internal Transformer(RowMap<T>? map = null)
 		=> _plan = map ?? RowMap<T>.Default;
 
-	/// <inheritdoc cref="Create(RowMap{T}?)"/>
+	/// <summary>
+	/// Creates a transformer that reads by column name.
+	/// </summary>
+	/// <returns>A new <see cref="Transformer{T}"/>.</returns>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(1)]
 	public static Transformer<T> Create() => new();
 
 	/// <summary>
-	/// Static utility for creating a Transformer <typeparamref name="T"/>.
+	/// Creates a <see cref="Transformer{T}"/>.
 	/// </summary>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
+	/// <remarks>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map-declare-once']/*" />
+	/// </remarks>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map']/*" />
+	/// <returns>A new transformer that uses <paramref name="map"/>.</returns>
 	/// <seealso cref="RowMap{T}"/>
 	public static Transformer<T> Create(RowMap<T>? map)
 		=> new(map);
 
 	/// <summary>
-	/// A sub class for processing the transformer results.
+	/// Processes the results of the transformer.
 	/// </summary>
-	/// <remarks>
-	/// Constructs a processor.
-	/// </remarks>
 	/// <param name="transformer">The transformer to use.</param>
 	protected class Processor(Transformer<T> transformer)
 	{
 		/// <summary>
-		/// Constructs a processor.
+		/// Initializes a new instance of the <see cref="Processor"/> class for the named columns.
 		/// </summary>
 		/// <param name="transformer">The transformer to use.</param>
 		/// <param name="names">The names of columns/properties to acquire.</param>
@@ -88,29 +107,42 @@ public class Transformer<T>
 			: this(transformer) => SetNames(names);
 
 		/// <summary>
-		/// The transformer being used.
+		/// Gets the transformer being used.
 		/// </summary>
+		/// <value>The transformer the processor was created with.</value>
 		public Transformer<T> Transformer { get; } = transformer;
 
 		/// <summary>
-		/// The resultant transform function. Until <see cref="SetNames"/> gives it columns, it builds <typeparamref name="T"/> from no columns: its properties keep their initializers and its constructor parameters take their declared defaults.
+		/// Gets the resultant transform function.
 		/// </summary>
+		/// <value>A function that creates a <typeparamref name="T"/> from an array of column values.</value>
+		/// <remarks>
+		/// Until <see cref="SetNames"/> gives it columns, it builds <typeparamref name="T"/> from no columns:
+		/// its properties keep their initializers and its constructor parameters take their declared defaults.
+		/// It is built from the map on first use, and only when no names were set;
+		/// a static default could not reach the instance's map, and <c>new T()</c> no longer compiles.
+		/// </remarks>
 		public Func<object?[], T> Transform
 		{
-			// Built from the plan on first use, and only when no names were set; a static default could not reach the instance's plan, and `new T()` no longer compiles.
 			get => field ??= Transformer._plan.ArrayMapper([]);
 			private set;
 		}
 
 		/// <summary>
-		/// Allows for deferred initialization.
+		/// Sets the columns to process, which allows for deferred initialization.
 		/// </summary>
 		/// <param name="names">The column/property names to process.</param>
 		public void SetNames(ImmutableArray<string> names)
 			=> Transform = Transformer._plan.ArrayMapper(names);
 	}
 
-	/// <inheritdoc cref="AsDequeueingEnumerable(QueryResult{Queue{object[]}}, ArrayPool{object}, bool)" />
+	/// <summary>
+	/// Dequeues the results and transforms each one by one during enumeration.
+	/// </summary>
+	/// <param name="results">The results to process.</param>
+	/// <returns>A dequeuing enumerable of the transformed results.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="results"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ValueMappingException">A required property has no column in the results.</exception>
 	public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results)
 	{
 		if (results is null) throw new ArgumentNullException(nameof(results));
@@ -124,8 +156,10 @@ public class Transformer<T>
 	/// </summary>
 	/// <param name="results">The results to process.</param>
 	/// <param name="arrayPool">The array pool to return the buffers to.</param>
-	/// <param name="clearArrays">Indicates whether the contents of the buffers should be cleared before reuse.</param>
+	/// <param name="clearArrays"><see langword="true"/> to clear the columns written to the buffers before they go back to the pool; otherwise, <see langword="false"/>. The default is <see langword="false"/>.</param>
 	/// <returns>A dequeuing enumerable of the transformed results.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="results"/> or <paramref name="arrayPool"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ValueMappingException">A required property has no column in the results.</exception>
 	public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results, ArrayPool<object> arrayPool, bool clearArrays = false)
 	{
 		if (results is null) throw new ArgumentNullException(nameof(results));
@@ -135,13 +169,24 @@ public class Transformer<T>
 		return Drain(results.Result, _plan.ArrayMapper(results.Names), arrayPool, clearArrays, results.ColumnCount);
 	}
 
-	// Each row leaves the queue as it is mapped, so it can be collected while the rest are still pending.
+	/// <summary>
+	/// Dequeues the rows and maps each one during enumeration.
+	/// </summary>
+	/// <remarks>
+	/// Each row leaves the queue as it is mapped, so it can be collected while the rest are still pending.
+	/// </remarks>
 	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map)
 	{
 		while (queue.Count > 0)
 			yield return map(queue.Dequeue());
 	}
 
+	/// <summary>
+	/// Dequeues the rows and maps each one during enumeration, then returns its array to the pool.
+	/// </summary>
+	/// <remarks>
+	/// Only the columns were written, so only they are cleared (when asked): the rest of a rented array was never used.
+	/// </remarks>
 	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map, ArrayPool<object> pool, bool clear, int columnCount)
 	{
 		while (queue.Count > 0)
@@ -164,13 +209,20 @@ public class Transformer<T>
 	}
 
 	/// <summary>
-	/// Obsolete: use table.Map(map).ToList().
-	/// Processes the data from the data table into a queue. Then dequeues the results and transforms each one by one during enumeration.
+	/// Obsolete: use <c>table.Map(map).ToList()</c>.
+	/// Processes the data from the data table into a queue, then dequeues the results and transforms each one by one during enumeration.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
+	/// <remarks>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='obsolete-12']/*" />
+	/// <para>
+	/// That page has the difference and a before/after example.
+	/// </para>
+	/// </remarks>
 	/// <param name="table">The data to process.</param>
-	/// <param name="clearTable">If true, will clear the table after buffering the data.</param>
+	/// <param name="clearTable"><see langword="true"/> to clear the table after buffering the data; otherwise, <see langword="false"/>.</param>
 	/// <returns>A dequeuing enumerable of the transformed results.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="table"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ValueMappingException">A required property has no column in the table; the table is not cleared then.</exception>
 	[Obsolete(ResultsObsolete)]
 	public IEnumerable<T> Results(DataTable table, bool clearTable)
 	{

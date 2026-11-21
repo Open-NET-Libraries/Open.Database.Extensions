@@ -1,12 +1,24 @@
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
-/// Reads one column as the requested type through the provider's typed getter when there is one, so common
-/// value types are not boxed on the way out (other types fall back to <c>GetFieldValue&lt;T&gt;</c>, which may box).
-/// <c>NULL</c> reads as <c>default</c>.
+/// Reads one column as the requested type through the provider's typed getter when there is one.
 /// </summary>
+/// <remarks>
+/// Common value types are not boxed on the way out.
+/// Other types fall back to <see cref="DbDataReader.GetFieldValue{T}(int)"/>, which may box.
+/// <c>NULL</c> reads as <see langword="default"/>.
+/// </remarks>
 internal static class ColumnReader
 {
+	/// <summary>
+	/// Reads the column at <paramref name="ordinal"/> as <typeparamref name="T"/>.
+	/// </summary>
+	/// <typeparam name="T">The type to read the column as.</typeparam>
+	/// <param name="reader">The reader positioned on a row.</param>
+	/// <param name="ordinal">The zero-based ordinal of the column.</param>
+	/// <returns>
+	/// The column's value, or <see langword="default"/> when the column is <c>NULL</c>.
+	/// </returns>
 	public static T Get<T>(DbDataReader reader, int ordinal)
 	{
 		if (reader.IsDBNull(ordinal)) return default!;

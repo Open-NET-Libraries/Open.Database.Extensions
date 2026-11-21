@@ -1,8 +1,8 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// A query defined once: the command text (or stored procedure name) and
-/// its timeout, with no connection.
+/// Represents a query defined once: the command text (or stored procedure
+/// name) and its timeout, with no connection.
 /// Immutable and safe to keep in a <see langword="static"/> field and share.
 /// </summary>
 /// <remarks>
@@ -10,7 +10,7 @@ namespace Open.Database.Extensions;
 /// Bind it to where connections come from with <c>Using</c>, add the values
 /// with <c>AddParam</c> (or <c>AddParams</c>), then map and read as usual:
 /// </para>
-/// <code>
+/// <code language="csharp">
 /// static readonly DbQuery PostsByAuthor
 ///     = DbQuery.Procedure("dbo.PostsByAuthor");
 ///
@@ -41,17 +41,31 @@ public sealed class DbQuery : IEquatable<DbQuery>
 		TextNames = textNames;
 	}
 
-	// The @name markers of a text definition, found once when it is made (a definition
-	// is a static field), so a call that derives names scans nothing. null for a
-	// procedure, whose names are remembered per source (ProcedureNameCache).
-	// A set with no names means "not known": each argument is sent as written.
+	/// <summary>
+	/// Gets the <c>@name</c> markers of a text definition, found once when it
+	/// is made; <see langword="null"/> for a procedure.
+	/// </summary>
+	/// <remarks>
+	/// A definition is a <see langword="static"/> field, so a call that
+	/// derives names scans nothing.
+	/// A procedure's names are remembered per source
+	/// (<c>ProcedureNameCache</c>).
+	/// A set with no names means "not known": each argument is sent as
+	/// written.
+	/// </remarks>
 	internal NameSet? TextNames { get; }
 
-	// What the members of a values type matched, once per definition, values type
-	// and set of names: the real name of each member in member order (null: the
-	// command does not take it). Up to four are kept, newest first (a definition used with
-	// more values types, or on more sets of names, drops the oldest), so values
-	// types used in turn cost nothing once matched.
+	/// <summary>
+	/// What the members of a values type matched, once per definition, values
+	/// type and set of names.
+	/// </summary>
+	/// <remarks>
+	/// It holds the real name of each member in member order
+	/// (<see langword="null"/>: the command does not take it).
+	/// Up to four are kept, newest first (a definition used with more values
+	/// types, or on more sets of names, drops the oldest), so values types
+	/// used in turn cost nothing once matched.
+	/// </remarks>
 	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved)
 	{
 		public Type Type { get; } = type;
@@ -71,10 +85,16 @@ public sealed class DbQuery : IEquatable<DbQuery>
 
 	internal CommandType Kind { get; }
 
-	// -1 when no timeout was set: the provider's default applies.
+	/// <summary>
+	/// Gets the command timeout in seconds, or -1 when no timeout was set:
+	/// the provider's default applies.
+	/// </summary>
 	internal int Timeout { get; }
 
 	/// <summary>Defines a query from SQL text.</summary>
+	/// <remarks>
+	/// The <c>@name</c> markers of the text are found once, here.
+	/// </remarks>
 	/// <param name="sql">The SQL text.</param>
 	/// <returns>The definition.</returns>
 	/// <exception cref="ArgumentNullException">
@@ -248,7 +268,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 }
 
 /// <summary>
-/// A <see cref="DbQuery"/> that declared the type of its values.
+/// Represents a <see cref="DbQuery"/> that declared the type of its values.
 /// </summary>
 /// <typeparam name="TParams">
 /// The type of the values: a <see langword="struct"/> whose public

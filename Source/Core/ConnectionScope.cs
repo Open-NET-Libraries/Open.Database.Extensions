@@ -1,15 +1,23 @@
 namespace Open.Database.Extensions;
 
-// How a scope lets go of its connection when it is disposed. Chosen by whatever made it.
+/// <summary>
+/// How a scope lets go of its connection when it is disposed. Chosen by whatever made the scope.
+/// </summary>
 enum ScopeEnd : byte
 {
-	// A connection the caller already holds: close it if the scope opened it.
+	/// <summary>
+	/// A connection the caller already holds: close it if the scope opened it.
+	/// </summary>
 	Close = 0,
 
-	// A connection a factory created: dispose it.
+	/// <summary>
+	/// A connection a factory created: dispose it.
+	/// </summary>
 	Dispose,
 
-	// A connection rented from a pool: give it back; the pool decides what that means.
+	/// <summary>
+	/// A connection rented from a pool: give it back; the pool decides what that means.
+	/// </summary>
 	Give,
 }
 
@@ -49,14 +57,14 @@ enum ScopeEnd : byte
 /// <para>
 /// When you already hold the connection the scope is usually only there to be disposed:
 /// </para>
-/// <code>
+/// <code language="csharp">
 /// await using var _ = await connection.EnsureOpenScopeAsync(cancellationToken);
 /// // ... use the connection you already hold.
 /// </code>
 /// <para>
 /// When the connection came from a factory or a pool the scope is how you get it:
 /// </para>
-/// <code>
+/// <code language="csharp">
 /// await using var scope = await factory.EnsureOpenScopeAsync(cancellationToken);
 /// var connection = scope.Connection;
 /// </code>
@@ -93,14 +101,24 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 	readonly ScopeEnd _end;
 	readonly IDbConnectionPool? _pool;
 
-	// The caller's own connection: closed again if the scope opened it.
+	/// <summary>
+	/// Creates a scope for the caller's own connection: closed again if the scope opened it.
+	/// </summary>
+	/// <param name="connection">The connection the caller holds.</param>
+	/// <param name="priorState">The state the connection was found in.</param>
 	internal ConnectionScope(TConnection connection, ConnectionState priorState)
 	{
 		_connection = connection;
 		PriorState = priorState;
 	}
 
-	// A connection a factory created: disposed.
+	/// <summary>
+	/// Creates a scope that ends the way <paramref name="end"/> says.
+	/// Used for a connection a factory created, which is disposed.
+	/// </summary>
+	/// <param name="connection">The connection.</param>
+	/// <param name="priorState">The state the connection was found in.</param>
+	/// <param name="end">How the scope lets go of the connection.</param>
 	internal ConnectionScope(
 		TConnection connection,
 		ConnectionState priorState,
@@ -108,7 +126,12 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 		: this(connection, priorState)
 		=> _end = end;
 
-	// A connection rented from a pool: given back to that pool.
+	/// <summary>
+	/// Creates a scope for a connection rented from a pool: given back to that pool.
+	/// </summary>
+	/// <param name="connection">The connection.</param>
+	/// <param name="priorState">The state the connection was found in.</param>
+	/// <param name="pool">The pool the connection was taken from.</param>
 	internal ConnectionScope(
 		TConnection connection,
 		ConnectionState priorState,
@@ -119,18 +142,20 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 		_pool = pool;
 	}
 
-	/// <summary>The connection, open for as long as the scope has not been disposed.</summary>
+	/// <summary>Gets the connection, open for as long as the scope has not been disposed.</summary>
+	/// <value>The connection the scope holds.</value>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> scope.</exception>
 	public TConnection Connection
 		=> _connection ?? throw new InvalidOperationException(
 			"This scope was not created by an EnsureOpenScope call; a default value has no connection.");
 
 	/// <summary>
-	/// The state the connection was in when the scope was made (not its state now):
+	/// Gets the state the connection was in when the scope was made (not its state now):
 	/// for example <see cref="ConnectionState.Closed"/>, or <see cref="ConnectionState.Open"/> (possibly
 	/// with <see cref="ConnectionState.Executing"/> or <see cref="ConnectionState.Fetching"/>),
 	/// or with <see cref="ConnectionState.Broken"/> set.
 	/// </summary>
+	/// <value>The state the connection was in when the scope was made.</value>
 	public ConnectionState PriorState { get; }
 
 	/// <summary>Splits the scope into the connection and the state it was found in.</summary>
@@ -176,6 +201,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 	/// <see cref="DbConnection"/> (on netstandard2.0, which has no <c>CloseAsync</c>, it calls
 	/// <c>Close</c>). Giving a connection back to a pool is synchronous.
 	/// </summary>
+	/// <returns>A task that represents the asynchronous dispose operation.</returns>
 	public ValueTask DisposeAsync()
 	{
 		if (_connection is null) return default;
@@ -218,7 +244,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 	/// <remarks>
 	/// A reader that outlives the scope still closes what the scope opened, because the connection
 	/// closes when the reader does:
-	/// <code>
+	/// <code language="csharp">
 	/// var scope = await connection.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 	/// await using var disposal = scope.ConfigureAwait(false);
 	/// await using var reader = await command
@@ -228,7 +254,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 	/// A connection that was already open is left open: nothing is added. A <see langword="default"/> scope
 	/// opened nothing, so it adds nothing either.
 	/// </remarks>
-	/// <param name="behavior">The behavior to start from.</param>
+	/// <param name="behavior">The behavior to start from. The default is <see cref="CommandBehavior.Default"/>.</param>
 	/// <returns>The behavior to pass to the command.</returns>
 	public CommandBehavior ReaderBehavior(CommandBehavior behavior = CommandBehavior.Default)
 		=> _connection is not null
@@ -236,11 +262,11 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 			: behavior;
 
 	/// <summary>
-	/// Configures how the disposal of this scope is awaited by <c>await using</c>, without boxing the scope.
+	/// Configures how the disposal of this scope is awaited by <see langword="await"/> <see langword="using"/>, without boxing the scope.
 	/// </summary>
 	/// <remarks>
-	/// Library code takes the scope first, then hands it to <c>await using</c> on its own line:
-	/// <code>
+	/// Library code takes the scope first, then hands it to <see langword="await"/> <see langword="using"/> on its own line:
+	/// <code language="csharp">
 	/// var scope = await connection.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 	/// await using var disposal = scope.ConfigureAwait(false);
 	/// </code>
@@ -262,7 +288,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 /// <summary>
 /// A <see cref="ConnectionScope{TConnection}"/> whose disposal is awaited as configured by
 /// <see cref="ConnectionScope{TConnection}.ConfigureAwait(bool)"/>. It exists only so that
-/// <c>await using</c> of the scope allocates nothing.
+/// <see langword="await"/> <see langword="using"/> of the scope allocates nothing.
 /// </summary>
 /// <remarks>
 /// The scope is a struct, and the BCL <c>IAsyncDisposable.ConfigureAwait</c> extension would box it; this
@@ -277,6 +303,13 @@ public readonly struct ConfiguredConnectionScope<TConnection>
 	readonly ConnectionScope<TConnection> _scope;
 	readonly bool _continueOnCapturedContext;
 
+	/// <summary>
+	/// Creates the configured scope that <see cref="ConnectionScope{TConnection}.ConfigureAwait(bool)"/> returns.
+	/// </summary>
+	/// <param name="scope">The scope to dispose.</param>
+	/// <param name="continueOnCapturedContext">
+	/// <see langword="true"/> to continue on the captured context after the disposal; otherwise <see langword="false"/>.
+	/// </param>
 	internal ConfiguredConnectionScope(
 		ConnectionScope<TConnection> scope,
 		bool continueOnCapturedContext)

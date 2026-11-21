@@ -29,7 +29,9 @@ public static partial class CoreExtensions
 			reader.AsEnumerableInternal(o, readStarted, arrayPool));
 	}
 
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})"/>
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-results']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader)
 	{
 		// GetNames guards reader.
@@ -39,8 +41,15 @@ public static partial class CoreExtensions
 			reader.AsEnumerable());
 	}
 
-	// Builds [0, 1, ... n-1] directly as an ImmutableArray (exact capacity, and reused zero-copy by
-	// QueryResult) instead of an Enumerable.Range that a growing ToImmutableArray would then copy.
+	/// <summary>
+	/// Builds the ordinals <c>[0, 1, ... count - 1]</c> directly as an <see cref="ImmutableArray{T}"/>.
+	/// </summary>
+	/// <remarks>
+	/// The array has the exact capacity and is reused zero-copy by <c>QueryResult</c>,
+	/// instead of an <c>Enumerable.Range</c> that a growing <c>ToImmutableArray</c> would then copy.
+	/// </remarks>
+	/// <param name="count">The number of ordinals.</param>
+	/// <returns>The ordinals.</returns>
 	static ImmutableArray<int> IdentityOrdinals(int count)
 	{
 		var b = ImmutableArray.CreateBuilder<int>(count);
@@ -49,25 +58,36 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Iterates all records within the current result set using an <see cref="IDataReader"/> and returns the desired results.
+	/// Reads the records of the current result set of an <see cref="IDataReader"/> and returns them with their column mappings.
 	/// </summary>
 	/// <remarks><see cref="DBNull"/> values are left unchanged (retained).</remarks>
-	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-results']/*" />
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
 	/// <returns>The query result that contains all the results and the column mappings.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="ordinals"/> is <see langword="null"/>.
+	/// </exception>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, IEnumerable<int> ordinals)
 		=> RetrieveInternal(reader, ordinals); // GetNames guards reader.
 
-	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-results']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, int n, params IEnumerable<int> others)
 		=> RetrieveInternal(reader, others.Prepend(n));
 
-	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
-	/// <param name="columnNames">The column names to select.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-results']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='columnNames-select']/*" />
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="columnNames"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="IndexOutOfRangeException">
+	/// A requested column does not exist. The message lists all the invalid names.
+	/// </exception>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, IEnumerable<string> columnNames)
 	{
 		// GetOrdinalMapping returns early for an empty list without touching reader.
@@ -80,48 +100,75 @@ public static partial class CoreExtensions
 			columns.Select(c => c.Name));
 	}
 
-	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
-	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining column names to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-results']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='c-others']/*" />
+	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="IndexOutOfRangeException">
+	/// A requested column does not exist. The message lists all the invalid names.
+	/// </exception>
 	public static QueryResultQueue<object[]> Retrieve(this IDataReader reader, string c, params IEnumerable<string> others)
 		=> Retrieve(reader, others.Prepend(c));
 
-	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
-	/// <param name="behavior">The <see cref="CommandBehavior"/> flags to use with the data reader.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <param name="behavior">
+	/// The behavior to use with the data reader.
+	/// <see cref="CommandBehavior.SequentialAccess"/> is added to it.
+	/// The default is <see cref="CommandBehavior.Default"/>.
+	/// </param>
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, CommandBehavior behavior = CommandBehavior.Default)
 		=> command.ExecuteReader(reader => reader.Retrieve(), behavior | CommandBehavior.SequentialAccess);
 
 	/// <summary>
-	/// Executes a reader and iterates all records within the remaining result set using an <see cref="IDataReader"/> and returns the desired results.
+	/// Executes a reader and returns the records of its remaining result set with their column mappings.
 	/// </summary>
 	/// <remarks>
 	/// <para><see cref="DBNull"/> values are left unchanged (retained).</para>
-	/// <para>The default behavior will open a connection, execute the reader and close the connection it if was not already open.</para></remarks>
-	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
 	/// <param name="ordinals">The ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <returns>The query result that contains all the results and the column mappings.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="ordinals"/> is <see langword="null"/>.
+	/// </exception>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, IEnumerable<int> ordinals)
 		=> command.ExecuteReader(reader => reader.Retrieve(ordinals));
 
-	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, int n, params IEnumerable<int> others)
 		=> command.ExecuteReader(reader => RetrieveInternal(reader, others.Prepend(n)));
 
-	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
-	/// <param name="columnNames">The column names to select.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='columnNames-select']/*" />
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="columnNames"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="IndexOutOfRangeException">
+	/// A requested column does not exist. The message lists all the invalid names.
+	/// </exception>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, IEnumerable<string> columnNames)
 		=> command.ExecuteReader(reader => reader.Retrieve(columnNames));
 
-	/// <param name="command">The <see cref="IDbCommand"/> to generate the reader from.</param>
-	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining column names to request from the reader for each record.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='c-others']/*" />
+	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="IndexOutOfRangeException">
+	/// A requested column does not exist. The message lists all the invalid names.
+	/// </exception>
 	public static QueryResultQueue<object[]> Retrieve(this IDbCommand command, string c, params IEnumerable<string> others)
 		=> command.ExecuteReader(reader => Retrieve(reader, others.Prepend(c)));
 
@@ -218,11 +265,12 @@ public static partial class CoreExtensions
 		}
 	}
 
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		IEnumerable<int> ordinals,
@@ -244,11 +292,13 @@ public static partial class CoreExtensions
 		params IEnumerable<int> others)
 		=> RetrieveAsync(reader, others.Prepend(n));
 
-	/// <param name="reader">The reader to enumerate.</param>
-	/// <param name="cancellationToken">A cancellation token.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{int}, bool, CancellationToken)" path="/*[not(self::param)]" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
@@ -257,14 +307,23 @@ public static partial class CoreExtensions
 		=> RetrieveAsync(reader, others.Prepend(n), cancellationToken);
 
 	/// <summary>
-	/// Asynchronously enumerates all records within the current result set using an <see cref="DbDataReader"/> and returns the desired results.
+	/// Asynchronously reads the records of the current result set of a <see cref="DbDataReader"/> and returns them with their column mappings.
 	/// </summary>
+	/// <remarks><see cref="DBNull"/> values are left unchanged (retained).</remarks>
 	/// <param name="reader">The <see cref="DbDataReader"/> to read results from.</param>
-	/// <param name="columnNames">The column names to select.</param>
-	/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="Retrieve(IDataReader, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='columnNames-select']/*" />
+	/// <param name="normalizeColumnOrder">
+	/// <see langword="true"/> to order the columns by ordinal;
+	/// <see langword="false"/> to keep the requested order.
+	/// The default is <see langword="false"/>.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is the query result that contains all the results and the column mappings.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		IEnumerable<string> columnNames,
@@ -304,11 +363,13 @@ public static partial class CoreExtensions
 		params IEnumerable<string> others)
 		=> RetrieveAsync(reader, others.Prepend(c));
 
-	/// <param name="reader">The <see cref="IDataReader"/> to read results from.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <param name="c">The first column name to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining column names to request from the reader for each record.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='c-others']/*" />
+	/// <inheritdoc cref="RetrieveAsync(DbDataReader, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbDataReader reader,
 		CancellationToken cancellationToken,
@@ -317,12 +378,20 @@ public static partial class CoreExtensions
 		=> RetrieveAsync(reader, others.Prepend(c), cancellationToken);
 
 	/// <summary>
-	/// Asynchronously executes a reader and enumerates all the remaining values of the current result set and returns the desired results.
+	/// Asynchronously executes a reader and returns the records of its remaining result set with their column mappings.
 	/// </summary>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <inheritdoc cref="Retrieve(IDbCommand, IEnumerable{int})" path="/*[not(self::param)]"/>
+	/// <remarks>
+	/// <para><see cref="DBNull"/> values are left unchanged (retained).</para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is the query result that contains all the results and the column mappings.
+	/// </returns>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		bool useReadAsync = true,
@@ -343,11 +412,12 @@ public static partial class CoreExtensions
 		bool useReadAsync = true)
 		=> command.ExecuteReaderAsync(reader => RetrieveAsyncInternal(reader, cancellationToken, ordinals, columnNames, useReadAsync: useReadAsync), cancellationToken: cancellationToken);
 
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="ordinals">The limited set of ordinals to include.  If none are specified, the returned objects will be empty.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		IEnumerable<int> ordinals,
@@ -369,11 +439,13 @@ public static partial class CoreExtensions
 		params IEnumerable<int> others)
 		=> RetrieveAsync(command, others.Prepend(n));
 
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <param name="n">The first ordinal to include in the request to the reader for each record.</param>
-	/// <param name="others">The remaining ordinals to request from the reader for each record.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="others"/> is <see langword="null"/>.
+	/// </exception>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		CancellationToken cancellationToken,
@@ -381,12 +453,29 @@ public static partial class CoreExtensions
 		params IEnumerable<int> others)
 		=> RetrieveAsync(command, others.Prepend(n), cancellationToken);
 
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="columnNames">The column names to select.</param>
-	/// <param name="normalizeColumnOrder">Orders the results arrays by ordinal.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <summary>
+	/// Asynchronously executes a reader and returns the records of its single result set with their column mappings.
+	/// </summary>
+	/// <remarks>
+	/// <para><see cref="DBNull"/> values are left unchanged (retained).</para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='columnNames-select']/*" />
+	/// <param name="normalizeColumnOrder">
+	/// <see langword="true"/> to order the columns by ordinal;
+	/// <see langword="false"/> to keep the requested order.
+	/// The default is <see langword="false"/>.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is the query result that contains all the results and the column mappings.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="columnNames"/> is <see langword="null"/>.
+	/// </exception>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		IEnumerable<string> columnNames,
@@ -417,11 +506,14 @@ public static partial class CoreExtensions
 		params IEnumerable<string> otherColumnNames)
 		=> RetrieveAsync(command, otherColumnNames.Prepend(columnName));
 
-	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='dbCommand']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
 	/// <param name="columnName">The first column name to include in the request to the reader for each record.</param>
 	/// <param name="otherColumnNames">The remaining column names to request from the reader for each record.</param>
-	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <inheritdoc cref="RetrieveAsync(DbCommand, IEnumerable{string}, bool, bool, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> or <paramref name="otherColumnNames"/> is <see langword="null"/>.
+	/// </exception>
 	public static ValueTask<QueryResultQueue<object[]>> RetrieveAsync(
 		this DbCommand command,
 		CancellationToken cancellationToken,

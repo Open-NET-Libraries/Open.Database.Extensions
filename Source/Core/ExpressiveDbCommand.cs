@@ -12,11 +12,11 @@
 /// </para>
 /// </remarks>
 /// <example>
-/// <code>
-/// List&lt;Customer&gt; customers = await connection
-///     .Command("SELECT Id, Name FROM Customers WHERE Region = @region")
-///     .AddParam("region", "West")
-///     .Map&lt;Customer&gt;()
+/// <code language="csharp">
+/// List&lt;Post&gt; posts = await connection
+///     .Command("SELECT Id, Title FROM Posts WHERE AuthorId = @authorId")
+///     .AddParam(authorId)
+///     .Map&lt;Post&gt;()
 ///     .ToListAsync(cancellationToken);
 /// </code>
 /// </example>
@@ -25,14 +25,10 @@
 public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbCommand, DbDataReader, DbType, ExpressiveDbCommand>
 {
 	/// <summary>
-	/// Constructs a command that takes its connections from a connection pool.
+	/// Initializes a new instance that takes its connections from a connection pool.
 	/// </summary>
-	/// <param name="connectionPool">The pool to take connections from. Each execution takes one and gives it back when finished.</param>
-	/// <param name="type">The command type.</param>
-	/// <param name="command">The command text or stored procedure name.</param>
-	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
-	/// <exception cref="ArgumentNullException"><paramref name="connectionPool"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorPool']/*" />
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorCommon']/*" />
 	public ExpressiveDbCommand(
 		IDbConnectionPool<DbConnection> connectionPool,
 		CommandType type,
@@ -43,14 +39,10 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	}
 
 	/// <summary>
-	/// Constructs a command that creates a new connection from a connection factory for each execution.
+	/// Initializes a new instance that creates a new connection from a connection factory for each execution.
 	/// </summary>
-	/// <param name="connFactory">The factory that creates the connections. Each execution creates a connection, opens it if needed, and disposes it when finished.</param>
-	/// <param name="type">The command type.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
-	/// <exception cref="ArgumentNullException"><paramref name="connFactory"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorFactory']/*" />
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorCommon']/*" />
 	public ExpressiveDbCommand(
 		IDbConnectionFactory<DbConnection> connFactory,
 		CommandType type,
@@ -61,14 +53,10 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	}
 
 	/// <summary>
-	/// Constructs a command that invokes a function to create a new connection for each execution.
+	/// Initializes a new instance that invokes a function to create a new connection for each execution.
 	/// </summary>
-	/// <param name="connFactory">The function that creates the connections. Each execution invokes it, opens the connection if needed, and disposes it when finished.</param>
-	/// <param name="type">The command type.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
-	/// <exception cref="ArgumentNullException"><paramref name="connFactory"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorFunc']/*" />
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorCommon']/*" />
 	public ExpressiveDbCommand(
 		Func<DbConnection> connFactory,
 		CommandType type,
@@ -79,15 +67,10 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	}
 
 	/// <summary>
-	/// Constructs a command that executes on an existing connection, optionally within a transaction.
+	/// Initializes a new instance that executes on an existing connection, optionally within a transaction.
 	/// </summary>
-	/// <param name="connection">The connection to execute on. It is opened only if it is closed, closed again afterwards if the command opened it, and never disposed.</param>
-	/// <param name="transaction">The optional transaction to execute the command in.</param>
-	/// <param name="type">The command type.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorConnectionTx']/*" />
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorCommon']/*" />
 	public ExpressiveDbCommand(
 		DbConnection connection,
 		IDbTransaction? transaction,
@@ -99,14 +82,10 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	}
 
 	/// <summary>
-	/// Constructs a command that executes on an existing connection.
+	/// Initializes a new instance that executes on an existing connection.
 	/// </summary>
-	/// <param name="connection">The connection to execute on. It is opened only if it is closed, closed again afterwards if the command opened it, and never disposed.</param>
-	/// <param name="type">The command type.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorConnection']/*" />
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorCommon']/*" />
 	public ExpressiveDbCommand(
 		DbConnection connection,
 		CommandType type,
@@ -117,14 +96,10 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	}
 
 	/// <summary>
-	/// Constructs a command that executes within a transaction, on the transaction's connection.
+	/// Initializes a new instance that executes within a transaction, on the transaction's connection.
 	/// </summary>
-	/// <param name="transaction">The transaction to execute the command in. Its <see cref="IDbTransaction.Connection"/> is used for execution.</param>
-	/// <param name="type">The command type.</param>
-	/// <param name="command">The command text, or the stored procedure name when <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.</param>
-	/// <param name="params">The initial parameters. They are copied, so later changes to the source collection do not affect the command.</param>
-	/// <exception cref="ArgumentNullException"><paramref name="transaction"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException"><paramref name="command"/> is empty or white space.</exception>
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorTx']/*" />
+	/// <include file="Commands.docs.xml" path="docs/members[@name='ctorCommon']/*" />
 	public ExpressiveDbCommand(
 		IDbTransaction transaction,
 		CommandType type,
@@ -135,7 +110,7 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	}
 
 	/// <summary>
-	/// Reads the parameter names a stored procedure declares through the ADO.NET schema collection <c>ProcedureParameters</c>, so parameters added with <c>AddParam(value)</c> find their real names on any provider that supports it (SQL Server does).
+	/// Gets the parameter names a stored procedure declares through the ADO.NET schema collection <c>ProcedureParameters</c>, so parameters added with <c>AddParam(value)</c> find their real names on any provider that supports it (SQL Server does).
 	/// </summary>
 	/// <remarks>A name with a database part (<c>otherdb.dbo.proc</c>) is not looked up, because the lookup runs in the connection's current database; a name that exists in more than one schema (when no schema is given) is not known either, and neither is anything from a provider that does not implement the collection:
 	/// in each case the last member of each argument is used as written. A failure of the lookup is thrown as it is (a <see cref="DbException"/> stays one, so a retry policy still sees it), with the procedure's name added to <see cref="Exception.Data"/> under the key <c>Procedure</c>.</remarks>
@@ -143,7 +118,14 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	protected override ImmutableArray<string> GetProcedureParameterNames(DbConnection connection, string procedure)
 		=> ProcedureSchemaNames.Get(connection, procedure);
 
-	/// <inheritdoc cref="GetProcedureParameterNames(DbConnection, string)"/>
+	/// <summary>
+	/// Asynchronously gets the parameter names a stored procedure declares
+	/// through the ADO.NET schema collection <c>ProcedureParameters</c>.
+	/// </summary>
+	/// <param name="connection">An open connection to run the lookup on.</param>
+	/// <param name="procedure">The procedure name as given to the command.</param>
+	/// <param name="cancellationToken">A token that can cancel the lookup.</param>
+	/// <inheritdoc cref="GetProcedureParameterNames(DbConnection, string)" path="/*[not(self::param) and not(self::summary)]"/>
 	protected override ValueTask<ImmutableArray<string>> GetProcedureParameterNamesAsync(DbConnection connection, string procedure, CancellationToken cancellationToken)
 		=> ProcedureSchemaNames.GetAsync(connection, procedure, cancellationToken);
 

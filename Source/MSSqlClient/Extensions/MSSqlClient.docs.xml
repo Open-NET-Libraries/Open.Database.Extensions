@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The texts the SQL Server extensions share, written here once so they cannot
+  drift apart. They are the SqlConnection, SqlTransaction and SqlCommand forms
+  of the texts in Core (Connections.docs.xml, Commands.docs.xml and
+  Readers.docs.xml), under the same keys where the meaning is the same.
+  A member includes one with
+  <include file="MSSqlClient.docs.xml" path="docs/members[@name='key']/*" />
+  (the file path is relative to the source file). A key may carry several
+  elements; an include inside <remarks> brings paragraphs. The crefs resolve
+  where the key is included.
+
+  Command creation (ConnectionProvider.Command.cs)
+  src-connection, src-transaction, src-factory, src-pool, src-func
+                      The parameter that names where the command runs.
+  command-text        The command and type parameters, and the empty text.
+  procedure           The procedureName parameter, and the empty name
+                      (also CreateStoredProcedureCommand).
+
+  Commands (ExpressiveSqlCommand.cs)
+  ctor-common, ctor-pool, ctor-factory, ctor-connection-tx,
+  ctor-connection, ctor-tx
+                      The constructor parameters and the empty command text.
+  condition           The condition parameter of AddParamIf.
+  names-failure       The failure paragraph of the procedure name lookup.
+
+  CreateCommand (Connection.CreateCommand.cs, Transaction.CreateCommand.cs)
+  create-connection   The connection parameter.
+  create-transaction  The transaction parameter.
+  create-timeout      The secondsTimeout parameter.
+  create-text         The type and commandText parameters, and the empty text.
+  create-text-command The commandText parameter of CreateTextCommand.
+  create-returns      The command returned for a connection.
+  create-returns-tx   The command returned for a transaction.
+  create-remarks      The remarks: the connection is not opened.
+
+  Parameters added to a command (Command.AddParameter.cs)
+  param-target, param-name, param-type, param-direction, param-created,
+  null-target-name, blank-name
+
+  Readers (Command.ExecuteReader.cs)
+  reader-command      The command parameter.
+  reader-handler, reader-transform, transform-T
+                      The function that receives the reader, and its type.
+  reader-behavior     The behavior parameter.
+  reader-token        The cancellationToken parameter.
+  reader-remarks      The remarks: what propagates and what is disposed.
+
+  Transactions (Transaction.cs)
+  tresult             The T type parameter: the type the action returns.
+  returns-value       Returns: the value the action returned.
+  tx-common           The connection, isolationLevel and cancellationToken
+                      parameters, and the OperationCanceledException.
+  tx-paras            The paragraphs on opening and closing the connection and
+                      on rolling back.
+  tx-async-para       The paragraph that applies to the asynchronous forms.
+-->
+<docs>
+
+  <!-- Command creation -->
+
+  <members name="src-connection">
+    <param name="connection">
+      The connection to execute on. It is opened only if it is closed, closed
+      again afterwards if the command opened it, and never disposed.
+    </param>
+  </members>
+
+  <members name="src-transaction">
+    <param name="transaction">
+      The transaction to execute in. The command runs on the transaction's
+      <see cref="IDbTransaction.Connection"/>.
+    </param>
+  </members>
+
+  <members name="src-factory">
+    <param name="connectionSource">
+      The factory that creates the connections. Each execution creates a
+      connection, opens it if needed, and disposes it when finished.
+    </param>
+  </members>
+
+  <members name="src-pool">
+    <param name="connectionSource">
+      The pool to take connections from. Each execution takes one, opens it if
+      needed, and gives it back when finished.
+    </param>
+  </members>
+
+  <members name="src-func">
+    <param name="connectionSource">
+      The function that creates the connections. Each execution invokes it,
+      opens the connection if needed, and disposes it when finished.
+    </param>
+  </members>
+
+  <members name="command-text">
+    <param name="command">
+      The command text, or the stored procedure name when
+      <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.
+    </param>
+    <param name="type">The command type. The default is <see cref="CommandType.Text"/>.</param>
+    <exception cref="ArgumentException">
+      <paramref name="command"/> is empty or white space.
+    </exception>
+  </members>
+
+  <members name="procedure">
+    <param name="procedureName">The stored procedure name.</param>
+    <exception cref="ArgumentException">
+      <paramref name="procedureName"/> is empty or white space.
+    </exception>
+  </members>
+
+  <!-- Commands -->
+
+  <members name="ctor-common">
+    <param name="type">The command type.</param>
+    <param name="command">
+      The command text, or the stored procedure name when
+      <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.
+    </param>
+    <param name="params">
+      The initial parameters.
+      They are copied, so later changes to the source collection do not affect
+      the command.
+    </param>
+    <exception cref="ArgumentException">
+      <paramref name="command"/> is empty or white space.
+    </exception>
+  </members>
+
+  <members name="ctor-pool">
+    <param name="connectionPool">
+      The pool to take connections from.
+      Each execution takes one and gives it back when finished.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connectionPool"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctor-factory">
+    <param name="connFactory">
+      The factory that creates the connections.
+      Each execution creates a connection, opens it if needed, and disposes it
+      when finished.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connFactory"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctor-connection-tx">
+    <param name="connection">
+      The connection to execute on.
+      It is opened only if it is closed, closed again afterwards if the
+      command opened it, and never disposed.
+    </param>
+    <param name="transaction">
+      The optional transaction to execute the command in.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connection"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctor-connection">
+    <param name="connection">
+      The connection to execute on.
+      It is opened only if it is closed, closed again afterwards if the
+      command opened it, and never disposed.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="connection"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="ctor-tx">
+    <param name="transaction">
+      The transaction to execute the command in.
+      Its <see cref="IDbTransaction.Connection"/> is used for execution.
+    </param>
+    <exception cref="ArgumentNullException">
+      <paramref name="transaction"/> or <paramref name="command"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="condition">
+    <param name="condition">
+      <see langword="true"/> to add the parameter; otherwise,
+      <see langword="false"/>.
+    </param>
+  </members>
+
+  <members name="names-failure">
+    <para>
+      A failure of the lookup is thrown as it is (a
+      <see cref="SqlException"/> stays a <see cref="SqlException"/>, so a retry
+      policy still sees it), with the procedure's name added to
+      <see cref="Exception.Data"/> under the key <c>Procedure</c>.
+    </para>
+  </members>
+
+  <!-- CreateCommand -->
+
+  <members name="create-connection">
+    <param name="connection">The connection to create the command from.</param>
+  </members>
+
+  <members name="create-transaction">
+    <param name="transaction">The transaction to create the command from.</param>
+  </members>
+
+  <members name="create-timeout">
+    <param name="secondsTimeout">
+      The number of seconds to wait before the command times out. The default
+      is 60 seconds.
+    </param>
+  </members>
+
+  <members name="create-text">
+    <param name="type">
+      The command type: <see cref="CommandType.Text"/>,
+      <see cref="CommandType.StoredProcedure"/>, or
+      <see cref="CommandType.TableDirect"/>.
+    </param>
+    <param name="commandText">
+      The command text, or the stored procedure name when
+      <paramref name="type"/> is <see cref="CommandType.StoredProcedure"/>.
+    </param>
+    <exception cref="ArgumentException">
+      <paramref name="commandText"/> is empty or white space.
+    </exception>
+  </members>
+
+  <members name="create-text-command">
+    <param name="commandText">The command text to use.</param>
+    <exception cref="ArgumentException">
+      <paramref name="commandText"/> is empty or white space.
+    </exception>
+  </members>
+
+  <members name="create-returns">
+    <returns>
+      A new <see cref="SqlCommand"/> that the caller owns and disposes.
+      It is not associated with a transaction.
+    </returns>
+  </members>
+
+  <members name="create-returns-tx">
+    <returns>
+      A new <see cref="SqlCommand"/> that the caller owns and disposes.
+      Its <see cref="SqlCommand.Transaction"/> is
+      <paramref name="transaction"/>.
+    </returns>
+  </members>
+
+  <members name="create-remarks">
+    <remarks>
+      The connection is not opened by this method; open it (see
+      <see cref="ConnectionExtensions.EnsureOpen(IDbConnection)"/>) before
+      executing the command.
+    </remarks>
+  </members>
+
+  <!-- Parameters added to a command -->
+
+  <members name="param-target">
+    <param name="target">The command to add the parameter to.</param>
+  </members>
+
+  <members name="param-name">
+    <param name="name">The name of the parameter.</param>
+  </members>
+
+  <members name="param-type">
+    <param name="type">The <see cref="SqlDbType"/> of the parameter.</param>
+  </members>
+
+  <members name="param-direction">
+    <param name="direction">The direction of the parameter.</param>
+  </members>
+
+  <members name="param-created">
+    <returns>
+      The created parameter, which has already been added to the command's
+      parameter collection.
+    </returns>
+  </members>
+
+  <members name="null-target-name">
+    <exception cref="ArgumentNullException">
+      <paramref name="target"/> or <paramref name="name"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="blank-name">
+    <exception cref="ArgumentException">
+      <paramref name="name"/> is empty or white space.
+    </exception>
+  </members>
+
+  <!-- Readers -->
+
+  <members name="reader-command">
+    <param name="command">
+      The command to execute.
+      Its connection is opened if needed and closed again if it was opened
+      here; neither the command nor the connection is disposed.
+    </param>
+  </members>
+
+  <members name="reader-handler">
+    <param name="handler">
+      The function that reads from the reader.
+      Do not let the reader escape it.
+    </param>
+  </members>
+
+  <members name="reader-transform">
+    <param name="transform">
+      The function that reads from the reader and produces the result.
+      Do not let the reader escape it.
+    </param>
+  </members>
+
+  <members name="transform-T">
+    <typeparam name="T">The return type of the transform function.</typeparam>
+  </members>
+
+  <members name="reader-behavior">
+    <param name="behavior">
+      The behavior to use with the data reader.
+      <see cref="CommandBehavior.CloseConnection"/> is added when the command
+      opens a closed connection.
+      The default is <see cref="CommandBehavior.Default"/>.
+    </param>
+  </members>
+
+  <members name="reader-token">
+    <param name="cancellationToken">
+      A token that can cancel opening the connection and executing the
+      command.
+      The default is <see cref="CancellationToken.None"/>.
+    </param>
+  </members>
+
+  <members name="reader-remarks">
+    <remarks>
+      Exceptions from the provider (for example
+      <see cref="SqlException"/>) propagate unchanged.
+      The reader is disposed, and with it a connection that this method
+      opened, even when the function passed in throws.
+    </remarks>
+  </members>
+
+  <!-- Transactions -->
+
+  <members name="tresult">
+    <typeparam name="T">The type of the value returned by the action.</typeparam>
+  </members>
+
+  <members name="returns-value">
+    <returns>The value returned by the action.</returns>
+  </members>
+
+  <members name="tx-common">
+    <param name="connection">
+      The connection to begin the transaction on. It does not need to be open.
+    </param>
+    <param name="isolationLevel">The isolation level for the transaction.</param>
+    <param name="cancellationToken">
+      A token to observe while the operation runs. If it is canceled before the
+      transaction is committed, the transaction is rolled back, or is never
+      begun.
+    </param>
+    <exception cref="OperationCanceledException">
+      <paramref name="cancellationToken"/> was canceled before the transaction
+      was committed.
+    </exception>
+  </members>
+
+  <members name="tx-paras">
+    <para>
+      If the connection is not open, it is opened first and closed (not
+      disposed) when the transaction completes, even if it fails.
+      A connection that was broken is closed and opened again, so it is closed
+      afterwards too.
+      A connection that was already open is left open.
+      A failure while closing is ignored, as by then the transaction has
+      already been committed or rolled back.
+      To keep a connection open across several operations, open it before
+      calling.
+    </para>
+    <para>
+      An exception thrown by the action, or a cancellation, rolls the
+      transaction back and propagates.
+      A transaction that is not committed is rolled back by disposing it,
+      which is the standard ADO.NET pattern; the .NET documentation for
+      <see cref="System.Data.Common.DbTransaction.Dispose()"/> notes that this
+      is provider specific.
+      The transaction is always disposed before the connection is closed, as
+      some providers (for example Microsoft.Data.Sqlite and MySqlConnector)
+      only roll back an uncommitted transaction on dispose while the
+      connection is still open.
+      The action should not commit or roll back the transaction itself;
+      completion is handled here.
+      When no isolation level is given,
+      <see cref="IsolationLevel.Unspecified"/> is used.
+    </para>
+  </members>
+
+  <members name="tx-async-para">
+    <para>
+      The transaction is begun with <c>BeginTransaction</c>, not
+      <c>BeginTransactionAsync</c>, which returns a plain
+      <see cref="System.Data.Common.DbTransaction"/>:
+      this keeps the <see cref="SqlTransaction"/> type flowing to the action.
+      It is then disposed with <c>DisposeAsync</c>, committed with
+      <c>CommitAsync</c>, and the connection closed with <c>CloseAsync</c>,
+      except on .NET Framework (net472), which does all three synchronously.
+      The token is checked just before the commit, and the commit itself is not
+      canceled once it has begun: cancelling part-way through would leave the
+      outcome unknown.
+    </para>
+  </members>
+
+</docs>

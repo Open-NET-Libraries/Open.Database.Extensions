@@ -3,49 +3,74 @@ namespace Open.Database.Extensions;
 public static partial class CoreExtensions
 {
 	/// <summary>
-	/// Locks in a mapping to model type <typeparamref name="T"/> and returns a deferred
-	/// <see cref="MappedQuery{T}"/>. Nothing runs until a terminal (<c>ToList</c>/<c>FirstOrDefault</c>/…)
-	/// is invoked. The mapping is compiled once per result-set shape and cached, so repeated queries pay no
-	/// reflection or compilation cost; values are read with typed getters, so nothing is boxed.
+	/// Locks in a mapping to model type <typeparamref name="T"/> and returns a
+	/// deferred <see cref="MappedQuery{T}"/>.
+	/// Nothing runs until a terminal, such as
+	/// <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>, is invoked.
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// A type with a public parameterless constructor is built with <c>new T()</c>, and its public settable properties (<c>init</c> and <c>required</c> ones too) are set from the columns.
-	/// Any other type is built through its one public constructor (a positional record, a record struct, a class with one constructor), and the properties the constructor does not cover are set afterwards.
-	/// A <c>required</c> property needs a column.
+	/// The mapping is compiled once per result-set shape and cached, so repeated
+	/// queries pay no reflection or compilation cost;
+	/// values are read with typed getters, so nothing is boxed.
+	/// </para>
+	/// <para>
+	/// A type with a public parameterless constructor is built with
+	/// <c>new T()</c>, and its public settable properties
+	/// (<see langword="init"/> and <see langword="required"/> ones too)
+	/// are set from the columns.
+	/// Any other type is built through its one public constructor
+	/// (a positional record, a record struct, a class with one constructor),
+	/// and the properties the constructor does not cover are set afterwards.
+	/// A <see langword="required"/> property needs a column.
 	/// A single value such as <see cref="int"/>
 	/// (a primitive, an enum, <see cref="string"/>, <see cref="decimal"/>,
 	/// a date or time, <see cref="Guid"/>, <c>byte[]</c>
 	/// or a <see cref="Nullable{T}"/> of one)
 	/// is read from the first column of each row,
 	/// converted as a property of that type is;
-	/// a NULL is <c>default</c> for a non-nullable value type,
+	/// a NULL is <see langword="default"/> for a non-nullable value type,
 	/// so declare <c>int?</c> to tell NULL from 0.
 	/// A <typeparamref name="T"/> that cannot be mapped
 	/// (an interface, an abstract class,
 	/// a type with two or more public constructors and none without parameters)
-	/// throws <see cref="InvalidOperationException"/> when the map is built or <see cref="RowMap{T}.Default"/> is read, which the overloads without a <see cref="RowMap{T}"/> do at the call.
+	/// throws <see cref="InvalidOperationException"/> when the map is built or
+	/// <see cref="RowMap{T}.Default"/> is read,
+	/// which the overloads without a <see cref="RowMap{T}"/> do at the call.
 	/// See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#records-and-constructors">Records and constructors</see>.
 	/// </para>
 	/// <para>
-	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the properties; the overload without a map reads by column name.
-	/// Columns match a property exactly, else ignoring case, else ignoring case and underscores (<c>author_id</c> feeds <c>AuthorId</c>);
+	/// Pass a <see cref="RowMap{T}"/> to read columns whose names differ from the
+	/// properties; the overload without a map reads by column name.
+	/// Columns match a property exactly, else ignoring case, else ignoring case
+	/// and underscores (<c>author_id</c> feeds <c>AuthorId</c>);
 	/// the resolved layout is cached per result-set layout.
-	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call
-	/// (about 29 KB and a reader compile for a one-row read of a 12-property model, against 464 B through a declared map; see
+	/// Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the
+	/// call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the
+	/// argument) is rebuilt, and its row reader compiled, on every call
+	/// (about 29 KB and a reader compile for a one-row read of a 12-property
+	/// model, against 464 B through a declared map; see
 	/// <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently">Columns named differently</see>).
 	/// </para>
 	/// <para>
-	/// A terminal returns the rows of the first result set only (a <em>result</em> here is one whole result set, what <see cref="IDataReader.NextResult"/> moves between; never a row) and never maps a later set.
-	/// It then reads through the later sets without reading their rows, so a failure in a later statement is thrown as the provider raised it.
-	/// That is not done with <c>.SingleResult()</c>, written before <c>Map</c> (<c>command.SingleResult().Map&lt;T&gt;()</c>, see <see cref="SingleResult(IExecuteReader)"/>) or after it (<c>command.Map&lt;T&gt;().SingleResult()</c>, the same), when the caller stops reading early, or when the mapping, a selector or the caller's handler throws.
-	/// A later failure can follow a write that already committed, so a caller that retries can repeat it, and the rows read are lost when it throws.
+	/// A terminal returns the rows of the first result set only
+	/// (a <em>result</em> here is one whole result set, what
+	/// <see cref="IDataReader.NextResult"/> moves between; never a row)
+	/// and never maps a later set.
+	/// It then reads through the later sets without reading their rows, so a
+	/// failure in a later statement is thrown as the provider raised it.
+	/// That is not done with <c>SingleResult()</c>, written before <c>Map</c>
+	/// (<c>command.SingleResult().Map&lt;T&gt;()</c>, see
+	/// <see cref="SingleResult(IExecuteReader)"/>) or after it
+	/// (<c>command.Map&lt;T&gt;().SingleResult()</c>, the same),
+	/// when the caller stops reading early,
+	/// or when the mapping, a selector or the caller's handler throws.
+	/// A later failure can follow a write that already committed, so a caller
+	/// that retries can repeat it, and the rows read are lost when it throws.
 	/// </para>
 	/// </remarks>
-	/// <typeparam name="T">The model type to map the values to.</typeparam>
 	/// <param name="command">The command to read from.</param>
-	/// <param name="map">The prebuilt <see cref="RowMap{T}"/> to read with; <see langword="null"/> reads as <c>Map&lt;T&gt;()</c> does (before 11.0.0-rc.4 it threw).</param>
-	/// <returns>A deferred query whose results are mapped to <typeparamref name="T"/>.</returns>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-overload']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
 	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(1)]
@@ -79,13 +104,14 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Locks in a custom projection and returns a deferred <see cref="MappedQuery{T}"/>. Nothing runs until
-	/// a terminal is invoked; <paramref name="selector"/> is applied per row as the reader streams.
+	/// Locks in a custom projection and returns a deferred
+	/// <see cref="MappedQuery{T}"/>.
+	/// Nothing runs until a terminal is invoked;
+	/// <paramref name="selector"/> is applied per row as the reader streams.
 	/// </summary>
-	/// <typeparam name="T">The type each record is projected to.</typeparam>
 	/// <param name="command">The command to read from.</param>
-	/// <param name="selector">The transform applied to each <see cref="IDataRecord"/>.</param>
-	/// <returns>A deferred query whose results are produced by <paramref name="selector"/>.</returns>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='map-selector']/*" />
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
 	[OverloadResolutionPriority(-1)]
 	public static MappedQuery<T> Map<T>(
 		this IExecuteReader command,
@@ -99,10 +125,27 @@ public static partial class CoreExtensions
 	}
 }
 
-// The shared implementation: holds the command handle (any IExecuteReader), how rows are mapped, and the
-// pending skip/take. The execution itself is the command's own ExecuteReader/ExecuteReaderAsync.
-// Terminals run the read loops in RowReader directly against the live reader (real async when the reader
-// is a DbDataReader). Skipped rows are advanced without mapping; a take stops reading once satisfied.
+/// <summary>
+/// The implementation shared by every mapped query type: the command, how
+/// the rows are mapped, and the pending skip and take.
+/// </summary>
+/// <remarks>
+/// The execution itself is the command's own <c>ExecuteReader</c> or
+/// <c>ExecuteReaderAsync</c>.
+/// Terminals run the read loops in <see cref="RowReader"/> directly against
+/// the live reader (real async when the reader is a
+/// <see cref="DbDataReader"/>).
+/// Skipped rows are advanced without mapping; a take stops reading once
+/// satisfied.
+/// </remarks>
+/// <typeparam name="T">The type each row is mapped to.</typeparam>
+/// <param name="command">The command the rows are read from.</param>
+/// <param name="source">Reads and maps one row.</param>
+/// <param name="skip">The number of rows to skip before the first mapped row.</param>
+/// <param name="take">The maximum number of rows to map, or -1 for no limit.</param>
+/// <param name="singleResult"><see langword="true"/> to stop after the first result set and not read through the later ones; otherwise, <see langword="false"/>.</param>
+/// <param name="asyncReads"><see langword="true"/> to read the rows of an asynchronous terminal with <c>ReadAsync</c>; otherwise, <see langword="false"/>, which reads them with <c>Read</c>.</param>
+/// <param name="config">The pool, the clear rule, the chunk sizes and the bin the pooling terminals use.</param>
 readonly struct MappedQueryCore<T>(
 	IExecuteReader command,
 	IRowSource<T> source,
@@ -113,8 +156,15 @@ readonly struct MappedQueryCore<T>(
 	ChunkConfig<T> config)
 	: IEquatable<MappedQueryCore<T>>
 {
-	// Generated mappings read each column once, in order, so the provider may stream the row.
-	// A caller-supplied selector may read in any order, so it runs with the default access mode.
+	/// <summary>
+	/// The reader behavior of a generated mapping.
+	/// </summary>
+	/// <remarks>
+	/// Generated mappings read each column once, in order, so the provider may
+	/// stream the row.
+	/// A caller-supplied selector may read in any order, so it runs with the
+	/// default access mode.
+	/// </remarks>
 	const CommandBehavior GeneratedMapping = CommandBehavior.SingleResult | CommandBehavior.SequentialAccess;
 
 	readonly IRowSource<T> _source = source;
@@ -123,17 +173,35 @@ readonly struct MappedQueryCore<T>(
 	readonly bool _singleResult = singleResult; // SingleResult() was called: stop after the first result set and do not read through the rest.
 	readonly bool _asyncReads = asyncReads; // AsyncReads() was called: the rows of an async terminal are read with ReadAsync (the default is Read).
 
-	// A default struct has no command: any use of it says so,
-	// the same way for every type of the family.
+	/// <summary>
+	/// The command, or <see langword="null"/> for a default value.
+	/// </summary>
+	/// <remarks>
+	/// A default struct has no command: any use of it says so, the same way for
+	/// every type of the family.
+	/// </remarks>
 	readonly IExecuteReader? _command = command;
 
+	/// <summary>
+	/// Gets the command the query reads from.
+	/// </summary>
+	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
 	public IExecuteReader Command
 		=> _command ?? throw new InvalidOperationException(
 			"This query was not created by Map<T>(); a default value cannot be used.");
 
-	// Equality is for a caller that keys on the whole query; it never runs on
-	// the path that executes one. Without it a record struct holding this
-	// would compare and hash its fields by reflection.
+	/// <summary>
+	/// Determines whether another query is the same query: the same command and
+	/// source, skip, take and flags, and the same configuration instance.
+	/// </summary>
+	/// <remarks>
+	/// Equality is for a caller that keys on the whole query; it never runs on
+	/// the path that executes one.
+	/// Without it a record struct holding this would compare and hash its fields
+	/// by reflection.
+	/// </remarks>
+	/// <param name="other">The query to compare with.</param>
+	/// <returns><see langword="true"/> if <paramref name="other"/> is the same query; otherwise, <see langword="false"/>.</returns>
 	public bool Equals(MappedQueryCore<T> other)
 		=> Equals(_command, other._command)
 		&& Equals(_source, other._source)
@@ -161,7 +229,13 @@ readonly struct MappedQueryCore<T>(
 		}
 	}
 
-	// Without .SingleResult() the reader is asked for every result set, because a terminal reads through the later ones to report their failures.
+	/// <summary>
+	/// Gets the <see cref="CommandBehavior"/> the reader is asked for.
+	/// </summary>
+	/// <remarks>
+	/// Without <c>SingleResult()</c> the reader is asked for every result set,
+	/// because a terminal reads through the later ones to report their failures.
+	/// </remarks>
 	CommandBehavior Behavior => _singleResult
 		? (_source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping)
 		: (_source is SelectorSource<T> ? CommandBehavior.Default : CommandBehavior.SequentialAccess);
@@ -170,9 +244,14 @@ readonly struct MappedQueryCore<T>(
 
 	public MappedQueryCore<T> WithAsyncReads() => new(Command, _source, _skip, _take, _singleResult, true, Config);
 
-	// The configuration the query was given: the pool every pooling terminal rents from and
-	// whether it clears, provided when the query is made (the default of the entry point, or
-	// UsePool).
+	/// <summary>
+	/// Gets the configuration the query was given.
+	/// </summary>
+	/// <remarks>
+	/// It holds the pool every pooling terminal rents from and whether it
+	/// clears, provided when the query is made (the default of the entry point,
+	/// or <c>UsePool</c>).
+	/// </remarks>
 	ChunkConfig<T> Config { get; } = config;
 
 	public MappedQueryCore<T> WithPool(ArrayPool<T> pool, bool clearOnReturn)
@@ -193,7 +272,12 @@ readonly struct MappedQueryCore<T>(
 			Config.DeferFromRows));
 	}
 
-	// A whole configuration (the pool, the clear, the chunk sizes, the bin).
+	/// <summary>
+	/// Returns the query with a whole configuration
+	/// (the pool, the clear, the chunk sizes, the bin).
+	/// </summary>
+	/// <param name="config">The configuration to use.</param>
+	/// <returns>A copy of the query that uses <paramref name="config"/>.</returns>
 	public MappedQueryCore<T> WithConfig(ChunkConfig<T> config)
 		=> new(Command, _source, _skip, _take, _singleResult, _asyncReads, config);
 
@@ -209,8 +293,17 @@ readonly struct MappedQueryCore<T>(
 				Config)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
-	// Take is set exactly once (the staging structs only expose it before any take exists), so this
-	// just records the limit; it applies after the skip, i.e. Enumerable.Skip(a).Take(b).
+	/// <summary>
+	/// Returns the query limited to at most <paramref name="count"/> rows.
+	/// </summary>
+	/// <remarks>
+	/// Take is set exactly once (the staging structs only expose it before any
+	/// take exists), so this just records the limit; it applies after the skip,
+	/// as <c>Enumerable.Skip(a).Take(b)</c> does.
+	/// </remarks>
+	/// <param name="count">The maximum number of rows to map.</param>
+	/// <returns>A copy of the query with the limit.</returns>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
 	public MappedQueryCore<T> WithTake(int count)
 		=> count >= 0
 			? new(
@@ -223,12 +316,41 @@ readonly struct MappedQueryCore<T>(
 				Config)
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
-	// One token governs a whole call: the one passed to the terminal together with the command's own (either cancels), for the connection open, the name lookup, the execute and the reads.
-	// No token, one token, or the same token twice needs no source, so those calls allocate nothing for it. Two different tokens need a linked source, which the call disposes when it ends.
+	/// <summary>
+	/// Combines the token passed to a terminal with the command's own.
+	/// </summary>
+	/// <remarks>
+	/// One token governs a whole call: the one passed to the terminal together
+	/// with the command's own (either cancels), for the connection open, the
+	/// name lookup, the execute and the reads.
+	/// No token, one token, or the same token twice needs no source, so those
+	/// calls allocate nothing for it.
+	/// Two different tokens need a linked source, which the call disposes when
+	/// it ends.
+	/// </remarks>
+	/// <param name="cancellationToken">The token passed to the terminal.</param>
+	/// <param name="linked">The linked source to dispose when the call ends, or <see langword="null"/> when none was needed.</param>
+	/// <returns>The token that governs the call.</returns>
 	CancellationToken Combine(CancellationToken cancellationToken, out CancellationTokenSource? linked)
 		=> CancellationTokens.Combine(Command.CancellationToken, cancellationToken, out linked);
 
-	// `token` is the combined token; it is also in `state`, which the terminal's static lambda reads it from.
+	/// <summary>
+	/// Executes the command asynchronously and passes the reader to
+	/// <paramref name="transform"/>.
+	/// </summary>
+	/// <remarks>
+	/// <paramref name="token"/> is the combined token; it is also in
+	/// <paramref name="state"/>, which the terminal's <see langword="static"/> lambda reads it
+	/// from.
+	/// </remarks>
+	/// <typeparam name="TState">The type of the state passed to the transform.</typeparam>
+	/// <typeparam name="TResult">The type the transform returns.</typeparam>
+	/// <param name="state">The state to pass to the transform.</param>
+	/// <param name="transform">The function that reads the rows from the reader.</param>
+	/// <param name="behavior">The behavior the reader is asked for.</param>
+	/// <param name="linked">The linked source to dispose when the call ends, or <see langword="null"/>.</param>
+	/// <param name="token">The combined token.</param>
+	/// <returns>A task that produces the result of the transform.</returns>
 	ValueTask<TResult> ExecuteAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource? linked, CancellationToken token)
 		=> linked is null
 			? Command.ExecuteReaderAsync(state, transform, behavior, token)
@@ -240,8 +362,22 @@ readonly struct MappedQueryCore<T>(
 			return await command.ExecuteReaderAsync(state, transform, behavior, token).ConfigureAwait(false);
 	}
 
-	// Runs a direct terminal: the transform reads the first result set, then (unless SingleResult() was called) the later sets are read through, so a failure in one is thrown.
-	// Nothing is read through when the transform throws, so the caller's own exception is never replaced.
+	/// <summary>
+	/// Runs a direct terminal: the transform reads the first result set, then
+	/// the later sets are read through.
+	/// </summary>
+	/// <remarks>
+	/// The later sets are read through unless <c>SingleResult()</c> was called,
+	/// so a failure in one is thrown.
+	/// Nothing is read through when the transform throws, so the caller's own
+	/// exception is never replaced.
+	/// </remarks>
+	/// <typeparam name="TState">The type of the state passed to the transform.</typeparam>
+	/// <typeparam name="TResult">The type the transform returns.</typeparam>
+	/// <param name="state">The state to pass to the transform.</param>
+	/// <param name="transform">The function that reads the rows from the reader.</param>
+	/// <param name="behavior">The behavior the reader is asked for.</param>
+	/// <returns>The result of the transform.</returns>
 	TResult Run<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior)
 		=> _singleResult
 			? Command.ExecuteReader(state, transform, behavior)
@@ -295,8 +431,24 @@ readonly struct MappedQueryCore<T>(
 			=> s.handler(StreamAsync(s._source, reader, s._skip, s._take, s._singleResult, s._asyncReads, s.token), s.token), Behavior, linked, token);
 	}
 
-	// The streams read through the later result sets after the last row, so a caller who enumerates to the end (or to the take limit) sees a later failure.
-	// An enumeration the caller abandons, or whose handler throws, is disposed before that point and reads nothing more.
+	/// <summary>
+	/// Streams the rows asynchronously.
+	/// </summary>
+	/// <remarks>
+	/// The streams read through the later result sets after the last row, so a
+	/// caller who enumerates to the end (or to the take limit) sees a later
+	/// failure.
+	/// An enumeration the caller abandons, or whose handler throws, is disposed
+	/// before that point and reads nothing more.
+	/// </remarks>
+	/// <param name="source">Reads and maps one row.</param>
+	/// <param name="reader">The reader the rows are read from.</param>
+	/// <param name="skip">The number of rows to skip.</param>
+	/// <param name="take">The maximum number of rows to map, or -1 for no limit.</param>
+	/// <param name="singleResult"><see langword="true"/> to stop after the first result set; otherwise, <see langword="false"/>, which reads through the later ones.</param>
+	/// <param name="useAsync"><see langword="true"/> to read the rows with <c>ReadAsync</c>; otherwise, <see langword="false"/>.</param>
+	/// <param name="token">The combined token that governs the call.</param>
+	/// <returns>The rows as an asynchronous sequence.</returns>
 	static IAsyncEnumerable<T> StreamAsync(IRowSource<T> source, IDataReader reader, int skip, int take, bool singleResult, bool useAsync, CancellationToken token)
 		=> reader is DbDataReader db
 			? RowReader.StreamAsync(source, db, skip, take, useAsync, !singleResult, token)
@@ -320,17 +472,32 @@ readonly struct MappedQueryCore<T>(
 		=> Run((_source, _skip, _take), static (reader, s)
 			=> RowReader.TryFirst(s._source, reader, s._skip, s._take, out T? item) ? item : default, FirstBehavior);
 
-	// SingleRow tells the provider only one row is needed; it can't be used when rows must be skipped first.
+	/// <summary>
+	/// Gets the behavior for the first-row terminals.
+	/// </summary>
+	/// <remarks>
+	/// <see cref="CommandBehavior.SingleRow"/> tells the provider that only one
+	/// row is needed.
+	/// It is added only when nothing is skipped and <c>SingleResult()</c> was
+	/// called.
+	/// </remarks>
 	CommandBehavior FirstBehavior => _skip == 0 && _singleResult ? Behavior | CommandBehavior.SingleRow : Behavior;
 
 	public T? SingleOrDefault()
 		=> Run((_source, _skip, _take), static (reader, s)
 			=> RowReader.TrySingle(s._source, reader, s._skip, s._take, out T? item) ? item : default, Behavior);
 
-	// The throwing twins (First, Single) read exactly as the OrDefault forms do.
-	// They throw for no rows only after the call has cleaned up (the connection
-	// closed if this call opened it, the later result sets read through), so a
-	// failure from a later result set is thrown instead.
+	/// <summary>
+	/// Reads the first row; throws if there is none.
+	/// </summary>
+	/// <remarks>
+	/// The throwing twins (<see cref="First"/>, <see cref="Single"/>) read
+	/// exactly as the <c>OrDefault</c> forms do.
+	/// They throw for no rows only after the call has cleaned up (the
+	/// connection closed if this call opened it, the later result sets read
+	/// through), so a failure from a later result set is thrown instead.
+	/// </remarks>
+	/// <returns>The first row.</returns>
 	public T First()
 	{
 		(bool found, T? row) = Run(
@@ -357,15 +524,27 @@ readonly struct MappedQueryCore<T>(
 		return found ? row! : throw RowReader.NoRows(nameof(Single));
 	}
 
-	// The collecting terminals (ToList, ToArray, Queue, HashSet and
-	// Dictionary, async) read into a chain of pooled arrays (see
-	// ChunkChain) and build the result from it in the same read method,
-	// right after the last row (one memcpy for a list or an array; the
-	// connection is released when the call returns). The read and the
-	// build are ONE async state machine (RowReader.CollectAsync). The build
-	// is a struct (IChainBuild), so it rides in the state tuple at no more
-	// than its own fields, and the lambdas are static: a call allocates no
-	// closure or delegate.
+	/// <summary>
+	/// Reads the rows into a chain of pooled arrays and builds the result from
+	/// it, asynchronously.
+	/// </summary>
+	/// <remarks>
+	/// The collecting terminals (<c>ToList</c>, <c>ToArray</c>, <c>Queue</c>,
+	/// <c>HashSet</c> and <c>Dictionary</c>, async) read into a chain of pooled
+	/// arrays (see <c>ChunkChain</c>) and build the result from it in the same
+	/// read method, right after the last row (one memcpy for a list or an
+	/// array; the connection is released when the call returns).
+	/// The read and the build are <em>one</em> async state machine
+	/// (<c>RowReader.CollectAsync</c>).
+	/// The build is a struct (<c>IChainBuild</c>), so it rides in the state tuple
+	/// at no more than its own fields, and the lambdas are <see langword="static"/>: a call
+	/// allocates no closure or delegate.
+	/// </remarks>
+	/// <typeparam name="TBuild">The type of the build, a struct that makes the result from the chain.</typeparam>
+	/// <typeparam name="TResult">The type of the result.</typeparam>
+	/// <param name="build">The build that makes the result.</param>
+	/// <param name="cancellationToken">The token passed to the terminal.</param>
+	/// <returns>A task that produces the result.</returns>
 	public ValueTask<TResult> CollectAsync<TBuild, TResult>(
 		TBuild build,
 		CancellationToken cancellationToken)
@@ -490,16 +669,33 @@ readonly struct MappedQueryCore<T>(
 #endif
 	}
 
-	// The same read as ToArrayAsync, with the array wrapped in the build
-	// (no async method of its own around it, which a read that really
-	// suspends would box).
+	/// <summary>
+	/// Reads the rows as <c>ToArrayAsync</c> does and wraps the array in an
+	/// <see cref="ImmutableArray{T}"/>.
+	/// </summary>
+	/// <remarks>
+	/// The array is wrapped in the build, with no <see langword="async"/> method of its own around
+	/// it, which a read that really suspends would box.
+	/// </remarks>
+	/// <param name="cancellationToken">The token passed to the terminal.</param>
+	/// <returns>A task that produces the immutable array.</returns>
 	public ValueTask<ImmutableArray<T>> ToImmutableArrayAsync(CancellationToken cancellationToken)
 		=> CollectAsync<ImmutableArrayBuild<T>, ImmutableArray<T>>(
 			default, cancellationToken);
 
-	// The dictionary and hash set terminals read the rows into the chain,
-	// then add them (the exact capacity known): a duplicate key throws after
-	// every row has been read, and the selectors run after the read.
+	/// <summary>
+	/// Reads the rows into a dictionary keyed by <paramref name="keySelector"/>.
+	/// </summary>
+	/// <remarks>
+	/// The dictionary and hash set terminals read the rows into the chain, then
+	/// add them (the exact capacity known): a duplicate key throws after every
+	/// row has been read, and the selectors run after the read.
+	/// </remarks>
+	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
+	/// <param name="keySelector">Produces the key for each mapped row.</param>
+	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
+	/// <returns>A dictionary of all the rows.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> is <see langword="null"/>.</exception>
 	public Dictionary<TKey, T> ToDictionary<TKey>(
 		Func<T, TKey> keySelector,
 		IEqualityComparer<TKey>? comparer)
@@ -571,12 +767,21 @@ readonly struct MappedQueryCore<T>(
 
 	#region Buffer terminals
 
-	// The producer reads straight into a sink by the same internal path
-	// as ToArrayAsync (RowReader.FillAsync / Fill): the connection, the
-	// read mode, Skip, Take and the read-through are the same, and
-	// there is no per-row enumerator. The sink is a struct (so the loop
-	// specializes) that holds a reference to its state, so the copy the
-	// loop passes across awaits is harmless.
+	/// <summary>
+	/// Reads every row into a sink.
+	/// </summary>
+	/// <remarks>
+	/// The producer reads straight into a sink by the same internal path as
+	/// <c>ToArrayAsync</c> (<c>RowReader.FillAsync</c> / <c>Fill</c>): the
+	/// connection, the read mode, <c>Skip</c>, <c>Take</c> and the read-through
+	/// are the same, and there is no per-row enumerator.
+	/// The sink is a struct (so the loop specializes) that holds a reference to
+	/// its state, so the copy the loop passes across awaits is harmless.
+	/// </remarks>
+	/// <typeparam name="TSink">The type of the sink.</typeparam>
+	/// <param name="sink">The sink the rows are written to.</param>
+	/// <param name="cancellationToken">The token passed to the terminal.</param>
+	/// <returns>A task that produces <see langword="true"/> when the read has completed.</returns>
 	public ValueTask<bool> FillAsync<TSink>(
 		TSink sink,
 		CancellationToken cancellationToken)
@@ -608,13 +813,20 @@ readonly struct MappedQueryCore<T>(
 			Behavior, linked, token);
 	}
 
-	// The buffer terminals of every view run the query through the
-	// sink path above (see ChunkProducer.cs). ToAsyncBuffer
-	// starts at the call; the two streams start at the first
-	// MoveNextAsync. A default struct is refused here, at the call,
-	// as everywhere else.
-	// They rent from the pool of UsePool (the shared array pool when there
-	// was none) and clear by the rule of PoolClearing.
+	/// <summary>
+	/// Starts reading the rows into a pooled buffer.
+	/// </summary>
+	/// <remarks>
+	/// The buffer terminals of every view run the query through the sink path
+	/// above (see ChunkProducer.cs).
+	/// <c>ToAsyncBuffer</c> starts at the call; the two streams start at the
+	/// first <see cref="IAsyncEnumerator{T}.MoveNextAsync"/>.
+	/// A default struct is refused here, at the call, as everywhere else.
+	/// They rent from the pool of <c>UsePool</c> (the shared array pool when
+	/// there was none) and clear by the rule of <c>PoolClearing</c>.
+	/// </remarks>
+	/// <param name="cancellationToken">The token that cancels the read.</param>
+	/// <returns>The buffer, already reading.</returns>
 	public PooledBuffer<T> ToAsyncBuffer(
 		CancellationToken cancellationToken)
 	{
@@ -640,10 +852,18 @@ readonly struct MappedQueryCore<T>(
 			CancellationToken.None);
 	}
 
-	// The chunk stream, element by element. Each element is copied into
-	// a local before it is yielded, so no span lives across a yield; the
-	// chunk's array goes back at the next chunk step, as for the chunk
-	// stream, and the one-shot guard is the chunk stream's.
+	/// <summary>
+	/// Yields the elements of a chunk stream one by one.
+	/// </summary>
+	/// <remarks>
+	/// Each element is copied into a local before it is yielded, so no span
+	/// lives across a yield; the chunk's array goes back at the next chunk
+	/// step, as for the chunk stream, and the one-shot guard is the chunk
+	/// stream's.
+	/// </remarks>
+	/// <param name="chunks">The chunk stream to flatten.</param>
+	/// <param name="cancellationToken">The token of the enumeration.</param>
+	/// <returns>The elements of the chunks, in order.</returns>
 	static async IAsyncEnumerable<T> Flatten(
 		IAsyncEnumerable<ReadOnlyMemory<T>> chunks,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -664,7 +884,7 @@ readonly struct MappedQueryCore<T>(
 }
 
 /// <summary>A deferred, type-locked query over any <see cref="IExecuteReader"/>. Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.</summary>
-/// <typeparam name="T">The type each record is mapped to.</typeparam>
+/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 public readonly record struct MappedQuery<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
@@ -674,16 +894,27 @@ public readonly record struct MappedQuery<T>
 	internal MappedQuery(MappedQueryCore<T> core) => _core = core;
 
 	/// <summary>
-	/// The command this query reads from, for a caller that keys on the query
-	/// (the memoize seam). Nothing runs by reading it.
+	/// Gets the command this query reads from.
 	/// </summary>
+	/// <value>The command the query reads from.</value>
+	/// <remarks>
+	/// It is for a caller that keys on the query (the memoize seam).
+	/// Nothing runs by reading it.
+	/// </remarks>
 	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
 	public IExecuteReader Command => _core.Command;
 
-	/// <summary>Skips the first <paramref name="count"/> mapped records.</summary>
+	/// <summary>Skips the first <paramref name="count"/> mapped rows.</summary>
+	/// <param name="count">The number of rows to skip.</param>
+	/// <returns>A query that can still be limited with <see cref="MappedQueryWithSkip{T}.Take(int)"/>.</returns>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
 	public MappedQueryWithSkip<T> Skip(int count) => new(_core.WithSkip(count));
 
-	/// <summary>Limits the result to at most <paramref name="count"/> mapped records.</summary>
+	/// <summary>Limits the result to at most <paramref name="count"/> mapped rows.</summary>
+	/// <remarks>The limit applies after any skip.</remarks>
+	/// <param name="count">The maximum number of rows to map.</param>
+	/// <returns>A query that is ready for a terminal.</returns>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
 	public MappedQueryWithTake<T> Take(int count) => new(_core.WithTake(count));
 
 	/// <summary>Stops after the first result set and does not read through the later ones.</summary>
@@ -728,31 +959,47 @@ public readonly record struct MappedQuery<T>
 	/// </para>
 	/// <para>
 	/// It applies to every terminal of this query that rents pooled arrays:
-	/// <c>ToArray</c>, <c>ToArrayAsync</c>, <c>ToListAsync</c>,
-	/// <c>ToImmutableArray</c>, <c>ToImmutableArrayAsync</c>,
-	/// <c>ToHashSet</c>, <c>ToHashSetAsync</c>, <c>ToDictionary</c>,
-	/// <c>ToDictionaryAsync</c>, <see cref="ToAsyncBuffer(CancellationToken)"/>,
-	/// <see cref="ToAsyncBufferStream(CancellationToken)"/> and
-	/// <see cref="ToBufferedAsyncStream(CancellationToken)"/>.
 	/// </para>
+	/// <list type="bullet">
+	/// <item><description><see cref="ToArray"/></description></item>
+	/// <item><description><see cref="ToArrayAsync(CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToListAsync(CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToImmutableArray"/></description></item>
+	/// <item><description><see cref="ToImmutableArrayAsync(CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToHashSet(IEqualityComparer{T})"/></description></item>
+	/// <item><description><see cref="ToHashSetAsync(IEqualityComparer{T}, CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToDictionary{TKey}(Func{T, TKey}, IEqualityComparer{TKey})"/></description></item>
+	/// <item><description><see cref="ToDictionary{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey})"/></description></item>
+	/// <item><description><see cref="ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToDictionaryAsync{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToAsyncBuffer(CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToAsyncBufferStream(CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToBufferedAsyncStream(CancellationToken)"/></description></item>
+	/// </list>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>
 	/// <param name="pool">
 	/// The pool to rent from and give back to. It is yours: ODX never
-	/// disposes it. <c>ArrayPool&lt;T&gt;.Shared</c> is what a query without
+	/// disposes it. <see cref="ArrayPool{T}.Shared"/> is what a query without
 	/// <c>UsePool</c> uses.
 	/// </param>
 	/// <param name="clearOnReturn">
-	/// <see langword="true"/> clears the used rows of every array before it
-	/// goes back, value rows included; <see langword="false"/> does not clear
-	/// rows that hold no references, whatever the app-wide switch says.
+	/// <see langword="true"/> to clear the used rows of every array before it
+	/// goes back, value rows included; otherwise, <see langword="false"/>,
+	/// which does not clear rows that hold no references, whatever the
+	/// app-wide switch says.
 	/// </param>
 	/// <returns>The same query, renting from <paramref name="pool"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="pool"/> is <see langword="null"/>.</exception>
 	public MappedQuery<T> UsePool(ArrayPool<T> pool, bool clearOnReturn)
 		=> new(_core.WithPool(pool, clearOnReturn));
 
-	// A whole configuration, for a test or a benchmark (pool, clear, chunk sizes, bin).
+	/// <summary>
+	/// Returns the query with a whole configuration
+	/// (pool, clear, chunk sizes, bin), for a test or a benchmark.
+	/// </summary>
+	/// <param name="config">The configuration to use.</param>
+	/// <returns>A copy of the query that uses <paramref name="config"/>.</returns>
 	internal MappedQuery<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
 
@@ -887,7 +1134,7 @@ public readonly record struct MappedQuery<T>
 	/// </para>
 	/// <para>
 	/// The rows stay valid until the buffer is disposed:
-	/// dispose it (<c>await using</c>) when you are done.
+	/// dispose it (<see langword="await"/> <see langword="using"/>) when you are done.
 	/// Disposing it while the read is still running cancels the
 	/// query; after the read finished it only releases the arrays.
 	/// A buffer that is never disposed holds its arrays until the
@@ -920,10 +1167,7 @@ public readonly record struct MappedQuery<T>
 	/// never reaches the pool.
 	/// </para>
 	/// </remarks>
-	/// <param name="cancellationToken">
-	/// Cancels the read: a consumer then sees the cancel after
-	/// what was already delivered.
-	/// </param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='buffer-token']/*" />
 	/// <returns>The buffer, already reading.</returns>
 	public PooledBuffer<T> ToAsyncBuffer(
 		CancellationToken cancellationToken = default)
@@ -936,15 +1180,15 @@ public readonly record struct MappedQuery<T>
 	/// <remarks>
 	/// <para>
 	/// Lazy: nothing executes until the first
-	/// <c>MoveNextAsync</c>.
+	/// <see cref="IAsyncEnumerator{T}.MoveNextAsync"/>.
 	/// The stream can be enumerated once:
-	/// a second <c>GetAsyncEnumerator</c> throws
+	/// a second <see cref="IAsyncEnumerable{T}.GetAsyncEnumerator(CancellationToken)"/> throws
 	/// <see cref="InvalidOperationException"/>.
 	/// </para>
 	/// <para>
 	/// Each <see cref="ReadOnlyMemory{T}"/> holds exactly the rows of
 	/// one chunk and is valid until the next
-	/// <c>MoveNextAsync</c> or the end of the enumeration,
+	/// <see cref="IAsyncEnumerator{T}.MoveNextAsync"/> or the end of the enumeration,
 	/// when its array goes back to the pool:
 	/// copy what you keep.
 	/// Nothing guards a memory held longer (it then reads rows
@@ -959,8 +1203,8 @@ public readonly record struct MappedQuery<T>
 	/// chunks pile up, as with an unbounded channel.
 	/// </para>
 	/// <para>
-	/// Disposing the enumerator, which a <c>break</c> out of
-	/// <c>await foreach</c> always does, cancels the query and
+	/// Disposing the enumerator, which a <see langword="break"/> out of
+	/// <see langword="await"/> <see langword="foreach"/> always does, cancels the query and
 	/// returns every array still queued.
 	/// </para>
 	/// <para>
@@ -975,7 +1219,7 @@ public readonly record struct MappedQuery<T>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// <para>
 	/// Here the clearing happens as each chunk goes back, once the consumer
-	/// is done with it (at the next <c>MoveNextAsync</c>, or when the
+	/// is done with it (at the next <see cref="IAsyncEnumerator{T}.MoveNextAsync"/>, or when the
 	/// enumeration ends or is disposed). A large chunk of rows that hold
 	/// references is handed to an internal background queue, so the read and
 	/// the consumer do not wait for it; anything else is cleared where it is
@@ -984,10 +1228,7 @@ public readonly record struct MappedQuery<T>
 	/// never reaches the pool.
 	/// </para>
 	/// </remarks>
-	/// <param name="cancellationToken">
-	/// Cancels the read: a consumer then sees the cancel after
-	/// what was already delivered.
-	/// </param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='buffer-token']/*" />
 	/// <returns>The lazy, single-use stream.</returns>
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
 		CancellationToken cancellationToken = default)
@@ -1002,7 +1243,7 @@ public readonly record struct MappedQuery<T>
 	/// The same pipeline as
 	/// <see cref="ToAsyncBufferStream(CancellationToken)"/>
 	/// (lazy, one consumer, a background producer, rolling pooled
-	/// chunks, a <c>break</c> or a dispose cancels the query),
+	/// chunks, a <see langword="break"/> or a dispose cancels the query),
 	/// but each chunk is flattened into its elements,
 	/// so there is no buffer to handle and the stream works with
 	/// <c>System.Linq.Async</c>.
@@ -1012,7 +1253,7 @@ public readonly record struct MappedQuery<T>
 	/// lets chunks pile up in memory.
 	/// A second enumeration throws
 	/// <see cref="InvalidOperationException"/> at its first
-	/// <c>MoveNextAsync</c> (not at <c>GetAsyncEnumerator</c>).
+	/// <see cref="IAsyncEnumerator{T}.MoveNextAsync"/> (not at <see cref="IAsyncEnumerable{T}.GetAsyncEnumerator(CancellationToken)"/>).
 	/// </para>
 	/// <para>
 	/// Which one to use:
@@ -1020,7 +1261,7 @@ public readonly record struct MappedQuery<T>
 	/// sequential, read-only access to the elements through the
 	/// buffers, without copying them twice, for raw speed and the
 	/// shortest connection time;
-	/// this method is the same, made easy, without buffers;
+	/// this method is the same, without buffers;
 	/// <see cref="ToAsyncBuffer(CancellationToken)"/> is a
 	/// reusable, potentially indexable list to work with for a while.
 	/// </para>
@@ -1036,10 +1277,7 @@ public readonly record struct MappedQuery<T>
 	/// dirty array never reaches the pool.
 	/// </para>
 	/// </remarks>
-	/// <param name="cancellationToken">
-	/// Cancels the read: a consumer then sees the cancel after
-	/// what was already delivered.
-	/// </param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='buffer-token']/*" />
 	/// <returns>The lazy, single-use stream of elements.</returns>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
 		CancellationToken cancellationToken = default)
@@ -1049,7 +1287,7 @@ public readonly record struct MappedQuery<T>
 }
 
 /// <summary>A <see cref="MappedQuery{T}"/> with a pending skip; can still be limited with <see cref="Take(int)"/>.</summary>
-/// <typeparam name="T">The type each record is mapped to.</typeparam>
+/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 public readonly record struct MappedQueryWithSkip<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
@@ -1058,14 +1296,10 @@ public readonly record struct MappedQueryWithSkip<T>
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithSkip(MappedQueryCore<T> core) => _core = core;
 
-	/// <summary>
-	/// The command this query reads from, for a caller that keys on the query
-	/// (the memoize seam). Nothing runs by reading it.
-	/// </summary>
-	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
+	/// <inheritdoc cref="MappedQuery{T}.Command"/>
 	public IExecuteReader Command => _core.Command;
 
-	/// <summary>Limits the result to at most <paramref name="count"/> mapped records.</summary>
+	/// <inheritdoc cref="MappedQuery{T}.Take(int)"/>
 	public MappedQueryWithTake<T> Take(int count) => new(_core.WithTake(count));
 
 	/// <inheritdoc cref="MappedQuery{T}.SingleResult"/>
@@ -1078,7 +1312,7 @@ public readonly record struct MappedQueryWithSkip<T>
 	public MappedQueryWithSkip<T> UsePool(ArrayPool<T> pool, bool clearOnReturn)
 		=> new(_core.WithPool(pool, clearOnReturn));
 
-	// A whole configuration, for a test or a benchmark (pool, clear, chunk sizes, bin).
+	/// <inheritdoc cref="MappedQuery{T}.WithConfig(ChunkConfig{T})"/>
 	internal MappedQueryWithSkip<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
 
@@ -1171,7 +1405,7 @@ public readonly record struct MappedQueryWithSkip<T>
 }
 
 /// <summary>A fully-configured <see cref="MappedQuery{T}"/> with a take (and any preceding skip); terminal-only.</summary>
-/// <typeparam name="T">The type each record is mapped to.</typeparam>
+/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 public readonly record struct MappedQueryWithTake<T>
 	: IMappedQuery<T>, IMappedTerminals<T>
 {
@@ -1180,11 +1414,7 @@ public readonly record struct MappedQueryWithTake<T>
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithTake(MappedQueryCore<T> core) => _core = core;
 
-	/// <summary>
-	/// The command this query reads from, for a caller that keys on the query
-	/// (the memoize seam). Nothing runs by reading it.
-	/// </summary>
-	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
+	/// <inheritdoc cref="MappedQuery{T}.Command"/>
 	public IExecuteReader Command => _core.Command;
 
 	/// <inheritdoc cref="MappedQuery{T}.SingleResult"/>
@@ -1197,7 +1427,7 @@ public readonly record struct MappedQueryWithTake<T>
 	public MappedQueryWithTake<T> UsePool(ArrayPool<T> pool, bool clearOnReturn)
 		=> new(_core.WithPool(pool, clearOnReturn));
 
-	// A whole configuration, for a test or a benchmark (pool, clear, chunk sizes, bin).
+	/// <inheritdoc cref="MappedQuery{T}.WithConfig(ChunkConfig{T})"/>
 	internal MappedQueryWithTake<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
 

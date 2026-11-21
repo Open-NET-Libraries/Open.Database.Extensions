@@ -15,15 +15,15 @@ namespace Open.Database.Extensions;
 /// </para>
 /// </remarks>
 /// <example>
-/// <code>
-/// List&lt;Customer&gt; all = await connection
-///     .Command("SELECT Id, Name FROM Customers")
-///     .Map&lt;Customer&gt;()
+/// <code language="csharp">
+/// List&lt;Post&gt; posts = await connection
+///     .Command("SELECT Id, Title FROM Posts")
+///     .Map&lt;Post&gt;()
 ///     .ToListAsync(cancellationToken);
 ///
-/// Customer? first = await connection
-///     .Command("SELECT Id, Name FROM Customers ORDER BY Id")
-///     .Map&lt;Customer&gt;()
+/// Post? first = await connection
+///     .Command("SELECT Id, Title FROM Posts ORDER BY Id")
+///     .Map&lt;Post&gt;()
 ///     .FirstOrDefaultAsync(cancellationToken);
 /// </code>
 /// </example>
@@ -44,13 +44,11 @@ public static class MappedQueryExtensions
 	/// <inheritdoc
 	/// cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"
 	/// path="/remarks"/>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows. Enumerate it inside the handler; it is not valid after the handler returns.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
-	/// <returns>A task that completes after the handler has completed and the connection has been released.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-items']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-task']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>
 	public static ValueTask ReadAsync<T>(this IMappedQuery<T> query, Func<IAsyncEnumerable<T>, ValueTask> handler, CancellationToken cancellationToken = default)
 	{
@@ -70,14 +68,12 @@ public static class MappedQueryExtensions
 	/// <inheritdoc
 	/// cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"
 	/// path="/remarks"/>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows. Enumerate it inside the handler; it is not valid after the handler returns.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
-	/// <returns>A task that produces the value returned by <paramref name="handler"/> after the connection has been released.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-result']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-items']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-task-result']/*" />
 	/// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <seealso cref="IMappedQuery{T}.ReadAsync{TResult}(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask{TResult}}, CancellationToken)"/>
 	public static ValueTask<TResult> ReadAsync<T, TResult>(this IMappedQuery<T> query, Func<IAsyncEnumerable<T>, ValueTask<TResult>> handler, CancellationToken cancellationToken = default)
 	{
@@ -88,53 +84,61 @@ public static class MappedQueryExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use query.ReadAsync(handler, cancellationToken).
-	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/>. The cancellation token comes first so the handler can be written as a trailing lambda.
+	/// Obsolete: use <c>query.ReadAsync(handler, cancellationToken)</c>.
+	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/>.
+	/// The cancellation token comes first so the handler can be written as a trailing lambda.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
 	/// <inheritdoc cref="ReadAsync{T}(IMappedQuery{T}, Func{IAsyncEnumerable{T}, ValueTask}, CancellationToken)"/>
 	[Obsolete(ReadAsyncTokenFirstObsolete)]
 	public static ValueTask ReadAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, ValueTask> handler)
 		=> query.ReadAsync(handler, cancellationToken);
 
 	/// <summary>
-	/// Obsolete: use query.ReadAsync(handler, cancellationToken).
-	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/>, and returns the handler's result. The cancellation token comes first so the handler can be written as a trailing lambda.
+	/// Obsolete: use <c>query.ReadAsync(handler, cancellationToken)</c>.
+	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/>, and returns the handler's result.
+	/// The cancellation token comes first so the handler can be written as a trailing lambda.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
 	/// <inheritdoc cref="ReadAsync{T, TResult}(IMappedQuery{T}, Func{IAsyncEnumerable{T}, ValueTask{TResult}}, CancellationToken)"/>
 	[Obsolete(ReadAsyncTokenFirstObsolete)]
 	public static ValueTask<TResult> ReadAsync<T, TResult>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, ValueTask<TResult>> handler)
 		=> query.ReadAsync(handler, cancellationToken);
 
 	/// <summary>
-	/// Obsolete: use query.ReadAsync(handler, cancellationToken).
-	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/> together with the cancellation token in effect. The cancellation token comes first so the handler can be written as a trailing lambda.
+	/// Obsolete: use <c>query.ReadAsync(handler, cancellationToken)</c>.
+	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/> together with the cancellation token in effect.
+	/// The cancellation token comes first so the handler can be written as a trailing lambda.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; the sequence and the token are not valid after the handler returns.</param>
-	/// <returns>A task that completes after the handler has completed and the connection has been released.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-async']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-task']/*" />
 	/// <seealso cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>
 	[Obsolete(ReadAsyncTokenFirstObsolete)]
 	public static ValueTask ReadAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler)
 		=> query.ReadAsync(handler, cancellationToken);
 
 	/// <summary>
-	/// Obsolete: use query.ReadAsync(handler, cancellationToken).
-	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/> together with the cancellation token in effect, and returns the handler's result. The cancellation token comes first so the handler can be written as a trailing lambda.
+	/// Obsolete: use <c>query.ReadAsync(handler, cancellationToken)</c>.
+	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/> together with the cancellation token in effect, and returns the handler's result.
+	/// The cancellation token comes first so the handler can be written as a trailing lambda.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <typeparam name="TResult">The type returned by the handler.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
-	/// <param name="handler">Receives a forward-only asynchronous sequence of mapped rows and the cancellation token in effect. Enumerate it inside the handler; the sequence and the token are not valid after the handler returns.</param>
-	/// <returns>A task that produces the value returned by <paramref name="handler"/> after the connection has been released.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
+	/// </remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-result']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-async']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-task-result']/*" />
 	/// <seealso cref="IMappedQuery{T}.ReadAsync{TResult}(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask{TResult}}, CancellationToken)"/>
 	[Obsolete(ReadAsyncTokenFirstObsolete)]
 	public static ValueTask<TResult> ReadAsync<T, TResult>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler)
@@ -143,14 +147,14 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="List{T}"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <returns>A list of all the rows, in the order the database returned them. The list is empty if there are no rows.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	public static List<T> ToList<T>(this IMappedQuery<T> query)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
@@ -166,16 +170,15 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="List{T}"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces a list of all the rows, in the order the database returned them.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
-	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="ToList{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<List<T>> ToListAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
@@ -191,14 +194,14 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads every mapped row into a new array.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <returns>An array of all the rows, in the order the database returned them. The array is empty if there are no rows.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
-	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="ToList{T}(IMappedQuery{T})"/>
 	public static T[] ToArray<T>(this IMappedQuery<T> query)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
@@ -212,15 +215,17 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new array.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces an array of all the rows, in the order the database returned them.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
+	/// <para>
 	/// A result with rows is a new array, exactly as long as the number of rows, and nothing else refers to it: keep it, change it or hand it on.
-	/// <c>ToImmutableArrayAsync</c> wraps such an array without copying it on .NET 8 and later (the netstandard2.0 build copies it once). (An empty result is the shared empty array, which has nothing to change.)
+	/// <see cref="ToImmutableArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/> wraps such an array without copying it on .NET 8 and later (the netstandard builds copy it once).
+	/// An empty result is the shared empty array, which has nothing to change.
+	/// </para>
 	/// </remarks>
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
@@ -239,14 +244,14 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="ImmutableArray{T}"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <returns>An immutable array of all the rows, in the order the database returned them.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
+	/// <seealso cref="ToImmutableArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
-	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ImmutableArray<T> ToImmutableArray<T>(this IMappedQuery<T> query)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
@@ -275,16 +280,15 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="ImmutableArray{T}"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces an immutable array of all the rows, in the order the database returned them.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
-	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="ToImmutableArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
@@ -300,20 +304,21 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>, keyed by <paramref name="keySelector"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
-	/// <param name="query">The query to execute.</param>
 	/// <param name="keySelector">Produces the key for each mapped row.</param>
 	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
 	/// <returns>A dictionary of all the rows. It is empty if there are no rows.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> or <paramref name="keySelector"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
-	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a null key) throws only after the whole read.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
+	/// <para>
+	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a <see langword="null"/> key) throws only after the whole read.
+	/// </para>
 	/// </remarks>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
-	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>
+	/// <seealso cref="ToList{T}(IMappedQuery{T})"/>
 	public static Dictionary<TKey, T> ToDictionary<T, TKey>(
 		this IMappedQuery<T> query, Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer = null)
 		where TKey : notnull
@@ -330,21 +335,21 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>, keyed by <paramref name="keySelector"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
-	/// <param name="query">The query to execute.</param>
 	/// <param name="keySelector">Produces the key for each mapped row.</param>
 	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces a dictionary of all the rows.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
-	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a null key) throws only after the whole read.
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/> or <paramref name="keySelector"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
+	/// <para>
+	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a <see langword="null"/> key) throws only after the whole read.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<T, TKey>(
 		this IMappedQuery<T> query,
@@ -368,25 +373,25 @@ public static class MappedQueryExtensions
 	/// keyed by <paramref name="keySelector"/>, with the value
 	/// <paramref name="valueSelector"/> returns for the row.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
 	/// <typeparam name="TValue">The type of the dictionary value.</typeparam>
-	/// <param name="query">The query to execute.</param>
 	/// <param name="keySelector">Produces the key for each mapped row.</param>
 	/// <param name="valueSelector">Produces the value for each mapped row.</param>
 	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
 	/// <returns>A dictionary of all the rows. It is empty if there are no rows.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> or <paramref name="valueSelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/>, <paramref name="keySelector"/> or <paramref name="valueSelector"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
 	/// <remarks>
 	/// <para>
-	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a null key) throws, and the selectors run, only after the whole read.
+	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a <see langword="null"/> key) throws, and the selectors run, only after the whole read.
 	/// A duplicate key throws, as it does for <see cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/> and for LINQ's <c>ToDictionary</c>.
 	/// </para>
 	/// <para>
 	/// The selectors run while the reader is open, so keep them quick and do not touch the connection from inside them.
 	/// </para>
 	/// </remarks>
+	/// <seealso cref="ToDictionaryAsync{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)"/>
 	/// <seealso cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/>
 	public static Dictionary<TKey, TValue> ToDictionary<T, TKey, TValue>(
 		this IMappedQuery<T> query,
@@ -411,21 +416,19 @@ public static class MappedQueryExtensions
 	/// keyed by <paramref name="keySelector"/>, with the value
 	/// <paramref name="valueSelector"/> returns for the row.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
 	/// <typeparam name="TValue">The type of the dictionary value.</typeparam>
-	/// <param name="query">The query to execute.</param>
 	/// <param name="keySelector">Produces the key for each mapped row.</param>
 	/// <param name="valueSelector">Produces the value for each mapped row.</param>
 	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces a dictionary of all the rows.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> or <paramref name="valueSelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="query"/>, <paramref name="keySelector"/> or <paramref name="valueSelector"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
 	/// <para>
-	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a null key) throws, and the selectors run, only after the whole read.
+	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a <see langword="null"/> key) throws, and the selectors run, only after the whole read.
 	/// A duplicate key throws, as it does for <see cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>.
 	/// </para>
 	/// <para>
@@ -434,6 +437,7 @@ public static class MappedQueryExtensions
 	/// </para>
 	/// </remarks>
 	/// <seealso cref="ToDictionary{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey})"/>
+	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<T, TKey, TValue>(
 		this IMappedQuery<T> query,
 		Func<T, TKey> keySelector,
@@ -457,15 +461,15 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="HashSet{T}"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <param name="comparer">The comparer for the rows, or <see langword="null"/> to use the default comparer.</param>
 	/// <returns>A set of the distinct rows. Rows that compare equal to an earlier row are dropped.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
-	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <seealso cref="ToHashSetAsync{T}(IMappedQuery{T}, IEqualityComparer{T}, CancellationToken)"/>
+	/// <seealso cref="ToList{T}(IMappedQuery{T})"/>
 	public static HashSet<T> ToHashSet<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
@@ -493,16 +497,15 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="HashSet{T}"/>.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <param name="comparer">The comparer for the rows, or <see langword="null"/> to use the default comparer.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces a set of the distinct rows.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
-	/// All rows are buffered in memory before the call returns. Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process very large results as a stream.
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="ToHashSet{T}(IMappedQuery{T}, IEqualityComparer{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null, CancellationToken cancellationToken = default)
 	{
@@ -519,18 +522,16 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads the first mapped row.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <returns>The first row, or <see langword="default"/> if the query returns no rows.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
 	/// <para>
 	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
 	/// </para>
-	/// <para>
-	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including how the later result sets are read through.
-	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets.
-	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through']/*" />
 	/// </remarks>
+	/// <seealso cref="FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
 	public static T? FirstOrDefault<T>(this IMappedQuery<T> query)
 	{
@@ -548,21 +549,18 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads the first mapped row.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces the first row, or <see langword="default"/> if the query returns no rows.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <remarks>
 	/// <para>
 	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
 	/// </para>
-	/// <para>
-	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including how the later result sets are read through.
-	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets.
-	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through']/*" />
 	/// </remarks>
-	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
+	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
+	/// <seealso cref="SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T?> FirstOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
@@ -581,16 +579,14 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads the only mapped row.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <returns>The single row, or <see langword="default"/> if the query returns no rows.</returns>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
 	/// <remarks>
-	/// <para>
-	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including how the later result sets are read through.
-	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets.
-	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through']/*" />
 	/// </remarks>
+	/// <seealso cref="SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
 	public static T? SingleOrDefault<T>(this IMappedQuery<T> query)
 	{
@@ -608,19 +604,16 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads the only mapped row.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces the single row, or <see langword="default"/> if the query returns no rows.</returns>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
 	/// <remarks>
-	/// <para>
-	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including how the later result sets are read through.
-	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets.
-	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through']/*" />
 	/// </remarks>
-	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
+	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
+	/// <seealso cref="FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T?> SingleOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
@@ -639,24 +632,19 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads the first mapped row; throws if the query returns no rows.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <returns>The first row.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <exception cref="InvalidOperationException">The query returns no rows.</exception>
 	/// <remarks>
 	/// <para>
 	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
-	/// A row whose value is <c>NULL</c> is still a row, and <see langword="default"/> is returned for it.
 	/// </para>
-	/// <para>
-	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
-	/// </para>
-	/// <para>
-	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including the no-rows message and how the later result sets are read through.
-	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets, and its no-rows error is the message of LINQ, which does not name the terminal.
-	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through-throwing']/*" />
 	/// </remarks>
+	/// <seealso cref="FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
 	/// <seealso cref="Single{T}(IMappedQuery{T})"/>
 	public static T First<T>(this IMappedQuery<T> query)
@@ -675,26 +663,20 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads the first mapped row; throws if the query returns no rows.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces the first row.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <exception cref="InvalidOperationException">The query returns no rows.</exception>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
 	/// <para>
 	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
-	/// A row whose value is <c>NULL</c> is still a row, and <see langword="default"/> is returned for it.
 	/// </para>
-	/// <para>
-	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
-	/// </para>
-	/// <para>
-	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including the no-rows message and how the later result sets are read through.
-	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets, and its no-rows error is the message of LINQ, which does not name the terminal.
-	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through-throwing']/*" />
 	/// </remarks>
+	/// <seealso cref="First{T}(IMappedQuery{T})"/>
 	/// <seealso cref="FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T> FirstAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
@@ -715,25 +697,22 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Reads the only mapped row; throws if the query returns no rows or more than one.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <returns>The single row.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <exception cref="InvalidOperationException">The query returns no rows, or more than one row.</exception>
 	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
 	/// <para>
-	/// A row whose value is <c>NULL</c> is still a row, and <see langword="default"/> is returned for it.
 	/// The provider is not asked for a single row, because it could then hide the second one.
 	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
 	/// <para>
-	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
 	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
 	/// </para>
-	/// <para>
-	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including the no-rows message and how the later result sets are read through.
-	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets, and its no-rows error is the message of LINQ, which does not name the terminal.
-	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through-throwing']/*" />
 	/// </remarks>
+	/// <seealso cref="SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
 	/// <seealso cref="First{T}(IMappedQuery{T})"/>
 	public static T Single<T>(this IMappedQuery<T> query)
@@ -752,27 +731,23 @@ public static class MappedQueryExtensions
 	/// <summary>
 	/// Asynchronously reads the only mapped row; throws if the query returns no rows or more than one.
 	/// </summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="query">The query to execute.</param>
-	/// <param name="cancellationToken">Cancels the call, together with the cancellation token set on the underlying command: either one cancels it, whether it is opening the connection, looking up stored-procedure parameter names, executing or reading.</param>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
 	/// <returns>A task that produces the single row.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <exception cref="InvalidOperationException">The query returns no rows, or more than one row.</exception>
-	/// <exception cref="OperationCanceledException">The operation was canceled.</exception>
 	/// <remarks>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
 	/// <para>
-	/// A row whose value is <c>NULL</c> is still a row, and <see langword="default"/> is returned for it.
 	/// The provider is not asked for a single row, because it could then hide the second one.
 	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
 	/// <para>
-	/// The no-rows error is thrown after the command has been cleaned up: the connection is released and, unless <c>SingleResult()</c> was called, the later result sets have been read through, so a failure in one of them is thrown instead.
 	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
 	/// </para>
-	/// <para>
-	/// Called through <see cref="IMappedQuery{T}"/>, the types of this library behave exactly as their own members do, including the no-rows message and how the later result sets are read through.
-	/// Another implementation of <see cref="IMappedQuery{T}"/> is read through its <c>Read</c> handler: it stops at the row, so it cannot read through the later result sets, and its no-rows error is the message of LINQ, which does not name the terminal.
-	/// </para>
+	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through-throwing']/*" />
 	/// </remarks>
+	/// <seealso cref="Single{T}(IMappedQuery{T})"/>
 	/// <seealso cref="SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T> SingleAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
@@ -790,13 +765,25 @@ public static class MappedQueryExtensions
 			cancellationToken);
 	}
 
-	// The terminals below read a foreign IMappedQuery<T> through its
-	// handler. Each one enumerates with
-	// WithCancellation(token).ConfigureAwait(false): the in-box
-	// System.Linq.AsyncEnumerable methods await MoveNextAsync and
-	// DisposeAsync without ConfigureAwait(false), so they would resume
-	// on the caller's SynchronizationContext.
-	// The messages are those of LINQ.
+	/// <summary>
+	/// Reads a query that is not one of this library's own, through its
+	/// <see cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>
+	/// handler, into a list.
+	/// </summary>
+	/// <remarks>
+	/// This and the helpers below read a foreign <see cref="IMappedQuery{T}"/>
+	/// through its handler.
+	/// Each enumerates with <c>WithCancellation(token).ConfigureAwait(false)</c>:
+	/// the in-box <c>System.Linq.AsyncEnumerable</c> methods await
+	/// <c>MoveNextAsync</c> and <c>DisposeAsync</c> without
+	/// <c>ConfigureAwait(false)</c>, so they would resume on the caller's
+	/// <see cref="SynchronizationContext"/>.
+	/// The messages are those of LINQ.
+	/// </remarks>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="items">The rows to read.</param>
+	/// <param name="token">The cancellation token for the enumeration.</param>
+	/// <returns>A list of all the rows.</returns>
 	static async ValueTask<List<T>> CollectListAsync<T>(
 		IAsyncEnumerable<T> items,
 		CancellationToken token)

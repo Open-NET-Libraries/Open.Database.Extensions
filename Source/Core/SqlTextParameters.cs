@@ -11,7 +11,12 @@ namespace Open.Database.Extensions;
 /// </remarks>
 static class SqlTextParameters
 {
-	// The distinct tokens of the text in order of first appearance, each with its @; empty (never default) when there are none.
+	/// <summary>
+	/// Gets the distinct tokens of the text in order of first appearance, each
+	/// with its <c>@</c>.
+	/// </summary>
+	/// <param name="text">The SQL text.</param>
+	/// <returns>The tokens; empty (never default) when there are none.</returns>
 	internal static ImmutableArray<string> Parse(string text)
 	{
 		ImmutableArray<string>.Builder? tokens = null;
@@ -32,7 +37,11 @@ static class SqlTextParameters
 	/// <paramref name="stop"/> the index after its last character, and <paramref name="position"/> moves to <paramref name="stop"/>.
 	/// <see cref="Parse"/> is built on this, so the markers a scan sees are exactly the tokens a parse makes (a repeat, in any case, is another marker here and one token there).
 	/// </summary>
-	/// <returns><see langword="false"/> when the text has no more markers.</returns>
+	/// <param name="text">The SQL text.</param>
+	/// <param name="position">Where to start looking; moves to <paramref name="stop"/> when a marker is found, otherwise to the end of the text.</param>
+	/// <param name="start">The index of the marker's <c>@</c>.</param>
+	/// <param name="stop">The index after the marker's last character.</param>
+	/// <returns><see langword="true"/> if a marker was found; <see langword="false"/> when the text has no more markers.</returns>
 	internal static bool NextMarker(ReadOnlySpan<char> text, ref int position, out int start, out int stop)
 	{
 		int i = position;
@@ -81,7 +90,16 @@ static class SqlTextParameters
 		return false;
 	}
 
-	// The index after the closing character of a quoted part that starts at `open` (a doubled closing character is one character of the text); the end of the text when it is not closed.
+	/// <summary>
+	/// Gets the index after the closing character of a quoted part.
+	/// </summary>
+	/// <remarks>
+	/// A doubled closing character is one character of the text.
+	/// </remarks>
+	/// <param name="text">The SQL text.</param>
+	/// <param name="open">The index of the opening character.</param>
+	/// <param name="close">The closing character.</param>
+	/// <returns>The index after the closing character; the end of the text when it is not closed.</returns>
 	static int SkipQuoted(ReadOnlySpan<char> text, int open, char close)
 	{
 		for (int i = open + 1; i < text.Length; i++)
@@ -99,7 +117,12 @@ static class SqlTextParameters
 		return text.Length;
 	}
 
-	// The index of the line break that ends a comment, or the end of the text.
+	/// <summary>
+	/// Gets the index of the line break that ends a comment.
+	/// </summary>
+	/// <param name="text">The SQL text.</param>
+	/// <param name="from">The index to start at.</param>
+	/// <returns>The index of the line break, or the end of the text.</returns>
 	static int SkipLine(ReadOnlySpan<char> text, int from)
 	{
 		for (int i = from; i < text.Length; i++)
@@ -110,7 +133,13 @@ static class SqlTextParameters
 		return text.Length;
 	}
 
-	// The index after the name characters (letters, digits, _, $ and #) that start at `from`.
+	/// <summary>
+	/// Gets the index after the name characters (letters, digits, <c>_</c>,
+	/// <c>$</c> and <c>#</c>) that start at <paramref name="from"/>.
+	/// </summary>
+	/// <param name="text">The SQL text.</param>
+	/// <param name="from">The index to start at.</param>
+	/// <returns>The index after the name.</returns>
 	static int SkipWord(ReadOnlySpan<char> text, int from)
 	{
 		int i = from;

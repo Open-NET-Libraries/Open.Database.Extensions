@@ -7,17 +7,19 @@ namespace Open.Database.Extensions;
 /// and matches it to the real parameter names of a stored procedure.
 /// </summary>
 /// <remarks>
-/// A derivable expression is a chain of plain member accesses: <c>startDate</c>, <c>filter.CompanySerialNum</c>, <c>order.Customer.Id</c>,
+/// A derivable expression is a chain of plain member accesses: <c>startDate</c>, <c>filter.AuthorId</c>, <c>post.Author.Id</c>,
 /// <c>this.Name</c>, <c>maybe?.X</c>, <c>maybe!.X</c>, <c>@class</c> (properties and fields look the same), with optional outer parentheses.
 /// Calls, indexers, operators, casts, literals and <c>nameof</c> are not derivable: a wrong name that silently binds is worse than an error that says to pass the name.
-/// A chain gives candidates, most specific first: <c>order.Customer.Id</c> tries <c>orderCustomerId</c>, <c>CustomerId</c>, then <c>Id</c>.
+/// A chain gives candidates, most specific first: <c>post.Author.Id</c> tries <c>postAuthorId</c>, <c>AuthorId</c>, then <c>Id</c>.
 /// A last member that carries a field prefix (<c>m_author</c>, <c>s_author</c>, <c>_author</c>) also offers its name without the prefix, right after the name as written.
 /// A candidate is matched to the real parameter names in four tiers, each candidate in its turn: exact, ignoring case, ignoring case and underscores, and,
 /// failing those, ignoring case and underscores after removing one common parameter prefix from the real name (<c>p_author</c>, <c>pAuthor</c>, <c>in_author</c>, <c>i_author</c>, <c>prm_author</c>, <c>par_author</c>, <c>v_author</c>).
 /// </remarks>
 static class ParameterNames
 {
-	// Words that start an expression but are not a variable or member name.
+	/// <summary>
+	/// Words that start an expression but are not a variable or member name.
+	/// </summary>
 	static readonly string[] NotNames =
 		["null", "true", "false", "default", "new", "typeof", "sizeof", "checked", "unchecked", "stackalloc", "base"];
 
@@ -33,11 +35,21 @@ static class ParameterNames
 		internal string LastMember { get; } = lastMember;
 		internal ImmutableArray<string> Candidates { get; } = candidates;
 
-		// The last real name this expression resolved to in a SQL text, so a repeat scan hands back the same string (the names are almost always the same):
-		// it belongs to the expression, which the call site holds, not to any text. One slot; a thread that loses a race only makes one more string.
+		/// <summary>
+		/// The last real name this expression resolved to in a SQL text, so a
+		/// repeat scan hands back the same string.
+		/// </summary>
+		/// <remarks>
+		/// The names are almost always the same.
+		/// It belongs to the expression, which the call site holds, not to any
+		/// text.
+		/// One slot; a thread that loses a race only makes one more string.
+		/// </remarks>
 		string? _real;
 
-		/// <summary>The string for a marker found by a scan (with its <c>@</c>): the one remembered when it is the same characters, else a new one, which is remembered.</summary>
+		/// <summary>Gets the string for a marker found by a scan: the one remembered when it is the same characters, else a new one, which is remembered.</summary>
+		/// <param name="marker">The marker, with its <c>@</c>.</param>
+		/// <returns>The string for the marker.</returns>
 		internal string Real(ReadOnlySpan<char> marker)
 		{
 			string? known = _real;
@@ -47,11 +59,20 @@ static class ParameterNames
 		}
 	}
 
-	// By the expression string itself: the text of an argument comes from [CallerArgumentExpression], a literal at the call site, so it is the same object on every call.
-	// An entry goes when its string is released. A text that is not derivable is not stored.
+	/// <summary>
+	/// The facts of the derivable expressions, by the expression string itself.
+	/// </summary>
+	/// <remarks>
+	/// The text of an argument comes from <c>[CallerArgumentExpression]</c>, a
+	/// literal at the call site, so it is the same object on every call.
+	/// An entry goes when its string is released.
+	/// A text that is not derivable is not stored.
+	/// </remarks>
 	static readonly ConditionalWeakTable<string, DerivedExpression> Described = new();
 
-	/// <summary>The last member and the candidates of the expression, remembered on the string; <see langword="null"/> when it is <see langword="null"/> or not derivable.</summary>
+	/// <summary>Gets the last member and the candidates of the expression, remembered on the string.</summary>
+	/// <param name="expression">The text of the argument.</param>
+	/// <returns>The facts of the expression; <see langword="null"/> when it is <see langword="null"/> or not derivable.</returns>
 	internal static DerivedExpression? Describe(string? expression)
 	{
 		if (expression is null) return null;
@@ -59,10 +80,14 @@ static class ParameterNames
 		return IsDerivable(expression) ? Described.GetValue(expression, static e => new DerivedExpression(LastMember(e), Candidates(e))) : null;
 	}
 
-	/// <summary>True when the expression is a chain of plain member accesses a name can be derived from. Allocates nothing.</summary>
+	/// <summary>Determines whether the expression is a chain of plain member accesses a name can be derived from. Allocates nothing.</summary>
+	/// <param name="expression">The text of the argument.</param>
+	/// <returns><see langword="true"/> if a name can be derived from the expression; otherwise, <see langword="false"/>.</returns>
 	internal static bool IsDerivable(string? expression) => TryScan(expression, null, out _, out _);
 
-	/// <summary>The last member of a derivable expression as written (<c>CompanySerialNum</c> for <c>filter.CompanySerialNum</c>).</summary>
+	/// <summary>Gets the last member of a derivable expression as written (<c>AuthorId</c> for <c>filter.AuthorId</c>).</summary>
+	/// <param name="expression">The text of the argument.</param>
+	/// <returns>The last member.</returns>
 	/// <exception cref="ArgumentException">The expression is not derivable.</exception>
 	internal static string LastMember(string expression)
 		=> TryScan(expression, null, out int start, out int length)
@@ -70,9 +95,11 @@ static class ParameterNames
 			: throw new ArgumentException($"Cannot derive a parameter name from the expression '{expression}'.", nameof(expression));
 
 	/// <summary>
-	/// The candidate names of a derivable expression, most specific (longest) first, then the final member name as written.
+	/// Gets the candidate names of a derivable expression, most specific (longest) first, then the final member name as written.
 	/// When that member starts with a field prefix (<c>m_</c>, <c>s_</c> or <c>_</c>, in lower case, followed by a letter or a digit) its name without the prefix follows as the last candidate.
 	/// </summary>
+	/// <param name="expression">The text of the argument.</param>
+	/// <returns>The candidates, most specific first.</returns>
 	/// <exception cref="ArgumentException">The expression is not derivable (callers check with <see cref="IsDerivable"/> first).</exception>
 	internal static ImmutableArray<string> Candidates(string expression)
 	{
@@ -95,15 +122,34 @@ static class ParameterNames
 		return candidates.MoveToImmutable();
 	}
 
-	// The length of a field prefix at the start of the member name s[start..start + length] (`_`, `m_` or `s_`, followed by a letter or a digit), or 0:
-	// m_author and _author have one; M_author, m__author and mauthor do not.
+	/// <summary>
+	/// Gets the length of a field prefix at the start of the member name
+	/// <c>s[start..start + length]</c>.
+	/// </summary>
+	/// <remarks>
+	/// A field prefix is <c>_</c>, <c>m_</c> or <c>s_</c>, followed by a letter
+	/// or a digit: <c>m_author</c> and <c>_author</c> have one;
+	/// <c>M_author</c>, <c>m__author</c> and <c>mauthor</c> do not.
+	/// </remarks>
+	/// <param name="s">The expression.</param>
+	/// <param name="start">The index where the member name starts.</param>
+	/// <param name="length">The length of the member name.</param>
+	/// <returns>The length of the prefix, or 0 when there is none.</returns>
 	static int FieldPrefixLength(string s, int start, int length)
 	{
 		int prefix = s[start] == '_' ? 1 : length > 1 && (s[start] == 'm' || s[start] == 's') && s[start + 1] == '_' ? 2 : 0;
 		return prefix > 0 && prefix < length && char.IsLetterOrDigit(s[start + prefix]) ? prefix : 0;
 	}
 
-	// Scans the expression as `a.b.c` with optional `?.`, `!` and outer parentheses. Fills `segments` (when given) with the member names.
+	/// <summary>
+	/// Scans the expression as <c>a.b.c</c> with optional <c>?.</c>, <c>!</c>
+	/// and outer parentheses.
+	/// </summary>
+	/// <param name="expression">The text of the argument.</param>
+	/// <param name="segments">The list to fill with the member names, or <see langword="null"/> for none.</param>
+	/// <param name="lastStart">The index where the last member starts.</param>
+	/// <param name="lastLength">The length of the last member.</param>
+	/// <returns><see langword="true"/> if the expression is a chain of plain member accesses; otherwise, <see langword="false"/>.</returns>
 	static bool TryScan(string? expression, List<Segment>? segments, out int lastStart, out int lastLength)
 	{
 		lastStart = lastLength = 0;
@@ -195,7 +241,15 @@ static class ParameterNames
 		while (i < end && char.IsWhiteSpace(s[i])) i++;
 	}
 
-	// True when the '(' at `open` is closed by the ')' at `close` (so the parentheses wrap everything in between).
+	/// <summary>
+	/// Determines whether the <c>(</c> at <paramref name="open"/> is closed by
+	/// the <c>)</c> at <paramref name="close"/>, so the parentheses wrap
+	/// everything in between.
+	/// </summary>
+	/// <param name="s">The expression.</param>
+	/// <param name="open">The index of the opening parenthesis.</param>
+	/// <param name="close">The index of the closing parenthesis.</param>
+	/// <returns><see langword="true"/> if they are a pair; otherwise, <see langword="false"/>.</returns>
 	static bool ClosesAt(string s, int open, int close)
 	{
 		if (s[close] != ')') return false;
@@ -210,7 +264,7 @@ static class ParameterNames
 	}
 
 	/// <summary>
-	/// Finds the real parameter that a derived name stands for. The candidates of the expression are tried most specific first, so <c>order.Customer.Id</c> finds <c>@customer_id</c> before a bare <c>@id</c>;
+	/// Finds the real parameter that a derived name stands for. The candidates of the expression are tried most specific first, so <c>post.Author.Id</c> finds <c>@author_id</c> before a bare <c>@id</c>;
 	/// within a candidate the match is exact, else ignoring case, else ignoring case and underscores, the same tiers columns use.
 	/// When a candidate matches in none of those three tiers, a fourth tier compares it with the real name after one common parameter prefix is removed
 	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c> or <c>v_</c> in any case, or a lone lower-case <c>p</c> before an upper-case letter), ignoring case and underscores:
@@ -218,7 +272,7 @@ static class ParameterNames
 	/// </summary>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
 	/// <param name="parameterNames">The procedure's real parameter names, as the provider reports them (a leading <c>@</c> is allowed).</param>
-	/// <param name="expression">The text of the argument as the caller wrote it (<c>order.Customer.Id</c>), which the message of an ambiguity quotes.</param>
+	/// <param name="expression">The text of the argument as the caller wrote it (<c>post.Author.Id</c>), which the message of an ambiguity quotes.</param>
 	/// <param name="procedure">The procedure's name, for the message of an ambiguity.</param>
 	/// <returns>The real name as the provider reported it, or <see langword="null"/> when no candidate matches any parameter.</returns>
 	/// <exception cref="InvalidOperationException">One candidate matches more than one parameter at the same tier. The message says what the caller wrote, the candidate, the tier and what the procedure declares.</exception>
@@ -226,12 +280,14 @@ static class ParameterNames
 		// Every candidate in every tier compares against the same bare names: remove the @ once, here.
 		=> MatchBare(candidates, parameterNames, BareNames(parameterNames), expression, procedure);
 
-	/// <summary>The same as <see cref="Match"/>, with the names without their <c>@</c> already made (a <see cref="NameSet"/> makes them once).</summary>
+	/// <summary>Finds the real parameter that a derived name stands for, as <see cref="Match"/> does, with the names without their <c>@</c> already made (a <see cref="NameSet"/> makes them once).</summary>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
 	/// <param name="parameterNames">The real names as the provider reports them.</param>
 	/// <param name="bareNames">The same names without a leading <c>@</c>.</param>
 	/// <param name="expression">The text of the argument, for the message of an ambiguity.</param>
 	/// <param name="procedure">The procedure's name, for the message of an ambiguity.</param>
+	/// <returns>The real name as the provider reported it, or <see langword="null"/> when no candidate matches any parameter.</returns>
+	/// <exception cref="InvalidOperationException">One candidate matches more than one parameter at the same tier.</exception>
 	internal static string? MatchBare(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames, ImmutableArray<string> bareNames, string expression, string procedure)
 	{
 		foreach (string candidate in candidates)
@@ -242,7 +298,12 @@ static class ParameterNames
 		return null;
 	}
 
-	// How a tier compares a candidate with a real name, for the message of an ambiguity.
+	/// <summary>
+	/// Describes how a tier compares a candidate with a real name, for the
+	/// message of an ambiguity.
+	/// </summary>
+	/// <param name="tier">The tier, 1 to 4.</param>
+	/// <returns>The description.</returns>
 	static string TierText(int tier) => tier switch
 	{
 		1 => "exactly",
@@ -278,7 +339,15 @@ static class ParameterNames
 		return null;
 	}
 
-	// The real names without a leading @. A set with none is returned as it is; otherwise one copy holds the bare names, and a name without an @ is the same string in it.
+	/// <summary>
+	/// Gets the real names without a leading <c>@</c>.
+	/// </summary>
+	/// <remarks>
+	/// A set with none is returned as it is; otherwise one copy holds the bare
+	/// names, and a name without an <c>@</c> is the same string in it.
+	/// </remarks>
+	/// <param name="names">The real names.</param>
+	/// <returns>The names without a leading <c>@</c>.</returns>
 	internal static ImmutableArray<string> BareNames(ImmutableArray<string> names)
 	{
 		string[]? bare = null;
@@ -301,10 +370,21 @@ static class ParameterNames
 		_ => EqualWithoutParameterPrefix(a, b),
 	};
 
-	// The prefixes real procedures put in front of a parameter name, compared ignoring case and followed by at least one more character.
+	/// <summary>
+	/// The prefixes real procedures put in front of a parameter name,
+	/// compared ignoring case and followed by at least one more character.
+	/// </summary>
 	static readonly string[] ParameterPrefixes = ["p_", "in_", "i_", "prm_", "par_", "v_"];
 
-	// The length of the parameter prefix at the start of a real name (a leading @ already removed), or 0. A lone lower-case p counts only before an upper-case letter: pAuthor, never pages.
+	/// <summary>
+	/// Gets the length of the parameter prefix at the start of a real name.
+	/// </summary>
+	/// <remarks>
+	/// A lone lower-case <c>p</c> counts only before an upper-case letter:
+	/// <c>pAuthor</c>, never <c>pages</c>.
+	/// </remarks>
+	/// <param name="name">The real name, with a leading <c>@</c> already removed.</param>
+	/// <returns>The length of the prefix, or 0 when there is none.</returns>
 	static int ParameterPrefixLength(ReadOnlySpan<char> name)
 	{
 		foreach (string prefix in ParameterPrefixes)
@@ -316,14 +396,26 @@ static class ParameterNames
 		return name.Length > 1 && name[0] == 'p' && char.IsUpper(name[1]) ? 1 : 0;
 	}
 
-	// Tier 4: the candidate against the real name once one parameter prefix is removed, ignoring case and underscores.
+	/// <summary>
+	/// Tier 4: compares the candidate with the real name once one parameter
+	/// prefix is removed, ignoring case and underscores.
+	/// </summary>
+	/// <param name="candidate">The candidate.</param>
+	/// <param name="real">The real name, without its <c>@</c>.</param>
+	/// <returns><see langword="true"/> if they match; otherwise, <see langword="false"/>.</returns>
 	static bool EqualWithoutParameterPrefix(ReadOnlySpan<char> candidate, ReadOnlySpan<char> real)
 	{
 		int prefix = ParameterPrefixLength(real);
 		return prefix > 0 && EqualIgnoringCaseAndUnderscores(candidate, real[prefix..]);
 	}
 
-	// Compares a with b, ignoring case and underscores.
+	/// <summary>
+	/// Compares <paramref name="a"/> with <paramref name="b"/>, ignoring case
+	/// and underscores.
+	/// </summary>
+	/// <param name="a">The first name.</param>
+	/// <param name="b">The second name.</param>
+	/// <returns><see langword="true"/> if they match; otherwise, <see langword="false"/>.</returns>
 	static bool EqualIgnoringCaseAndUnderscores(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
 	{
 		int i = 0, j = 0;
@@ -358,6 +450,7 @@ static class ParameterNames
 	/// <param name="text">The SQL text.</param>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
 	/// <param name="real">The marker as the text spells it, with its <c>@</c>, when <see cref="ScanResult.Found"/>.</param>
+	/// <returns>How the scan ended.</returns>
 	internal static ScanResult Scan(string text, ImmutableArray<string> candidates, out ReadOnlySpan<char> real)
 	{
 		foreach (string candidate in candidates)
@@ -393,7 +486,15 @@ static class ParameterNames
 		return ScanResult.None;
 	}
 
-	// True when no earlier marker of the text is the same name (ignoring case) as the one at start..stop.
+	/// <summary>
+	/// Determines whether no earlier marker of the text is the same name
+	/// (ignoring case) as the one at <paramref name="start"/> to
+	/// <paramref name="stop"/>.
+	/// </summary>
+	/// <param name="text">The SQL text.</param>
+	/// <param name="start">The index of the marker's <c>@</c>.</param>
+	/// <param name="stop">The index after the marker's last character.</param>
+	/// <returns><see langword="true"/> if it is the first writing of the name; otherwise, <see langword="false"/>.</returns>
 	static bool IsFirst(string text, int start, int stop)
 	{
 		ReadOnlySpan<char> marker = text.AsSpan(start, stop - start);

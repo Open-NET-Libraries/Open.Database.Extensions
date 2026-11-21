@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Documentation text shared by the mapped-query members: the Map overloads,
+  the query types and their terminals, the command reader extensions.
+  A member pulls in what it needs with
+  <include file="Mapped.docs.xml" path="docs/members[@name='key']/*" />
+  (the file path is relative to the source file that includes it, so
+  Extensions\*.cs say ../Mapped.docs.xml), so a sentence used by many members
+  is written here once and cannot drift between them.
+  The pooled-memory text is the other file, PooledMemory.docs.xml.
+  Every key is a fragment: parameters, type parameters, exceptions, returns
+  or paragraphs that go into the including member's own <remarks>.
+-->
+<docs>
+  <members name="row-type">
+    <typeparam name="T">The type each row is mapped to.</typeparam>
+  </members>
+
+  <members name="query">
+    <typeparam name="T">The type each row is mapped to.</typeparam>
+    <param name="query">The query to execute.</param>
+  </members>
+
+  <members name="query-null">
+    <exception cref="System.ArgumentNullException">
+      <paramref name="query"/> is <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="token">
+    <param name="cancellationToken">
+      Cancels the call, together with the cancellation token set on the
+      underlying command: either one cancels it, whether it is opening the
+      connection, looking up stored-procedure parameter names, executing or
+      reading.
+    </param>
+    <exception cref="System.OperationCanceledException">
+      The operation was canceled.
+    </exception>
+  </members>
+
+  <members name="buffer-token">
+    <param name="cancellationToken">
+      Cancels the read: a consumer then sees the cancel after what was
+      already delivered.
+    </param>
+  </members>
+
+  <members name="buffered">
+    <para>
+      All rows are buffered in memory before the call returns.
+      Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process
+      very large results as a stream.
+    </para>
+  </members>
+
+  <members name="handler-result">
+    <typeparam name="TResult">The type returned by the handler.</typeparam>
+  </members>
+
+  <members name="handler-sync">
+    <param name="handler">
+      Receives a forward-only sequence of mapped rows.
+      Enumerate it inside the handler; it is not valid after the handler
+      returns.
+    </param>
+  </members>
+
+  <members name="handler-items">
+    <param name="handler">
+      Receives a forward-only asynchronous sequence of mapped rows.
+      Enumerate it inside the handler; it is not valid after the handler
+      returns.
+    </param>
+  </members>
+
+  <members name="handler-async">
+    <param name="handler">
+      Receives a forward-only asynchronous sequence of mapped rows and the
+      cancellation token in effect.
+      Enumerate it inside the handler; the sequence and the token are not
+      valid after the handler returns.
+    </param>
+  </members>
+
+  <members name="returns-task">
+    <returns>
+      A task that completes after the handler has completed and the connection
+      has been released.
+    </returns>
+  </members>
+
+  <members name="returns-task-result">
+    <returns>
+      A task that produces the value returned by
+      <paramref name="handler"/> after the connection has been released.
+    </returns>
+  </members>
+
+  <members name="obsolete-11">
+    <para>
+      Obsolete in 11.0, removed in 12.
+      See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>
+      for the difference and a before/after example.
+    </para>
+  </members>
+
+  <members name="null-row">
+    <para>
+      A row whose value is <c>NULL</c> is still a row, and
+      <see langword="default"/> is returned for it.
+    </para>
+  </members>
+
+  <members name="no-rows">
+    <para>
+      The no-rows error is thrown after the command has been cleaned up:
+      the connection is released and, unless
+      <see cref="MappedQuery{T}.SingleResult"/> was called, the later result
+      sets have been read through, so a failure in one of them is thrown
+      instead.
+    </para>
+  </members>
+
+  <members name="terminal-through">
+    <para>
+      Called through <see cref="IMappedQuery{T}"/>, the types of this library
+      behave exactly as their own members do, including how the later result
+      sets are read through.
+      Another implementation of <see cref="IMappedQuery{T}"/> is read through
+      its <c>Read</c> handler: it stops at the row, so it cannot read through
+      the later result sets.
+    </para>
+  </members>
+
+  <members name="terminal-through-throwing">
+    <para>
+      Called through <see cref="IMappedQuery{T}"/>, the types of this library
+      behave exactly as their own members do, including the no-rows message
+      and how the later result sets are read through.
+      Another implementation of <see cref="IMappedQuery{T}"/> is read through
+      its <c>Read</c> handler: it stops at the row, so it cannot read through
+      the later result sets, and its no-rows error is the message of LINQ,
+      which does not name the terminal.
+    </para>
+  </members>
+
+  <members name="map-overload">
+    <typeparam name="T">The model type to map the values to.</typeparam>
+    <param name="map">
+      The prebuilt <see cref="RowMap{T}"/> to read with;
+      <see langword="null"/> reads as <c>Map&lt;T&gt;()</c> does.
+    </param>
+    <returns>
+      A deferred query whose results are mapped to
+      <typeparamref name="T"/>.
+    </returns>
+  </members>
+
+  <members name="map-selector">
+    <typeparam name="T">The type each record is projected to.</typeparam>
+    <param name="selector">
+      The transform applied to each <see cref="IDataRecord"/>.
+    </param>
+    <returns>
+      A deferred query whose results are produced by
+      <paramref name="selector"/>.
+    </returns>
+  </members>
+
+  <members name="map-how">
+    <para>
+      How <typeparamref name="T"/> is mapped is the same as for
+      <see cref="CoreExtensions.Map{T}(IExecuteReader, RowMap{T}?)"/>:
+      a <see cref="RowMap{T}"/> reads columns whose names differ from the
+      properties, and the overload without one reads by column name
+      (exactly, else ignoring case, else ignoring case and underscores, so
+      <c>author_id</c> feeds <c>AuthorId</c>).
+      A single value such as <see cref="int"/> is read from the first column.
+    </para>
+  </members>
+
+  <members name="behavior">
+    <param name="behavior">
+      The <see cref="CommandBehavior"/> to run the reader with.
+      The default is <see cref="CommandBehavior.Default"/>.
+    </param>
+  </members>
+
+  <members name="behavior-single">
+    <param name="behavior">
+      The <see cref="CommandBehavior"/> to run the reader with;
+      <see cref="CommandBehavior.SingleResult"/> is always added.
+      The default is <see cref="CommandBehavior.Default"/>.
+    </param>
+  </members>
+
+  <members name="command">
+    <param name="command">The command to read from.</param>
+  </members>
+
+  <members name="command-transform">
+    <typeparam name="T">The type the transform returns.</typeparam>
+    <param name="command">The command to read from.</param>
+    <param name="transform">
+      The function that converts each <see cref="IDataRecord"/> to a
+      <typeparamref name="T"/>.
+    </param>
+  </members>
+
+  <members name="returns-queue">
+    <returns>
+      The <see cref="QueryResultQueue{T}"/> that contains all the results and
+      the column mappings.
+    </returns>
+  </members>
+
+  <members name="null-command">
+    <exception cref="System.ArgumentNullException">
+      <paramref name="command"/> is <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="null-command-handler">
+    <exception cref="System.ArgumentNullException">
+      <paramref name="command"/> or <paramref name="handler"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="null-command-transform">
+    <exception cref="System.ArgumentNullException">
+      <paramref name="command"/> or <paramref name="transform"/> is
+      <see langword="null"/>.
+    </exception>
+  </members>
+
+  <members name="token-behavior">
+    <param name="cancellationToken">
+      A token that can cancel the call.
+      It is used together with the command's own token; either one cancels.
+      It comes after the optional <paramref name="behavior"/>:
+      pass it by name (<c>cancellationToken: token</c>) or pass the behavior
+      too.
+    </param>
+    <exception cref="System.OperationCanceledException">
+      The operation was canceled.
+    </exception>
+  </members>
+
+  <members name="reader-state-transform">
+    <typeparam name="TState">The type of the state passed to the transform.</typeparam>
+    <typeparam name="TResult">The type the transform returns.</typeparam>
+    <param name="state">The state to pass to the transform.</param>
+    <param name="transform">The function that processes the data reader.</param>
+  </members>
+</docs>

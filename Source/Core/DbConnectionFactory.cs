@@ -47,6 +47,7 @@ public class DbConnectionFactory : IDbConnectionFactory
 	/// Implicitly converts a connection factory function to a connection factory instance.
 	/// </summary>
 	/// <param name="factory">The function that creates a new connection each time it is called.</param>
+	/// <returns>A <see cref="DbConnectionFactory"/> that invokes <paramref name="factory"/> for every connection.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
 	public static implicit operator DbConnectionFactory(Func<IDbConnection> factory)
 		=> Create(factory);
@@ -88,6 +89,7 @@ public class DbConnectionFactory<TConnection>
 	/// Implicitly converts a typed connection factory function to a typed connection factory instance.
 	/// </summary>
 	/// <param name="factory">The function that creates a new connection each time it is called.</param>
+	/// <returns>A <see cref="DbConnectionFactory{TConnection}"/> that invokes <paramref name="factory"/> for every connection.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
 	public static implicit operator DbConnectionFactory<TConnection>(Func<TConnection> factory)
 		=> Create(factory);

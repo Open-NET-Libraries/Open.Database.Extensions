@@ -13,16 +13,21 @@ namespace Open.Database.Extensions;
 /// </remarks>
 static class TextNameCache
 {
-	// Only interned texts, by the text object itself: an entry goes when its string is released.
+	/// <summary>
+	/// The remembered sets, only for interned texts, by the text object itself.
+	/// </summary>
+	/// <remarks>An entry goes when its string is released.</remarks>
 	static readonly ConditionalWeakTable<string, NameSet> ByReference = new();
 
 	/// <summary>
-	/// The remembered set of an interned text, made on first use; <see langword="null"/> for a text that is not interned, which is scanned.
+	/// Gets the remembered set of an interned text, made on first use; <see langword="null"/> for a text that is not interned, which is scanned.
 	/// </summary>
 	/// <remarks>
 	/// The text itself must be the interned object: a string built at run time with the characters of a literal is another object, and is scanned.
 	/// Looking it up allocates nothing.
 	/// </remarks>
+	/// <param name="text">The SQL text.</param>
+	/// <returns>The set of its markers, or <see langword="null"/> when the text is not interned.</returns>
 	internal static NameSet? Get(string text)
 		=> ByReference.TryGetValue(text, out NameSet? known)
 			? known
@@ -30,21 +35,28 @@ static class TextNameCache
 				? ByReference.GetValue(text, static t => new NameSet(SqlTextParameters.Parse(t)))
 				: null;
 
-	/// <summary>True when the text has at least one marker (otherwise its parameter names are not known).</summary>
+	/// <summary>Determines whether the text has at least one marker (otherwise its parameter names are not known).</summary>
+	/// <param name="text">The SQL text.</param>
+	/// <returns><see langword="true"/> if the text has a marker; otherwise, <see langword="false"/>.</returns>
 	internal static bool HasMarkers(string text)
 	{
 		int position = 0;
 		return SqlTextParameters.NextMarker(text, ref position, out _, out _);
 	}
 
-	/// <summary>The distinct markers of the text, for a message.</summary>
+	/// <summary>Gets the distinct markers of the text, for a message.</summary>
+	/// <param name="text">The SQL text.</param>
+	/// <returns>The markers, each with its <c>@</c>.</returns>
 	internal static ImmutableArray<string> Names(string text) => SqlTextParameters.Parse(text);
 
 	/// <summary>
-	/// The marker (with its <c>@</c>) that the argument expression stands for, as the text spells it, or <see langword="null"/> when none fits:
+	/// Gets the marker (with its <c>@</c>) that the argument expression stands for, as the text spells it, or <see langword="null"/> when none fits:
 	/// the answer <see cref="NameSet.Match"/> gives over the parsed tokens, found without parsing.
 	/// Allocates nothing once the expression has been seen and its marker was found before.
 	/// </summary>
+	/// <param name="text">The SQL text.</param>
+	/// <param name="expression">The text of the argument.</param>
+	/// <returns>The marker, or <see langword="null"/> when none fits.</returns>
 	/// <exception cref="InvalidOperationException">The expression fits more than one marker equally well.</exception>
 	internal static string? Scan(string text, string expression)
 	{

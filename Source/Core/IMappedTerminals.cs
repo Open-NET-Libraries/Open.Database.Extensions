@@ -5,7 +5,7 @@ namespace Open.Database.Extensions;
 /// so that the extensions on <see cref="IMappedQuery{T}"/> can call them
 /// instead of running LINQ over the rows.
 /// </summary>
-/// <typeparam name="T">The type each row is mapped to.</typeparam>
+/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 /// <remarks>
 /// Internal on purpose: it is not part of the public API.
 /// A type of this library is told apart from another implementation of
@@ -15,9 +15,15 @@ namespace Open.Database.Extensions;
 /// </remarks>
 internal interface IMappedTerminals<T>
 {
-	// The query's own core: a query that is ours is collected by its own terminals, with the
-	// pool and the clear rule it was given (UsePool), whichever way it is called. A query that
-	// is not ours (a user's IMappedQuery<T>) has none, and is collected without pooling.
+	/// <summary>
+	/// Gets the query's own core.
+	/// </summary>
+	/// <remarks>
+	/// A query that is ours is collected by its own terminals, with the pool and
+	/// the clear rule it was given (<c>UsePool</c>), whichever way it is called.
+	/// A query that is not ours (a user's <see cref="IMappedQuery{T}"/>) has
+	/// none, and is collected without pooling.
+	/// </remarks>
 	MappedQueryCore<T> Core { get; }
 
 	T First();

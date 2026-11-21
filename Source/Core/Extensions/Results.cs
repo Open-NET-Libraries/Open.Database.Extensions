@@ -3,13 +3,18 @@ namespace Open.Database.Extensions;
 public static partial class CoreExtensions
 {
 	/// <summary>
-	/// Iterates each record and attempts to map the fields to type T.
+	/// Iterates each remaining record of an <see cref="IDataReader"/> and maps its fields to a <typeparamref name="T"/>.
 	/// </summary>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="reader">The IDataReader to read results from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-results']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> is <see langword="null"/>.
+	/// </exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> Results<T>(
 	this IDataReader reader, RowMap<T>? map = null)
@@ -31,14 +36,20 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Iterates each record and attempts to map the fields to type T.
-	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
+	/// Maps each remaining record of an <see cref="IDataReader"/> to a <typeparamref name="T"/>,
+	/// buffering all the results in a queue before returning.
 	/// </summary>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="reader">The IDataReader to read results from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-results']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
+	/// <returns>The enumerable to pull the mapped results from.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> is <see langword="null"/>.
+	/// </exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> ResultsBuffered<T>(this IDataReader reader, RowMap<T>? map = null)
 	{
@@ -62,14 +73,24 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Iterates each record and attempts to map the fields to type T.
-	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
+	/// Executes a reader and maps each record of its result to a <typeparamref name="T"/>,
+	/// buffering all the results in a queue before returning.
 	/// </summary>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
+	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
+	/// <returns>The enumerable to pull the mapped results from.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">
+	/// <typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>). It is thrown at the call, before the command runs.
+	/// </exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static IEnumerable<T> Results<T>(this IDbCommand command, RowMap<T>? map = null)
 	{
@@ -95,14 +116,19 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously iterates each record and attempts to map the fields to type T.
+	/// Asynchronously iterates each remaining record of a <see cref="DbDataReader"/> and maps its fields to a <typeparamref name="T"/>.
 	/// </summary>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="reader">The IDataReader to read results from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <param name="cancellationToken">An optional cancellation token.</param>
-	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
+	/// <param name="reader">The <see cref="DbDataReader"/> to read results from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>The asynchronous enumerable to pull the mapped results from.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> is <see langword="null"/>.
+	/// </exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static IAsyncEnumerable<T> ResultsAsync<T>(
 		this DbDataReader reader,
@@ -122,15 +148,29 @@ public static partial class CoreExtensions
 		=> ResultsAsync<T>(reader, null, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
+	/// Asynchronously maps each remaining record of a <see cref="DbDataReader"/> to a <typeparamref name="T"/>,
+	/// buffering all the results in a queue before returning.
 	/// </summary>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="reader">The IDataReader to read results from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <returns>A task containing the list of results.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
+	/// <param name="reader">The <see cref="DbDataReader"/> to read results from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
+	/// <param name="useReadAsync">
+	/// <see langword="true"/> to read the rows with <c>ReadAsync</c>;
+	/// <see langword="false"/> to read them with <c>Read</c>.
+	/// The default is <see langword="true"/>.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is the enumerable to pull the mapped results from.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="reader"/> is <see langword="null"/>.
+	/// </exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static async ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
 		this DbDataReader reader,
@@ -151,8 +191,6 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ResultsBufferedAsync{T}(DbDataReader, RowMap{T}?, bool, CancellationToken)" />
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<IEnumerable<T>> ResultsBufferedAsync<T>(
 	this DbDataReader reader,
 	RowMap<T>? map,
@@ -166,15 +204,33 @@ public static partial class CoreExtensions
 		=> ResultsBufferedAsync<T>(reader, null, true, cancellationToken);
 
 	/// <summary>
-	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
+	/// Asynchronously executes a reader and maps each record of its result to a <typeparamref name="T"/>,
+	/// buffering all the results in a queue before returning.
 	/// </summary>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <param name="useReadAsync">If true (default) will iterate the results using .ReadAsync() otherwise will only Execute the reader asynchronously and then use .Read() to iterate the results but still allowing cancellation.</param>
-	/// <param name="cancellationToken">Optional cancellation token.</param>
-	/// <returns>A task containing the list of results.</returns>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='connection']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
+	/// <param name="command">The <see cref="DbCommand"/> to generate a reader from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
+	/// <param name="useReadAsync">
+	/// <see langword="true"/> to read the rows with <c>ReadAsync</c>;
+	/// <see langword="false"/> to read them with <c>Read</c>.
+	/// The default is <see langword="true"/>.
+	/// </param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
+	/// <returns>
+	/// A task that represents the asynchronous operation.
+	/// Its result is the enumerable to pull the mapped results from.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="command"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">
+	/// <typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>). It is thrown at the call, before the command runs.
+	/// </exception>
 	/// <seealso cref="RowMap{T}"/>
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
@@ -188,8 +244,6 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="ResultsAsync{T}(DbCommand, RowMap{T}?, bool, CancellationToken)" />
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <seealso cref="RowMap{T}"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<IEnumerable<T>> ResultsAsync<T>(
 		this DbCommand command,
@@ -206,16 +260,22 @@ public static partial class CoreExtensions
 	const string ResultsFromDataTableObsolete = "Use .ToDataTable() then table.Map(map).ToList() instead, for example: using var table = command.ToDataTable(); var rows = table.Map(map).ToList(). This method cleared the table as the rows were read; Map does not, so dispose or clear the table yourself. This method threw for a type that cannot be mapped before it ran; Map<T> still throws, but after the data is loaded: read RowMap<T>.Default (or build your RowMap) first to keep the early failure. Removed in 12.";
 
 	/// <summary>
-	/// Obsolete: use <see cref="DataReaderExtensions.ToDataTable(IDataReader)"/> then table.Map(map).ToList().
-	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
-	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
+	/// Loads all the data of an <see cref="IDataReader"/> into a <see cref="DataTable"/>, then maps its rows to a <typeparamref name="T"/>.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="reader">The IDataReader to read results from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
+	/// <para>
+	/// Use <see cref="DataReaderExtensions.ToDataTable(IDataReader)"/> and then <c>table.Map(map)</c> instead.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-results']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// <typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>). It is thrown at the call, before the data is read.
+	/// </exception>
 	/// <seealso cref="RowMap{T}"/>
 	[Obsolete(ResultsFromDataTableObsolete)]
 	public static IEnumerable<T> ResultsFromDataTable<T>(this IDataReader reader, RowMap<T>? map = null)
@@ -228,16 +288,22 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Obsolete: use <see cref="CommandExtensions.ToDataTable(IDbCommand, CommandBehavior)"/> then table.Map(map).ToList().
-	/// Loads all data into a DataTable before Iterates each record and attempts to map the fields to type T.
-	/// Data is temporarily stored (buffered in entirety) in a queue before applying the transform for each iteration.
+	/// Executes a reader, loads all its data into a <see cref="DataTable"/>, then maps its rows to a <typeparamref name="T"/>.
 	/// </summary>
-	/// <remarks>Obsolete in 11.0, removed in 12. See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see> for the difference and a before/after example.</remarks>
-	/// <remarks>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="command">The command to generate a reader from.</param>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
+	/// <para>
+	/// Use <see cref="CommandExtensions.ToDataTable(IDbCommand, CommandBehavior)"/> and then <c>table.Map(map)</c> instead.
+	/// </para>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
+	/// </remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
+	/// <param name="command">The <see cref="IDbCommand"/> to generate a reader from.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
 	/// <returns>The enumerable to pull the transformed results from.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// <typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>). It is thrown at the call, before the command runs.
+	/// </exception>
 	/// <seealso cref="RowMap{T}"/>
 	[Obsolete(ResultsFromDataTableObsolete)]
 	public static IEnumerable<T> ResultsFromDataTable<T>(this IDbCommand command, RowMap<T>? map = null)
