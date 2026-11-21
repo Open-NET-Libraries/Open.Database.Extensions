@@ -1,4 +1,4 @@
-﻿
+
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -26,6 +26,21 @@ public static partial class CommandExtensions
 #endif
 		return command.Connection!.EnsureOpenAsync(cancellationToken);
 	}
+
+	// The scope of the command's own connection (opened if needed, closed again if the scope opened it).
+	// A command with no connection gets the empty scope, and the command reports the missing connection
+	// itself when it is executed, as it always has.
+	internal static ConnectionScope<IDbConnection> EnsureOpenScope(this IDbCommand command)
+		=> command.Connection is { } connection
+			? connection.EnsureOpenScope()
+			: default;
+
+	internal static async ValueTask<ConnectionScope<IDbConnection>> EnsureOpenScopeAsync(
+		this IDbCommand command,
+		CancellationToken cancellationToken)
+		=> command.Connection is { } connection
+			? await connection.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false)
+			: default;
 
 	// These open a closed connection and execute the reader in one step. CommandBehavior.CloseConnection closes the connection when the
 	// reader is disposed, but when the provider fails to execute there is no reader, so the connection that was opened here is closed here

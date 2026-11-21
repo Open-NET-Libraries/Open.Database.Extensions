@@ -212,6 +212,29 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 	}
 
 	/// <summary>
+	/// The behavior to execute a reader with: <paramref name="behavior"/>, plus
+	/// <see cref="CommandBehavior.CloseConnection"/> when this scope opened the connection.
+	/// </summary>
+	/// <remarks>
+	/// A reader that outlives the scope still closes what the scope opened, because the connection
+	/// closes when the reader does:
+	/// <code>
+	/// var scope = await connection.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
+	/// await using var disposal = scope.ConfigureAwait(false);
+	/// await using var reader = await command
+	///     .ExecuteReaderAsync(scope.ReaderBehavior(), cancellationToken)
+	///     .ConfigureAwait(false);
+	/// </code>
+	/// A connection that was already open is left open: nothing is added. A <see langword="default"/> scope
+	/// opened nothing, so it adds nothing either.
+	/// </remarks>
+	/// <param name="behavior">The behavior to start from.</param>
+	/// <returns>The behavior to pass to the command.</returns>
+	public CommandBehavior ReaderBehavior(CommandBehavior behavior = CommandBehavior.Default)
+		=> _connection is not null
+			? ConnectionExtensions.ReaderBehavior(PriorState, behavior)
+			: behavior;
+	/// <summary>
 	/// Configures how the disposal of this scope is awaited by <c>await using</c>, without boxing the scope.
 	/// </summary>
 	/// <remarks>

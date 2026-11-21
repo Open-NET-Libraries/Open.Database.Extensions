@@ -97,6 +97,11 @@ public static partial class ConnectionExtensions
 		return connection.EnsureOpen();
 	}
 
+	// What a reader of a connection that was found in this state is executed with: the connection
+	// that needed opening closes when the reader does (also for the callers that hold no scope).
+	internal static CommandBehavior ReaderBehavior(ConnectionState priorState, CommandBehavior behavior)
+		=> NeedsOpen(priorState) ? behavior | CommandBehavior.CloseConnection : behavior;
+
 	/// <summary>
 	/// Opens the connection if it is not open (a broken connection is closed first) and
 	/// returns a <see cref="ConnectionScope{TConnection}"/> that puts it back when disposed: a

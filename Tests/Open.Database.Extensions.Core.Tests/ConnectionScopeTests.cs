@@ -416,6 +416,54 @@ public static class ConnectionScopeTests
 
 		return best;
 	}
+	// ---- ReaderBehavior: close what the scope opened when the reader closes ------------
+
+	[Theory]
+	[InlineData(ConnectionState.Closed, true)]
+	[InlineData(ConnectionState.Broken, true)]
+	[InlineData(ConnectionState.Open | ConnectionState.Broken, true)]
+	[InlineData(ConnectionState.Open, false)]
+	[InlineData(ConnectionState.Open | ConnectionState.Executing, false)]
+	[InlineData(ConnectionState.Open | ConnectionState.Fetching, false)]
+	public static void ReaderBehavior_AddsCloseConnection_OnlyWhenTheScopeOpenedTheConnection(
+		ConnectionState prior,
+		bool added)
+	{
+		var connection = new ScopeConnection();
+		connection.SetState(prior);
+		using var scope = connection.EnsureOpenScope();
+
+		Assert.Equal(
+			added
+				? CommandBehavior.SingleResult | CommandBehavior.CloseConnection
+				: CommandBehavior.SingleResult,
+			scope.ReaderBehavior(CommandBehavior.SingleResult));
+		Assert.Equal(
+			added ? CommandBehavior.CloseConnection : CommandBehavior.Default,
+			scope.ReaderBehavior());
+	}
+
+	[Fact]
+	public static void ReaderBehavior_OfADefaultScope_AddsNothing()
+	{
+		ConnectionScope<ScopeConnection> scope = default;
+
+		Assert.Equal(CommandBehavior.Default, scope.ReaderBehavior());
+		Assert.Equal(
+			CommandBehavior.SequentialAccess,
+			scope.ReaderBehavior(CommandBehavior.SequentialAccess));
+	}
+
+	[Fact]
+	public static void ReaderBehavior_AlreadyHavingCloseConnection_IsUnchanged()
+	{
+		var connection = new ScopeConnection();
+		using var scope = connection.EnsureOpenScope();
+
+		Assert.Equal(
+			CommandBehavior.CloseConnection,
+			scope.ReaderBehavior(CommandBehavior.CloseConnection));
+	}
 	// ---- failures ---------------------------------------------------------------------
 
 	[Fact]

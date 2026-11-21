@@ -113,3 +113,4 @@ Open.Database.Extensions.ConfiguredConnectionScope<TConnection>
 Open.Database.Extensions.ConfiguredConnectionScope<TConnection>.ConfiguredConnectionScope() -> void
 Open.Database.Extensions.ConfiguredConnectionScope<TConnection>.DisposeAsync() -> System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable
 Open.Database.Extensions.ConnectionScope<TConnection>.ConfigureAwait(bool continueOnCapturedContext) -> Open.Database.Extensions.ConfiguredConnectionScope<TConnection>
+Open.Database.Extensions.ConnectionScope<TConnection>.ReaderBehavior(System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> System.Data.CommandBehavior

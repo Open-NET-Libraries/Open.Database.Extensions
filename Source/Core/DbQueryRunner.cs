@@ -24,7 +24,6 @@ static class DbQueryRunner
 	public readonly struct Lease : IDisposable
 	{
 		readonly ConnectionScope<DbConnection> _scope;
-		readonly bool _opened;
 
 		Lease(
 			ConnectionScope<DbConnection> scope,
@@ -34,10 +33,6 @@ static class DbQueryRunner
 			_scope = scope;
 			Connection = connection;
 			Transaction = transaction;
-
-			// Set for a connection the run opened (it was closed, or broken).
-			_opened = transaction is null
-				&& ConnectionExtensions.NeedsOpen(scope.PriorState);
 		}
 
 		public DbConnection Connection { get; }
@@ -159,9 +154,10 @@ static class DbQueryRunner
 				: connection;
 		}
 
+		// A transaction's connection is never opened here, so it adds nothing.
 		public CommandBehavior Behavior(CommandBehavior behavior)
-			=> _opened
-				? behavior | CommandBehavior.CloseConnection
+			=> Transaction is null
+				? _scope.ReaderBehavior(behavior)
 				: behavior;
 
 		public void Dispose() => _scope.Dispose();

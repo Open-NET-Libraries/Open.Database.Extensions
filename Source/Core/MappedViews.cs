@@ -445,14 +445,8 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 	{
 		// No connection: nothing to open, and the command says so itself (the
 		// provider throws InvalidOperationException), as it always has.
-		using ConnectionScope<IDbConnection> scope
-			= command.Connection is { } connection
-				? connection.EnsureOpenScope()
-				: default;
-		using IDataReader reader = command.ExecuteReader(
-			ConnectionExtensions.NeedsOpen(scope.PriorState)
-				? behavior | CommandBehavior.CloseConnection
-				: behavior);
+		using var scope = command.EnsureOpenScope();
+		using IDataReader reader = command.ExecuteReader(scope.ReaderBehavior(behavior));
 		return transform(reader, state);
 	}
 
@@ -466,17 +460,12 @@ sealed class CommandExecutor(IDbCommand command) : ViewExecutor
 
 		// No connection: nothing to open, and the command says so itself (the
 		// provider throws InvalidOperationException), as it always has.
-		ConnectionScope<IDbConnection> scope
-			= command.Connection is { } connection
-				? await connection
-					.EnsureOpenScopeAsync(cancellationToken)
-					.ConfigureAwait(false)
-				: default;
+		var scope = await command
+			.EnsureOpenScopeAsync(cancellationToken)
+			.ConfigureAwait(false);
 		await using var scopeDisposal = scope.ConfigureAwait(false);
 
-		CommandBehavior b = ConnectionExtensions.NeedsOpen(scope.PriorState)
-			? behavior | CommandBehavior.CloseConnection
-			: behavior;
+		CommandBehavior b = scope.ReaderBehavior(behavior);
 
 		if (command is DbCommand dbCommand)
 		{
