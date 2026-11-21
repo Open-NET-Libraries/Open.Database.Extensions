@@ -179,3 +179,10 @@ public sealed class DerivedPost : PostBase
 {
 	public string? Note { get; set; }
 }
+
+/// <summary>A declaration that is not valid (a negative ordinal): the runtime refuses the type, so the generator leaves the call to it.</summary>
+public sealed class InvalidOrderPost
+{
+	[Column(Order = -1)]
+	public int Id { get; set; }
+}

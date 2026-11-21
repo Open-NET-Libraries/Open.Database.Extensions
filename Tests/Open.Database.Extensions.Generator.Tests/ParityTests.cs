@@ -594,4 +594,18 @@ public class ParityTests
 		Parity.SameRows(runtime, generic);
 		Assert.Equal(default, c);
 	}
+
+	[Fact]
+	public void An_invalid_declaration_is_left_to_the_runtime()
+	{
+		var q = new TableQuery([Col.Of<int>("Id")], [1]);
+
+		Counts start = Counts.Now();
+		SameOutcome(
+			() => q.Map(RowMap<InvalidOrderPost>.Default).ToList(),
+			() => q.Map<InvalidOrderPost>().ToList());
+		Counts c = Counts.Now().Since(start);
+
+		Assert.Equal(default, c);
+	}
 }

@@ -99,7 +99,7 @@ static class ModelReader
 				seen.Add(name);
 
 				Decoration declared = property is null ? Decoration.None : Decoration.Of(property);
-				if (declared.NotMapped) return null; // [NotMapped] on a member a constructor parameter sets: a type error at run time.
+				if (declared.NotMapped || declared.Invalid) return null; // [NotMapped] on a member a constructor parameter sets, or a declaration that is not valid: a type error at run time.
 
 				// A required property the constructor also sets would have to be set again in an object initializer; the runtime sets it once. Not described here.
 				bool required = property is not null && property.IsRequired && !setsRequired;
@@ -121,7 +121,7 @@ static class ModelReader
 
 			Decoration declared = Decoration.Of(p);
 			bool required = p.IsRequired && !setsRequired;
-			if (declared.NotMapped && (declared.HasColumnAttribute || required)) return null; // A type error at run time.
+			if (declared.Invalid || (declared.NotMapped && (declared.HasColumnAttribute || required))) return null; // A type error at run time.
 
 			SlotSpec? slot = Slot(p.Name, null, -1, p.Type, IsNonNullableReference(p), setter.IsInitOnly || required, required, declared, null);
 			if (slot is null) return null;
@@ -414,20 +414,23 @@ static class ModelReader
 	}
 
 	// RowMap's Decoration: read as data, by full name.
-	readonly struct Decoration(string? column, int order, bool hasColumnAttribute, bool notMapped)
+	readonly struct Decoration(string? column, int order, bool hasColumnAttribute, bool notMapped, bool invalid)
 	{
 		public string? Column => column;
 		public int Order => order;
 		public bool HasColumnAttribute => hasColumnAttribute;
 		public bool NotMapped => notMapped;
 
-		public static Decoration None => new(null, -1, false, false);
+		// An empty or white-space name, or a negative ordinal: the runtime makes the type unmappable (a declaration is a hard rule), so the call is left to it.
+		public bool Invalid => invalid;
+
+		public static Decoration None => new(null, -1, false, false, false);
 
 		public static Decoration Of(IPropertySymbol property)
 		{
 			string? column = null;
 			int order = -1;
-			bool hasColumn = false, notMapped = false;
+			bool hasColumn = false, notMapped = false, invalid = false;
 			foreach (AttributeData a in property.GetAttributes())
 			{
 				if (a.AttributeClass is not { } c) continue;
@@ -440,14 +443,22 @@ static class ModelReader
 				else if (name == ColumnAttribute)
 				{
 					hasColumn = true;
-					if (a.ConstructorArguments.Length > 0 && a.ConstructorArguments[0].Value is string { Length: > 0 } given) column = given;
+					if (a.ConstructorArguments.Length > 0)
+					{
+						if (a.ConstructorArguments[0].Value is string given && !string.IsNullOrWhiteSpace(given)) column = given;
+						else invalid = true;
+					}
 
 					foreach (KeyValuePair<string, TypedConstant> named in a.NamedArguments)
-						if (named.Key == "Order" && named.Value.Value is int value && value >= 0) order = value;
+					{
+						if (named.Key != "Order" || named.Value.Value is not int value) continue;
+						if (value >= 0) order = value;
+						else invalid = true;
+					}
 				}
 			}
 
-			return new(column, order, hasColumn, notMapped);
+			return new(column, order, hasColumn, notMapped, invalid);
 		}
 	}
 }
