@@ -171,7 +171,7 @@ readonly struct MappedQueryCore<T>(
 	public MappedQueryCore<T> WithAsyncReads() => new(Command, _source, _skip, _take, _singleResult, true, Config);
 
 	// The configuration the query was given: the pool every pooling terminal rents from and
-	// whether it clears, provided when the query is made (the preset of the entry point, or
+	// whether it clears, provided when the query is made (the default of the entry point, or
 	// UsePool).
 	ChunkConfig<T> Config { get; } = config;
 
@@ -187,7 +187,7 @@ readonly struct MappedQueryCore<T>(
 		// The pool is the caller's; the sizes and the bin stay what the query had.
 		return WithConfig(new ChunkConfig<T>(
 			pool,
-			PoolClearing.Resolve<T>(clearOnReturn),
+			clearOnReturn,
 			Config.Sizes,
 			Config.Bin,
 			Config.DeferFromRows));

@@ -315,25 +315,20 @@ static class Views
 			-1,
 			singleResult,
 			asyncReads,
-			Defaults<T>.For(PoolClearing.Resolve<T>(null)));
+			Defaults<T>.Config);
 
 	// The shared array pool, the shipped sizes and the default bin, per row type.
 	// Private to Views: nothing else can ask for it.
 	static class Defaults<T>
 	{
-		static readonly ChunkConfig<T> Plain = Make(false);
-		static readonly ChunkConfig<T> Clearing = Make(true);
-
-		public static ChunkConfig<T> For(bool clearOnReturn)
-			=> clearOnReturn ? Clearing : Plain;
-
-		static ChunkConfig<T> Make(bool clearOnReturn)
-			=> new(
-				ArrayPool<T>.Shared,
-				clearOnReturn,
-				ChunkSizes.Default,
-				RecycleBin.Default,
-				ChunkConfig<T>.DefaultDeferFromRows);
+		// Asks for no clearing choice (null): the configuration resolves it, once,
+		// from the app-wide default and the reference-row floor.
+		public static readonly ChunkConfig<T> Config = new(
+			ArrayPool<T>.Shared,
+			null,
+			ChunkSizes.Default,
+			RecycleBin.Default,
+			ChunkConfig<T>.DefaultDeferFromRows);
 	}
 }
 // The two executors let MappedQueryCore<T> run over a reader or a raw command.

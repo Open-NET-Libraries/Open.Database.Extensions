@@ -24,7 +24,7 @@ namespace Open.Database.Extensions.Core;
 /// </remarks>
 internal sealed class ChunkConfig<T>(
 	ArrayPool<T> pool,
-	bool clearOnReturn,
+	bool? clearOnReturn,
 	ChunkSizes sizes,
 	RecycleBin bin,
 	int deferFromRows)
@@ -55,9 +55,12 @@ internal sealed class ChunkConfig<T>(
 
 	/// <summary>Whether the rows are cleared before an array goes back.</summary>
 	/// <remarks>
-	/// The floor is enforced here, not trusted to the caller: a row type that
-	/// holds references is cleared whatever was asked (PoolClearing), so such
-	/// rows are never given ClearMode.None.
+	/// Resolved once, here, from what was asked (the constructor takes the raw
+	/// intent: <see langword="null"/> is the app-wide default, <see langword="true"/>
+	/// and <see langword="false"/> are what the caller chose), and the floor is
+	/// enforced here too, not trusted to the caller: a row type that holds
+	/// references is cleared whatever was asked (PoolClearing), so such rows are
+	/// never given ClearMode.None.
 	/// </remarks>
 	public bool ClearOnReturn { get; } = PoolClearing.Resolve<T>(clearOnReturn);
 

@@ -15,7 +15,7 @@ internal static class TestConfig
 {
 	public static ChunkConfig<T> Of<T>(
 		ArrayPool<T> pool,
-		bool clearOnReturn,
+		bool? clearOnReturn,
 		RecycleBin? bin = null,
 		int deferFromRows = ChunkConfig<T>.DefaultDeferFromRows,
 		ChunkSizes? sizes = null)

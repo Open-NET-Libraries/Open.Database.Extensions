@@ -129,6 +129,27 @@ public static class PoolClearingTests
 	[InlineData(true, true)]
 	public static void ReferenceRows_AreAlwaysCleared(bool? clear, bool all)
 		=> Assert.True(PoolClearing.Resolve<PoolRow>(clear, all));
+
+	// The configuration takes the raw intent and resolves it once, itself: null is
+	// the app-wide default, true and false are what was asked, and rows that hold
+	// references are cleared whatever was asked.
+	[Theory]
+	[InlineData(null)]
+	[InlineData(false)]
+	[InlineData(true)]
+	public static void AConfig_ResolvesTheRawIntentOnce(bool? clear)
+	{
+		var pool = IntPool();
+
+		Assert.Equal(
+			PoolClearing.Resolve<PoolValue>(clear),
+			TestConfig.Of<PoolValue>(ArrayPool<PoolValue>.Shared, clear).ClearOnReturn);
+		Assert.Equal(
+			PoolClearing.Resolve<int>(clear),
+			TestConfig.Of<int>(pool, clear).ClearOnReturn);
+		Assert.True(TestConfig.Of<PoolRow>(ArrayPool<PoolRow>.Shared, clear).ClearOnReturn);
+	}
+
 	// ---- a caller's own pool -------------------------------------------------
 
 	static CountingPool<int> IntPool()
