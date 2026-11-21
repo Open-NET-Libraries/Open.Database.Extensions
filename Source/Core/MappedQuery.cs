@@ -170,9 +170,6 @@ readonly struct MappedQueryCore<T>(
 
 	public MappedQueryCore<T> WithAsyncReads() => new(Command, _source, _skip, _take, _singleResult, true, Config);
 
-	// The configuration the query was given: the pool, and whether the rows are
-	// cleared. A pool of the caller is never touched by ODX but to rent from and
-	// return to.
 	// The configuration the query was given: the pool every pooling terminal rents from and
 	// whether it clears, provided when the query is made (the preset of the entry point, or
 	// UsePool).
@@ -182,6 +179,10 @@ readonly struct MappedQueryCore<T>(
 	{
 		if (pool is null) throw new ArgumentNullException(nameof(pool));
 		Contract.EndContractBlock();
+
+		// A default value has no command: say so the way the whole family does,
+		// before anything reads its (null) configuration.
+		_ = Command;
 
 		// The pool is the caller's; the sizes and the bin stay what the query had.
 		return WithConfig(new ChunkConfig<T>(
