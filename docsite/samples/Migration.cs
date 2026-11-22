@@ -6,11 +6,11 @@ using Open.Database.Extensions.Core;
 namespace Samples;
 
 /// <summary>
-/// The calls that were deprecated in 10.x and the rc series are removed in 11.0.
-/// Each "before" region is the removed call as a comment (it no longer compiles);
-/// each "after" region is the call to type instead, compiled and run by Program.cs.
+/// The calls that were removed in 11.0, and the calls to type instead.
+/// The old calls appear only as text in the migration guide (they no longer compile);
+/// each "after" region here is compiled and run by Program.cs.
 /// </summary>
-public static class Deprecated
+public static class Migration
 {
 	const string PostsSql = "select * from posts order by id";
 	const string IdsSql = "select id from posts order by id";
@@ -29,15 +29,7 @@ public static class Deprecated
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 	{
-		#region deprecated_results_before
-		// Removed in 11.0:
-		// List<Post> before = connection
-		//     .Command(PostsSql)
-		//     .Results<Post>()
-		//     .ToList();
-		#endregion
-
-		#region deprecated_results_after
+		#region migration_results_after
 		List<Post> after = await connection
 			.Command(PostsSql)
 			.Map<Post>()
@@ -51,15 +43,7 @@ public static class Deprecated
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 	{
-		#region deprecated_resultsasync_before
-		// Removed in 11.0:
-		// List<Post> before = (await connection
-		//     .Command(PostsSql)
-		//     .ResultsAsync<Post>())
-		//     .ToList();
-		#endregion
-
-		#region deprecated_resultsasync_after
+		#region migration_resultsasync_after
 		List<Post> after = await connection
 			.Command(PostsSql)
 			.Map<Post>()
@@ -74,14 +58,7 @@ public static class Deprecated
 		using SqliteCommand newCommand = connection.CreateCommand();
 		newCommand.CommandText = PostsSql;
 
-		#region deprecated_resultsfromdatatable_before
-		// Removed in 11.0, synchronous:
-		// List<Post> before = newCommand
-		//     .ResultsFromDataTable<Post>()
-		//     .ToList();
-		#endregion
-
-		#region deprecated_resultsfromdatatable_after
+		#region migration_resultsfromdatatable_after
 		// Synchronous, like the call it replaces:
 		// ToDataTable has no async form.
 		// Reading the map first keeps the old behavior of failing
@@ -102,15 +79,7 @@ public static class Deprecated
 	{
 		IExecuteReader command = connection.Command(IdsSql);
 
-		#region deprecated_selector_before
-		// Removed in 11.0:
-		// long? first = command.FirstOrDefault(Id);
-		// List<long> taken = command.Take(2, Id);
-		// List<long> skipped = command.Skip(3, Id);
-		// List<long> sliced = command.SkipThenTake(1, 2, Id);
-		#endregion
-
-		#region deprecated_selector_after
+		#region migration_selector_after
 		long? firstAfter = await command
 			.Map(Id)
 			.FirstOrDefaultAsync(cancellationToken);
@@ -136,17 +105,7 @@ public static class Deprecated
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 	{
-		#region deprecated_takeasync_before
-		// Removed in 11.0:
-		// IList<long> taken = await connection
-		//     .Command(IdsSql)
-		//     .TakeAsync(Id, 2);
-		// List<long> all = await connection
-		//     .Command(IdsSql)
-		//     .ToListAsync(Id);
-		#endregion
-
-		#region deprecated_takeasync_after
+		#region migration_takeasync_after
 		List<long> takenAfter = await connection
 			.Command(IdsSql)
 			.Map(Id)
@@ -166,12 +125,7 @@ public static class Deprecated
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 	{
-		#region deprecated_collection_before
-		// Removed in 11.0:
-		// var rows = new QueryResultCollection<long>([0], ["id"], ids);
-		#endregion
-
-		#region deprecated_collection_after
+		#region migration_collection_after
 		List<long> ids = await connection
 			.Command(IdsSql)
 			.Map(Id)
@@ -183,12 +137,7 @@ public static class Deprecated
 
 	public static async Task<(string After, string AfterAsync)> MappedDictionaries(SqliteConnection connection)
 	{
-		#region deprecated_mappeddictionaries_before
-		// Removed in 11.0, synchronous:
-		// IEnumerable<Dictionary<string, object?>> before = source.AsMappedDictionaries();
-		#endregion
-
-		#region deprecated_mappeddictionaries_after
+		#region migration_mappeddictionaries_after
 		// The first line is synchronous, like the call it replaces;
 		// the second is its async form.
 		IEnumerable<Dictionary<string, object?>> after = connection
@@ -208,16 +157,7 @@ public static class Deprecated
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 	{
-		#region deprecated_dequeueas_before
-		// Removed in 11.0:
-		// List<Post> before = connection
-		//     .Command(PostsSql)
-		//     .Retrieve()
-		//     .DequeueAs<Post>()
-		//     .ToList();
-		#endregion
-
-		#region deprecated_dequeueas_after
+		#region migration_dequeueas_after
 		List<Post> after = await connection
 			.Command(PostsSql)
 			.Map<Post>()
