@@ -235,7 +235,7 @@ public sealed class PooledBuffer<T>
 		int firstRows = 1;
 		while (firstRows < rows.Length) firstRows <<= 1;
 
-		ChunkConfig<T> config = new(pool, clearOnReturn, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromRows);
+		ChunkConfig<T> config = new(pool, clearOnReturn, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromBytes);
 		T[] array = config.Rent(firstRows);
 		rows.CopyTo(array);
 		return new([config.Seal(array, rows.Length)], rows.Length, firstRows);
