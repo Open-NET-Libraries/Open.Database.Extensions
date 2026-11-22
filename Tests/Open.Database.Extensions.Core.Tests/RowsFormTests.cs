@@ -195,6 +195,18 @@ public static class RowsFormTests
 		Assert.Contains("AsDictionaryRows()", ex.Message);
 	}
 
+	// The call the docs name: Map<DictionaryRow>() throws InvalidOperationException, and the message names AsDictionaryRows().
+	[Fact]
+	public static void MapOfDictionaryRow_ThroughThePublicCall_ThrowsAndNamesAsDictionaryRows()
+	{
+		using SqliteConnection c = Open();
+
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(
+			() => c.Command("select 1 as a").Map<DictionaryRow>().ToList());
+
+		Assert.Contains("AsDictionaryRows()", ex.Message);
+	}
+
 	[Fact]
 	public static void DictionaryRow_AsAnInterface_Works_OnABoxedCopy()
 	{
