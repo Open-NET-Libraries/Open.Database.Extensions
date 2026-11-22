@@ -313,7 +313,7 @@ public static class StallStreamTests
 			{
 				Assert.True(await rows.MoveNextAsync());
 				if (i % 2 == 0) cts.Cancel();
-				await Task.Delay(i % 3);
+				await Task.Delay(i % 3, Ct);
 				while (await rows.MoveNextAsync()) { }
 			}
 			catch (Exception ex) when (ex is TimeoutException or OperationCanceledException)
@@ -334,7 +334,7 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(50);
 		IAsyncEnumerable<Row> stream = Query(tally).Stream(Short, Ct);
-		IStallSignal signal = Assert.IsAssignableFrom<IStallSignal>(stream);
+		IStallSignal signal = Assert.IsType<IStallSignal>(stream, exactMatch: false);
 
 		await using IAsyncEnumerator<Row> rows = stream.GetAsyncEnumerator(TestContext.Current.CancellationToken);
 		Assert.True(await rows.MoveNextAsync());
@@ -351,7 +351,7 @@ public static class StallStreamTests
 	public static async Task TheStallSignal_NeverFires_WhenTheConsumerKeepsUp()
 	{
 		DbTally tally = Tally(5);
-		IStallSignal signal = Assert.IsAssignableFrom<IStallSignal>(Query(tally).Stream(Long, Ct));
+		IStallSignal signal = Assert.IsType<IStallSignal>(Query(tally).Stream(Long, Ct), exactMatch: false);
 		IAsyncEnumerable<Row> stream = (IAsyncEnumerable<Row>)signal;
 
 		Assert.Equal(5, (await Collect(stream)).Count);
@@ -366,7 +366,7 @@ public static class StallStreamTests
 		DbTally tally = Tally(1);
 		TimeSpan timeout = days < 0 ? Timeout.InfiniteTimeSpan : TimeSpan.FromDays(days);
 
-		IStallSignal signal = Assert.IsAssignableFrom<IStallSignal>(Query(tally).Stream(timeout, Ct));
+		IStallSignal signal = Assert.IsType<IStallSignal>(Query(tally).Stream(timeout, Ct), exactMatch: false);
 
 		Assert.False(signal.Expired.CanBeCanceled);
 	}

@@ -80,7 +80,7 @@ public static class PerCallCancellationTests
 		_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 	};
 
-	static Task Run(ExpressiveDbCommand command, QueryShape shape, QueryTerminal terminal, TokenRig rig, CancellationToken token) => shape switch
+	static Task Run(ExpressiveDbCommand command, QueryShape shape, QueryTerminal terminal, CancellationToken token) => shape switch
 	{
 		QueryShape.Plain => Call(command.Map<TokenItem>(), terminal, token),
 		QueryShape.Skip => Call(command.Map<TokenItem>().Skip(0), terminal, token),
@@ -168,7 +168,7 @@ public static class PerCallCancellationTests
 		using var canceled = new CancellationTokenSource();
 		canceled.Cancel();
 
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Run(command, shape, terminal, rig, canceled.Token));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Run(command, shape, terminal, canceled.Token));
 
 		Assert.Empty(rig.Log); // not opened, not looked up, not executed
 	}
@@ -193,7 +193,7 @@ public static class PerCallCancellationTests
 		using var live = new CancellationTokenSource();
 		ExpressiveDbCommand command = Procedure(rig).UseCancellationToken(canceled.Token);
 
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Run(command, shape, terminal, rig, live.Token));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Run(command, shape, terminal, live.Token));
 
 		Assert.Empty(rig.Log);
 	}
@@ -221,7 +221,7 @@ public static class PerCallCancellationTests
 				break;
 		}
 
-		await Run(command, shape, terminal, rig, call);
+		await Run(command, shape, terminal, call);
 
 		CancellationToken seen = Assert.Single(rig.Open);
 		Assert.Equal(seen, Assert.Single(rig.Lookup));
