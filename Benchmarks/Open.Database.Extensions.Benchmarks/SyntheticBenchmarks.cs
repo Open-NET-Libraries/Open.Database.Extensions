@@ -239,6 +239,13 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public ValueTask<List<SynRow>> V2_Async() { _label = nameof(V2_Async); return SyntheticVariants.V2Async(Connection, _hand); }
 
+	// ---- Gen and GenD (SG.md 5f): the prototype source generator's plain Map<T>() on the undecorated and the decorated twin (SyntheticGenerated.cs) ----
+	[Benchmark]
+	public object Gen_Sync() { _label = nameof(Gen_Sync); return SyntheticGenerated.Gen(Connection, Width); }
+
+	[Benchmark]
+	public object GenD_Sync() { _label = nameof(GenD_Sync); return SyntheticGenerated.GenD(Connection, Width); }
+
 	// ---- V3 to V6 (BS-B): the domain object is SynItem; Pace applies to V3, V3s, V4a, V4b, V6c only ----------------------------------------------------------------
 	[Benchmark]
 	public List<SynItem> V3_Sync() { _label = nameof(V3_Sync); return SyntheticVariantsB.V3(Connection, Pace); }

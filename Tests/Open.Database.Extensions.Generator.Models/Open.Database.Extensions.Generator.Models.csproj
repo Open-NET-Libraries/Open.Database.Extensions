@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		The MODEL LIBRARY of the generator's test harness (SG.md, TEST HARNESS, REVISED): twin models, the same shape undecorated and decorated,
+		in their own assembly, so the generator is proven where a real consumer builds: the interceptors in the consuming assembly, the models
+		read from metadata. Consumed by Open.Database.Extensions.Generator.Tests (correctness) and the Benchmarks project (speed).
+		It references nothing of ODX: a model is plain C#.
+	-->
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsPackable>false</IsPackable>
+		<RootNamespace>Open.Database.Extensions.Generator.Models</RootNamespace>
+	</PropertyGroup>
+
+</Project>

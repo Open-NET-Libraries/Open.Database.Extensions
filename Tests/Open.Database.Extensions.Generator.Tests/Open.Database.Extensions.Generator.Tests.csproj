@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		The generator's correctness checks (SG.md 5a/5c, TEST HARNESS, REVISED): it consumes the MODEL LIBRARY (another assembly) and
+		proves, per twin, that a plain Map<T>() was intercepted (the test-only counters) and that its rows, or its exception, equal the
+		runtime map's: q.Map<T>() (intercepted) against q.Map(RowMap<T>.Default) (an argument: never intercepted) on the same data.
+		Core's own test projects are not changed.
+	-->
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+		<!-- xUnit v3 test projects are executables. -->
+		<OutputType>Exe</OutputType>
+		<IsPackable>false</IsPackable>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- Test-only: the generated code counts what it did, so a silent no-op fails a test. -->
+		<OdxGeneratorCounters>true</OdxGeneratorCounters>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Using Include="Xunit" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
+		<PackageReference Include="xunit.v3" Version="3.2.2" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
+		<ProjectReference Include="..\Open.Database.Extensions.Generator.Models\Open.Database.Extensions.Generator.Models.csproj" />
+		<ProjectReference Include="..\..\Source\Generator\Open.Database.Extensions.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+
+	<Import Project="..\..\Source\Generator\build\Open.Database.Extensions.Generator.targets" />
+
+</Project>

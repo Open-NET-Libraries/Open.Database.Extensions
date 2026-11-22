@@ -33,6 +33,8 @@
 		<ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
 		<ProjectReference Include="..\..\Source\Channel\Open.Database.Extensions.Channel.csproj" />
 		<ProjectReference Include="..\..\Source\Dataflow\Open.Database.Extensions.Dataflow.csproj" />
+		<!-- Gen and GenD (SyntheticGenerated.cs): the prototype source generator's call sites, in their own assembly so it intercepts nothing here. -->
+		<ProjectReference Include="..\Open.Database.Extensions.Benchmarks.Generated\Open.Database.Extensions.Benchmarks.Generated.csproj" />
 	</ItemGroup>
 
 </Project>

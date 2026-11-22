@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		The Gen and GenD call sites of the Benchmarks project (SG.md 5f), in an assembly of their own: the generator intercepts every plain Map<T>()
+		of the project it runs in, so it runs here and not in the Benchmarks project, whose V1 (the baseline) and other runtime variants must stay the
+		runtime map. The models come from the generator's model library, another assembly, as a consumer's would.
+	-->
+	<PropertyGroup>
+		<TargetFrameworks>net11.0;net10.0</TargetFrameworks>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsPackable>false</IsPackable>
+		<Optimize>true</Optimize>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
+		<ProjectReference Include="..\..\Tests\Open.Database.Extensions.Generator.Models\Open.Database.Extensions.Generator.Models.csproj" />
+		<ProjectReference Include="..\..\Source\Generator\Open.Database.Extensions.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+
+	<Import Project="..\..\Source\Generator\build\Open.Database.Extensions.Generator.targets" />
+
+</Project>
