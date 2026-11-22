@@ -6,7 +6,6 @@ namespace Open.Database.Extensions.Tests;
 public static class DataReaderExtensionsTests
 {
 	static readonly string[] IdName = ["Id", "Name"];
-	static readonly string[] IdNameExtra = ["Id", "Name", "Extra"];
 
 	[Fact]
 	public static void AsEnumerable_All_YieldsRowArrays()

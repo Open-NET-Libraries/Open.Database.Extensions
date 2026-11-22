@@ -937,6 +937,7 @@ public static partial class SyntheticChecks
 
 	// Tolerance: 0.001 B per row, which is 10 B per million rows. The expected figure is exactly 0.
 	const double AllocToleranceBytesPerRow = 0.001;
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "Write-only on purpose: accumulating each result keeps the JIT from discarding the measured work.")]
 	static long _sink;
 
 	public static int SelfTestAlloc()

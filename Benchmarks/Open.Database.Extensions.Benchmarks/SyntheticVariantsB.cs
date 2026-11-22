@@ -120,13 +120,6 @@ public static class SyntheticVariantsB
 			return SynItem.From(row);
 		};
 
-	static Func<SynRow, SynItem> InlineMassaged(int width, int pace)
-		=> row =>
-		{
-			if (pace > 0) Spin.Iterations(pace);
-			return SynItem.Massage(SynItem.From(row), width);
-		};
-
 	// ---- the Select replacement (route a of the A2 migration line) ----
 	// IMappedQuery<T>.Select is removed. A consumer who shaped each row
 	// with a Select now gives Map a factory map: the row is built

@@ -153,7 +153,7 @@ public static class SyntheticVariants
 	public static ValueTask<List<object[]>> V0Async(SyntheticConnection connection)
 		=> connection.Command(Sql).ExecuteReaderAsync<List<object[]>>(static async reader =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var rows = new List<object[]>();
 			while (await db.ReadAsync().ConfigureAwait(false))
 			{

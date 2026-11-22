@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for building a command and retrieving data using best practices.

@@ -59,14 +59,6 @@ public static class RowMapFamilyTests
 		return new FakeDbCommand(connection, () => FakeReader.CreateDb(RowMapTests.Renamed, Rows));
 	}
 
-	static DataTable Table()
-	{
-		var table = new DataTable();
-		foreach (string name in RowMapTests.Renamed) table.Columns.Add(name, name == "item_id" ? typeof(int) : name == "item_total" ? typeof(decimal) : typeof(string));
-		foreach (object?[] row in Rows) table.Rows.Add([.. row.Select(v => v ?? DBNull.Value)]);
-		return table;
-	}
-
 	// ---- draining what each family produces ----
 	static async Task<List<Item>> Drain(ChannelReader<Item> reader)
 	{
@@ -94,13 +86,6 @@ public static class RowMapFamilyTests
 		var block = new BufferBlock<Item>();
 		Assert.Equal(2, await run(block));
 		return await Receive(block);
-	}
-
-	static async Task<List<Item>> Enumerate(IAsyncEnumerable<Item> source)
-	{
-		var items = new List<Item>();
-		await foreach (Item item in source) items.Add(item);
-		return items;
 	}
 
 	static Task<List<Item>> Now(IEnumerable<Item> items) => Task.FromResult(items.ToList());

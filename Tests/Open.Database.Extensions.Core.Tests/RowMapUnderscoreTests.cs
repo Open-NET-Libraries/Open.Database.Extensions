@@ -56,8 +56,6 @@ public static class RowMapUnderscoreTests
 		return (map is null ? cmd.Map<T>() : cmd.Map(map)).ToList().Single();
 	}
 
-	static readonly string[] CountsNames = ["q_type", "min_date", "total_days", "max_days", "user_id", "http_request", "address_2"];
-
 	static readonly ImmutableArray<ColumnDef> CountsColumns =
 	[
 		("q_type", typeof(string)), ("min_date", typeof(DateTime)), ("total_days", typeof(int)), ("max_days", typeof(long)),

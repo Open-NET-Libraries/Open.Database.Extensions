@@ -125,7 +125,7 @@ public static class ArrayLeaseTests
 		// The five rows are gone; every slot after them still holds the
 		// sentinel, so nothing past the rows was touched.
 		Assert.All(array.Take(5), r => Assert.Null(r));
-		Assert.All(array.Skip(5), r => Assert.Equal(-1, r!.Id));
+		Assert.All(array.Skip(5), r => Assert.Equal(-1, r.Id));
 	}
 
 	// ---- clearing in the bin (a large chunk) ---------------------------------
@@ -150,7 +150,7 @@ public static class ArrayLeaseTests
 		// Cleared there as the inline release does: the ten rows are gone and
 		// every slot after them still holds the sentinel.
 		Assert.All(array.Take(10), r => Assert.Null(r));
-		Assert.All(array.Skip(10), r => Assert.Equal(-1, r!.Id));
+		Assert.All(array.Skip(10), r => Assert.Equal(-1, r.Id));
 	}
 
 	[Fact]

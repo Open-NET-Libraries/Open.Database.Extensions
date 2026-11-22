@@ -653,7 +653,7 @@ public static class RowMapConverterTests
 	{
 		DataTable table = new();
 		foreach (ColumnDef column in Columns) table.Columns.Add(column.Name, column.Type);
-		foreach (object?[] row in rows) table.Rows.Add(row!);
+		foreach (object?[] row in rows) table.Rows.Add(row);
 		return table;
 	}
 

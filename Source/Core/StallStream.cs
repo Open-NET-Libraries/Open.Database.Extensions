@@ -125,7 +125,7 @@ internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 
 				if (reader.TryRead(out T? row))
 				{
-					yield return row!;
+					yield return row;
 					continue;
 				}
 

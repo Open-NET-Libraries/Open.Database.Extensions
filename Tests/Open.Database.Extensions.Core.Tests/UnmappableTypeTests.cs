@@ -325,13 +325,6 @@ public static class UnmappableTypeTests
 		return new FakeDbCommand(connection, () => FakeReader.CreateDb(["Id"]));
 	}
 
-	static DataTable Table()
-	{
-		var table = new DataTable();
-		table.Columns.Add("Id", typeof(int));
-		return table;
-	}
-
 	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
 	{
 		public bool UseAsyncRead => false;
@@ -367,7 +360,6 @@ public static class UnmappableTypeTests
 	static async Task Done<T>(ChannelReader<T> reader) => await reader.Completion;
 	static async Task Done<T>(IReceivableSourceBlock<T> block) => await block.Completion;
 	static async Task Done<T>(ValueTask<T> task) => await task;
-	static async Task Done<T>(IAsyncEnumerable<T> source) { await foreach (T _ in source) { } }
 
 	// name -> the call, for the model type T, over an empty result: one list serves every type-shape error, each family of entry points once.
 	// (The calls are written for any T, so a type that cannot be mapped for another reason meets the same entry points: see the required field below.)
@@ -508,13 +500,6 @@ public static class UnmappableTypeTests
 		public override void Close() { }
 		protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
 		protected override DbCommand CreateDbCommand() => Created = new FakeDbCommand(this, () => FakeReader.CreateDb(["Id"]));
-	}
-
-	static ExpressiveDbCommand Expressive(Touched touched)
-	{
-		var connection = new ClosedConnection();
-		touched.Count = () => (connection.Created?.Behaviors.Count ?? 0) + connection.OpenCalls;
-		return connection.Command("SELECT 1");
 	}
 
 	static BufferBlock<T> Target<T>() => new();

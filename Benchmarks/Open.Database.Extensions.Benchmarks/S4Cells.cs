@@ -400,7 +400,7 @@ public static partial class S4Cells
 				insert.Transaction = transaction;
 				insert.CommandText = $"insert into [{scenario.Id}] (Id, Body) values ($id, $body)";
 				insert.Parameters.AddWithValue("$id", kind.IdOf(row));
-				insert.Parameters.AddWithValue("$body", kind.BodyOf(row)!);
+				insert.Parameters.AddWithValue("$body", kind.BodyOf(row));
 				insert.ExecuteNonQuery();
 			}
 

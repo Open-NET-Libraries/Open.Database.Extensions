@@ -315,9 +315,6 @@ public static class DbQueryConnectionTests
 
 	const string ValuesSql = "select @id, @name";
 
-	static readonly DbQuery<Values> ValuesQuery
-		= DbQuery.Text(ValuesSql).Params<Values>();
-
 	const BindingFlags Hidden
 		= BindingFlags.Instance | BindingFlags.NonPublic;
 

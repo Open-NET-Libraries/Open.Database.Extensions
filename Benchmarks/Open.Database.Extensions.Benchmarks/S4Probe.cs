@@ -136,7 +136,7 @@ public static partial class S4Probe
 			ThreadPool.SetMinThreads(System.Numerics.BitOperations.PopCount((ulong)mask), io);
 		}
 
-		long affinity = OperatingSystem.IsWindows() || OperatingSystem.IsLinux() ? (long)process.ProcessorAffinity : 0;
+		long affinity = OperatingSystem.IsWindows() || OperatingSystem.IsLinux() ? process.ProcessorAffinity : 0;
 		Console.WriteLine($"process: priority {process.PriorityClass}, affinity 0x{affinity:X}");
 	}
 

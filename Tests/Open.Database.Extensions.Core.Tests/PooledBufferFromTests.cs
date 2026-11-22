@@ -126,7 +126,7 @@ public static class PooledBufferFromTests
 	public static void From_ANullPool_IsRefused()
 		=> Assert.Equal(
 			"pool",
-			Assert.Throws<ArgumentNullException>(() => PooledBuffer<int>.From([1], null!, false)).ParamName);
+			Assert.Throws<ArgumentNullException>(() => PooledBuffer<int>.From([1], null, false)).ParamName);
 
 	[Fact]
 	public static async Task From_NoRows_RentsNothing_AndGivesTheSharedEmptyView()

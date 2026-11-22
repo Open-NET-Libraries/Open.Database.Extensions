@@ -83,7 +83,7 @@ public static class SyntheticDapper
 	/// <summary>V7_V8a: Dapper's ExecuteScalar&lt;int&gt;.</summary>
 	public static int V8a(SyntheticConnection connection) => connection.ExecuteScalar<int>(Sql);
 
-	public static Task<int> V8aAsync(SyntheticConnection connection) => connection.ExecuteScalarAsync<int>(Sql)!;
+	public static Task<int> V8aAsync(SyntheticConnection connection) => connection.ExecuteScalarAsync<int>(Sql);
 
 	/// <summary>V7_V8b: Dapper's QueryFirst&lt;int&gt; (the reader path).</summary>
 	public static int V8b(SyntheticConnection connection) => connection.QueryFirst<int>(Sql);

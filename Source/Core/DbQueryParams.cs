@@ -110,7 +110,7 @@ readonly struct ParamList
 	}
 
 	static object Box<T>(T value)
-		=> value is null ? (object)NullOf<T>.Instance : value;
+		=> value is null ? NullOf<T>.Instance : value;
 
 	ParamList Append(DbQuery definition, object key, object value)
 	{
@@ -130,7 +130,7 @@ readonly struct ParamList
 				break;
 
 			default:
-				var shared = (object?[])_items!;
+				var shared = (object?[])_items;
 				if (slot < shared.Length
 					&& Interlocked.CompareExchange(ref shared[slot], key, null) is null)
 				{

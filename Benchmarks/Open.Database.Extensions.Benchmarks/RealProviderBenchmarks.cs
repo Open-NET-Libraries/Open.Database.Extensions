@@ -313,7 +313,7 @@ public sealed class RealProviderCase
 	}
 
 	/// <summary>True when the case's files are gone (the SQLite file, or both LocalDB files).</summary>
-	public bool FilesGone => _sqliteFile is { } f ? !File.Exists(f) : !File.Exists(_dataFile!) && !File.Exists(_logFile!);
+	public bool FilesGone => _sqliteFile is { } f ? !File.Exists(f) : !File.Exists(_dataFile) && !File.Exists(_logFile);
 }
 
 /// <summary>The ReaderOpen column only: there is no Drain column here (the wrapper does not time NextResult).</summary>

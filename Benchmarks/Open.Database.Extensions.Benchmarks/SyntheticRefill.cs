@@ -34,7 +34,7 @@ internal sealed class ReadRefillRequest : RefillRequest
 	{
 		_reader = reader;
 		if (cancellationToken.CanBeCanceled)
-			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((ReadRefillRequest)state!)._source.TrySetCanceled(token), this);
+			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((ReadRefillRequest)state)._source.TrySetCanceled(token), this);
 	}
 
 	/// <summary>The task ReadAsync returns: incomplete until the refill ends or the token is canceled.</summary>
@@ -67,7 +67,7 @@ internal sealed class GetterRefillRequest<T> : RefillRequest
 		_ordinal = ordinal;
 		_read = read;
 		if (cancellationToken.CanBeCanceled)
-			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((GetterRefillRequest<T>)state!)._source.TrySetCanceled(token), this);
+			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((GetterRefillRequest<T>)state)._source.TrySetCanceled(token), this);
 	}
 
 	internal Task<T> Result => _source.Task;

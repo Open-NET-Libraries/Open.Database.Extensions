@@ -252,7 +252,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10L(DbConnection connection, string sql)
 		=> connection.Command(sql).ExecuteReader(static reader =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var list = SynRowGenerated.ReadAll(db);
 			while (db.NextResult()) { }
 			return list;
@@ -262,7 +262,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10r(DbConnection connection, string sql)
 		=> connection.Command(sql).ExecuteReader(static reader =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var ordinals = SynRowGenerated.Resolve(db);
 			var list = new List<SynRow>();
 			while (db.Read()) list.Add(SynRowGenerated.Read(db, in ordinals));
@@ -356,7 +356,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10ri(DbConnection connection, string sql)
 		=> connection.Command(sql).ExecuteReader(static reader =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var ordinals = SynRowGenerated.Resolve(db);
 			var list = new List<SynRow>();
 			while (db.Read()) list.Add(SynRowGenerated.ReadInline(db, in ordinals));
@@ -404,7 +404,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10rn(DbConnection connection, string sql)
 		=> connection.Command(sql).ExecuteReader(static reader =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var ordinals = SynRowGenerated.Resolve(db);
 			var list = new List<SynRow>();
 			while (db.Read()) list.Add(SynRowGenerated.ReadNoInline(db, in ordinals));
@@ -454,7 +454,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10k(DbConnection connection, string sql, int width)
 		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var list = w switch
 			{
 				1 => SynRowGenerated.LoopKn1(db),
@@ -472,7 +472,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10kri(DbConnection connection, string sql, int width)
 		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var list = w switch
 			{
 				1 => SynRowGenerated.LoopKi1(db),
@@ -490,7 +490,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10kL(DbConnection connection, string sql, int width)
 		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var list = w switch
 			{
 				1 => SynRowGenerated.ReadAllK1(db),

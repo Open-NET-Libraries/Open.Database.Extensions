@@ -173,7 +173,7 @@ public static partial class In6Probe
 	static void SetAffinity(Process process, long mask) => process.ProcessorAffinity = new IntPtr(mask);
 
 	static long GetAffinity(Process process)
-		=> OperatingSystem.IsWindows() || OperatingSystem.IsLinux() ? (long)process.ProcessorAffinity : 0;
+		=> OperatingSystem.IsWindows() || OperatingSystem.IsLinux() ? process.ProcessorAffinity : 0;
 
 	static string SettingsText(In6Settings s)
 		=> $"settings: rows {s.Rows}, warm-up {s.Warmup} + measured {s.Ops} operations per cell (S3: {s.S3Ops}), SQL Server scenarios {string.Join(",", s.Scenarios.Order())}, paths {string.Join(",", s.Paths)}, pressure cells {s.PressureMode}, S3 pressure {s.PressureS3}, pressure K = {s.K} (processors {s.Processors}), parts: {string.Join(",", s.Only.Order())}";
@@ -302,7 +302,7 @@ public static partial class In6Probe
 		int k = s.K, perPath = s.Warmup + s.Ops;
 		Console.WriteLine("IN6 dry run: nothing is opened or created.");
 		Console.WriteLine(SettingsText(s));
-		Console.WriteLine($"process: affinity {(s.AffinityMask == 0 ? "unchanged" : "0x" + s.AffinityMask.ToString("X", CultureInfo.InvariantCulture) + " (" + System.Numerics.BitOperations.PopCount((ulong)s.AffinityMask) + " processors; K = auto uses that count)")}, priority {(s.PriorityClass?.ToString() ?? "unchanged")} (applied at the start of a real run, not in a dry run)");
+		Console.WriteLine($"process: affinity {(s.AffinityMask == 0 ? "unchanged" : "0x" + s.AffinityMask.ToString("X", CultureInfo.InvariantCulture) + " (" + System.Numerics.BitOperations.PopCount((ulong)s.AffinityMask) + " processors; K = auto uses that count)")}, priority {s.PriorityClass?.ToString() ?? "unchanged"} (applied at the start of a real run, not in a dry run)");
 		Console.WriteLine("read paths: sync (sync execute + Read) | async+Read (async execute + Read) | EnableAsyncRead (async execute + ReadAsync); all through Map<T>().ToList[Async]()");
 		if (s.Paths.Contains("P4")) Console.WriteLine("P4 (hand-written, not ODX): ExecuteReaderAsync with the default behavior, ReadAsync, and EVERY cell read with await GetFieldValueAsync<T>(i); IsDBNullAsync only for the columns that can be NULL; builds the same row objects (checked on the first 5 rows before measuring)");
 		if (s.Paths.Contains("P6")) Console.WriteLine("P6 (raw, not ODX, NO timing wrapper): the provider's own connection and command, ExecuteReaderAsync (default behavior), await ReadAsync per row, then SYNC typed getters (the same cells and row objects); timed INLINE in the probe loop: 'inline await ReadAsync ms sum/max' = the time from before each ReadAsync call to after its await (a truly async completion and the continuation's wait for a thread are inside it), 'inline getters ms sum' = the time in the typed getters, the ReadAsync incomplete count = calls whose task was not complete when checked, 'wait ms' = the await time of those calls (not the wait until completion), 'wait rows' = the rows read so far at those calls; reader-open is timed inline too");
@@ -991,7 +991,7 @@ public static partial class In6Probe
 			{
 				double expectedWait = boundaries * (double)RefillUs;
 				Check(r.WaitSumMedianUs >= 0.9 * expectedWait && r.WaitSumMedianUs <= (1.1 * expectedWait) + (boundaries * 300), $"{r.Path}: wait time sum {r.WaitSumMedianUs:F0} us per operation, expected about {expectedWait:F0} (boundaries x refill; tolerance -10% to +10% and 300 us per boundary)");
-				Check(r.WaitMaxUs >= 0.9 * RefillUs && r.WaitMaxUs <= 5000, $"{r.Path}: longest single wait {r.WaitMaxUs:F0} us, expected from {0.9 * RefillUs:F0} us up to a few ms");
+				Check(r.WaitMaxUs is >= 0.9 * RefillUs and <= 5000, $"{r.Path}: longest single wait {r.WaitMaxUs:F0} us, expected from {0.9 * RefillUs:F0} us up to a few ms");
 				var spots = r.Positions;
 				Check(spots is { Total: > 0 } && spots.Total == boundaries * Ops && spots.Distinct == boundaries && spots.Operations == Ops, $"{r.Path}: {spots?.Total} incomplete reads recorded over {spots?.Operations} operations, expected {boundaries * Ops} over {Ops}");
 				bool rowsOk = spots is not null;

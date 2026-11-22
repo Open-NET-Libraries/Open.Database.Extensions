@@ -1,5 +1,3 @@
-using System.Data.Common;
-
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
