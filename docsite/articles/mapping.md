@@ -123,7 +123,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 
 ## One value per row
 
-On a command, `Map<int>()` reads the first column of each row as one value, and the terminals of `Map<int>()` work as for a row model: `db.Command(sql).Map<int>().ToList()`. The async terminals work the same way: `db.Command(sql).Map<int>().ToArrayAsync(ct)`. For a row model the same terminals map by column name, so `Map<Post>().ToListAsync(ct)` reads rows as `Post`. A synchronous read is `Map<T>().ToList()`.
+On a command, `Map<int>()` reads the first column of each row as one value, and its terminals work as for a row model: `await db.Command(sql).Map<int>().ToArrayAsync(ct)`. For a row model the same terminals map by column name, so `Map<Post>().ToListAsync(ct)` reads rows as `Post`.
 
 [!code-csharp[](../samples/Mapping.cs#map_single_value)]
 
@@ -133,11 +133,11 @@ The rules:
 - **The first column, whatever its name.** The other columns are ignored, so select only the one you need.
 - **Converted like a property of that type.** When the column type matches, or is an integer that fits (a `long` into an `int` is range-checked; a `short` widens), the value is read with the typed getter and nothing is boxed. Otherwise it is converted: a `decimal` into an `int` rounds, text into a `Guid`, an enum from its name (ignoring case) or its number, a `DateTime` into a `DateTimeOffset`. A value that cannot be converted throws `ValueMappingException`. The reader is chosen once per result set, from the type the first row reports.
 - **NULL.** Follows [the NULL rules](#null-in-a-non-nullable-column): `Map<int>().Single()` over a NULL is `0`, and `Map<int?>()` gives `null`.
-- **Read through.** As every `Map` terminal, they (and the async forms on the command) read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
+- **Read through.** As every `Map` terminal, they read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
 
 It differs from `ExecuteScalar<T>()`, which returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
-Pass the token or nothing to these `Async` forms: the token goes straight after the comparer, or first when there is no comparer (`ToHashSetAsync<int>(ct)`, `ToHashSetAsync(comparer, ct)`), as on `MappedQuery<T>`.
+Pass the token or nothing to the `Async` terminals: the token goes straight after the comparer, or first when there is no comparer (`ToHashSetAsync(ct)`, `ToHashSetAsync(comparer, ct)`).
 
 Errors in the data throw per row: a missing `required` column and an unconvertible value throw `ValueMappingException`, and a constructor that throws is wrapped (see [Values that cannot be mapped](#values-that-cannot-be-mapped)).
 
