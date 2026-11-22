@@ -72,7 +72,7 @@ public readonly struct DictionaryRow : IReadOnlyDictionary<string, object?>
 
 	/// <summary>Gets the distinct column names, in the order of their first column.</summary>
 	/// <value>The names.</value>
-	public IEnumerable<string> Keys => _index?.DistinctNames ?? [];
+	public IEnumerable<string> Keys => _index?.DistinctNames ?? (IEnumerable<string>)Array.Empty<string>();
 
 	/// <summary>Gets the values of the first column of each distinct name, in the same order as <see cref="Keys"/>.</summary>
 	/// <value>The values.</value>
