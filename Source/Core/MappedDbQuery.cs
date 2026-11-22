@@ -103,7 +103,7 @@ public sealed class MappedDbQuery<T>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
 	public MappedQuery<T> Using(DbConnection connection)
 		// DbQuery.Using throws ArgumentNullException for a null source.
-		=> View(Query.Using(connection));
+		=> View(Query.Using(connection).ToCall());
 
 	/// <summary>Reads the query inside a transaction the caller owns.</summary>
 	/// <param name="transaction">The transaction. Its connection is used, and left open.</param>
@@ -111,7 +111,7 @@ public sealed class MappedDbQuery<T>
 	/// <exception cref="ArgumentNullException"><paramref name="transaction"/> is <see langword="null"/>.</exception>
 	public MappedQuery<T> Using(DbTransaction transaction)
 		// DbQuery.Using throws ArgumentNullException for a null source.
-		=> View(Query.Using(transaction));
+		=> View(Query.Using(transaction).ToCall());
 
 	/// <summary>Reads the query on a connection taken from a pool.</summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
@@ -121,7 +121,7 @@ public sealed class MappedDbQuery<T>
 	public MappedQuery<T> Using<TConnection>(IDbConnectionPool<TConnection> pool)
 		where TConnection : DbConnection
 		// DbQuery.Using throws ArgumentNullException for a null source.
-		=> View(Query.Using(pool));
+		=> View(Query.Using(pool).ToCall());
 
 	/// <summary>Reads the query on a connection made by a factory.</summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
@@ -131,20 +131,23 @@ public sealed class MappedDbQuery<T>
 	public MappedQuery<T> Using<TConnection>(IDbConnectionFactory<TConnection> factory)
 		where TConnection : DbConnection
 		// DbQuery.Using throws ArgumentNullException for a null source.
-		=> View(Query.Using(factory));
+		=> View(Query.Using(factory).ToCall());
 
 	/// <summary>Adds a named parameter before the source is known.</summary>
+	/// <remarks>
+	/// For the lightest call, declare the values with <see cref="DbQuery.Params{TParams}"/> and a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
+	/// </remarks>
 	/// <typeparam name="TValue">The type of the value.</typeparam>
 	/// <param name="name">The name of the parameter, with or without its prefix.</param>
 	/// <param name="value">The value.</param>
 	/// <returns>The parameters so far, to be given a source with <c>Using</c>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
 	public UnboundCall<T> AddParam<TValue>(string name, TValue value)
-		=> new(this, new ParamStep<TValue>(null, DbQueryCall.CheckedName(name), value, ParamKind.Named));
+		=> new(this, default(ParamList).AddNamed(Query, DbQueryCall.CheckedName(name), value));
 
 	/// <inheritdoc cref="AddParam{TValue}(string, TValue)"/>
 	public UnboundCall<T> AddParam(string name, string? value)
-		=> new(this, new ParamStep<string?>(null, DbQueryCall.CheckedName(name), value, ParamKind.Named));
+		=> new(this, default(ParamList).AddNamed(Query, DbQueryCall.CheckedName(name), value));
 
 	/// <summary>Adds a parameter whose name is derived from the argument's expression, before the source is known.</summary>
 	/// <typeparam name="TValue">The type of the value.</typeparam>
@@ -155,20 +158,23 @@ public sealed class MappedDbQuery<T>
 	public UnboundCall<T> AddParam<TValue>(
 		TValue value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> new(this, new ParamStep<TValue>(null, DbQueryCall.CheckedExpression(expression), value, ParamKind.Derived));
+		=> new(this, default(ParamList).AddDerived(Query, DbQueryCall.CheckedExpression(expression), value));
 
 	/// <summary>Adds the members of an object as parameters, before the source is known.</summary>
+	/// <remarks>
+	/// For the lightest call, use a typed <see cref="DbQuery.Params{TParams}"/> definition with a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
+	/// </remarks>
 	/// <typeparam name="TValues">The type of the object.</typeparam>
 	/// <param name="values">The object whose members are the parameters.</param>
 	/// <returns>The parameters so far, to be given a source with <c>Using</c>.</returns>
 	public UnboundCall<T> AddParams<TValues>(TValues values)
 		where TValues : notnull
-		=> new(this, new ParamStep<TValues>(null, null, values, ParamKind.Members));
+		=> new(this, default(ParamList).AddMembers(Query, values));
 
 	/// <summary>Makes the view over a command made from this definition, with the options of this definition.</summary>
-	internal MappedQuery<T> View(IExecuteReader command)
+	internal MappedQuery<T> View(DbQueryCall call)
 	{
-		MappedQuery<T> view = new(Views.QueryCore(command, _source));
+		MappedQuery<T> view = new(Views.QueryCore(call, _source));
 		if (_singleResult) view = view.SingleResult();
 		if (_asyncReads) view = view.AsyncReads();
 		if (_pool is not null) view = view.UsePool(_pool, _clearOnReturn);
@@ -268,15 +274,14 @@ public readonly struct MappedDbQueryUsing<TParams, T>
 public readonly struct UnboundCall<T>
 {
 	MappedDbQuery<T>? Held { get; }
-	readonly ParamStep? _last;
+	readonly ParamList _list;
 
-	internal UnboundCall(MappedDbQuery<T> definition, ParamStep last)
+	internal UnboundCall(MappedDbQuery<T> definition, ParamList list)
 	{
 		Debug.Assert(definition is not null);
-		Debug.Assert(last is not null);
 
 		Held = definition;
-		_last = last;
+		_list = list;
 	}
 
 	MappedDbQuery<T> Definition
@@ -284,23 +289,23 @@ public readonly struct UnboundCall<T>
 
 	/// <inheritdoc cref="MappedDbQuery{T}.AddParam{TValue}(string, TValue)"/>
 	public UnboundCall<T> AddParam<TValue>(string name, TValue value)
-		=> new(Definition, new ParamStep<TValue>(_last, DbQueryCall.CheckedName(name), value, ParamKind.Named));
+		=> new(Definition, _list.AddNamed(Definition.Query, DbQueryCall.CheckedName(name), value));
 
 	/// <inheritdoc cref="MappedDbQuery{T}.AddParam{TValue}(string, TValue)"/>
 	public UnboundCall<T> AddParam(string name, string? value)
-		=> new(Definition, new ParamStep<string?>(_last, DbQueryCall.CheckedName(name), value, ParamKind.Named));
+		=> new(Definition, _list.AddNamed(Definition.Query, DbQueryCall.CheckedName(name), value));
 
 	/// <inheritdoc cref="MappedDbQuery{T}.AddParam{TValue}(TValue, string?)"/>
 	[OverloadResolutionPriority(-1)]
 	public UnboundCall<T> AddParam<TValue>(
 		TValue value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> new(Definition, new ParamStep<TValue>(_last, DbQueryCall.CheckedExpression(expression), value, ParamKind.Derived));
+		=> new(Definition, _list.AddDerived(Definition.Query, DbQueryCall.CheckedExpression(expression), value));
 
 	/// <inheritdoc cref="MappedDbQuery{T}.AddParams{TValues}(TValues)"/>
 	public UnboundCall<T> AddParams<TValues>(TValues values)
 		where TValues : notnull
-		=> new(Definition, new ParamStep<TValues>(_last, null, values, ParamKind.Members));
+		=> new(Definition, _list.AddMembers(Definition.Query, values));
 
 	/// <summary>Gives the parameters a connection the caller owns.</summary>
 	/// <param name="connection">The connection.</param>
@@ -342,13 +347,9 @@ public readonly struct UnboundCall<T>
 		// DbQuery.Using throws ArgumentNullException for a null source.
 		=> Bind(Definition.Query.Using(factory));
 
+	// Definition throws for a default value before this is reached.
 	MappedQuery<T> Bind(DbQueryUsing root)
-	{
-		// Definition throws for a default value before this is reached.
-		Debug.Assert(_last is not null);
-
-		return Definition.View(ParamStep.Replay(root, _last));
-	}
+		=> Definition.View(root.WithParams(_list));
 }
 
 /// <summary>
@@ -397,79 +398,6 @@ public readonly struct UnboundCall<TParams, T>
 		=> Definition.View(Definition.Query.Using(factory).AddParams(_values));
 }
 
-/// <summary>What a parameter step adds.</summary>
-enum ParamKind
-{
-	/// <summary>A value under a given name.</summary>
-	Named,
-
-	/// <summary>A value whose name is derived from the expression that was passed.</summary>
-	Derived,
-
-	/// <summary>The members of an object.</summary>
-	Members,
-}
-
-/// <summary>
-/// One parameter added before the source is known: kept as a linked list, newest first,
-/// and replayed on the source's <see cref="DbQueryUsing"/> when <c>Using</c> gives it one.
-/// </summary>
-/// <remarks>
-/// Internal: the steps are an implementation detail of <see cref="UnboundCall{T}"/>, so no public member exposes them.
-/// </remarks>
-internal abstract class ParamStep(ParamStep? previous)
-{
-	/// <summary>Gets the step added before this one.</summary>
-	public ParamStep? Previous { get; } = previous;
-
-	/// <summary>Adds this step's parameter to the first call of a source.</summary>
-	public abstract DbQueryCall Apply(DbQueryUsing root);
-
-	/// <summary>Adds this step's parameter to a call.</summary>
-	public abstract DbQueryCall Apply(DbQueryCall call);
-
-	/// <summary>Replays every step, oldest first, on the source's root.</summary>
-	/// <remarks>
-	/// Recursive, so nothing is allocated to walk the steps oldest first; the depth is the number of
-	/// values the caller added before <c>Using</c>.
-	/// </remarks>
-	/// <param name="root">The source with the definition's command.</param>
-	/// <param name="last">The newest step.</param>
-	/// <returns>The call that holds every parameter.</returns>
-	public static DbQueryCall Replay(DbQueryUsing root, ParamStep last)
-		=> last.Previous is { } previous
-			? last.Apply(Replay(root, previous))
-			: last.Apply(root);
-}
-
-/// <summary>A parameter step for one value type.</summary>
-internal sealed class ParamStep<TValue>(ParamStep? previous, string? name, TValue value, ParamKind kind)
-	: ParamStep(previous)
-{
-	// A Members step is only made by AddParams<TValues>, which requires notnull.
-#pragma warning disable CS8714
-	public override DbQueryCall Apply(DbQueryUsing root)
-		=> kind switch
-		{
-			ParamKind.Named when typeof(TValue) == typeof(string)
-				=> root.AddParam(name!, (string?)(object?)value),
-			ParamKind.Named => root.AddParam(name!, value),
-			ParamKind.Derived => root.AddParam(value, name),
-			_ => root.AddParams(value),
-		};
-
-	public override DbQueryCall Apply(DbQueryCall call)
-		=> kind switch
-		{
-			ParamKind.Named when typeof(TValue) == typeof(string)
-				=> call.AddParam(name!, (string?)(object?)value),
-			ParamKind.Named => call.AddParam(name!, value),
-			ParamKind.Derived => call.AddParam(value, name),
-			_ => call.AddParams(value),
-		};
-#pragma warning restore CS8714
-}
-
 /// <summary>
 /// Adds parameters to a <see cref="MappedQuery{T}"/> that <c>Using</c> made from a <see cref="MappedDbQuery{T}"/>,
 /// so <c>ByAuthor.Using(source).AddParam("authorId", id)</c> reads the same as the other order.
@@ -485,6 +413,11 @@ public static class MappedDbQueryExtensions
 	const string NotFromADefinition
 		= "AddParam after Map applies only to a query made from a DbQuery definition; for a command, call AddParam before Map.";
 
+	static DbQueryCall CallOf<T>(MappedQuery<T> query)
+		=> query.TryGetCall(out DbQueryCall call)
+			? call
+			: throw new InvalidOperationException(NotFromADefinition);
+
 	/// <summary>Adds a named parameter to the query.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <typeparam name="TValue">The type of the value.</typeparam>
@@ -495,21 +428,11 @@ public static class MappedDbQueryExtensions
 	/// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException"><paramref name="query"/> was not made from a <see cref="DbQuery"/> definition.</exception>
 	public static MappedQuery<T> AddParam<T, TValue>(this MappedQuery<T> query, string name, TValue value)
-		=> query.WithCommand(query.Command switch
-		{
-			DbQueryUsing source => source.AddParam(name, value),
-			DbQueryCall call => call.AddParam(name, value),
-			_ => throw new InvalidOperationException(NotFromADefinition),
-		});
+		=> query.WithCall(CallOf(query).AddParam(name, value));
 
 	/// <inheritdoc cref="AddParam{T, TValue}(MappedQuery{T}, string, TValue)"/>
 	public static MappedQuery<T> AddParam<T>(this MappedQuery<T> query, string name, string? value)
-		=> query.WithCommand(query.Command switch
-		{
-			DbQueryUsing source => source.AddParam(name, value),
-			DbQueryCall call => call.AddParam(name, value),
-			_ => throw new InvalidOperationException(NotFromADefinition),
-		});
+		=> query.WithCall(CallOf(query).AddParam(name, value));
 
 	/// <summary>Adds a parameter whose name is derived from the argument's expression.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
@@ -525,12 +448,7 @@ public static class MappedDbQueryExtensions
 		this MappedQuery<T> query,
 		TValue value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> query.WithCommand(query.Command switch
-		{
-			DbQueryUsing source => source.AddParam(value, expression),
-			DbQueryCall call => call.AddParam(value, expression),
-			_ => throw new InvalidOperationException(NotFromADefinition),
-		});
+		=> query.WithCall(CallOf(query).AddParam(value, expression));
 
 	/// <summary>Adds the members of an object as parameters.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
@@ -541,10 +459,5 @@ public static class MappedDbQueryExtensions
 	/// <exception cref="InvalidOperationException"><paramref name="query"/> was not made from a <see cref="DbQuery"/> definition.</exception>
 	public static MappedQuery<T> AddParams<T, TValues>(this MappedQuery<T> query, TValues values)
 		where TValues : notnull
-		=> query.WithCommand(query.Command switch
-		{
-			DbQueryUsing source => source.AddParams(values),
-			DbQueryCall call => call.AddParams(values),
-			_ => throw new InvalidOperationException(NotFromADefinition),
-		});
+		=> query.WithCall(CallOf(query).AddParams(values));
 }

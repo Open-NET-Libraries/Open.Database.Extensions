@@ -460,8 +460,9 @@ public static class MappedDbQueryTests
 
 		Assert.Equal([5], single);
 		Assert.NotEqual(view, withParam);
-		Assert.IsType<DbQueryUsing>(view.Command);
-		Assert.IsType<DbQueryCall>(withParam.Command, exactMatch: false);
+		Assert.IsType<DbQueryCall>(view.Command);
+		Assert.IsType<DbQueryCall>(withParam.Command);
+		Assert.NotEqual((DbQueryCall)view.Command, (DbQueryCall)withParam.Command);
 	}
 
 	[Fact]

@@ -142,6 +142,11 @@ public static class DbQueryAllocationTests
 
 	// ---- measuring ----
 
+	// A count that differs by less than one object (8 B) is the same count: something a runner allocates once in a while
+	// (a provider cache, a resize) spreads across the calls of a round as a few bytes, differently on each path.
+	static void Near(long expected, long actual)
+		=> Assert.InRange(actual, expected - 7, expected + 7);
+
 	// Bytes per call: after a warm-up, the smallest of five rounds of 2,000 calls.
 	static long BytesPerCall(Action call)
 	{
@@ -194,7 +199,7 @@ public static class DbQueryAllocationTests
 	}
 
 	// The bar: a call costs no more than writing it by hand.
-	// At K=1 the one node the call is built from (48 B) is not recovered by
+	// At K=1 the array the call keeps its value in is not recovered by
 	// the rest of the path (see TheFewestValues).
 	[Theory]
 	[InlineData(2)]
@@ -214,17 +219,23 @@ public static class DbQueryAllocationTests
 		long builder = Bytes(() => Builder(c, k));
 
 		Report($"K={k}: typed {typed} B, ad hoc {adHoc} B, hand-written {hand} B, today's builder (explicit names) {builder} B");
-		Assert.True(typed <= hand, $"K={k}: typed {typed} B, hand-written {hand} B.");
-		Assert.True(adHoc <= hand, $"K={k}: ad hoc {adHoc} B, hand-written {hand} B.");
+		Assert.True(typed <= hand + 7, $"K={k}: typed {typed} B, hand-written {hand} B.");
+		Assert.True(adHoc <= hand + 7, $"K={k}: ad hoc {adHoc} B, hand-written {hand} B.");
 		Assert.True(typed < builder, $"K={k}: typed {typed} B, builder {builder} B.");
 		Assert.True(adHoc < builder, $"K={k}: ad hoc {adHoc} B, builder {builder} B.");
 #endif
 	}
 
-	static readonly MappedDbQuery<Row> M2 = Q2.Map<Row>();
+	static readonly DbQuery Q5 = DbQuery.Text(SqlFor(5));
+	static readonly DbQuery Q10 = DbQuery.Text(SqlFor(10));
 
-	// Map-first: a mapped definition reads the same call at the cost of the chain that maps after the source,
-	// plus what the unbound source and the held values need; nothing the definition adds is per call beyond that.
+	static readonly MappedDbQuery<Row> M1 = Q1.Map<Row>();
+	static readonly MappedDbQuery<Row> M2 = Q2.Map<Row>();
+	static readonly MappedDbQuery<Row> M5 = Q5.Map<Row>();
+	static readonly MappedDbQuery<Row> M10 = Q10.Map<Row>();
+
+	// Map-first: a mapped definition reads the same call at no more than the chain that maps after the source,
+	// and the values cost the same array whether they come before the source or after it.
 	[Fact]
 	public static void AMappedDefinition_CostsNoMoreThanTheChainThatMapsAfterTheSource()
 	{
@@ -241,11 +252,11 @@ public static class DbQueryAllocationTests
 
 		Report($"mapped definition: classic {classic} B, params after Using {after} B, params before Using {before} B");
 
-		// After Using: the one box of the unbound source (32 B) is all the definition adds.
-		Assert.True(after <= classic + 32, $"params after Using {after} B, classic chain {classic} B.");
+		// Mapping the call of an unmapped definition costs no more than a definition that maps first.
+		Assert.True(after <= classic + 7, $"params after Using {after} B, classic chain {classic} B.");
 
-		// Before Using: that box and one step of 40 to 48 B per held value (two values here), replayed at Using for nothing more.
-		Assert.True(before <= classic + 128, $"params before Using {before} B, classic chain {classic} B.");
+		// Giving the source after the values copies nothing.
+		Near(after, before);
 #endif
 	}
 
@@ -258,61 +269,71 @@ public static class DbQueryAllocationTests
 		if (value is null) _sunk++;
 	}
 
-	// Where each byte of the map-first path goes, one hop at a time (what the owner asked to see before any change).
-	// Bound so far in this file: the box after Using is the DbQueryUsing struct (a definition and a source, 16 B) boxed
-	// into the IExecuteReader the MappedQuery view holds (16 B of object header on top: 32 B); the classic chain never
-	// boxes it because AddParam is called on the struct itself. A ParamStep is one class per value added before Using.
+	// Where each byte of the map-first path goes. A call keeps its values in one array sized from the definition:
+	// 24 B of array header and 16 B per value (a name and a value), allocated by the first value added and written
+	// in place by the next ones. A value type is boxed once, where it is added, because the provider takes an object;
+	// strings are not boxed, so a chain of strings costs exactly its array. The same holds when the values are added
+	// before the source is known, and the source then adds nothing.
 	[Fact]
-	public static void EachHopOfTheMapFirstPath_HasItsOwnMeasuredCost()
+	public static void TheMapFirstPath_AllocatesOneArray_WhateverTheOrder()
 	{
 #if DEBUG
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		int p0 = VA;
-		long p1 = VB;
+		string s = VC;
 
-		UnboundCall<Row> held0 = M2.AddParam("p0", p0);
-		UnboundCall<Row> held01 = M2.AddParam("p0", p0).AddParam("p1", p1);
-		DbQueryCall classicNode = Q2.Using(c).AddParam("p0", p0);
+		long using0 = BytesPerCall(() => Sink(M2.Using(c)));
+		long after1 = BytesPerCall(() => Sink(M1.Using(c).AddParam("p0", s)));
+		long after5 = BytesPerCall(() => Sink(M5.Using(c).AddParam("p0", s).AddParam("p1", s).AddParam("p2", s).AddParam("p3", s).AddParam("p4", s)));
+		long after10 = BytesPerCall(() => Sink(M10.Using(c).AddParam("p0", s).AddParam("p1", s).AddParam("p2", s).AddParam("p3", s).AddParam("p4", s).AddParam("p5", s).AddParam("p6", s).AddParam("p7", s).AddParam("p8", s).AddParam("p9", s)));
+		long before1 = BytesPerCall(() => Sink(M1.AddParam("p0", s)));
+		long before5 = BytesPerCall(() => Sink(M5.AddParam("p0", s).AddParam("p1", s).AddParam("p2", s).AddParam("p3", s).AddParam("p4", s)));
+		long before10 = BytesPerCall(() => Sink(M10.AddParam("p0", s).AddParam("p1", s).AddParam("p2", s).AddParam("p3", s).AddParam("p4", s).AddParam("p5", s).AddParam("p6", s).AddParam("p7", s).AddParam("p8", s).AddParam("p9", s)));
+		UnboundCall<Row> held5 = M5.AddParam("p0", s).AddParam("p1", s).AddParam("p2", s).AddParam("p3", s).AddParam("p4", s);
+		long bind5 = BytesPerCall(() => Sink(held5.Using(c)));
 
-		long classicBind = BytesPerCall(() => Sink(Q2.Using(c)));
-		long classicNodeFirst = BytesPerCall(() => Sink(Q2.Using(c).AddParam("p0", p0)));
-		long classicNodeSecond = BytesPerCall(() => Sink(classicNode.AddParam("p1", p1)));
+		Report($"hops: Using {using0} B; after Using {after1} / {after5} / {after10} B for 1 / 5 / 10 strings; "
+			+ $"before Using {before1} / {before5} / {before10} B; Using on five held values {bind5} B");
 
-		long box = BytesPerCall(() => Sink(M2.Using(c)));
-		long boxThenNode = BytesPerCall(() => Sink(M2.Using(c).AddParam("p0", p0)));
-		long stepInt = BytesPerCall(() => Sink(M2.AddParam("p0", p0)));
-		long stepLong = BytesPerCall(() => Sink(M2.AddParam("p1", p1)));
-		long stepSecond = BytesPerCall(() => Sink(held0.AddParam("p1", p1)));
-		long replayOne = BytesPerCall(() => Sink(held0.Using(c)));
-		long replayTwo = BytesPerCall(() => Sink(held01.Using(c)));
+		// Binding the source allocates nothing: the view holds the call as it is.
+		Near(0, using0);
+		Near(24 + (16 * 1), after1);
+		Near(24 + (16 * 5), after5);
+		Near(24 + (16 * 10), after10);
 
-		Report($"hops: classic Using {classicBind} B, classic first node {classicNodeFirst} B, classic second node {classicNodeSecond} B; "
-			+ $"map-first Using (the box) {box} B, Using then first node {boxThenNode} B, "
-			+ $"step for an int {stepInt} B, for a long {stepLong} B, a second step {stepSecond} B, "
-			+ $"Using on one held value {replayOne} B, on two {replayTwo} B");
-		// The classic chain binds a source for nothing (the struct is used where it is), and a node costs 40 to 48 B.
-		Assert.Equal(0, classicBind);
-
-		// The box: the DbQueryUsing struct (a definition and a source) boxed into the IExecuteReader the view holds.
-		Assert.Equal(32, box);
-		Assert.Equal(box + classicNodeFirst, boxThenNode);
-
-		// A held value is one step of 40 to 48 B; replaying them at Using builds exactly the nodes the classic chain builds
-		// and nothing else (the replay walks the steps by recursion, so it allocates nothing to do it).
-		Assert.InRange(stepInt, 40, 48);
-		Assert.InRange(stepLong, 40, 48);
-		Assert.InRange(stepSecond, 40, 48);
-		Assert.Equal(classicNodeFirst, replayOne);
-		Assert.Equal(classicNodeFirst + classicNodeSecond, replayTwo);
+		// The same array whichever order the values and the source are given in, and giving the source copies nothing.
+		Near(after1, before1);
+		Near(after5, before5);
+		Near(after10, before10);
+		Near(0, bind5);
 #endif
 	}
 
-	// One value: the single node (48 B for the first, the one a bound query
-	// returns) is the whole difference from hand-written code.
+	// Boxing a value type is the provider's cost, paid once where the value is added: an int is 24 B on top of the array.
 	[Fact]
-	public static void TheFewestValues_CostOneNodeOverHandWrittenAdoNet()
+	public static void AValueType_IsBoxedOnce_WhereItIsAdded()
+	{
+#if DEBUG
+		Assert.Skip("Release only.");
+#else
+		using DbConnection c = NewConnection();
+		int i = VA;
+		long l = VB;
+
+		long oneInt = BytesPerCall(() => Sink(M1.Using(c).AddParam("p0", i)));
+		long intAndLong = BytesPerCall(() => Sink(M2.Using(c).AddParam("p0", i).AddParam("p1", l)));
+
+		Report($"boxes: one int {oneInt} B, an int and a long {intAndLong} B");
+		Near(40 + 24, oneInt);
+		Near(56 + 24 + 24, intAndLong);
+#endif
+	}
+
+	// One value: the typed form costs no more than hand-written code, and the ad hoc form (the array that holds the value)
+	// stays within 16 B of it, since hand-written code boxes its value as well.
+	[Fact]
+	public static void TheFewestValues_StayWithinASmallMarginOfHandWrittenAdoNet()
 	{
 #if DEBUG
 		// Release only, as ACall_CostsNoMoreThanHandWrittenAdoNet.
@@ -325,8 +346,8 @@ public static class DbQueryAllocationTests
 		long builder = Bytes(() => Builder(c, 1));
 
 		Report($"K=1: typed {typed} B, ad hoc {adHoc} B, hand-written {hand} B, today's builder (explicit names) {builder} B");
-		Assert.True(typed <= hand + 48, $"K=1: typed {typed} B, hand-written {hand} B.");
-		Assert.True(adHoc <= hand + 48, $"K=1: ad hoc {adHoc} B, hand-written {hand} B.");
+		Assert.True(typed <= hand + 7, $"K=1: typed {typed} B, hand-written {hand} B.");
+		Assert.True(adHoc <= hand + 23, $"K=1: ad hoc {adHoc} B, hand-written {hand} B.");
 		Assert.True(typed < builder, $"K=1: typed {typed} B, builder {builder} B.");
 #endif
 	}
@@ -360,7 +381,7 @@ public static class DbQueryAllocationTests
 		});
 
 		Report($"K={k}: derived {derived} B, named {named} B");
-		Assert.True(derived <= named, $"K={k}: derived {derived} B, named {named} B.");
+		Assert.True(derived <= named + 7, $"K={k}: derived {derived} B, named {named} B.");
 	}
 
 	readonly record struct OtherArgs2(int P0, long P1);
@@ -383,33 +404,39 @@ public static class DbQueryAllocationTests
 		});
 
 		Report($"alternating two values types: {alternating} B per pair, alone {aloneA} B and {aloneB} B");
-		Assert.True(alternating <= aloneA + aloneB, $"alternating {alternating} B per pair, alone {aloneA} + {aloneB} B.");
+		Assert.True(alternating <= aloneA + aloneB + 7, $"alternating {alternating} B per pair, alone {aloneA} + {aloneB} B.");
 	}
 
 	// ---- the pieces, and the seam ----
 
-	// The memoize seam adds no state to a node: the first node holds the
-	// definition, the source, a name and the value (48 B), every later node its
-	// parent, a name and the value (40 B), and binding allocates nothing.
+	// What a call is made of: the array that holds the values (24 B and 16 B per value, here four, as the text declares),
+	// the box of each value type, and nothing else; binding the source and the typed values cost what they hold.
+	// Adding to a kept call a second time copies the values it sees into an array of its own, so the first call is never changed.
 	[Fact]
 	public static void ThePieces_AreExactlyTheirFields_SoTheSeamAddsNothing()
 	{
+#if DEBUG
+		// Release only, as the other byte counts: a Debug build boxes a struct that is passed to a generic method.
+		Assert.Skip("Release only.");
+#else
 		using DbConnection c = NewConnection();
-		object? sink = null;
-
-		long binding = BytesPerCall(() => _ = Q4.Using(c));
-		long first = BytesPerCall(() => sink = Q4.Using(c).AddParam("p0", 42));
+		// A struct is taken without boxing it, so what is counted is what the call allocates.
+		long binding = BytesPerCall(() => Sink(Q4.Using(c)));
+		long first = BytesPerCall(() => Sink(Q4.Using(c).AddParam("p0", 42)));
+		long both = BytesPerCall(() => Sink(Q4.Using(c).AddParam("p0", 42).AddParam("p1", 7L)));
 		DbQueryCall held = Q4.Using(c).AddParam("p0", 42);
-		long second = BytesPerCall(() => sink = held.AddParam("p1", 7L));
-		long typed = BytesPerCall(() => sink = T4.Using(c).AddParams(new(VA, VB, VC, VD)));
+		long branched = BytesPerCall(() => Sink(held.AddParam("p1", 7L)));
+		long typed = BytesPerCall(() => Sink(T4.Using(c).AddParams(new(VA, VB, VC, VD))));
 
-		// What a caller that keys on the call does is a separate, opt-in cost.
-		GC.KeepAlive(sink);
-		Report($"binding {binding} B, first node {first} B, later node {second} B, typed root {typed} B");
-		Assert.Equal(0, binding);
-		Assert.Equal(48, first);
-		Assert.Equal(40, second);
-		Assert.Equal(64, typed);
+		Report($"binding {binding} B, first value {first} B, a second in the chain {both - first} B, a second on a kept call {branched} B, typed {typed} B");
+		Near(0, binding);
+		Near(88 + 24, first);
+		Near(24, both - first);
+		Near(88 + 24, branched);
+
+		// The holder of the typed values: a header and the struct (an int, a long, a string and an int: 24 B).
+		Near(40, typed);
+#endif
 	}
 
 	[Fact]
@@ -430,6 +457,6 @@ public static class DbQueryAllocationTests
 
 		Assert.True(equal);
 		Assert.NotEqual(0, hash);
-		Assert.Equal(0, bytes);
+		Near(0, bytes);
 	}
 }

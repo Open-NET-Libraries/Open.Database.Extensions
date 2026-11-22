@@ -12,8 +12,8 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 	// The binding is read from the IL of each call, at every language version of
 	// this project (C# 7.3, 9, 12 and 13).
 	// Nothing here is written with a record, a target-typed new or any other
-	// later syntax; Map binds the one extension on IExecuteReader on a struct
-	// (boxing receiver) and on a class.
+	// later syntax; Map binds the member of the call or of the bound
+	// definition, which holds the call as it is (no box).
 	public static class DbQueryBindingTests
 	{
 		sealed class NoConnection : DbConnection
@@ -118,7 +118,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		}
 
 		[Fact]
-		public static void Map_OnEveryShape_BindsTheExtensionOnIExecuteReader()
+		public static void Map_OnACallOrABoundDefinition_BindsTheirOwnMember()
 		{
 			var map = new RowMap<Post>(new System.Collections.Generic.KeyValuePair<string, string>("Id", "id"));
 
@@ -143,8 +143,9 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 					var called = method.Module.ResolveMethod(BitConverter.ToInt32(il, i + 1));
 					if (called == null || called.Name != "Map") continue;
 					var parameters = called.GetParameters();
-					Assert.Equal(typeof(IExecuteReader), parameters[0].ParameterType);
-					found = parameters.Length == 1 ? "" : parameters[1].ParameterType.Name;
+					Assert.False(called.IsStatic);
+					Assert.True(called.DeclaringType == typeof(DbQueryUsing) || called.DeclaringType == typeof(DbQueryCall));
+					found = parameters.Length == 0 ? "" : parameters[0].ParameterType.Name;
 				}
 				catch (ArgumentException) { }
 			}

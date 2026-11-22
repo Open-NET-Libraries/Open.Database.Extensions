@@ -433,7 +433,7 @@ public static class DbQueryTests
 			.ToListAsync(TestContext.Current.CancellationToken);
 
 		Assert.Equal([4], Ids(posts));
-		Assert.Equal(["Views", "@AuthorId"], SentNames(c));
+		Assert.Equal(["@Views", "@AuthorId"], SentNames(c));
 	}
 
 	[Fact]
@@ -449,7 +449,7 @@ public static class DbQueryTests
 			.ToListAsync(TestContext.Current.CancellationToken);
 
 		Assert.Equal([4], Ids(posts));
-		Assert.Equal(["@AuthorId", "Views"], SentNames(c));
+		Assert.Equal(["@AuthorId", "@Views"], SentNames(c));
 	}
 
 	[Fact]
@@ -513,7 +513,7 @@ public static class DbQueryTests
 			async () => await held.Map<Post>().ToListAsync(TestContext.Current.CancellationToken));
 		// The first run was `low`: both values, in the order added.
 		Assert.Equal(
-			["@authorId", "views"],
+			["@authorId", "@views"],
 			c.Commands[0].Parameters.Cast<DbParameter>().Select(static p => p.ParameterName));
 		Assert.Single(c.Commands[2].Parameters);
 	}
@@ -565,7 +565,7 @@ public static class DbQueryTests
 			.ToListAsync(TestContext.Current.CancellationToken);
 
 		Assert.Equal(
-			["a", "b", "@c"],
+			["@a", "@b", "@c"],
 			c.Commands[0].Parameters.Cast<DbParameter>().Select(static p => p.ParameterName));
 	}
 
@@ -937,9 +937,9 @@ public static class DbQueryTests
 		MappedQueryWithSkip<Post> skipped = query.Skip(1);
 		MappedQueryWithTake<Post> taken = query.Take(2);
 
-		Assert.Same(call, query.Command);
-		Assert.Same(call, skipped.Command);
-		Assert.Same(call, taken.Command);
+		Assert.Equal(call, Assert.IsType<DbQueryCall>(query.Command));
+		Assert.Equal(call, Assert.IsType<DbQueryCall>(skipped.Command));
+		Assert.Equal(call, Assert.IsType<DbQueryCall>(taken.Command));
 
 		Assert.Equal(query, call.Map(map));
 		Assert.Equal(query.GetHashCode(), call.Map(map).GetHashCode());

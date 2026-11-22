@@ -224,8 +224,20 @@ public static class DbQueryBindingTests
 		Assert.All(errors, d => Assert.True(d.Id == id, Show(errors)));
 	}
 
+	// The spelling of a call and of a bound definition is the spelling of a command: the same text binds, and the compiler
+	// picks the member of the call itself, which holds the call as it is, where a command reaches the one extension on
+	// IExecuteReader (which would box a struct).
+	static string Arguments(IMethodSymbol method)
+	{
+		IMethodSymbol definition = (method.ReducedFrom ?? method).OriginalDefinition;
+		IEnumerable<IParameterSymbol> parameters = method.ReducedFrom is null
+			? definition.Parameters
+			: definition.Parameters.Skip(1);
+		return definition.Name + "(" + string.Join(", ", parameters.Select(static p => p.Type.ToDisplayString())) + ")";
+	}
+
 	[Fact]
-	public static void Map_OnEveryShape_BindsTheOneMapOnIExecuteReader()
+	public static void Map_OnACallOrABoundDefinition_BindsTheirOwnMember_OnACommandTheExtension()
 	{
 		(CSharpCompilation compilation, SyntaxTree tree) = Compile("""
 			static readonly RowMap<Post> PostMap = new();
@@ -243,6 +255,9 @@ public static class DbQueryBindingTests
 				today.Map<Post>();
 				today.Map(PostMap);
 				today.Map(r => r.GetInt32(0));
+				call.AsObjectArrays();
+				Q.Using(c).AsDictionaryRows();
+				today.AsObjectArrays();
 			}
 			""");
 
@@ -250,20 +265,31 @@ public static class DbQueryBindingTests
 		IMethodSymbol[] bound = Bound(compilation, tree, "Map");
 		Assert.Equal(11, bound.Length);
 
+		// A bound definition and every call bind the member of their own type.
+		string[] owners = ["DbQueryUsing", "DbQueryUsing", "DbQueryUsing", "DbQueryCall", "DbQueryCall", "DbQueryCall", "DbQueryCall", "DbQueryCall"];
+		for (int i = 0; i < owners.Length; i++)
+		{
+			Assert.Null(bound[i].ReducedFrom);
+			Assert.Equal(owners[i], bound[i].ContainingType.Name);
+		}
+
+		// A command binds the one extension on IExecuteReader.
 		INamedTypeSymbol extensions = compilation.GetTypeByMetadataName(
 			"Open.Database.Extensions.CoreExtensions")!;
-		Assert.All(bound, m =>
+		for (int i = 8; i < bound.Length; i++)
 		{
-			IMethodSymbol definition = (m.ReducedFrom ?? m).OriginalDefinition;
+			IMethodSymbol definition = (bound[i].ReducedFrom ?? bound[i]).OriginalDefinition;
 			Assert.Same(extensions, definition.ContainingType);
 			Assert.Equal("IExecuteReader", definition.Parameters[0].Type.Name);
-		});
+		}
 
-		// The same symbol as today's command for the same shape.
-		Assert.Equal(Shape(bound[0]), Shape(bound[3]));
-		Assert.Equal(Shape(bound[0]), Shape(bound[8]));
-		Assert.Equal(Shape(bound[1]), Shape(bound[9]));
-		Assert.Equal(Shape(bound[2]), Shape(bound[10]));
+		// The same arguments, so the same text, whatever the receiver.
+		foreach (int i in new[] { 3, 6, 7, 8 }) Assert.Equal(Arguments(bound[0]), Arguments(bound[i]));
+		foreach (int i in new[] { 4, 9 }) Assert.Equal(Arguments(bound[1]), Arguments(bound[i]));
+		foreach (int i in new[] { 5, 10 }) Assert.Equal(Arguments(bound[2]), Arguments(bound[i]));
+
+		Assert.Equal(["DbQueryCall", "CoreExtensions"], Bound(compilation, tree, "AsObjectArrays").Select(static m => (m.ReducedFrom ?? m).ContainingType.Name));
+		Assert.Equal(["DbQueryUsing"], Bound(compilation, tree, "AsDictionaryRows").Select(static m => (m.ReducedFrom ?? m).ContainingType.Name));
 	}
 
 	public static TheoryData<LanguageVersion> Versions

@@ -584,3 +584,37 @@ static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTra
 *REMOVED*const Open.Database.Extensions.Core.Transformer<T>.MaxArrayBuffer = 1024 -> int
 *REMOVED*static readonly Open.Database.Extensions.Core.Transformer<T>.LocalPool -> System.Buffers.ArrayPool<object!>!
 Open.Database.Extensions.RowMap<T>.ArrayMapper(System.Collections.Immutable.ImmutableArray<string!> names) -> System.Func<object?[]!, T>!
+*REMOVED*Open.Database.Extensions.DbQueryCall.AddParam(string! name, string? value) -> Open.Database.Extensions.DbQueryCall!
+*REMOVED*Open.Database.Extensions.DbQueryCall.AddParam<T>(T value, string? expression = null) -> Open.Database.Extensions.DbQueryCall!
+*REMOVED*Open.Database.Extensions.DbQueryCall.AddParam<T>(string! name, T value) -> Open.Database.Extensions.DbQueryCall!
+*REMOVED*Open.Database.Extensions.DbQueryCall.AddParams<T>(T values) -> Open.Database.Extensions.DbQueryCall!
+*REMOVED*Open.Database.Extensions.DbQueryUsing.AddParam(string! name, string? value) -> Open.Database.Extensions.DbQueryCall!
+*REMOVED*Open.Database.Extensions.DbQueryUsing.AddParam<T>(T value, string? expression = null) -> Open.Database.Extensions.DbQueryCall!
+*REMOVED*Open.Database.Extensions.DbQueryUsing.AddParam<T>(string! name, T value) -> Open.Database.Extensions.DbQueryCall!
+*REMOVED*Open.Database.Extensions.DbQueryUsing.AddParams<T>(T values) -> Open.Database.Extensions.DbQueryCall!
+*REMOVED*Open.Database.Extensions.DbQueryUsing<TParams>.AddParams(TParams values) -> Open.Database.Extensions.DbQueryCall!
+Open.Database.Extensions.DbQueryCall.AddParam(string! name, string? value) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryCall.AddParam<T>(T value, string? expression = null) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryCall.AddParam<T>(string! name, T value) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryCall.AddParams<T>(T values) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryUsing.AddParam(string! name, string? value) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryUsing.AddParam<T>(T value, string? expression = null) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryUsing.AddParam<T>(string! name, T value) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryUsing.AddParams<T>(T values) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryUsing<TParams>.AddParams(TParams values) -> Open.Database.Extensions.DbQueryCall
+Open.Database.Extensions.DbQueryCall.DbQueryCall() -> void
+Open.Database.Extensions.DbQueryCall.Equals(Open.Database.Extensions.DbQueryCall other) -> bool
+override Open.Database.Extensions.DbQueryCall.Equals(object? obj) -> bool
+override Open.Database.Extensions.DbQueryCall.GetHashCode() -> int
+static Open.Database.Extensions.DbQueryCall.operator !=(Open.Database.Extensions.DbQueryCall left, Open.Database.Extensions.DbQueryCall right) -> bool
+static Open.Database.Extensions.DbQueryCall.operator ==(Open.Database.Extensions.DbQueryCall left, Open.Database.Extensions.DbQueryCall right) -> bool
+Open.Database.Extensions.DbQueryCall.AsDictionaryRows() -> Open.Database.Extensions.MappedQuery<Open.Database.Extensions.DictionaryRow>
+Open.Database.Extensions.DbQueryCall.AsObjectArrays() -> Open.Database.Extensions.MappedQuery<object?[]!>
+Open.Database.Extensions.DbQueryCall.Map<T>() -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryCall.Map<T>(Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryCall.Map<T>(System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryUsing.AsDictionaryRows() -> Open.Database.Extensions.MappedQuery<Open.Database.Extensions.DictionaryRow>
+Open.Database.Extensions.DbQueryUsing.AsObjectArrays() -> Open.Database.Extensions.MappedQuery<object?[]!>
+Open.Database.Extensions.DbQueryUsing.Map<T>() -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryUsing.Map<T>(Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryUsing.Map<T>(System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedQuery<T>

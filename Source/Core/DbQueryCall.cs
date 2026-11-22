@@ -5,128 +5,145 @@ namespace Open.Database.Extensions;
 /// <summary>
 /// Represents a <see cref="DbQuery"/> bound to a source with some values
 /// added.
-/// Immutable: each <c>AddParam</c> returns a new one and leaves this one as
-/// it was, so a call can be kept and branched.
+/// A <see langword="readonly"/> <see langword="struct"/>: each
+/// <c>AddParam</c> returns a new one and leaves this one unchanged, so a call
+/// can be kept and branched.
 /// </summary>
 /// <remarks>
-/// Map it with <c>Map&lt;T&gt;()</c>, which is the same extension every command
-/// uses, then run a terminal. Nothing touches the database before that.
+/// <para>
+/// The values of a call and of every call made from it by adding values are
+/// kept in one array sized from the definition, so a chain of <c>AddParam</c>
+/// allocates one array, not one object per value.
+/// A call that is kept and added to twice does not interfere with itself: the
+/// second addition works on a copy.
+/// A value that is an object, and the object of <c>AddParams</c>, is read when the query runs.
+/// </para>
+/// <para>
+/// Map it with <c>Map&lt;T&gt;()</c>, then run a terminal. Nothing touches the database before that.
+/// </para>
 /// </remarks>
-public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
+public readonly struct DbQueryCall
+	: IExecuteReaderAsync, IExecuteReaderSync, IEquatable<DbQueryCall>
 {
-	/// <summary>
-	/// How a node's parameters are named.
-	/// </summary>
-	enum NameKind
+	readonly DbQuery? _definition;
+	readonly object? _source;
+
+	internal DbQueryCall(DbQuery definition, object source, ParamList parameters)
 	{
-		/// <summary>The name the caller wrote.</summary>
-		Explicit,
-		/// <summary>
-		/// The argument's text, resolved to the real name when it runs.
-		/// </summary>
-		Derived,
-		/// <summary>
-		/// The public members of the value, each resolved the same way.
-		/// </summary>
-		Members,
+		_definition = definition;
+		_source = source;
+		Params = parameters;
 	}
 
-	private protected DbQueryCall() { }
+	internal bool IsBound => _definition is not null;
 
-	internal abstract DbQuery Definition { get; }
+	internal DbQuery Definition
+		=> _definition ?? throw DbQueryRunner.Unbound();
 
-	internal abstract object SourceCore { get; }
+	internal object SourceCore
+		=> _source ?? throw DbQueryRunner.Unbound();
 
-	/// <summary>
-	/// Gets whether any node needs the real names (a derived name or members).
-	/// </summary>
-	internal abstract bool NeedsNames { get; }
-
-	/// <summary>
-	/// Determines whether the remembered names fit the nodes.
-	/// </summary>
-	/// <remarks>
-	/// <see langword="false"/> when a node that needs a name matches none of
-	/// the remembered names (see <c>ExpressiveCommandBase.Fits</c>).
-	/// </remarks>
-	/// <param name="names">The remembered names.</param>
-	/// <param name="command">The command text or procedure name.</param>
-	/// <returns>
-	/// <see langword="true"/> if the names fit; otherwise,
-	/// <see langword="false"/>.
-	/// </returns>
-	internal abstract bool Fits(NameSet names, string command);
-
-	/// <summary>
-	/// Determines whether a node of the whole call claims the name with a name
-	/// of its own.
-	/// </summary>
-	/// <remarks>
-	/// A name of its own is one written or derived, not a member of an
-	/// <c>AddParams</c> object: such a parameter wins over a member that
-	/// resolves to the same name, whichever was added first, as on a command.
-	/// </remarks>
-	/// <param name="name">The real name.</param>
-	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
-	/// <param name="definition">The query definition.</param>
-	/// <returns>
-	/// <see langword="true"/> if a node claims the name; otherwise,
-	/// <see langword="false"/>.
-	/// </returns>
-	internal abstract bool Claims(string name, NameSet? names, DbQuery definition);
-
-	/// <summary>
-	/// Binds this node's parameters after its parent's, in the order added.
-	/// </summary>
-	/// <param name="command">The command to add the parameters to.</param>
-	/// <param name="definition">The query definition.</param>
-	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
-	/// <param name="whole">The call that runs: the node last added.</param>
-	internal abstract void BindAll(
-		DbCommand command,
-		DbQuery definition,
-		NameSet? names,
-		DbQueryCall whole);
+	internal ParamList Params { get; }
 
 	/// <summary>
 	/// The connection, transaction, pool or factory the query is bound to.
 	/// </summary>
 	/// <value>The connection, transaction, pool or factory the query was bound to with <c>Using</c>.</value>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public object Source => SourceCore;
 
 	/// <inheritdoc cref="DbQueryUsing.AddParams{T}(T)"/>
 	public DbQueryCall AddParams<T>(T values)
 		where T : notnull
-		=> new Node<T>(this, null, values);
+		=> new(
+			Definition,
+			SourceCore,
+			Params.AddMembers(Definition, values));
 
 	/// <inheritdoc cref="DbQueryUsing.AddParam{T}(string, T)"/>
 	public DbQueryCall AddParam<T>(string name, T value)
-		=> new Node<T>(this, CheckedName(name), value);
+		=> new(
+			Definition,
+			SourceCore,
+			Params.AddNamed(Definition, CheckedName(name), value));
 
 	/// <inheritdoc cref="DbQueryUsing.AddParam(string, string?)"/>
 	public DbQueryCall AddParam(string name, string? value)
-		=> new Node<string?>(this, CheckedName(name), value);
+		=> new(
+			Definition,
+			SourceCore,
+			Params.AddNamed(Definition, CheckedName(name), value));
 
 	/// <inheritdoc cref="DbQueryUsing.AddParam{T}(T, string?)"/>
 	[OverloadResolutionPriority(-1)]
 	public DbQueryCall AddParam<T>(
 		T value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> new DerivedNode<T>(this, CheckedExpression(expression), value);
+		=> new(
+			Definition,
+			SourceCore,
+			Params.AddDerived(Definition, CheckedExpression(expression), value));
 
-	internal static DbQueryCall NewRoot<T>(
-		DbQuery definition,
-		object source,
-		string? name,
-		T value)
-		=> new Root<T>(definition, source, name, value);
 
-	internal static DbQueryCall NewDerivedRoot<T>(
-		DbQuery definition,
-		object source,
-		string expression,
-		T value)
-		=> new DerivedRoot<T>(definition, source, expression, value);
+	/// <summary>
+	/// Maps each row to a <typeparamref name="T"/> by column name (a single value such as
+	/// <see cref="int"/> is read from the first column), and returns the mapped query.
+	/// </summary>
+	/// <remarks>
+	/// The same as <see cref="CoreExtensions.Map{T}(IExecuteReader)"/>, written the same way, without boxing this value:
+	/// the query holds the call as it is.
+	/// </remarks>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>()
+		=> FirstColumn<T>.Instance is { } firstColumn
+		? new(Views.QueryCore(Bound(), firstColumn))
+		: new(Views.QueryCore(Bound(), RowMap<T>.Default));
+
+	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped query.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="map">The map. A <see langword="null"/> map reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload).</param>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>(RowMap<T>? map)
+		=> map is null
+		? Map<T>()
+		: new(Views.QueryCore(Bound(), map));
+
+	/// <summary>Maps each row with a selector, and returns the mapped query.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="selector">Called for each row, from any thread and by overlapping calls, so it must be safe for concurrent use.</param>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>(Func<IDataRecord, T> selector)
+	{
+		if (selector is null) throw new ArgumentNullException(nameof(selector));
+		Contract.EndContractBlock();
+
+		return new(Views.QueryCore(Bound(), new SelectorSource<T>(selector)));
+	}
+
+	/// <summary>Reads each row without a model, as an array of its values.</summary>
+	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>.</remarks>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<object?[]> AsObjectArrays()
+		=> new(Views.QueryCore(Bound(), ObjectArraySource.Instance));
+
+	/// <summary>Reads each row without a model, as a <see cref="DictionaryRow"/>.</summary>
+	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>.</remarks>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<DictionaryRow> AsDictionaryRows()
+		=> new(Views.QueryCore(Bound(), DictionaryRowSource.Instance));
+
+	DbQueryCall Bound()
+	{
+		_ = Definition;
+		return this;
+	}
 
 	internal static string CheckedName(string name)
 	{
@@ -150,15 +167,15 @@ public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
 	/// The name it stands for is settled when the query runs.
 	/// </remarks>
 	/// <param name="expression">The text of the argument.</param>
-	/// <returns>The expression.</returns>
+	/// <returns>The facts of the expression.</returns>
 	/// <exception cref="ArgumentException">A name cannot be derived from the expression.</exception>
 	[SuppressMessage(
 		"Usage",
 		"CA2208:Instantiate argument exceptions correctly")]
-	internal static string CheckedExpression(string? expression)
-		=> ParameterNames.Describe(expression) is not null
-			? expression!
-			: throw (expression is null
+	internal static ParameterNames.DerivedExpression CheckedExpression(
+		string? expression)
+		=> ParameterNames.Describe(expression)
+			?? throw (expression is null
 				? new ArgumentException(
 					"The compiler did not supply the argument's text (deriving a name needs C# 10 or newer). Pass the name explicitly: AddParam(\"name\", value).",
 					"value")
@@ -166,448 +183,39 @@ public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
 					$"Cannot derive a parameter name from the argument '{expression}'. Pass a variable or a chain of members such as filter.AuthorId, or name the parameter: AddParam(\"name\", value).",
 					"value"));
 
-	/// <summary>
-	/// Gets the real name an argument of <c>AddParam(value)</c> stands for.
-	/// </summary>
-	/// <param name="expression">The text of the argument.</param>
-	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
-	/// <param name="definition">The query definition.</param>
-	/// <returns>The real name; the last member as written when the names are not known.</returns>
-	/// <exception cref="InvalidOperationException">The expression matches none of the names, or more than one equally well.</exception>
-	static string ResolveDerived(
-		string expression,
-		NameSet? names,
-		DbQuery definition)
-		=> Known(names)
-			? names!.Match(expression, definition.CommandText)
-				?? throw NoMatch(expression, names!, definition)
-			: ParameterNames.Describe(expression)!.LastMember;
+	/// <inheritdoc />
+	public bool Equals(DbQueryCall other)
+		=> Equals(_definition, other._definition)
+		&& Equals(_source, other._source)
+		&& Params.SameEntries(other.Params);
 
-	static bool ClaimsValue(
-		NameKind kind,
-		string? own,
-		string name,
-		NameSet? names,
-		DbQuery definition)
-		=> kind switch
-		{
-			NameKind.Explicit => SameName(own!, name),
-			NameKind.Derived
-				=> SameName(ResolveDerived(own!, names, definition), name),
-			_ => false,
-		};
+	/// <inheritdoc />
+	public override bool Equals(object? obj)
+		=> obj is DbQueryCall other && Equals(other);
 
-	/// <summary>
-	/// How many (values type, set of names) matches a definition keeps.
-	/// </summary>
-	const int MaxMatches = 4;
+	/// <summary>Determines whether two calls are the same definition on the same source with the same values added.</summary>
+	/// <param name="left">The first call.</param>
+	/// <param name="right">The second call.</param>
+	/// <returns><see langword="true"/> if they are equal; otherwise, <see langword="false"/>.</returns>
+	public static bool operator ==(DbQueryCall left, DbQueryCall right)
+		=> left.Equals(right);
 
-	static bool Known(NameSet? names)
-		=> names is { Names.Length: > 0 };
+	/// <summary>Determines whether two calls differ.</summary>
+	/// <param name="left">The first call.</param>
+	/// <param name="right">The second call.</param>
+	/// <returns><see langword="true"/> if they are not equal; otherwise, <see langword="false"/>.</returns>
+	public static bool operator !=(DbQueryCall left, DbQueryCall right)
+		=> !left.Equals(right);
 
-	static bool FitsValue<T>(
-		NameKind kind,
-		string? name,
-		T value,
-		NameSet names,
-		string command)
+	/// <inheritdoc />
+	public override int GetHashCode()
 	{
-		if (names.Names.Length == 0) return true;
-
-		switch (kind)
+		unchecked
 		{
-			case NameKind.Derived:
-				return names.Match(name!, command) is not null;
-			case NameKind.Members:
-				// A second look drops a member the command does not take
-				// without reading again.
-				if (names.Rechecked) return true;
-				foreach (string member in MemberNames(value))
-				{
-					if (names.Match(member, command) is null) return false;
-				}
-
-				return true;
-			default:
-				return true;
+			int h = _definition?.GetHashCode() ?? 0;
+			h = (h * 31) + (_source?.GetHashCode() ?? 0);
+			return (h * 31) + Params.EntriesHash();
 		}
-	}
-
-	static string[] MemberNames<T>(T value)
-		=> typeof(T) == typeof(object)
-			? RuntimeParamSource.Of(value!.GetType()).Names
-			: ParamSource<T>.Names;
-
-	static void BindValue<T>(
-		DbCommand command,
-		NameKind kind,
-		string? name,
-		T value,
-		DbQuery definition,
-		NameSet? names,
-		DbQueryCall whole)
-	{
-		switch (kind)
-		{
-			case NameKind.Explicit:
-				Add(command, name!, value, typeof(T), definition, names);
-				return;
-			case NameKind.Derived:
-				Add(
-					command,
-					ResolveDerived(name!, names, definition),
-					value,
-					typeof(T),
-					definition,
-					names);
-				return;
-			default:
-				BindMembers(command, value, definition, names, whole);
-				return;
-		}
-	}
-
-	/// <summary>
-	/// Adds the members of the values as parameters.
-	/// </summary>
-	/// <remarks>
-	/// The members of the values are found once per type.
-	/// When the real names are known a member the command does not take is
-	/// not sent, and a member whose name another parameter claims (one written
-	/// or derived, added before or after) is left to that parameter.
-	/// Two members of one name collide.
-	/// </remarks>
-	/// <typeparam name="T">The type of the values.</typeparam>
-	/// <param name="command">The command to add the parameters to.</param>
-	/// <param name="value">The values.</param>
-	/// <param name="definition">The query definition.</param>
-	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
-	/// <param name="whole">The call that runs.</param>
-	static void BindMembers<T>(
-		DbCommand command,
-		T value,
-		DbQuery definition,
-		NameSet? names,
-		DbQueryCall whole)
-	{
-		bool known = Known(names);
-		if (typeof(T) == typeof(object))
-		{
-			object source = value!;
-			RuntimeParamSource members
-				= RuntimeParamSource.Of(source.GetType());
-			for (int i = 0; i < members.Names.Length; i++)
-			{
-				string? name = known
-					? names!.Match(members.Names[i], definition.CommandText)
-					: members.Names[i];
-				if (name is null || whole.Claims(name, names, definition)) continue;
-
-				Add(
-					command,
-					name,
-					members.Getters[i](source),
-					members.Types[i],
-					definition,
-					names);
-			}
-
-			return;
-		}
-
-		string[] memberNames = ParamSource<T>.Names;
-		Func<T, object?>[] getters = ParamSource<T>.Getters;
-		Type[] types = ParamSource<T>.Types;
-		string?[]? resolved = known
-			? Resolved<T>(definition, names!, memberNames)
-			: null;
-		for (int i = 0; i < memberNames.Length; i++)
-		{
-			string? name = known ? resolved![i] : memberNames[i];
-			if (name is null || whole.Claims(name, names, definition)) continue;
-
-			Add(command, name, getters[i](value), types[i], definition, names);
-		}
-	}
-
-	/// <summary>
-	/// Gets the real name of each member in member order, matched once per
-	/// definition, values type and set of names.
-	/// </summary>
-	/// <typeparam name="T">The type of the values.</typeparam>
-	/// <param name="definition">The query definition, which keeps the matches.</param>
-	/// <param name="names">The remembered names.</param>
-	/// <param name="members">The names of the members.</param>
-	/// <returns>The real name of each member, or <see langword="null"/> for one the command does not take.</returns>
-	static string?[] Resolved<T>(
-		DbQuery definition,
-		NameSet names,
-		string[] members)
-	{
-		DbQuery.MemberMatch[]? known = definition.Matches;
-		int kept = known?.Length ?? 0;
-		for (int i = 0; i < kept; i++)
-		{
-			DbQuery.MemberMatch m = known![i];
-			if (ReferenceEquals(m.Names, names) && m.Type == typeof(T))
-				return m.Resolved;
-		}
-
-		var resolved = new string?[members.Length];
-		for (int i = 0; i < members.Length; i++)
-			resolved[i] = names.Match(members[i], definition.CommandText);
-
-		// Newest first; the oldest of four goes.
-		kept = Math.Min(kept, MaxMatches - 1);
-		var next = new DbQuery.MemberMatch[kept + 1];
-		next[0] = new(typeof(T), names, resolved);
-		if (kept > 0) Array.Copy(known!, 0, next, 1, kept);
-		definition.Matches = next;
-		return resolved;
-	}
-
-	static void Add(
-		DbCommand command,
-		string name,
-		object? value,
-		Type clrType,
-		DbQuery definition,
-		NameSet? names)
-	{
-		if (Has(command, name)) throw Collision(name, definition, names);
-
-		Append(command, name, value, clrType);
-	}
-
-	/// <summary>
-	/// Adds a parameter to the command.
-	/// </summary>
-	/// <remarks>
-	/// A NULL carries no type, so it is sent with the type of its argument,
-	/// as the command builders do.
-	/// </remarks>
-	/// <param name="command">The command to add the parameter to.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="value">The value of the parameter.</param>
-	/// <param name="clrType">The CLR type of the argument.</param>
-	static void Append(
-		DbCommand command,
-		string name,
-		object? value,
-		Type clrType)
-	{
-		DbParameter parameter = command.CreateParameter();
-		parameter.ParameterName = name;
-		if (value is null)
-		{
-			parameter.Value = DBNull.Value;
-			if (ClrDbTypes.From(clrType) is { } nullType)
-				parameter.DbType = nullType;
-		}
-		else
-		{
-			parameter.Value = value;
-		}
-
-		command.Parameters.Add(parameter);
-	}
-
-	/// <summary>
-	/// Determines whether the command already has a parameter of the name,
-	/// since two parameters of one name would overwrite each other.
-	/// </summary>
-	/// <remarks>
-	/// The names are compared without an <c>@</c> and ignoring case, as the
-	/// command builders compare them.
-	/// </remarks>
-	/// <param name="command">The command.</param>
-	/// <param name="name">The name.</param>
-	/// <returns>
-	/// <see langword="true"/> if the command has the parameter; otherwise,
-	/// <see langword="false"/>.
-	/// </returns>
-	static bool Has(DbCommand command, string name)
-	{
-		DbParameterCollection parameters = command.Parameters;
-		for (int i = 0; i < parameters.Count; i++)
-		{
-			if (SameName(parameters[i].ParameterName, name)) return true;
-		}
-
-		return false;
-	}
-
-	static bool SameName(string a, string b)
-		=> Bare(a).Equals(Bare(b), StringComparison.OrdinalIgnoreCase);
-
-	static ReadOnlySpan<char> Bare(string name)
-		=> name.Length > 0 && name[0] == '@'
-			? name.AsSpan(1)
-			: name.AsSpan();
-
-	static InvalidOperationException Collision(
-		string name,
-		DbQuery definition,
-		NameSet? names)
-		=> new($"Two parameters resolve to '{name}'. "
-			+ (Known(names)
-				? $"'{definition.CommandText}' declares: {string.Join(", ", names!.Names)}."
-				: "The parameter names are not known, so each argument is used under its last member as written.")
-			+ " Name one of them explicitly: AddParam(\"name\", value).");
-
-	static InvalidOperationException NoMatch(
-		string expression,
-		NameSet names,
-		DbQuery definition)
-		=> new($"The argument '{expression}' matches none of the parameters of '{definition.CommandText}' (tried {string.Join(", ", ParameterNames.Candidates(expression))}). It declares: {string.Join(", ", names.Names)}. Name the parameter explicitly: AddParam(\"name\", value).");
-
-	/// <summary>
-	/// The first node, which <c>AddParam</c> or <c>AddParams</c> on a bound
-	/// query returns.
-	/// </summary>
-	/// <remarks>
-	/// It alone holds the definition and the source.
-	/// For a derived name <c>name</c> holds the argument's text (see
-	/// <c>DerivedRoot</c>).
-	/// </remarks>
-	class Root<T>(
-		DbQuery definition,
-		object source,
-		string? name,
-		T value)
-		: DbQueryCall
-	{
-		readonly DbQuery _definition = definition;
-		readonly object _source = source;
-		readonly string? _name = name;
-		readonly T _value = value;
-
-		public virtual NameKind Kind
-			=> _name is null ? NameKind.Members : NameKind.Explicit;
-
-		internal override DbQuery Definition => _definition;
-
-		internal override object SourceCore => _source;
-
-		internal override bool NeedsNames => Kind != NameKind.Explicit;
-
-		internal override bool Fits(NameSet names, string command)
-			=> FitsValue(Kind, _name, _value, names, command);
-
-		internal override bool Claims(
-			string name,
-			NameSet? names,
-			DbQuery definition)
-			=> ClaimsValue(Kind, _name, name, names, definition);
-
-		internal override void BindAll(
-			DbCommand command,
-			DbQuery definition,
-			NameSet? names,
-			DbQueryCall whole)
-			=> BindValue(command, Kind, _name, _value, definition, names, whole);
-
-		public override bool Equals(object? obj)
-			=> obj is Root<T> other
-			&& Kind == other.Kind
-			&& _definition.Equals(other._definition)
-			&& Equals(_source, other._source)
-			&& string.Equals(_name, other._name, StringComparison.Ordinal)
-			&& EqualityComparer<T>.Default.Equals(_value, other._value);
-
-		public override int GetHashCode()
-		{
-			unchecked
-			{
-				int h = _definition.GetHashCode();
-				h = (h * 31) + _source.GetHashCode();
-				h = (h * 31) + (_name?.GetHashCode() ?? 0);
-				return (h * 31) + EqualityComparer<T>.Default.GetHashCode(_value!);
-			}
-		}
-	}
-
-	/// <summary>
-	/// A root whose name is derived from the argument's text.
-	/// </summary>
-	/// <remarks>
-	/// The same fields as a root: which kind it is comes from the type, so a
-	/// node is no larger for it.
-	/// </remarks>
-	sealed class DerivedRoot<T>(
-		DbQuery definition,
-		object source,
-		string expression,
-		T value)
-		: Root<T>(definition, source, expression, value)
-	{
-		public override NameKind Kind => NameKind.Derived;
-	}
-
-	/// <summary>
-	/// Every later node: its parent, a name and a value.
-	/// </summary>
-	/// <remarks>The value stays typed, so this layer boxes nothing.</remarks>
-	class Node<T>(DbQueryCall parent, string? name, T value)
-		: DbQueryCall
-	{
-		readonly DbQueryCall _parent = parent;
-		readonly string? _name = name;
-		readonly T _value = value;
-
-		public virtual NameKind Kind
-			=> _name is null ? NameKind.Members : NameKind.Explicit;
-
-		internal override DbQuery Definition => _parent.Definition;
-
-		internal override object SourceCore => _parent.SourceCore;
-
-		internal override bool NeedsNames
-			=> Kind != NameKind.Explicit || _parent.NeedsNames;
-
-		internal override bool Fits(NameSet names, string command)
-			=> _parent.Fits(names, command)
-			&& FitsValue(Kind, _name, _value, names, command);
-
-		internal override bool Claims(
-			string name,
-			NameSet? names,
-			DbQuery definition)
-			=> _parent.Claims(name, names, definition)
-			|| ClaimsValue(Kind, _name, name, names, definition);
-
-		internal override void BindAll(
-			DbCommand command,
-			DbQuery definition,
-			NameSet? names,
-			DbQueryCall whole)
-		{
-			_parent.BindAll(command, definition, names, whole);
-			BindValue(command, Kind, _name, _value, definition, names, whole);
-		}
-
-		public override bool Equals(object? obj)
-			=> obj is Node<T> other
-			&& Kind == other.Kind
-			&& _parent.Equals(other._parent)
-			&& string.Equals(_name, other._name, StringComparison.Ordinal)
-			&& EqualityComparer<T>.Default.Equals(_value, other._value);
-
-		public override int GetHashCode()
-		{
-			unchecked
-			{
-				int h = _parent.GetHashCode();
-				h = (h * 31) + (_name?.GetHashCode() ?? 0);
-				return (h * 31) + EqualityComparer<T>.Default.GetHashCode(_value!);
-			}
-		}
-	}
-
-	sealed class DerivedNode<T>(DbQueryCall parent, string expression, T value)
-		: Node<T>(parent, expression, value)
-	{
-		public override NameKind Kind => NameKind.Derived;
 	}
 
 	CancellationToken IExecuteReader.CancellationToken => default;
@@ -618,40 +226,20 @@ public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
 		TState state,
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior)
-		=> DbQueryRunner.Run(
-			Definition,
-			SourceCore,
-			this,
-			state,
-			transform,
-			behavior);
+		=> Run(state, transform, behavior);
 
 	ValueTask<TResult> IExecuteReader.ExecuteReaderAsync<TState, TResult>(
 		TState state,
 		Func<IDataReader, TState, ValueTask<TResult>> transform,
 		CommandBehavior behavior,
 		CancellationToken cancellationToken)
-		=> DbQueryRunner.RunAsync(
-			Definition,
-			SourceCore,
-			this,
-			state,
-			transform,
-			behavior,
-			cancellationToken);
+		=> RunAsync(state, transform, behavior, cancellationToken);
 
 	ValueTask<TResult> IExecuteReader.ExecuteReaderAsync<TState, TResult>(
 		TState state,
 		Func<IDataReader, TState, ValueTask<TResult>> transform,
 		CommandBehavior behavior)
-		=> DbQueryRunner.RunAsync(
-			Definition,
-			SourceCore,
-			this,
-			state,
-			transform,
-			behavior,
-			default);
+		=> RunAsync(state, transform, behavior, default);
 
 	void IExecuteReaderSync.ExecuteReader(
 		Action<IDataReader> handler,
@@ -659,7 +247,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
 		=> DbQueryRunner.Run(
 			Definition,
 			SourceCore,
-			this,
+			Params,
 			handler,
 			behavior);
 
@@ -669,7 +257,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
 		=> DbQueryRunner.Run(
 			Definition,
 			SourceCore,
-			this,
+			Params,
 			transform,
 			behavior);
 
@@ -679,7 +267,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceCore,
-			this,
+			Params,
 			handler,
 			behavior);
 
@@ -689,7 +277,38 @@ public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceCore,
-			this,
+			Params,
 			transform,
 			behavior);
+
+	/// <summary>
+	/// Runs the query without the interface, so a query that holds this value
+	/// does not box it.
+	/// </summary>
+	internal TResult Run<TState, TResult>(
+		TState state,
+		Func<IDataReader, TState, TResult> transform,
+		CommandBehavior behavior)
+		=> DbQueryRunner.Run(
+			Definition,
+			SourceCore,
+			Params,
+			state,
+			transform,
+			behavior);
+
+	/// <inheritdoc cref="Run{TState, TResult}(TState, Func{IDataReader, TState, TResult}, CommandBehavior)"/>
+	internal ValueTask<TResult> RunAsync<TState, TResult>(
+		TState state,
+		Func<IDataReader, TState, ValueTask<TResult>> transform,
+		CommandBehavior behavior,
+		CancellationToken cancellationToken)
+		=> DbQueryRunner.RunAsync(
+			Definition,
+			SourceCore,
+			Params,
+			state,
+			transform,
+			behavior,
+			cancellationToken);
 }
