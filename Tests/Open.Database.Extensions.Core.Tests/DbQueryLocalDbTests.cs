@@ -9,6 +9,7 @@ namespace Open.Database.Extensions.Tests;
 // the typed form, a transaction, a factory, and a typed NULL.
 // Skipped without LocalDB (see LocalDbFixture).
 [ExcludeFromCodeCoverage]
+[Collection("LocalDB DDL")]
 public static class DbQueryLocalDbTests
 {
 	static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -35,10 +36,10 @@ public static class DbQueryLocalDbTests
 	{
 		LocalDbFixture.SkipUnlessAvailable();
 		using LocalDbFixture.Scratch procedure = CreateProcedure();
-		DbQuery query = DbQuery.Procedure(Echo(procedure));
+		var query = DbQuery.Procedure(Echo(procedure));
 		await using SqlConnection connection = LocalDbFixture.Create();
-		int authorId = 7;
-		int views = 50;
+		const int authorId = 7;
+		const int views = 50;
 
 		List<Row> rows = await query.Using(connection)
 			.AddParam(authorId)
@@ -58,8 +59,8 @@ public static class DbQueryLocalDbTests
 		DbQuery<AuthorViews> query
 			= DbQuery.Procedure(Echo(procedure)).Params<AuthorViews>();
 		await using SqlConnection connection = LocalDbFixture.Create();
-		int authorId = 8;
-		int views = 60;
+		const int authorId = 8;
+		const int views = 60;
 
 		List<Row> rows = await query.Using(connection)
 			.AddParams(new(AuthorId: authorId, Views: views))

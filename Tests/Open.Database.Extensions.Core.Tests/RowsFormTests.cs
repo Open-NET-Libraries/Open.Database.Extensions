@@ -1,8 +1,8 @@
+using Microsoft.Data.Sqlite;
+using Open.Database.Extensions.Core;
 using System.Data.Common;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Microsoft.Data.Sqlite;
-using Open.Database.Extensions.Core;
 
 namespace Open.Database.Extensions.Tests;
 
@@ -32,7 +32,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task ObjectArrays_HoldTheValues_AndANullIsNull()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 
 		List<object?[]> rows = await c.Command(TwoRows).AsObjectArrays().ToListAsync(Ct);
 
@@ -45,7 +45,7 @@ public static class RowsFormTests
 	public static async Task ObjectArrays_KeepTheirValues_AfterTheConnectionIsClosed_AndNoTwoRowsShareAnArray()
 	{
 		List<object?[]> rows;
-		using (SqliteConnection c = Open())
+		await using (SqliteConnection c = Open())
 			rows = await c.Command(TwoRows).AsObjectArrays().ToListAsync(Ct);
 
 		Assert.NotSame(rows[0], rows[1]);
@@ -57,7 +57,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task ObjectArrays_OfNoRows_IsEmpty_AndOfNoColumns_IsAnEmptyArray()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 
 		Assert.Empty(await c.Command("select 1 where 0").AsObjectArrays().ToListAsync(Ct));
 
@@ -71,7 +71,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task DictionaryRows_HoldTheNames_TheValuesAndANullCell()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 
 		List<DictionaryRow> rows = await c.Command(TwoRows).AsDictionaryRows().ToListAsync(Ct);
 
@@ -91,7 +91,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task DictionaryRow_FindsAnExactName_ThenIgnoringCase_AndAMissingNameThrows()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 		DictionaryRow row = (await c.Command("select 1 as Id, 2 as id, 3 as Other").AsDictionaryRows().ToListAsync(Ct)).Single();
 
 		Assert.Equal(1L, row["Id"]);
@@ -110,7 +110,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task DictionaryRow_OfTwoColumnsWithTheSameName_FirstWins_AndTheOrdinalReachesBoth()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 		DictionaryRow row = (await c.Command("select 1 as id, 2 as id").AsDictionaryRows().ToListAsync(Ct)).Single();
 
 		Assert.Single(row.Keys);
@@ -120,7 +120,7 @@ public static class RowsFormTests
 		Assert.Equal(2L, row[1]);
 		Assert.Single(row);
 		Assert.Equal(KeyValuePair.Create<string, object?>("id", 1L), row.Single());
-		Dictionary<string, object?> copy = row.ToDictionary();
+		var copy = row.ToDictionary();
 		Assert.Equal(1L, Assert.Single(copy).Value);
 		Assert.Throws<ArgumentOutOfRangeException>(() => row[2]);
 		Assert.Throws<ArgumentOutOfRangeException>(() => row[-1]);
@@ -129,10 +129,10 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task DictionaryRow_ToDictionary_IsACopyTheCallerOwns()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 		DictionaryRow row = (await c.Command(TwoRows).AsDictionaryRows().ToListAsync(Ct))[0];
 
-		Dictionary<string, object?> copy = row.ToDictionary();
+		var copy = row.ToDictionary();
 		copy["Id"] = 100L;
 
 		Assert.Equal(1L, row["Id"]);
@@ -162,7 +162,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task DictionaryRows_OfNoRows_AreEmpty_AndOfNoColumns_AnEmptyRow()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 
 		Assert.Empty(await c.Command("select 1 as Id where 0").AsDictionaryRows().ToListAsync(Ct));
 
@@ -175,7 +175,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task DictionaryRows_OfOneResultSet_ShareOneListOfNames()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 		List<DictionaryRow> rows = await c.Command(TwoRows).AsDictionaryRows().ToListAsync(Ct);
 
 		// The keys of every row are the one array the index holds.
@@ -192,6 +192,18 @@ public static class RowsFormTests
 
 		// DictionaryRow is not a row model: a map of it says so, and names the way to read rows without a model.
 		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(static () => RowMap<DictionaryRow>.Default);
+		Assert.Contains("AsDictionaryRows()", ex.Message);
+	}
+
+	// The call the docs name: Map<DictionaryRow>() throws InvalidOperationException, and the message names AsDictionaryRows().
+	[Fact]
+	public static void MapOfDictionaryRow_ThroughThePublicCall_ThrowsAndNamesAsDictionaryRows()
+	{
+		using SqliteConnection c = Open();
+
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(
+			() => c.Command("select 1 as a").Map<DictionaryRow>().ToList());
+
 		Assert.Contains("AsDictionaryRows()", ex.Message);
 	}
 
@@ -238,7 +250,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task TheRowsFormReadsThroughALaterSet_AndSingleResultDoesNot()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 		const string later = "select 1 as a; select abs(-9223372036854775808)";
 
 		await Assert.ThrowsAsync<SqliteException>(async () => await c.Command(later).AsObjectArrays().ToListAsync(Ct));
@@ -250,7 +262,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task TheRowsFormReturnsTheFirstSetOnly_WhenLaterSetsSucceed()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 
 		List<object?[]> rows = await c.Command("select 1 as a; select 2 as a, 3 as b").AsObjectArrays().ToListAsync(Ct);
 
@@ -260,7 +272,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task TheArraysThatHoldTheRows_AreClearedWhenTheyGoBack_TheRowsAreTheCallers()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 		var pool = new CountingPool<object?[]>
 		{
 			RoundUp = true,
@@ -279,7 +291,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task SkipAndTake_AndTheBufferTerminals_Work()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 
 		List<object?[]> second = await c.Command(TwoRows).AsObjectArrays().Skip(1).Take(1).ToListAsync(Ct);
 		await using PooledBuffer<DictionaryRow> buffer = c.Command(TwoRows).AsDictionaryRows().ToAsyncBuffer(Ct);
@@ -295,20 +307,20 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task EveryReceiver_GivesTheSameRows()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 		const string sql = "select 7 as a, null as b";
 
-		using SqliteCommand command = c.CreateCommand();
+		await using SqliteCommand command = c.CreateCommand();
 		command.CommandText = sql;
 		using var table = new DataTable();
-		using (SqliteDataReader loader = command.ExecuteReader()) table.Load(loader);
+		await using (SqliteDataReader loader = command.ExecuteReader()) table.Load(loader);
 
 		List<object?[]> fromExecute = await c.Command(sql).AsObjectArrays().ToListAsync(Ct);
 		List<object?[]> fromCommand = await command.AsObjectArrays().ToListAsync(Ct);
 		List<object?[]> fromTable = await table.AsObjectArrays().ToListAsync(Ct);
 		List<object?[]> fromDefinition = await DbQuery.Text(sql).AsObjectArrays().Using(c).ToListAsync(Ct);
 		List<object?[]> fromReader;
-		using (SqliteDataReader reader = command.ExecuteReader())
+		await using (SqliteDataReader reader = command.ExecuteReader())
 			fromReader = await reader.AsObjectArrays().ToListAsync(Ct);
 
 		foreach (List<object?[]> rows in new[] { fromExecute, fromCommand, fromDefinition, fromReader })
@@ -320,7 +332,7 @@ public static class RowsFormTests
 		Assert.Equal(7L, named["a"]);
 		Assert.Single(await command.AsDictionaryRows().ToListAsync(Ct));
 		Assert.Single(await table.AsDictionaryRows().ToListAsync(Ct));
-		using (SqliteDataReader reader = command.ExecuteReader())
+		await using (SqliteDataReader reader = command.ExecuteReader())
 			Assert.Single(await reader.AsDictionaryRows().ToListAsync(Ct));
 	}
 
@@ -329,7 +341,7 @@ public static class RowsFormTests
 	[Fact]
 	public static async Task TheTypedDefinition_TakesTheRowsFormToo()
 	{
-		using SqliteConnection c = Open();
+		await using SqliteConnection c = Open();
 		MappedDbQuery<Args, DictionaryRow> definition = DbQuery.Text("select @P as P").Params<Args>().AsDictionaryRows();
 
 		DictionaryRow row = Assert.Single(await definition.Using(c).AddParams(new(5)).ToListAsync(Ct));

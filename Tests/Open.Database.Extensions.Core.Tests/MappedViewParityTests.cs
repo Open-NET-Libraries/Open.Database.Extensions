@@ -318,6 +318,7 @@ public static class MappedViewParityTests
 			Throws(() => q.Take(1));
 			Throws(() => q.SingleResult());
 		}
+
 		{
 			MappedQueryWithSkip<int> q = default;
 			Throws(() => q.Stream(Timeout.InfiniteTimeSpan));
@@ -326,6 +327,7 @@ public static class MappedViewParityTests
 			Throws(() => q.Take(1));
 			Throws(() => q.SingleResult());
 		}
+
 		{
 			MappedQueryWithTake<int> q = default;
 			Throws(() => q.Stream(Timeout.InfiniteTimeSpan));
@@ -333,6 +335,7 @@ public static class MappedViewParityTests
 			Fails(() => q.FirstOrDefaultAsync());
 			Throws(() => q.SingleResult());
 		}
+
 		{
 			MappedReader<int> q = default;
 			Throws(() => q.Read(_ => { }));
@@ -356,6 +359,7 @@ public static class MappedViewParityTests
 			Throws(() => q.Skip(1));
 			Throws(() => q.Take(1));
 		}
+
 		{
 			MappedCommand<int> q = default;
 			Throws(() => q.Stream(Timeout.InfiniteTimeSpan));
@@ -646,4 +650,5 @@ public static class MappedViewParityTests
 		Check(() => default(MappedQueryWithSkip<int>).UsePool(ArrayPool<int>.Shared, true));
 		Check(() => default(MappedQueryWithTake<int>).UsePool(ArrayPool<int>.Shared, false));
 		Check(() => default(MappedCommand<int>).UsePool(ArrayPool<int>.Shared, false));
-	}}
+	}
+}

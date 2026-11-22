@@ -110,7 +110,7 @@ A name you write is sent exactly as written: the library never adds or removes a
 For a stored procedure the name is settled when the command runs. The provider reports the procedure's real parameter names (SQL Server does), and each argument is matched to one of them:
 
 1. Exactly, else ignoring case, else ignoring case and underscores: `TitleContains` finds `@title_contains`.
-2. Else with one common parameter prefix removed from the real name (`p_`, `in_`, `i_`, `prm_`, `par_`, `v_`, or a lone `p` before a capital letter): `Author` finds `@p_author` and `@pAuthor`. A field prefix on the argument (`m_author`, `s_author`, `_author`) is also tried without it.
+2. Else with one common parameter prefix dropped from the real name (`p_`, `in_`, `i_`, `prm_`, `par_`, `v_`, or a lone `p` before a capital letter): `Author` finds `@p_author` and `@pAuthor`. A field prefix on the argument (`m_author`, `s_author`, `_author`) is also tried without it.
 3. A chain tries its longer endings first, each through all of those steps before the next: `order.Customer.Id` tries `orderCustomerId`, `CustomerId`, then `Id`, so `@customer_id` and `@p_customer_id` are chosen over a bare `@id`.
 
 For example `AddParam(search.Author)` sends `@p_author` when the procedure declares that, `@Author` or `@author` when it declares one of those, and throws when it declares none of them. The prefix step (rule 2) can bind a parameter whose name only starts like a prefix: `Stock` finds `@in_stock`, `Value` finds `@par_value` and `Progress` finds `@in_progress`. When that is not the parameter you mean, name it yourself: `AddParam("stock", stock)`.
@@ -138,7 +138,7 @@ A procedure that changes can show its old names for up to five minutes. Two case
 - a member of an `AddParams` object that the second read still does not find is skipped, so a parameter added to the procedure after that read is not sent until the names expire;
 - a less specific match is kept while a more specific new parameter exists (`@id` for `order.Customer.Id` although `@customer_id` now exists);
 - an ambiguity, or two arguments that resolve to the same parameter, is reported from the remembered names;
-- when the second read finds nothing (the procedure is no longer visible to the login, or it now declares no parameters), the argument is sent as written, and the old names are dropped.
+- when the second read finds nothing (the procedure is not visible to the login, or it now declares no parameters), the argument is sent as written, and the old names are dropped.
 
 A read that finds nothing (an unreadable procedure, one that does not exist, or one that declares no parameters) is remembered too, but for 15 seconds only, so a procedure that cannot be read costs one lookup in 15 seconds, not one in every run, and a procedure that appears or changes is picked up soon. Until then its derived names are sent as written.
 
@@ -189,7 +189,7 @@ The terminals that take the type read one column as easily as a model; the token
 
 `ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout. The default is 60 seconds. On SQL Server the lookup of a stored procedure's parameter names uses the same timeout. A failed lookup throws the provider's own exception (a `SqlException` stays a `SqlException`, so a retry policy still sees it), with the procedure's name in `Exception.Data["Procedure"]`.
 
-`UseCancellationToken(token)` sets a token for the command. A token passed to an async terminal such as `ToListAsync(token)` is used together with it, and either one cancels the call. The `Async` terminals of the command itself (`ExecuteNonQueryAsync`, `ExecuteScalarAsync`, `ExecuteReaderAsync`, `ExecuteReturnAsync`) take a `CancellationToken` too, and it is used together with this one. The call then stops with `OperationCanceledException`, except that a provider may report a cancellation that arrives while the command is executing as its own exception (SQL Server's `SqlException`, "Operation cancelled by user"); the library does not translate it. The token covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows.
+`UseCancellationToken(token)` sets a token for the command. A token passed to an async terminal such as `ToListAsync(token)` is combined with it, and either one cancels the call. The `Async` terminals of the command itself (`ExecuteNonQueryAsync`, `ExecuteScalarAsync`, `ExecuteReaderAsync`, `ExecuteReturnAsync`) take a `CancellationToken` too, and it is combined with this one. The call then stops with `OperationCanceledException`, except that a provider may report a cancellation that arrives while the command is executing as its own exception (SQL Server's `SqlException`, "Operation cancelled by user"); the library does not translate it. The token covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows.
 
 ### Which scalar form
 

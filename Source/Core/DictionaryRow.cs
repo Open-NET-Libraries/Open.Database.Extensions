@@ -23,13 +23,13 @@ namespace Open.Database.Extensions;
 /// with the value <see langword="null"/>.
 /// </para>
 /// <para>
-/// Reading a value (the indexers, <see cref="TryGetValue(string, out object?)"/>, <see cref="ContainsKey(string)"/>, <see cref="Count"/>,
-/// <see cref="Keys"/> and the enumeration) allocates nothing; the first name that is not found exactly builds the
-/// ignoring-case lookup, once for the result set. <see cref="Values"/> and <see cref="ToDictionary"/> build a collection each time,
+/// Reading a value by position or by a name that matches exactly allocates nothing, and so do <see cref="Count"/> and <see cref="Keys"/>.
+/// The first name that does not match exactly builds the ignoring-case lookup of the result set, which every row of the set shares and which is built
+/// when it is first needed; a missing name in the string indexer throws <see cref="KeyNotFoundException"/>. <see cref="Values"/> and <see cref="ToDictionary"/> build a collection each time,
 /// and handing the row to an <see cref="IReadOnlyDictionary{TKey, TValue}"/> boxes it.
 /// A result set with no rows gives no row, so no column names: an empty result exposes none.
 /// <c>default(DictionaryRow)</c> is an empty row.
-/// It is not a model: <c>Map&lt;DictionaryRow&gt;()</c> is not supported.
+/// It is not a model: <c>Map&lt;DictionaryRow&gt;()</c> throws <see cref="InvalidOperationException"/>, and the message names <c>AsDictionaryRows()</c>.
 /// </para>
 /// </remarks>
 public readonly struct DictionaryRow : IReadOnlyDictionary<string, object?>

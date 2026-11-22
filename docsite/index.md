@@ -44,7 +44,6 @@ The stream method has no `async`, `await` or `using`: the stream opens the conne
 | Stream rows into a channel or a dataflow block | [Channels and Dataflow](articles/channels-and-dataflow.md) |
 | See how little code it takes, against Dapper, EF Core and ADO.NET | [How little code](articles/how-little-code.md) |
 | See how it differs from Dapper | [Coming from Dapper](articles/coming-from-dapper.md) |
-| See what changed in 11 | [What's new in 11](articles/whats-new-11.md) |
 | Look up a type or a method | [API reference](api/index.md) |
 
 Every code sample in this guide is compiled by the build and run against SQLite before the site is published.
@@ -52,3 +51,5 @@ Every code sample in this guide is compiled by the build and run against SQLite 
 ## How it fits together
 
 <img src="images/architecture.svg" alt="Four layers: a foundation of best-practice ADO.NET extensions, expressive commands on top of it, row mapping on top of that, all resting on a base of performance." style="max-width: 520px; width: 100%;" />
+
+*Coming from earlier versions? See [Coming from earlier versions](articles/whats-new-11.md).*

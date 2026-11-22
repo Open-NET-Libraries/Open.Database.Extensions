@@ -8,6 +8,7 @@ namespace Open.Database.Extensions.Tests;
 // The real provider: a failure in a statement after the first result set is raised by NextResult, so a Map terminal throws it, and .SingleResult() does not see it.
 // Needs SQL Server LocalDB; the tests are skipped on a machine without it. Procedures are created in tempdb under a unique name and dropped.
 [ExcludeFromCodeCoverage]
+[Collection("LocalDB DDL")]
 public static class MappedQueryLaterFailureLiveTests
 {
 	static CancellationToken Ct => TestContext.Current.CancellationToken;

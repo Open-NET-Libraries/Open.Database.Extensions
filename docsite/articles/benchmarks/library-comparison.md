@@ -42,7 +42,7 @@ Memory is the same in both runs, because it is the library's allocation and not 
 
 [!include[](../../includes/perf/lib-real-memory.md)]
 
-On SQL Server `Map<T>()` allocates exactly what hand-written code allocates, and Dapper 29.4% more. On SQLite `Map<T>()` allocates 4.6% more than a hand-written selector (12.51 against 11.96 MB), and Dapper 18.2% more than `Map<T>()`. The older run of this page, on an earlier build, showed `Map<T>()` slower than Dapper on SQLite. That no longer holds; see [Why SQLite looks different from the older run](#why-sqlite-looks-different-from-the-older-run).
+On SQL Server `Map<T>()` allocates exactly what hand-written code allocates, and Dapper 29.4% more. On SQLite `Map<T>()` allocates 4.6% more than a hand-written selector (12.51 against 11.96 MB), and Dapper 18.2% more than `Map<T>()`.
 
 The tables for the older run, which also had a hand loop on the provider's reader and a row class followed by `Select`, and a second run at 5 columns, are on [On real databases](real-databases.md).
 
@@ -64,7 +64,7 @@ ODX is at or below Dapper's time in all 54 cases of that run, and a tie in a few
 
 ## Why `Map<T>()` is faster here
 
-The library is built on one idea: hold the connection open as briefly as possible, and allocate as little as possible while it is open. Four design choices from [What's new in 11](../whats-new-11.md) are the likely reasons for the numbers above. These runs did not isolate each one:
+The library is built on one idea: hold the connection open as briefly as possible, and allocate as little as possible while it is open. Four design choices are the likely reasons for the numbers above. These runs did not isolate each one:
 
 - The mapping from columns to your type is compiled once for each result-set shape and cached. A call after the first does not look at the type again.
 - Values are read with typed getters (`GetInt32`, `GetString`), so nothing is boxed.
@@ -74,10 +74,6 @@ The library is built on one idea: hold the connection open as briefly as possibl
 That also fits the memory column matching a hand-written selector on SQL Server and on the synthetic reader: nothing is left to allocate but the list and one object per row.
 
 **Where the gain does not survive.** Once a real provider does the work, most of the time is the provider's. SQL Server LocalDB reads 10,000 rows in 24 to 31 ms whichever library maps them, so a 2.9-times lead on a synthetic reader becomes a lead of 5 to 13%. If your queries are slow because of the database, no mapping library will change that. The thing ODX still changes there is memory: on SQL Server 22.7% less than Dapper (Dapper allocates 29.4% more), on SQLite 15.4% less (Dapper allocates 18.2% more).
-
-### Why SQLite looks different from the older run
-
-The earlier version of this page was measured on builds from 2026-11-14 and showed `Map<T>()` 5.1% slower than Dapper on SQLite, and allocating 14.11 MB where a hand-written selector allocated 11.96 MB. The run on this page is from a later build (2026-11-21), and `Map<T>()` allocates 12.51 MB there, which is 1.6 MB less on the same rows. In between, a change removed a box per cell where SQLite hands over a different type than the member has: a `bool` stored as an integer, and a `DateTime` or a `decimal` stored as text. It is the likely reason for the difference; these runs did not isolate it. Hand-written code did not change (11.96 MB in both runs), so the gap to it shrank from 2.15 to 0.55 MB.
 
 ## Limits
 

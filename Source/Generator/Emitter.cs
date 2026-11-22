@@ -107,8 +107,8 @@ static class Emitter
 		sb.AppendLine();
 	}
 
-    // What every model shares: the slot table entry, the layout base, and RowMap.Match for a map with no pairs.
-    static void EmitShared(StringBuilder sb) => sb.AppendLine(
+	// What every model shares: the slot table entry, the layout base, and RowMap.Match for a map with no pairs.
+	static void EmitShared(StringBuilder sb) => sb.AppendLine(
 """
 	// What one slot declares, for the matcher (RowMap's Slot, for a map with no pairs).
 	file sealed class OdxSlot(string name, string column, int order, bool notMapped, bool required)
@@ -317,7 +317,7 @@ static class Emitter
 
 """);
 
-    static void EmitModel(StringBuilder sb, ModelSpec m, string id, Options options)
+	static void EmitModel(StringBuilder sb, ModelSpec m, string id, Options options)
 	{
 		string T = m.Type;
 		var slots = m.Slots.Items;
@@ -613,7 +613,7 @@ static class Emitter
 			sb.AppendLine($"{I}else");
 			sb.AppendLine($"{I}{{");
 
-			string J = I + "\t";
+			const string J = I + "\t";
 			var args = new string[m.ParameterCount];
 			for (int k = 0; k < slots.Length; k++)
 				if (slots[k].Position >= 0) args[slots[k].Position] = "v" + k;
@@ -687,7 +687,7 @@ static class Emitter
 	static void EmitSlot(StringBuilder sb, SlotSpec s, int k, ReadMode mode, string indent, Func<string, bool, string> statement)
 	{
 		var cases = s.Cases.Items;
-		if (mode is ReadMode.Literal or ReadMode.Full || (mode == ReadMode.Converting && cases.Length == 1))
+		if (mode is ReadMode.Literal or ReadMode.Full || mode == ReadMode.Converting && cases.Length == 1)
 		{
 			string o = mode == ReadMode.Literal ? s.Order.ToString(System.Globalization.CultureInfo.InvariantCulture) : "l.O" + k;
 			ReadCase c = cases[0];

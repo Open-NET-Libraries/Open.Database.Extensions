@@ -20,7 +20,7 @@ For the shapes this table does not cover, such as a NULL that means an empty str
 
 - **Construction.** A row is built through the type's constructor or from its default value, as the table in [Which types are built through a constructor](#which-types-are-built-through-a-constructor) says, and then its properties are set; any other type throws `InvalidOperationException` at the call, even for an empty result (see [Errors](#errors)).
 - **What is set.** The parameters of the constructor, when the type is built through one, and the public instance properties that have a public setter (a record's `init` property included). A parameter and a property of the same name, ignoring case, are one member: it is fed once, through the constructor. Public fields and static properties are not mapped.
-- **Matching.** A column is matched to the property or constructor parameter with the same name: exactly, else ignoring case, else ignoring case with the underscores removed from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching member is ignored. A property with no matching column keeps the value its constructor gave it. A parameter with no matching column gets its declared default value, else its default (`0`, `null`). A `NULL` cell follows [the NULL rules](#null-in-a-non-nullable-column).
+- **Matching.** A column is matched to the property or constructor parameter with the same name: exactly, else ignoring case, else ignoring case with the underscores dropped from both (see [snake_case columns map to PascalCase properties](#snake_case-columns-map-to-pascalcase-properties)). A column with no matching member is ignored. A property with no matching column keeps the value its constructor gave it. A parameter with no matching column gets its declared default value, else its default (`0`, `null`). A `NULL` cell follows [the NULL rules](#null-in-a-non-nullable-column).
 - **Columns named differently.** Declare a `RowMap<T>` once that names the column for a property, or ignores a property (see [Columns named differently](#columns-named-differently)).
 - **No other conventions.** The library has no mapping attributes of its own. If a column name differs from the property name by more than case and underscores, declare a `RowMap<T>`.
 
@@ -68,7 +68,7 @@ A constructor parameter is matched like a property: the same three tiers (exact,
 
 An `init` property is set like any other settable property. A `required` property is set the same way, and it must be fed:
 
-- **A column must feed it, whatever the query** (a `required` property of a base class too). When the column names and types of a query include none for it, the first row throws `ValueMappingException`, with the property, its type, the model and the column that was looked for in the message. A query with no rows never reports it, except through the routes that know the columns before the first row: `DataTable.To<T>()`, and `ToChannel` and the Dataflow methods ([Channels and Dataflow](channels-and-dataflow.md)). (`Retrieve()` with `DequeueAs<T>()` did too; it is deprecated.)
+- **A column must feed it, whatever the query** (a `required` property of a base class too). When the column names and types of a query include none for it, the first row throws `ValueMappingException`, with the property, its type, the model and the column that was looked for in the message. A query with no rows never reports it, except through the routes that know the columns before the first row: `ToChannel` and the Dataflow methods ([Channels and Dataflow](channels-and-dataflow.md)).
 - **A constructor parameter's default does not feed it.** A `required` property needs its own column, even when a constructor parameter has the same name.
 - **A NULL in that column is not an error.** The column must be there, but a NULL cell follows [the NULL rules](#null-in-a-non-nullable-column), as for any other property.
 - **It cannot be ignored.** A `RowMap<T>` pair with a `null` column for a `required` property throws `ArgumentException` when the map is created.
@@ -147,7 +147,7 @@ A column named `first_name` feeds the property `FirstName` with no `RowMap<T>` d
 
 1. The column name equals the property name exactly.
 2. The column name equals the property name, ignoring case.
-3. The column name with its underscores removed equals the property name with its underscores removed, ignoring case.
+3. The column name without its underscores equals the property name without its underscores, ignoring case.
 
 Within a tier the first matching column wins (two `id` columns from `select a.*, p.*` give the first), one column feeds one property, and a column no tier matches is ignored. A property that tier 1 or 2 has filled is never taken by tier 3: with the columns `q_type` and `QType`, `QType` reads the `QType` column and `q_type` is ignored, in either column order.
 
@@ -258,7 +258,7 @@ Some columns are not the type the model wants: a number the model keeps as text,
 
 [!code-csharp[](../samples/Mapping.cs#map_converted_null)]
 
-- **It is checked when you call `Convert`.** It throws `ArgumentException` for a member that does not exist or cannot be set, one that has a converter already (a second `Convert` replaces nothing), one the map ignores with a `null` column, a `TMember` that cannot be assigned to the member, and a column another member reads; and `ArgumentNullException` for a `null` argument. With a column, the member must not have a pair already: the first form takes the pair's column.
+- **It is checked when you call `Convert`.** It throws `ArgumentException` for a member that does not exist or cannot be set, one that has a converter already (a second `Convert` changes nothing), one the map ignores with a `null` column, a `TMember` that cannot be assigned to the member, and a column another member reads; and `ArgumentNullException` for a `null` argument. With a column, the member must not have a pair already: the first form takes the pair's column.
 - **Name the types.** A lambda alone does not say what the column is read as: write `Convert<long, string>(...)`, or give the lambda's parameter a type.
 - **Pairs, not delegates, are enumerated.** A map enumerates the pairs it was declared with, and the column of a `Convert` that names one, so `new RowMap<T>(map)` makes a copy without the converters. Call `Convert` on the copy again.
 
@@ -290,7 +290,7 @@ FrozenDictionary<int, Post> byId = (await query
 
 [!code-csharp[](../samples/Mapping.cs#map_paging)]
 
-To read the rows one at a time and stop early, use `Stream(timeout)` in an `await foreach`: it holds the reader and the connection open while you pull rows, and the timeout is the longest you may go without pulling the next one. To hand rows to another consumer use [`ToBufferedAsyncStream`](channels-and-dataflow.md), and for the raw reader `ExecuteReader(reader => ...)`:
+Buffered terminals are the way to read rows. Only to stop early, `Stream(stallTimeout)` hands rows to an `await foreach` while the reader and the connection stay open; read its remarks before you use it. To hand rows to another consumer, use [`ToBufferedAsyncStream`](channels-and-dataflow.md); for the raw reader, `ExecuteReader(reader => ...)`:
 
 [!code-csharp[](../samples/Mapping.cs#map_stream)]
 
@@ -300,21 +300,9 @@ Every terminal has an `Async` twin that takes a `CancellationToken`:
 
 An async terminal executes and opens asynchronously but reads the rows with `Read()`; [`AsyncReads()`](async-reads.md) opts one call in to `ReadAsync`.
 
-### Streaming holds the connection
-
-> [!WARNING]
-> **Streaming is not the recommended way to read rows: it holds the connection while your code runs for each row.** `Stream`, `ForEach` and `ForEachAsync`, `IterateWhile` on a reader, and a reader's `AsEnumerable` and `AsAsyncEnumerable` all run your code for each row while the reader, and the connection under it, are open. The connection stays held for as long as your code takes per row, added up over all the rows.
->
-> In async code that time has no bound: every `await` in the loop body can yield, and nothing says when the loop resumes. Until it does, the connection is on hold: a pooled connection is not returned to the pool, and the server may keep its locks and the open result set.
->
-> These members are here for the cases that need exactly that, such as a result too large to buffer or a row-by-row pipeline. Otherwise use a call that lets go of the connection first:
->
-> - `ToListAsync(cancellationToken)` and `ToArrayAsync(cancellationToken)` buffer the rows and release the connection.
-> - `ToBufferedAsyncStream(cancellationToken)` and `ToAsyncBufferStream(cancellationToken)` stream the rows to a consumer without holding the connection. The producer reads into pooled chunks without waiting for the consumer, and frees the connection while the consumer takes its time (dispose the enumerator: `await foreach` does; an abandoned stream keeps reading the whole query). The stream is unbounded: the rows wait in memory until the consumer takes them. A producer that waited for room would bring the hold back, so it does not wait ([Async buffers and streams](async-buffers.md)).
-
 ## Mapping a reader or a command you already have
 
-`Map<T>()` also works on a plain `IDataReader` and on a plain `IDbCommand`. `reader.Map<T>()` returns a `MappedReader<T>` and `command.Map<T>()` returns a `MappedCommand<T>`. Both have the same overloads as the expressive command's `Map` (no argument, a `RowMap<T>`, pairs, a selector) and the same terminals, synchronous and asynchronous, including `Skip`, `Take` and `Read`. The rules for mapping `T` are the ones above.
+`Map<T>()` also works on a plain `IDataReader` and on a plain `IDbCommand`. `reader.Map<T>()` returns a `MappedReader<T>` and `command.Map<T>()` returns a `MappedCommand<T>`. Both have the same overloads as the expressive command's `Map` (no argument, a `RowMap<T>`, a selector) and the same terminals, synchronous and asynchronous, including `Skip`, `Take` and `Read`. The rules for mapping `T` are the ones above.
 
 On a reader, the reader is yours. A terminal never opens, closes or disposes it, and never calls `NextResult` on it: it reads the current result set from where the reader stands and stops. To map the next result set, call `NextResult` yourself and map again.
 
@@ -359,8 +347,6 @@ A *result* here is one whole result set: what `NextResult` moves between. It is 
 `Map` returns the rows of the first result set only. Later sets are never mapped. After the rows are read, the terminal reads through the later sets without reading their rows, so a failure in a later statement (a stored procedure or a text batch that fails after its first `SELECT`) is thrown to you as the provider raised it, not lost when the reader is disposed. A trailing status set does not throw and adds no rows.
 
 Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `Single` or `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `First`, `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through, and the provider discards the first set's unread rows on the way.
-
-The calls removed in 11.0 (`Results<T>`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()`) read only the first result set. `Map` reads through the rest, and `command.SingleResult().Map(...)` gives the old behavior. See [Removed in 11.0](whats-new-11.md#deprecated-in-110).
 
 `.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` still works (and so does it on the result of `Skip` and `Take`): the two forms are the same. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `First` and `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
 

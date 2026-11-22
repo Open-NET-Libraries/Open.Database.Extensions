@@ -1,8 +1,7 @@
+using Open.Database.Extensions.Core;
 using System.Buffers;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Open.Database.Extensions.Core;
 using static Open.Database.Extensions.Tests.ChannelWait;
 
 #nullable enable
@@ -316,7 +315,7 @@ public static class ChunkChainTests
 			chain.Add(row);
 		}
 
-		List<Cell> list = chain.ToList();
+		var list = chain.ToList();
 		Assert.Equal(rows, list.Count);
 		Assert.Equal(rows, chain.Count);
 		chain.Dispose();
@@ -334,7 +333,7 @@ public static class ChunkChainTests
 		for (int i = 0; i < rows; ++i)
 			Assert.Equal(i * 7, array[i].Value);
 
-		List<Cell> list = chain.ToList();
+		var list = chain.ToList();
 		Assert.Equal(array, list);
 	}
 
@@ -360,7 +359,7 @@ public static class ChunkChainTests
 	public static void ADisposedTwice_ReturnsEveryArrayOnce()
 	{
 		CountingPool<PoolRow> pool = NewPool();
-		ChunkChain<PoolRow> chain = ChunkChain<PoolRow>.Rent(
+		var chain = ChunkChain<PoolRow>.Rent(
 			TestConfig.Of<PoolRow>(pool, false));
 		for (int i = 0; i < 100; ++i) chain.Add(new PoolRow(i + 1));
 

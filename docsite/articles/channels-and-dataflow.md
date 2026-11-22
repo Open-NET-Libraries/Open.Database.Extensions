@@ -12,7 +12,7 @@ The Channel package takes a mapped query (`Map<T>()`). The Dataflow package work
 
 ## Streaming from a mapped query
 
-The buffer streams are in the core package. To put the rows into a channel, see [Channels](#channels).
+To read a mapped query while a consumer works, use the buffer streams (`ToBufferedAsyncStream` and `ToAsyncBufferStream`) in the core package: the connection is released as soon as the last row is read.
 
 A stream earns its place when a producer and its consumer run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows at database speed on a background task, in chunks, and is finished with the connection as soon as the last row is read. The consumer does the slow work (a web call, a file write, a transform) while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`.
 
@@ -40,7 +40,7 @@ If there is one consumer, only a few rows, and nothing else to overlap, you do n
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_buffer)]
 
-To read rows one at a time and stop early, see [`Stream`](mapping.md#streaming-holds-the-connection): it holds the connection while you pull rows, so it is not the way to do slow work per row.
+To read rows one at a time and stop early, see [`Stream`](mapping.md#terminals): it holds the connection while you pull rows, so it is not the way to do slow work per row.
 
 ### What it costs
 

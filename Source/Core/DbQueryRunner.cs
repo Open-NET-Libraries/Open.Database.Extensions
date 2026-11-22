@@ -186,7 +186,7 @@ static class DbQueryRunner
 			if (supplied is null or DbConnection)
 				return supplied as DbConnection;
 
-			if (source is not IDbConnectionFactory && source is IDbConnectionPool pool)
+			if (source is not IDbConnectionFactory and IDbConnectionPool pool)
 				pool.Give(supplied);
 			else
 				supplied.Dispose();
@@ -250,7 +250,7 @@ static class DbQueryRunner
 		DbConnection connection,
 		DbTransaction? transaction,
 		DbQuery definition,
-		DbQueryCall? call,
+		ParamList call,
 		NameSet? names)
 	{
 		DbCommand command = connection.CreateCommand();
@@ -261,7 +261,7 @@ static class DbQueryRunner
 			command.CommandType = definition.Kind;
 			if (definition.Timeout >= 0)
 				command.CommandTimeout = definition.Timeout;
-			call?.BindAll(command, definition, names, call);
+			call.BindAll(command, definition, names);
 			return command;
 		}
 		catch
@@ -335,7 +335,7 @@ static class DbQueryRunner
 		DbQuery definition,
 		object source,
 		DbConnection connection,
-		DbQueryCall call)
+		ParamList call)
 	{
 		if (definition.Kind != CommandType.StoredProcedure)
 			return definition.TextNames;
@@ -373,7 +373,7 @@ static class DbQueryRunner
 		DbQuery definition,
 		object source,
 		DbConnection connection,
-		DbQueryCall call,
+		ParamList call,
 		CancellationToken cancellationToken)
 	{
 		if (definition.Kind != CommandType.StoredProcedure)
@@ -425,7 +425,7 @@ static class DbQueryRunner
 	/// <see langword="true"/> if the names fit; otherwise,
 	/// <see langword="false"/>.
 	/// </returns>
-	static bool Fits(NameSet? remembered, DbQueryCall call, DbQuery definition)
+	static bool Fits(NameSet? remembered, ParamList call, DbQuery definition)
 		=> remembered is null || call.Fits(remembered, definition.CommandText);
 
 	/// <summary>
@@ -435,7 +435,7 @@ static class DbQueryRunner
 	/// <typeparam name="TResult">The type of the result.</typeparam>
 	/// <param name="definition">The query definition.</param>
 	/// <param name="source">The connection, transaction, pool or factory.</param>
-	/// <param name="call">The bound parameters, or <see langword="null"/> for none.</param>
+	/// <param name="call">The bound parameters, or <see langword="default"/> for none.</param>
 	/// <param name="state">The state to pass to <paramref name="transform"/>.</param>
 	/// <param name="transform">The function that reads the reader.</param>
 	/// <param name="behavior">The behavior to run the reader with.</param>
@@ -444,7 +444,7 @@ static class DbQueryRunner
 	public static TResult Run<TState, TResult>(
 		DbQuery definition,
 		object source,
-		DbQueryCall? call,
+		ParamList call,
 		TState state,
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior)
@@ -452,8 +452,8 @@ static class DbQueryRunner
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		using Lease lease = Lease.Open(source);
-		NameSet? names = call is { NeedsNames: true }
+		using var lease = Lease.Open(source);
+		NameSet? names = call.NeedsNames
 			? Resolve(definition, source, lease.Connection, call)
 			: null;
 		using DbCommand command = Make(
@@ -474,7 +474,7 @@ static class DbQueryRunner
 	/// <typeparam name="TResult">The type of the result.</typeparam>
 	/// <param name="definition">The query definition.</param>
 	/// <param name="source">The connection, transaction, pool or factory.</param>
-	/// <param name="call">The bound parameters, or <see langword="null"/> for none.</param>
+	/// <param name="call">The bound parameters, or <see langword="default"/> for none.</param>
 	/// <param name="state">The state to pass to <paramref name="transform"/>.</param>
 	/// <param name="transform">The function that reads the reader.</param>
 	/// <param name="behavior">The behavior to run the reader with.</param>
@@ -485,7 +485,7 @@ static class DbQueryRunner
 	public static async ValueTask<TResult> RunAsync<TState, TResult>(
 		DbQuery definition,
 		object source,
-		DbQueryCall? call,
+		ParamList call,
 		TState state,
 		Func<IDataReader, TState, ValueTask<TResult>> transform,
 		CommandBehavior behavior,
@@ -501,7 +501,7 @@ static class DbQueryRunner
 			.OpenAsync(source, cancellationToken)
 			.ConfigureAwait(false);
 		await using var leaseDisposal = lease.ConfigureAwait(false);
-		NameSet? names = call is { NeedsNames: true }
+		NameSet? names = call.NeedsNames
 			? await ResolveAsync(
 					definition,
 					source,
@@ -534,7 +534,7 @@ static class DbQueryRunner
 	public static void Run(
 		DbQuery definition,
 		object source,
-		DbQueryCall? call,
+		ParamList call,
 		Action<IDataReader> handler,
 		CommandBehavior behavior)
 	{
@@ -557,7 +557,7 @@ static class DbQueryRunner
 	public static T Run<T>(
 		DbQuery definition,
 		object source,
-		DbQueryCall? call,
+		ParamList call,
 		Func<IDataReader, T> transform,
 		CommandBehavior behavior)
 	{
@@ -576,7 +576,7 @@ static class DbQueryRunner
 	public static ValueTask RunAsync(
 		DbQuery definition,
 		object source,
-		DbQueryCall? call,
+		ParamList call,
 		Func<IDataReader, ValueTask> handler,
 		CommandBehavior behavior)
 	{
@@ -600,7 +600,7 @@ static class DbQueryRunner
 	public static ValueTask<T> RunAsync<T>(
 		DbQuery definition,
 		object source,
-		DbQueryCall? call,
+		ParamList call,
 		Func<IDataReader, ValueTask<T>> transform,
 		CommandBehavior behavior)
 	{

@@ -60,26 +60,6 @@ public static partial class SqlCommandExtensions
 	}
 
 	/// <summary>
-	/// Adds an input parameter of the given type to a command that must be a <see cref="SqlCommand"/>, without assigning a value.
-	/// </summary>
-	/// <remarks>
-	/// Obsolete, and removed in 12.
-	/// Call <see cref="AddParameterType(SqlCommand, string?, SqlDbType, ParameterDirection)"/> on the <see cref="SqlCommand"/> instead:
-	/// this overload casts any <see cref="IDbCommand"/> to <see cref="SqlCommand"/> and throws <see cref="InvalidCastException"/> for any other command.
-	/// </remarks>
-	/// <param name="target">The command to add the parameter to. It must be a <see cref="SqlCommand"/>.</param>
-	/// <param name="name">The name of the parameter.</param>
-	/// <param name="type">The <see cref="SqlDbType"/> of the parameter.</param>
-	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='param-created']/*" />
-	/// <exception cref="InvalidCastException"><paramref name="target"/> is not a <see cref="SqlCommand"/>.</exception>
-	/// <exception cref="ArgumentNullException"><paramref name="target"/> or <paramref name="name"/> is <see langword="null"/>.</exception>
-	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='blank-name']/*" />
-	[Obsolete("Call AddParameterType on the SqlCommand: this overload casts any IDbCommand to SqlCommand and throws InvalidCastException for any other command. Removed in 12.")]
-	public static SqlParameter AddParameterType(this IDbCommand target,
-		string name, SqlDbType type)
-		=> AddParameterType((SqlCommand)target, name, type);
-
-	/// <summary>
 	/// Adds a typed return-value parameter to the command.
 	/// </summary>
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='param-target']/*" />

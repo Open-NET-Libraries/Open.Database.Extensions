@@ -224,5 +224,4 @@ public static partial class CoreExtensions
 				yield return r;
 		}
 	}
-
 }

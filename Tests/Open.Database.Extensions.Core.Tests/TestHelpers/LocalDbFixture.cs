@@ -15,6 +15,9 @@ namespace Open.Database.Extensions.Tests;
 /// <see cref="RequireVariable"/> wins over <see cref="ForceSkipVariable"/>: with both set the server tests fail, so forcing a skip can never turn a required run into a green one.
 /// Everything the tests create lives in <c>tempdb</c> under a name made unique by a new <see cref="Guid"/>, and is dropped when its <see cref="Scratch"/> is disposed.
 /// </remarks>
+// Test classes that create objects here share the xUnit collection "LocalDB DDL", so they run one after another: DDL from several
+// classes at once in tempdb can deadlock. ToListArraySqlServerAllocationProbe stays in "Heap measurements" (a class has one
+// collection), and it creates one table.
 [ExcludeFromCodeCoverage]
 internal static class LocalDbFixture
 {

@@ -47,6 +47,76 @@ sealed class NameSet
 	internal ImmutableArray<string> BareNames { get; }
 
 	/// <summary>
+	/// One name of the set, with its place in it, held once per set: a call that stores it allocates nothing, and a call that binds it
+	/// knows its place without looking the name up.
+	/// </summary>
+	/// <param name="real">The name as the set holds it, with its <c>@</c> when it has one.</param>
+	/// <param name="index">The place of the name in <see cref="Names"/>.</param>
+	internal sealed class Entry(string real, int index)
+	{
+		/// <summary>Gets the name as the set holds it.</summary>
+		public string Real { get; } = real;
+
+		/// <summary>Gets the place of the name in the set.</summary>
+		public int Index { get; } = index;
+	}
+
+	/// <summary>
+	/// Compares names the way a command compares its parameters: without a leading <c>@</c>, ignoring case.
+	/// </summary>
+	sealed class BareComparer : IEqualityComparer<string>
+	{
+		internal static readonly BareComparer Instance = new();
+
+		static ReadOnlySpan<char> Bare(string name)
+			=> name.Length > 0 && name[0] == '@' ? name.AsSpan(1) : name.AsSpan();
+
+		public bool Equals(string? x, string? y)
+			=> Bare(x!).Equals(Bare(y!), StringComparison.OrdinalIgnoreCase);
+
+		public int GetHashCode(string obj)
+		{
+			unchecked
+			{
+				int h = 17;
+				foreach (char c in Bare(obj)) h = h * 31 + char.ToUpperInvariant(c);
+				return h;
+			}
+		}
+	}
+
+	/// <summary>The entries by name, without the <c>@</c> and ignoring case; built when first asked, never changed.</summary>
+	Dictionary<string, Entry>? _entries;
+
+	/// <summary>
+	/// Finds a name of the set, written with or without its <c>@</c> and in any case.
+	/// </summary>
+	/// <remarks>
+	/// Allocates nothing once the set has been asked.
+	/// When two names differ only in case or in the <c>@</c> the first is the one found.
+	/// </remarks>
+	/// <param name="name">The name to look for.</param>
+	/// <returns>The entry, or <see langword="null"/> when the set has no such name.</returns>
+	public Entry? Find(string name)
+	{
+		Dictionary<string, Entry> entries = Volatile.Read(ref _entries) ?? BuildEntries();
+		return entries.TryGetValue(name, out Entry? found) ? found : null;
+	}
+
+	Dictionary<string, Entry> BuildEntries()
+	{
+		var entries = new Dictionary<string, Entry>(Names.Length, BareComparer.Instance);
+		for (int i = 0; i < Names.Length; i++)
+		{
+			if (!entries.ContainsKey(Names[i])) entries.Add(Names[i], new Entry(Names[i], i));
+		}
+
+		// Two threads may both build: the entries are the same.
+		Volatile.Write(ref _entries, entries);
+		return entries;
+	}
+
+	/// <summary>
 	/// The real name that the argument expression stands for, or <see langword="null"/> when it matches none. The answer is remembered, so the next call with the same expression does no matching.
 	/// An ambiguity throws (see <see cref="ParameterNames.MatchBare"/>) and is not remembered, so it throws on every call.
 	/// </summary>
