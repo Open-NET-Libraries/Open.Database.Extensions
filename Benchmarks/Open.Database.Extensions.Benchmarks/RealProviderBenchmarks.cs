@@ -13,7 +13,7 @@ namespace Open.Database.Extensions.Benchmarks;
 //
 // Test data: tables of the synthetic catalog (the first Width columns, Rows rows, the SAME generator as the synthetic provider), created in GlobalSetup
 // and dropped in GlobalCleanup. LocalDB: a dedicated database ode_rp_<guid> whose files live in the scratch folder (never tempdb, never the default
-// location, never drive C:). If CREATE DATABASE fails the case stops with a clear message; there is no fallback. SQLite: a file under the
+// location). If CREATE DATABASE fails the case stops with a clear message; there is no fallback. SQLite: a file under the
 // scratch folder (unique name), deleted afterwards.
 //
 // Settings (environment variable or command-line option; the run scripts pass them):
@@ -174,7 +174,7 @@ public sealed class RealProviderCase
 	{
 		string baseConnection = RealProviderParams.Get(RealProviderParams.SqlServerVariable) ?? RealProviderParams.DefaultSqlServer;
 		if (RealProviderParams.Get(RealProviderParams.ScratchVariable) is not { } scratch)
-			throw new RealProviderUnavailableException("STOP: no scratch folder for the SQL Server database files. Pass --scratch <folder> or set ODX_RP_SCRATCH (a folder not on drive C:). There is no fallback to tempdb or to the default location.");
+			throw new RealProviderUnavailableException("STOP: no scratch folder for the SQL Server database files. Pass --scratch <folder> or set ODX_RP_SCRATCH. There is no fallback to tempdb or to the default location.");
 		string folder = FullPath(scratch);
 		string name = "ode_rp_" + Guid.NewGuid().ToString("N")[..12];
 		string dataFile = Path.Combine(folder, name + ".mdf"), logFile = Path.Combine(folder, name + "_log.ldf");
@@ -242,7 +242,7 @@ public sealed class RealProviderCase
 	static RealProviderCase CreateSqlite(int width, int rows)
 	{
 		string scratch = RealProviderParams.Get(RealProviderParams.SqliteDirVariable) ?? RealProviderParams.Get(RealProviderParams.ScratchVariable)
-			?? throw new RealProviderUnavailableException("STOP: no folder for the SQLite file. Pass --sqlite-dir <folder> (or --scratch <folder>) or set ODX_RP_SQLITE_DIR / ODX_RP_SCRATCH (a folder not on drive C:).");
+			?? throw new RealProviderUnavailableException("STOP: no folder for the SQLite file. Pass --sqlite-dir <folder> (or --scratch <folder>) or set ODX_RP_SQLITE_DIR / ODX_RP_SCRATCH.");
 		string folder = FullPath(scratch);
 		Directory.CreateDirectory(folder);
 		string file = Path.Combine(folder, "rp-" + Guid.NewGuid().ToString("N")[..12] + ".db");
