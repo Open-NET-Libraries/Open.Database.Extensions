@@ -107,6 +107,17 @@ namespace Open.Database.Extensions;
 public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRowSource<T>
 {
 	/// <summary>
+	/// Initializes a new instance of the <see cref="RowMap{T}"/> class from one (property name, column name) pair, so <c>new RowMap&lt;T&gt;(new("A", "b"))</c> compiles.
+	/// </summary>
+	/// <remarks>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='declare-once']/*" />
+	/// </remarks>
+	/// <param name="mapping">The (property name, column name) pair; a <see langword="null"/> column means "do not map this property".</param>
+	/// <include file="RowMapping.docs.xml" path="docs/members[@name='mapping-exceptions']/*" />
+	[OverloadResolutionPriority(1)]
+	public RowMap(KeyValuePair<string, string?> mapping) : this([mapping]) { }
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="RowMap{T}"/> class from (property name, column name) pairs.
 	/// </summary>
 	/// <remarks>

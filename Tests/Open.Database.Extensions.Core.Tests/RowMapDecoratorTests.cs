@@ -306,7 +306,7 @@ public static class RowMapDecoratorTests
 	public static void APairOnANotMappedMember_MapsItAllTheSame()
 	{
 		// A pair overrides the declaration: the member exists for the map that names it.
-		var map = new RowMap<Skipped>([new("Note", "memo")]);
+		var map = new RowMap<Skipped>(new("Note", "memo"));
 		var command = Cmd(Columns(("Id", typeof(int)), ("memo", typeof(string)), ("Note", typeof(string))), [1, "from memo", "from Note"]);
 
 		Skipped row = Assert.Single(command.Map(map).ToList());
@@ -314,7 +314,7 @@ public static class RowMapDecoratorTests
 		Assert.Equal("from memo", row.Note);
 
 		// A pair to null is what it says: unread.
-		var unread = new RowMap<Skipped>([new("Note", null)]);
+		var unread = new RowMap<Skipped>(new("Note", null));
 		Assert.Equal("kept", Assert.Single(command.Map(unread).ToList()).Note);
 	}
 
@@ -414,8 +414,8 @@ public static class RowMapDecoratorTests
 	[Fact]
 	public static void APairThatAgreesWithTheDeclaration_ReadsTheSameColumn()
 	{
-		var same = new RowMap<Named>([new("Id", "post_id")]);
-		var otherCase = new RowMap<Named>([new("Id", "POST_ID")]);
+		var same = new RowMap<Named>(new("Id", "post_id"));
+		var otherCase = new RowMap<Named>(new("Id", "POST_ID"));
 
 		var command = Cmd(Columns(("post_id", typeof(int))), [4]);
 
@@ -429,14 +429,14 @@ public static class RowMapDecoratorTests
 	public static async Task APair_OverridesTheDeclarationsOfItsMember_NotOfTheOthers()
 	{
 		// Id is declared "post_id"; the pair says "id": that column is read, and post_id is never asked for.
-		var other = new RowMap<Named>([new("Id", "id")]);
+		var other = new RowMap<Named>(new("Id", "id"));
 		var command = Cmd(Columns(("id", typeof(int)), ("Title", typeof(string))), [4, "t"]);
 		Named row = Assert.Single(command.Map(other).ToList());
 		Assert.Equal(4, row.Id);
 		Assert.Equal(4, Assert.Single(await command.Map(other).ToListAsync(Ct)).Id);
 
 		// A declared ordinal is not checked for the overridden member (Id is declared at 0, and is read at 2 here) ...
-		var moved = new RowMap<Ordered>([new("Id", "elsewhere")]);
+		var moved = new RowMap<Ordered>(new("Id", "elsewhere"));
 		var shuffled = Cmd(Columns(("first", typeof(string)), ("headline", typeof(string)), ("elsewhere", typeof(int))), ["f", "h", 9]);
 		Ordered moved1 = Assert.Single(shuffled.Map(moved).ToList());
 		Assert.Equal((9, "h"), (moved1.Id, moved1.Title));
@@ -450,7 +450,7 @@ public static class RowMapDecoratorTests
 	[Fact]
 	public static void APairToNull_LeavesADeclaredMemberUnread_WithNoThrow()
 	{
-		var map = new RowMap<Named>([new("Id", null)]);
+		var map = new RowMap<Named>(new("Id", null));
 		var command = Cmd(Columns(("Title", typeof(string))), ["t"]);
 
 		Named row = Assert.Single(command.Map(map).ToList());

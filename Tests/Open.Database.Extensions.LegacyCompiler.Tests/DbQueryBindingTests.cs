@@ -120,7 +120,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		[Fact]
 		public static void Map_OnACallOrABoundDefinition_BindsTheirOwnMember()
 		{
-			var map = new RowMap<Post>((System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>)new[] { new System.Collections.Generic.KeyValuePair<string, string>("Id", "id") });
+			var map = new RowMap<Post>(new System.Collections.Generic.KeyValuePair<string, string>("Id", "id"));
 
 			Assert.Equal("", MapShape((Func<DbQueryUsing, object>)(u => u.Map<Post>())));
 			Assert.Equal("", MapShape((Func<DbQueryCall, object>)(c => c.Map<Post>())));

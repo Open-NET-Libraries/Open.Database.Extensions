@@ -167,7 +167,7 @@ Pass it to `Map<T>`. The same `map` parameter is on `AsSourceBlock` and `ToTarge
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_use)]
 
-**Other ways to declare it.** All of these make the same map. The constructor takes the pairs as arguments, an `ImmutableArray` or any `IEnumerable` of pairs also works, and a map enumerates the pairs it was declared with, so `new RowMap<T>(map)` makes an equal copy. An empty map, `[]`, maps by name like no map at all:
+**Other ways to declare it.** All of these make the same map. The constructor takes one pair (no brackets needed) or several, an `ImmutableArray` or any `IEnumerable` of pairs also works, and a map enumerates the pairs it was declared with, so `new RowMap<T>(map)` makes an equal copy. An empty map, `[]`, maps by name like no map at all:
 
 [!code-csharp[](../samples/Mapping.cs#map_declaration_forms)]
 

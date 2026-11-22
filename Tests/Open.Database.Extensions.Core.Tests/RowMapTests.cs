@@ -372,7 +372,7 @@ public static class RowMapTests
 	{
 		// An unknown property is an error even with a null column ("Nope" is deliberately not a property), and so are a repeated property,
 		// an empty column name and two properties on one column.
-		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>([new("Nope", null)])));
+		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new("Nope", null))));
 		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), "a"), new(nameof(Item.Name), "b"))));
 		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), ""), new(nameof(Item.Id), "x"))));
 		Assert.Throws<ArgumentException>(() => Cmd(Renamed, 1).Map(new RowMap<Item>(new(nameof(Item.Name), "x"), new(nameof(Item.Note), "X"))));
