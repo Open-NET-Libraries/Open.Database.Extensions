@@ -671,7 +671,7 @@ public static class SingleResultBeforeMapTests
 	{
 		using var cts = new CancellationTokenSource();
 		var command = new FakeExecuteReader(() => Reader(Rows(1))) { CancellationToken = cts.Token };
-		IExecuteReader view = command.SingleResult();
+		IExecuteReaderSync view = (IExecuteReaderSync)command.SingleResult();
 
 		view.ExecuteReader(_ => { });
 		view.ExecuteReader(_ => 1, CommandBehavior.SequentialAccess);

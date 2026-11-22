@@ -1,3 +1,5 @@
+using Open.Database.Extensions.Synchronous;
+
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Open.Database.Extensions;
 /// <typeparam name="TDbType">The DB type enum to use for parameters.</typeparam>
 /// <typeparam name="TThis">The type of the derived class, so that the chaining methods return it.</typeparam>
 public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
-		: IExecuteCommand<TCommand>, IExecuteReader<TReader>
+		: IExecuteCommandSync<TCommand>, IExecuteReaderSync<TReader>
 		where TConnection : class, IDbConnection
 		where TCommand : class, IDbCommand
 		where TReader : class, IDataReader
@@ -1386,7 +1388,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	#endregion
 
 	/// <inheritdoc />
-	public void Execute(Action<TCommand> action)
+	internal void Execute(Action<TCommand> action)
 	{
 		if (action is null) throw new ArgumentNullException(nameof(action));
 		Contract.EndContractBlock();
@@ -1399,7 +1401,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	}
 
 	/// <inheritdoc />
-	public T Execute<T>(Func<TCommand, T> transform)
+	internal T Execute<T>(Func<TCommand, T> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
@@ -1434,10 +1436,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		return ExecuteCoreAsync(transform, static (cmd, _, f) => f(cmd));
 	}
 
-	void IExecuteCommand.Execute(Action<IDbCommand> action)
+	void IExecuteCommandSync.Execute(Action<IDbCommand> action)
 		=> Execute(command => action(command));
 
-	T IExecuteCommand.Execute<T>(Func<IDbCommand, T> transform)
+	T IExecuteCommandSync.Execute<T>(Func<IDbCommand, T> transform)
 		=> Execute(command => transform(command));
 
 	ValueTask IExecuteCommand.ExecuteAsync(Func<IDbCommand, ValueTask> handler)
@@ -1458,7 +1460,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		=> reader is TReader r ? r : throw new InvalidCastException($"Expected reader type of ({typeof(TReader)}).  Actual: ({reader.GetType()})");
 
 	/// <inheritdoc />
-	public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
+	internal TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
@@ -1589,7 +1591,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}, cancellationToken);
 
 	/// <inheritdoc />
-	public void ExecuteReader(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default)
+	internal void ExecuteReader(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
@@ -1602,7 +1604,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	}
 
 	/// <inheritdoc />
-	public T ExecuteReader<T>(Func<TReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
+	internal T ExecuteReader<T>(Func<TReader, T> transform, CommandBehavior behavior = CommandBehavior.Default)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
@@ -1782,7 +1784,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			CommandBehavior.Default,
 			cancellationToken);
 
-	void IExecuteReader.ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior)
+	void IExecuteReaderSync.ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior)
 	{
 		if (handler is null) throw new ArgumentNullException(nameof(handler));
 		Contract.EndContractBlock();
@@ -1794,13 +1796,28 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		}, behavior);
 	}
 
-	T IExecuteReader.ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior)
+	T IExecuteReaderSync.ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
 		return ExecuteReader(transform, static (reader, f) => f(reader), behavior);
 	}
+
+	TResult IExecuteReaderSync.ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior)
+		=> ExecuteReader(state, transform, behavior);
+
+	void IExecuteReaderSync<TReader>.ExecuteReader(Action<TReader> handler, CommandBehavior behavior)
+		=> ExecuteReader(handler, behavior);
+
+	T IExecuteReaderSync<TReader>.ExecuteReader<T>(Func<TReader, T> transform, CommandBehavior behavior)
+		=> ExecuteReader(transform, behavior);
+
+	void IExecuteCommandSync<TCommand>.Execute(Action<TCommand> action)
+		=> Execute(action);
+
+	T IExecuteCommandSync<TCommand>.Execute<T>(Func<TCommand, T> transform)
+		=> Execute(transform);
 
 	ValueTask IExecuteReader.ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior)
 	{
@@ -1828,7 +1845,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// that parameter.
 	/// </summary>
 	/// <returns>The value from the return parameter.</returns>
-	public object? ExecuteReturn()
+	internal object? ExecuteReturn()
 		// The connection is opened before the command is created, as some commands require it.
 		=> ExecuteCore(0, static (cmd, _, _) =>
 		{
@@ -1848,7 +1865,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <see langword="default"/> when it is NULL.
 	/// </returns>
 	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range.</exception>
-	public T ExecuteReturn<T>()
+	internal T ExecuteReturn<T>()
 		=> RowMap<T>.ConvertScalar(ExecuteReturn());
 
 	/// <summary>
@@ -1900,14 +1917,14 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// Executes the command with <see cref="IDbCommand.ExecuteNonQuery"/>.
 	/// </summary>
 	/// <returns>The number of rows affected, as the provider reports it.</returns>
-	public int ExecuteNonQuery()
+	internal int ExecuteNonQuery()
 		=> Execute(command => command.ExecuteNonQuery());
 
 	/// <summary>
 	/// Executes the command with <see cref="IDbCommand.ExecuteScalar"/>.
 	/// </summary>
 	/// <returns>The raw value the provider returns: <see cref="DBNull.Value"/> when the column is NULL and <see langword="null"/> when there is no row, which is how to tell the two apart. Use <see cref="ExecuteScalar{T}()"/> for <see langword="default"/> in both cases, or a transform overload to receive <see langword="null"/> in both.</returns>
-	public object? ExecuteScalar()
+	internal object? ExecuteScalar()
 		=> Execute(command => command.ExecuteScalar());
 
 	/// <summary>
@@ -1919,7 +1936,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <see langword="default"/> when the result is NULL or there was no row.
 	/// </returns>
 	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range; the conversion's own error is the inner exception.</exception>
-	public T ExecuteScalar<T>()
+	internal T ExecuteScalar<T>()
 		=> RowMap<T>.ConvertScalar(ExecuteScalar());
 
 	/// <summary>
@@ -1941,7 +1958,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <typeparam name="T">The type expected.</typeparam>
 	/// <param name="transform">The function that converts the value. It receives <see langword="null"/> when the column is NULL or there is no row, never <see cref="DBNull"/>; any other value is passed as the provider returned it.</param>
 	/// <returns>The value returned from the transform.</returns>
-	public T ExecuteScalar<T>(Func<object?, T> transform)
+	internal T ExecuteScalar<T>(Func<object?, T> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();

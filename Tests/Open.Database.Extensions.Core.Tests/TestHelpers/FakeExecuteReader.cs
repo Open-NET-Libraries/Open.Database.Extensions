@@ -12,7 +12,7 @@ namespace Open.Database.Extensions.Tests;
 /// actually ran, which is how the deferred-execution behavior is asserted.
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal sealed class FakeExecuteReader(IReadOnlyList<string> columns, params object?[][] rows) : IExecuteReader
+internal sealed class FakeExecuteReader(IReadOnlyList<string> columns, params object?[][] rows) : IExecuteReaderSync
 {
 	/// <summary>Number of readers created — i.e. how many times a terminal executed the query.</summary>
 	public int ExecuteCount { get; private set; }

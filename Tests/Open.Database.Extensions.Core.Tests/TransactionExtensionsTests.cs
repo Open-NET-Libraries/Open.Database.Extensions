@@ -348,7 +348,6 @@ public static class TransactionExtensionsTests
 		var c = new FakeDbConnection();
 
 		AssertRejected(c, () => c.ExecuteTransaction(IsolationLevel.ReadCommitted, CancellationToken.None, null!), "action");
-		AssertRejected(c, () => c.ExecuteTransaction(CancellationToken.None, (Func<DbTransaction, int>)null!), "action");
 		AssertRejected(c, () => c.ExecuteTransactionConditional(IsolationLevel.ReadCommitted, null!), "conditionalAction");
 	}
 

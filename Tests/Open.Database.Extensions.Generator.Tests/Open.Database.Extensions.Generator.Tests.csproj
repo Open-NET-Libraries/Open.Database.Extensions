@@ -20,6 +20,7 @@
 
 	<ItemGroup>
 		<Using Include="Xunit" />
+		<Using Include="Open.Database.Extensions.Synchronous" />
 	</ItemGroup>
 
 	<ItemGroup>

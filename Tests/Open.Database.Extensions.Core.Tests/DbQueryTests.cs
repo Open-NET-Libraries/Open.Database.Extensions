@@ -815,7 +815,7 @@ public static class DbQueryTests
 	{
 		using var db = new Db();
 		using Tracked c = db.Connect();
-		IExecuteReader reader = Posts.Using(c).AddParam("authorId", 7).AddParam("views", 0);
+		IExecuteReaderSync reader = Posts.Using(c).AddParam("authorId", 7).AddParam("views", 0);
 		var ids = new List<int>();
 
 		reader.ExecuteReader(r =>
@@ -865,7 +865,7 @@ public static class DbQueryTests
 	{
 		using var db = new Db();
 		using Tracked c = db.Connect();
-		IExecuteReader reader = Posts.Using(c);
+		IExecuteReaderSync reader = Posts.Using(c);
 
 		Assert.Throws<ArgumentNullException>(() => reader.ExecuteReader((Action<IDataReader>)null!));
 		Assert.Throws<ArgumentNullException>(() => reader.ExecuteReader((Func<IDataReader, int>)null!));

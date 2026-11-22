@@ -1,3 +1,5 @@
+using Open.Database.Extensions.Synchronous;
+
 namespace Open.Database.Extensions;
 
 public static partial class CoreExtensions
@@ -118,7 +120,7 @@ public static partial class CoreExtensions
 /// </remarks>
 /// <param name="command">The command to read from.</param>
 sealed class SingleResultReader(IExecuteReader command)
-	: IExecuteReaderAsync
+	: IExecuteReaderAsync, IExecuteReaderSync
 {
 	internal IExecuteReader Command { get; } = command;
 
@@ -131,14 +133,14 @@ sealed class SingleResultReader(IExecuteReader command)
 	public void ExecuteReader(
 		Action<IDataReader> handler,
 		CommandBehavior behavior = CommandBehavior.Default)
-		=> Command.ExecuteReader(
+		=> Command.AsSync().ExecuteReader(
 			handler,
 			behavior | CommandBehavior.SingleResult);
 
 	public T ExecuteReader<T>(
 		Func<IDataReader, T> transform,
 		CommandBehavior behavior = CommandBehavior.Default)
-		=> Command.ExecuteReader(
+		=> Command.AsSync().ExecuteReader(
 			transform,
 			behavior | CommandBehavior.SingleResult);
 
@@ -160,7 +162,7 @@ sealed class SingleResultReader(IExecuteReader command)
 		TState state,
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior = CommandBehavior.Default)
-		=> Command.ExecuteReader(
+		=> Command.AsSync().ExecuteReader(
 			state,
 			transform,
 			behavior | CommandBehavior.SingleResult);

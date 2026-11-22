@@ -17,26 +17,10 @@ public interface IExecuteReader
 	CancellationToken CancellationToken { get; }
 
 	/// <summary>
-	/// Executes the command and passes the data reader to <paramref name="handler"/>.
-	/// </summary>
-	/// <param name="handler">The function that processes the data reader.</param>
-	/// <include file="Mapped.docs.xml" path="docs/members[@name='behavior']/*" />
-	void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default);
-	/// <summary>
-	/// Executes the command, passes the data reader to <paramref name="transform"/>
-	/// and returns its result.
-	/// </summary>
-	/// <typeparam name="T">The type the transform returns.</typeparam>
-	/// <param name="transform">The function that processes the data reader and produces the result.</param>
-	/// <include file="Mapped.docs.xml" path="docs/members[@name='behavior']/*" />
-	/// <returns>The result of <paramref name="transform"/>.</returns>
-	T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default);
-
-	/// <summary>
 	/// Asynchronously executes the command and passes the data reader to
 	/// <paramref name="handler"/>.
 	/// </summary>
-	/// <inheritdoc cref="ExecuteReader(Action{IDataReader}, CommandBehavior)" path="/param"/>
+	/// <inheritdoc cref="Synchronous.IExecuteReaderSync.ExecuteReader(Action{IDataReader}, CommandBehavior)" path="/param"/>
 	/// <returns>A task that represents the asynchronous operation.</returns>
 	ValueTask ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default);
 
@@ -51,24 +35,13 @@ public interface IExecuteReader
 	ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default);
 
 	/// <summary>
-	/// Executes the command, passes the data reader and <paramref name="state"/>
-	/// to <paramref name="transform"/>, and returns its result.
-	/// Pass a <see langword="static"/> lambda and the state it needs to avoid
-	/// allocating a closure per call.
-	/// </summary>
-	/// <include file="Mapped.docs.xml" path="docs/members[@name='reader-state-transform']/*" />
-	/// <include file="Mapped.docs.xml" path="docs/members[@name='behavior']/*" />
-	/// <returns>The result of <paramref name="transform"/>.</returns>
-	TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default);
-
-	/// <summary>
 	/// Asynchronously executes the command, passes the data reader and
 	/// <paramref name="state"/> to <paramref name="transform"/>, and returns its
 	/// result.
 	/// Pass a <see langword="static"/> lambda and the state it needs to avoid
 	/// allocating a closure per call.
 	/// </summary>
-	/// <inheritdoc cref="ExecuteReader{TState, TResult}(TState, Func{IDataReader, TState, TResult}, CommandBehavior)" path="/*[not(self::summary) and not(self::returns)]"/>
+	/// <inheritdoc cref="Synchronous.IExecuteReaderSync.ExecuteReader{TState, TResult}(TState, Func{IDataReader, TState, TResult}, CommandBehavior)" path="/*[not(self::summary) and not(self::returns)]"/>
 	/// <returns>A task that produces the result of <paramref name="transform"/>.</returns>
 	ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default);
 
@@ -99,11 +72,6 @@ public interface IExecuteReader
 public interface IExecuteReader<out TReader> : IExecuteReader
 	where TReader : IDataReader
 {
-	/// <inheritdoc cref="IExecuteReader.ExecuteReader(Action{IDataReader}, CommandBehavior)"/>
-	void ExecuteReader(Action<TReader> handler, CommandBehavior behavior = CommandBehavior.Default);
-	/// <inheritdoc cref="IExecuteReader.ExecuteReader{T}(Func{IDataReader, T}, CommandBehavior)"/>
-	T ExecuteReader<T>(Func<TReader, T> transform, CommandBehavior behavior = CommandBehavior.Default);
-
 	/// <inheritdoc cref="IExecuteReader.ExecuteReaderAsync(Func{IDataReader, ValueTask}, CommandBehavior)"/>
 	ValueTask ExecuteReaderAsync(Func<TReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default);
 

@@ -119,7 +119,7 @@ public static class MappedQueryEdgeTests
 
 	// ---- the terminals every IMappedQuery has ----
 
-	sealed class StubQuery<T>(IEnumerable<T> items) : IMappedQuery<T>
+	sealed class StubQuery<T>(IEnumerable<T> items) : IMappedQuerySync<T>
 	{
 		public int Executions { get; private set; }
 

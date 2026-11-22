@@ -7,7 +7,7 @@ namespace Open.Database.Extensions.Tests;
 /// synchronous path for them. Every execution is handed a fresh reader from the factory and disposes it, as a command does.
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal class PlainReaderCommand(Func<IDataReader> factory) : IExecuteReader
+internal class PlainReaderCommand(Func<IDataReader> factory) : IExecuteReaderSync
 {
 	public CancellationToken CancellationToken => default;
 

@@ -107,7 +107,7 @@ public static class ForeignQueryContextTests
 		}
 	}
 
-	sealed class ForeignQuery(Rows rows) : IMappedQuery<int>
+	sealed class ForeignQuery(Rows rows) : IMappedQuerySync<int>
 	{
 		public void Read(Action<IEnumerable<int>> handler)
 			=> handler(rows.Values);

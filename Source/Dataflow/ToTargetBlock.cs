@@ -1,4 +1,6 @@
 ﻿using CancellationTokens = Open.Database.Extensions.Core.CancellationTokens;
+using Open.Database.Extensions.Synchronous;
+
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -407,7 +409,7 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			return command.ExecuteReader(reader =>
+			return command.AsSync().ExecuteReader(reader =>
 				ToTargetBlock(reader, target, false));
 		}
 		catch (Exception ex)
@@ -462,7 +464,7 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			return command.ExecuteReader(reader =>
+			return command.AsSync().ExecuteReader(reader =>
 				ToTargetBlock(reader, target, false, arrayPool));
 		}
 		catch (Exception ex)
@@ -518,7 +520,7 @@ public static partial class DataflowExtensions
 
 		try
 		{
-			return command.ExecuteReader(reader =>
+			return command.AsSync().ExecuteReader(reader =>
 				ToTargetBlock(reader, target, false, transform));
 		}
 		catch (Exception ex)
@@ -569,7 +571,7 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		return ToTargetBlockMapped(read => command.ExecuteReader(read), target, complete, null);
+		return ToTargetBlockMapped(read => command.AsSync().ExecuteReader(read), target, complete, null);
 	}
 
 	/// <summary>
@@ -609,7 +611,7 @@ public static partial class DataflowExtensions
 		if (target is null) throw new ArgumentNullException(nameof(target));
 		Contract.EndContractBlock();
 
-		return ToTargetBlockMapped(read => command.ExecuteReader(read), target, complete, map);
+		return ToTargetBlockMapped(read => command.AsSync().ExecuteReader(read), target, complete, map);
 	}
 
 	/// <summary>

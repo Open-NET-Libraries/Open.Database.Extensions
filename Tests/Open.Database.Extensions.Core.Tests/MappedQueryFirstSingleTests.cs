@@ -845,7 +845,7 @@ public static class MappedQueryFirstSingleTests
 	// ---- another implementation of IMappedQuery<T>: the LINQ fallback ----
 
 	// A tiny list-backed query that is not one of the library types.
-	sealed class ListQuery<T>(params T[] rows) : IMappedQuery<T>
+	sealed class ListQuery<T>(params T[] rows) : IMappedQuerySync<T>
 	{
 		public int Enumerated { get; private set; }
 

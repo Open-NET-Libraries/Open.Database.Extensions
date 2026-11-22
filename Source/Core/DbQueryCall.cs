@@ -1,3 +1,5 @@
+using Open.Database.Extensions.Synchronous;
+
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Open.Database.Extensions;
 /// Map it with <c>Map&lt;T&gt;()</c>, which is the same extension every command
 /// uses, then run a terminal. Nothing touches the database before that.
 /// </remarks>
-public abstract class DbQueryCall : IExecuteReaderAsync
+public abstract class DbQueryCall : IExecuteReaderAsync, IExecuteReaderSync
 {
 	/// <summary>
 	/// How a node's parameters are named.
@@ -612,7 +614,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 
 	bool IExecuteReaderAsync.UseAsyncRead => false;
 
-	TResult IExecuteReader.ExecuteReader<TState, TResult>(
+	TResult IExecuteReaderSync.ExecuteReader<TState, TResult>(
 		TState state,
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior)
@@ -651,7 +653,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 			behavior,
 			default);
 
-	void IExecuteReader.ExecuteReader(
+	void IExecuteReaderSync.ExecuteReader(
 		Action<IDataReader> handler,
 		CommandBehavior behavior)
 		=> DbQueryRunner.Run(
@@ -661,7 +663,7 @@ public abstract class DbQueryCall : IExecuteReaderAsync
 			handler,
 			behavior);
 
-	T IExecuteReader.ExecuteReader<T>(
+	T IExecuteReaderSync.ExecuteReader<T>(
 		Func<IDataReader, T> transform,
 		CommandBehavior behavior)
 		=> DbQueryRunner.Run(

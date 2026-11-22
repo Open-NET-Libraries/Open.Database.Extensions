@@ -216,6 +216,116 @@
 *REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToDictionaryAsync<T, TKey, TValue>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.Dictionary<TKey, TValue>!>
 *REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToDictionaryAsync<T, TKey>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.Dictionary<TKey, T>!>
 *REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToHashSetAsync<T>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Collections.Generic.IEqualityComparer<T>? comparer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.Execute(System.Action<TCommand!>! action) -> void
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.Execute<T>(System.Func<TCommand!, T>! transform) -> T
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteNonQuery() -> int
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReader(System.Action<TReader!>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReader<T>(System.Func<TReader!, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReader<TState, TResult>(TState state, System.Func<System.Data.IDataReader!, TState, TResult>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> TResult
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReturn() -> object?
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReturn<T>() -> T
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteScalar() -> object?
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteScalar<T>() -> T
+*REMOVED*Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteScalar<T>(System.Func<object?, T>! transform) -> T
+*REMOVED*Open.Database.Extensions.IExecuteCommand.Execute(System.Action<System.Data.IDbCommand!>! action) -> void
+*REMOVED*Open.Database.Extensions.IExecuteCommand.Execute<T>(System.Func<System.Data.IDbCommand!, T>! transform) -> T
+*REMOVED*Open.Database.Extensions.IExecuteCommand<TCommand>.Execute(System.Action<TCommand>! action) -> void
+*REMOVED*Open.Database.Extensions.IExecuteCommand<TCommand>.Execute<T>(System.Func<TCommand, T>! transform) -> T
+*REMOVED*Open.Database.Extensions.IExecuteReader.ExecuteReader(System.Action<System.Data.IDataReader!>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+*REMOVED*Open.Database.Extensions.IExecuteReader.ExecuteReader<T>(System.Func<System.Data.IDataReader!, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+*REMOVED*Open.Database.Extensions.IExecuteReader.ExecuteReader<TState, TResult>(TState state, System.Func<System.Data.IDataReader!, TState, TResult>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> TResult
+*REMOVED*Open.Database.Extensions.IExecuteReader<TReader>.ExecuteReader(System.Action<TReader>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+*REMOVED*Open.Database.Extensions.IExecuteReader<TReader>.ExecuteReader<T>(System.Func<TReader, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+*REMOVED*Open.Database.Extensions.IMappedQuery<T>.Read(System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+*REMOVED*Open.Database.Extensions.IMappedQuery<T>.Read<TResult>(System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.FirstOrDefault() -> T?
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.Read(System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.Read<TResult>(System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.SingleOrDefault() -> T?
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToArray() -> T[]!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToDictionary<TKey>(System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToHashSet(System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToImmutableArray() -> System.Collections.Immutable.ImmutableArray<T>
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToList() -> System.Collections.Generic.List<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.FirstOrDefault() -> T?
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.Read(System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.Read<TResult>(System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.SingleOrDefault() -> T?
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToArray() -> T[]!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToDictionary<TKey>(System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToHashSet(System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToImmutableArray() -> System.Collections.Immutable.ImmutableArray<T>
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToList() -> System.Collections.Generic.List<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.FirstOrDefault() -> T?
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.Read(System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.Read<TResult>(System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.SingleOrDefault() -> T?
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToArray() -> T[]!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToDictionary<TKey>(System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToHashSet(System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToImmutableArray() -> System.Collections.Immutable.ImmutableArray<T>
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToList() -> System.Collections.Generic.List<T>!
+*REMOVED*static Open.Database.Extensions.CommandExtensions.ExecuteReader(this System.Data.IDbCommand! command, System.Action<System.Data.IDataReader!>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+*REMOVED*static Open.Database.Extensions.CommandExtensions.ExecuteReader<T>(this System.Data.IDbCommand! command, System.Func<System.Data.IDataReader!, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+*REMOVED*static Open.Database.Extensions.CommandExtensions.ToDataTable(this System.Data.IDbCommand! command, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.SequentialAccess) -> System.Data.DataTable!
+*REMOVED*static Open.Database.Extensions.CommandExtensions.ToDataTables(this System.Data.IDbCommand! command, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.SequentialAccess) -> System.Collections.Generic.List<System.Data.DataTable!>!
+*REMOVED*static Open.Database.Extensions.IExecuteReaderExtensions.LoadTable(this Open.Database.Extensions.IExecuteReader! command) -> System.Data.DataTable!
+*REMOVED*static Open.Database.Extensions.IExecuteReaderExtensions.LoadTables(this Open.Database.Extensions.IExecuteReader! command) -> System.Collections.Generic.List<System.Data.DataTable!>!
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.FirstOrDefault<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T?
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.SingleOrDefault<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T?
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToArray<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T[]!
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToDictionary<T, TKey>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToHashSet<T>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToImmutableArray<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> System.Collections.Immutable.ImmutableArray<T>
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToList<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> System.Collections.Generic.List<T>!
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Action<System.Data.Common.DbTransaction!>! action, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Action<System.Data.Common.DbTransaction!>! action, System.Threading.CancellationToken cancellationToken) -> void
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Action<System.Data.Common.DbTransaction!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Action<System.Data.Common.DbTransaction!>! action) -> void
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Func<System.Data.Common.DbTransaction!, T>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> T
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, T>! action) -> T
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, T>! action, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> T
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, T>! action, System.Threading.CancellationToken cancellationToken) -> T
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> bool
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction) -> bool
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> bool
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction, System.Threading.CancellationToken cancellationToken) -> bool
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> (bool Commit, T Value)
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction) -> (bool Commit, T Value)
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> (bool Commit, T Value)
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction, System.Threading.CancellationToken cancellationToken) -> (bool Commit, T Value)
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.FirstOrDefault() -> T?
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.Read(System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.Read<TResult>(System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.SingleOrDefault() -> T?
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToArray() -> T[]!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToDictionary<TKey>(System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToHashSet(System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToImmutableArray() -> System.Collections.Immutable.ImmutableArray<T>
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToList() -> System.Collections.Generic.List<T>!
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.First() -> T
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.Single() -> T
+*REMOVED*Open.Database.Extensions.MappedQuery<T>.ToDictionary<TKey, TValue>(System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.First() -> T
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.Single() -> T
+*REMOVED*Open.Database.Extensions.MappedQueryWithSkip<T>.ToDictionary<TKey, TValue>(System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.First() -> T
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.Single() -> T
+*REMOVED*Open.Database.Extensions.MappedQueryWithTake<T>.ToDictionary<TKey, TValue>(System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.First() -> T
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.Single() -> T
+*REMOVED*Open.Database.Extensions.MappedCommand<T>.ToDictionary<TKey, TValue>(System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.First<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.Single<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T
+*REMOVED*static Open.Database.Extensions.MappedQueryExtensions.ToDictionary<T, TKey, TValue>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken, System.Action<System.Data.Common.DbTransaction!>! action) -> void
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, T>! action) -> T
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, System.Threading.Tasks.ValueTask>! action) -> System.Threading.Tasks.ValueTask
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionAsync<T>(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, System.Threading.Tasks.ValueTask<T>>! action) -> System.Threading.Tasks.ValueTask<T>
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction) -> bool
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction) -> (bool Commit, T Value)
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, System.Threading.Tasks.ValueTask<bool>>! conditionalAction) -> System.Threading.Tasks.ValueTask<bool>
+*REMOVED*static Open.Database.Extensions.TransactionExtensions.ExecuteTransactionConditionalAsync<T>(this System.Data.Common.DbConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, System.Threading.Tasks.ValueTask<(bool Commit, T Value)>>! conditionalAction) -> System.Threading.Tasks.ValueTask<(bool Commit, T Value)>
 Open.Database.Extensions.DbQuery.AsDictionaryRows() -> Open.Database.Extensions.MappedDbQuery<Open.Database.Extensions.DictionaryRow>!
 Open.Database.Extensions.DbQuery.AsObjectArrays() -> Open.Database.Extensions.MappedDbQuery<object?[]!>!
 Open.Database.Extensions.DbQuery.Map<T>() -> Open.Database.Extensions.MappedDbQuery<T>!
@@ -307,6 +417,28 @@ Open.Database.Extensions.MappedTable<T>.ToDictionaryAsync<TKey>(System.Func<T, T
 Open.Database.Extensions.MappedTable<T>.ToDictionaryAsync<TKey>(System.Func<T, TKey>! keySelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.Dictionary<TKey, T>!>
 Open.Database.Extensions.MappedTable<T>.ToHashSetAsync(System.Collections.Generic.IEqualityComparer<T>? comparer, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
 Open.Database.Extensions.MappedTable<T>.ToHashSetAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
+Open.Database.Extensions.Synchronous.IExecuteCommandSync
+Open.Database.Extensions.Synchronous.IExecuteCommandSync.Execute(System.Action<System.Data.IDbCommand!>! action) -> void
+Open.Database.Extensions.Synchronous.IExecuteCommandSync.Execute<T>(System.Func<System.Data.IDbCommand!, T>! transform) -> T
+Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>
+Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>.Execute(System.Action<TCommand>! action) -> void
+Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>.Execute<T>(System.Func<TCommand, T>! transform) -> T
+Open.Database.Extensions.Synchronous.IExecuteReaderSync
+Open.Database.Extensions.Synchronous.IExecuteReaderSync.ExecuteReader(System.Action<System.Data.IDataReader!>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+Open.Database.Extensions.Synchronous.IExecuteReaderSync.ExecuteReader<T>(System.Func<System.Data.IDataReader!, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+Open.Database.Extensions.Synchronous.IExecuteReaderSync.ExecuteReader<TState, TResult>(TState state, System.Func<System.Data.IDataReader!, TState, TResult>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> TResult
+Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>
+Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>.ExecuteReader(System.Action<TReader>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>.ExecuteReader<T>(System.Func<TReader, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+Open.Database.Extensions.Synchronous.IMappedQuerySync<T>
+Open.Database.Extensions.Synchronous.IMappedQuerySync<T>.Read(System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+Open.Database.Extensions.Synchronous.IMappedQuerySync<T>.Read<TResult>(System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+Open.Database.Extensions.Synchronous.SyncCommandExtensions
+Open.Database.Extensions.Synchronous.SyncExecuteReaderExtensions
+Open.Database.Extensions.Synchronous.SyncExpressiveExtensions
+Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions
+Open.Database.Extensions.Synchronous.SyncMappedViewExtensions
+Open.Database.Extensions.Synchronous.SyncTransactionExtensions
 Open.Database.Extensions.UnboundCall<T>
 Open.Database.Extensions.UnboundCall<T>.AddParam(string! name, string? value) -> Open.Database.Extensions.UnboundCall<T>
 Open.Database.Extensions.UnboundCall<T>.AddParam<TValue>(string! name, TValue value) -> Open.Database.Extensions.UnboundCall<T>
@@ -361,3 +493,94 @@ static Open.Database.Extensions.MappedQueryExtensions.ToHashSetAsync<T>(this Ope
 static Open.Database.Extensions.PooledArray<T>.Empty.get -> Open.Database.Extensions.PooledArray<T>!
 static Open.Database.Extensions.PooledBuffer<T>.From(System.ReadOnlySpan<T> rows) -> Open.Database.Extensions.PooledBuffer<T>!
 static Open.Database.Extensions.PooledBuffer<T>.From(System.ReadOnlySpan<T> rows, System.Buffers.ArrayPool<T>! pool, bool clearOnReturn) -> Open.Database.Extensions.PooledBuffer<T>!
+static Open.Database.Extensions.Synchronous.SyncCommandExtensions.ExecuteReader(this System.Data.IDbCommand! command, System.Action<System.Data.IDataReader!>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+static Open.Database.Extensions.Synchronous.SyncCommandExtensions.ExecuteReader<T>(this System.Data.IDbCommand! command, System.Func<System.Data.IDataReader!, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+static Open.Database.Extensions.Synchronous.SyncCommandExtensions.ToDataTable(this System.Data.IDbCommand! command, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.SequentialAccess) -> System.Data.DataTable!
+static Open.Database.Extensions.Synchronous.SyncCommandExtensions.ToDataTables(this System.Data.IDbCommand! command, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.SequentialAccess) -> System.Collections.Generic.List<System.Data.DataTable!>!
+static Open.Database.Extensions.Synchronous.SyncExecuteReaderExtensions.LoadTable(this Open.Database.Extensions.IExecuteReader! command) -> System.Data.DataTable!
+static Open.Database.Extensions.Synchronous.SyncExecuteReaderExtensions.LoadTables(this Open.Database.Extensions.IExecuteReader! command) -> System.Collections.Generic.List<System.Data.DataTable!>!
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.Execute<TCommand, T>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>! command, System.Func<TCommand, T>! transform) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.Execute<TCommand>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>! command, System.Action<TCommand>! action) -> void
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteNonQuery(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> int
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TReader, T>(this Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>! command, System.Func<TReader, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TReader>(this Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>! command, System.Action<TReader>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TState, TResult>(this Open.Database.Extensions.Synchronous.IExecuteReaderSync! command, TState state, System.Func<System.Data.IDataReader!, TState, TResult>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> TResult
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReturn(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> object?
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReturn<T>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> object?
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar<T>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar<T>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command, System.Func<object?, T>! transform) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.First<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.FirstOrDefault<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.Single<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.SingleOrDefault<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.ToArray<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> T[]!
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.ToDictionary<T, TKey, TValue>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.ToDictionary<T, TKey>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.ToHashSet<T>(this Open.Database.Extensions.IMappedQuery<T>! query, System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.ToImmutableArray<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> System.Collections.Immutable.ImmutableArray<T>
+static Open.Database.Extensions.Synchronous.SyncMappedQueryExtensions.ToList<T>(this Open.Database.Extensions.IMappedQuery<T>! query) -> System.Collections.Generic.List<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.First<T>(this Open.Database.Extensions.MappedCommand<T> query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.First<T>(this Open.Database.Extensions.MappedQuery<T> query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.First<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.First<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.FirstOrDefault<T>(this Open.Database.Extensions.MappedCommand<T> query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.FirstOrDefault<T>(this Open.Database.Extensions.MappedQuery<T> query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.FirstOrDefault<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.FirstOrDefault<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Read<T, TResult>(this Open.Database.Extensions.MappedCommand<T> query, System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Read<T, TResult>(this Open.Database.Extensions.MappedQuery<T> query, System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Read<T, TResult>(this Open.Database.Extensions.MappedQueryWithSkip<T> query, System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Read<T, TResult>(this Open.Database.Extensions.MappedQueryWithTake<T> query, System.Func<System.Collections.Generic.IEnumerable<T>!, TResult>! handler) -> TResult
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Read<T>(this Open.Database.Extensions.MappedCommand<T> query, System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Read<T>(this Open.Database.Extensions.MappedQuery<T> query, System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Read<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query, System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Read<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query, System.Action<System.Collections.Generic.IEnumerable<T>!>! handler) -> void
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Single<T>(this Open.Database.Extensions.MappedCommand<T> query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Single<T>(this Open.Database.Extensions.MappedQuery<T> query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Single<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.Single<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query) -> T
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.SingleOrDefault<T>(this Open.Database.Extensions.MappedCommand<T> query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.SingleOrDefault<T>(this Open.Database.Extensions.MappedQuery<T> query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.SingleOrDefault<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.SingleOrDefault<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query) -> T?
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToArray<T>(this Open.Database.Extensions.MappedCommand<T> query) -> T[]!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToArray<T>(this Open.Database.Extensions.MappedQuery<T> query) -> T[]!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToArray<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query) -> T[]!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToArray<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query) -> T[]!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToDictionary<T, TKey, TValue>(this Open.Database.Extensions.MappedCommand<T> query, System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToDictionary<T, TKey, TValue>(this Open.Database.Extensions.MappedQuery<T> query, System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToDictionary<T, TKey, TValue>(this Open.Database.Extensions.MappedQueryWithSkip<T> query, System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToDictionary<T, TKey, TValue>(this Open.Database.Extensions.MappedQueryWithTake<T> query, System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToDictionary<T, TKey>(this Open.Database.Extensions.MappedCommand<T> query, System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToDictionary<T, TKey>(this Open.Database.Extensions.MappedQuery<T> query, System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToDictionary<T, TKey>(this Open.Database.Extensions.MappedQueryWithSkip<T> query, System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToDictionary<T, TKey>(this Open.Database.Extensions.MappedQueryWithTake<T> query, System.Func<T, TKey>! keySelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToHashSet<T>(this Open.Database.Extensions.MappedCommand<T> query, System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToHashSet<T>(this Open.Database.Extensions.MappedQuery<T> query, System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToHashSet<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query, System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToHashSet<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query, System.Collections.Generic.IEqualityComparer<T>? comparer = null) -> System.Collections.Generic.HashSet<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToImmutableArray<T>(this Open.Database.Extensions.MappedCommand<T> query) -> System.Collections.Immutable.ImmutableArray<T>
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToImmutableArray<T>(this Open.Database.Extensions.MappedQuery<T> query) -> System.Collections.Immutable.ImmutableArray<T>
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToImmutableArray<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query) -> System.Collections.Immutable.ImmutableArray<T>
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToImmutableArray<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query) -> System.Collections.Immutable.ImmutableArray<T>
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToList<T>(this Open.Database.Extensions.MappedCommand<T> query) -> System.Collections.Generic.List<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToList<T>(this Open.Database.Extensions.MappedQuery<T> query) -> System.Collections.Generic.List<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToList<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query) -> System.Collections.Generic.List<T>!
+static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.ToList<T>(this Open.Database.Extensions.MappedQueryWithTake<T> query) -> System.Collections.Generic.List<T>!
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Action<System.Data.Common.DbTransaction!>! action, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Action<System.Data.Common.DbTransaction!>! action, System.Threading.CancellationToken cancellationToken) -> void
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Action<System.Data.Common.DbTransaction!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransaction(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Action<System.Data.Common.DbTransaction!>! action) -> void
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Func<System.Data.Common.DbTransaction!, T>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> T
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, T>! action) -> T
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, T>! action, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> T
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransaction<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, T>! action, System.Threading.CancellationToken cancellationToken) -> T
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> bool
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction) -> bool
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> bool
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, bool>! conditionalAction, System.Threading.CancellationToken cancellationToken) -> bool
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> (bool Commit, T Value)
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction) -> (bool Commit, T Value)
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> (bool Commit, T Value)
+static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction, System.Threading.CancellationToken cancellationToken) -> (bool Commit, T Value)

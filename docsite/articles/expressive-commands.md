@@ -181,6 +181,8 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 | `ToListAsync<T>()`, `ToArrayAsync<T>()`, `ToImmutableArrayAsync<T>()`, `FirstAsync<T>()`, `FirstOrDefaultAsync<T>()`, `SingleAsync<T>()`, `SingleOrDefaultAsync<T>()`, `ToHashSetAsync<T>()` | `Map<T>()` then that async terminal (for a synchronous read write `Map<T>().ToList()`); a single value such as `int` reads the first column: [One value per row](mapping.md#one-value-per-row) |
 | `ToChannel<T>()`, `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
+The blocking terminals (`ExecuteNonQuery()`, `ExecuteScalar`, `ExecuteReturn`, `Execute`, `ExecuteReader` and the `Map<T>()` terminals such as `ToList()`) are in the `Open.Database.Extensions.Synchronous` namespace: add `using Open.Database.Extensions.Synchronous;` to call them. The `Async` terminals need no extra `using`.
+
 The terminals that take the type read one column as easily as a model; the token goes last:
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#single_value_async)]
