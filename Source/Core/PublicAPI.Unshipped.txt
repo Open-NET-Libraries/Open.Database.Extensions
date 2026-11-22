@@ -94,3 +94,57 @@
 *REMOVED*static Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs<T>(this System.Threading.Tasks.Task<Open.Database.Extensions.Core.QueryResult<System.Collections.Generic.Queue<object![]!>!>!>! source, Open.Database.Extensions.RowMap<T>? map = null) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IEnumerable<T>!>
 *REMOVED*static Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs<T>(this System.Threading.Tasks.ValueTask<Open.Database.Extensions.Core.QueryResult<System.Collections.Generic.Queue<object![]!>!>!> source) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IEnumerable<T>!>
 *REMOVED*static Open.Database.Extensions.Core.QueryResultExtensions.DequeueAs<T>(this System.Threading.Tasks.ValueTask<Open.Database.Extensions.Core.QueryResult<System.Collections.Generic.Queue<object![]!>!>!> source, Open.Database.Extensions.RowMap<T>? map = null) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IEnumerable<T>!>
+Open.Database.Extensions.DbQuery.Map<T>() -> Open.Database.Extensions.MappedDbQuery<T>!
+Open.Database.Extensions.DbQuery.Map<T>(Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedDbQuery<T>!
+Open.Database.Extensions.DbQuery.Map<T>(System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedDbQuery<T>!
+Open.Database.Extensions.DbQuery<TParams>.Map<T>() -> Open.Database.Extensions.MappedDbQuery<TParams, T>!
+Open.Database.Extensions.DbQuery<TParams>.Map<T>(Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedDbQuery<TParams, T>!
+Open.Database.Extensions.DbQuery<TParams>.Map<T>(System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedDbQuery<TParams, T>!
+Open.Database.Extensions.MappedDbQuery<T>
+Open.Database.Extensions.MappedDbQuery<T>.AddParam(string! name, string? value) -> Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.MappedDbQuery<T>.AddParam<TValue>(string! name, TValue value) -> Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.MappedDbQuery<T>.AddParam<TValue>(TValue value, string? expression = null) -> Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.MappedDbQuery<T>.AddParams<TValues>(TValues values) -> Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.MappedDbQuery<T>.AsyncReads() -> Open.Database.Extensions.MappedDbQuery<T>!
+Open.Database.Extensions.MappedDbQuery<T>.SingleResult() -> Open.Database.Extensions.MappedDbQuery<T>!
+Open.Database.Extensions.MappedDbQuery<T>.UsePool(System.Buffers.ArrayPool<T>! pool, bool clearOnReturn) -> Open.Database.Extensions.MappedDbQuery<T>!
+Open.Database.Extensions.MappedDbQuery<T>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.MappedDbQuery<T>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.MappedDbQuery<T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.MappedDbQuery<T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.MappedDbQuery<TParams, T>
+Open.Database.Extensions.MappedDbQuery<TParams, T>.AddParams(TParams values) -> Open.Database.Extensions.UnboundCall<TParams, T>
+Open.Database.Extensions.MappedDbQuery<TParams, T>.AsyncReads() -> Open.Database.Extensions.MappedDbQuery<TParams, T>!
+Open.Database.Extensions.MappedDbQuery<TParams, T>.SingleResult() -> Open.Database.Extensions.MappedDbQuery<TParams, T>!
+Open.Database.Extensions.MappedDbQuery<TParams, T>.UsePool(System.Buffers.ArrayPool<T>! pool, bool clearOnReturn) -> Open.Database.Extensions.MappedDbQuery<TParams, T>!
+Open.Database.Extensions.MappedDbQuery<TParams, T>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.MappedDbQueryUsing<TParams, T>
+Open.Database.Extensions.MappedDbQuery<TParams, T>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.MappedDbQueryUsing<TParams, T>
+Open.Database.Extensions.MappedDbQuery<TParams, T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.MappedDbQueryUsing<TParams, T>
+Open.Database.Extensions.MappedDbQuery<TParams, T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.MappedDbQueryUsing<TParams, T>
+Open.Database.Extensions.MappedDbQueryExtensions
+Open.Database.Extensions.MappedDbQueryUsing<TParams, T>
+Open.Database.Extensions.MappedDbQueryUsing<TParams, T>.AddParams(TParams values) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.MappedDbQueryUsing<TParams, T>.MappedDbQueryUsing() -> void
+Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.UnboundCall<T>.AddParam(string! name, string? value) -> Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.UnboundCall<T>.AddParam<TValue>(string! name, TValue value) -> Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.UnboundCall<T>.AddParam<TValue>(TValue value, string? expression = null) -> Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.UnboundCall<T>.AddParams<TValues>(TValues values) -> Open.Database.Extensions.UnboundCall<T>
+Open.Database.Extensions.UnboundCall<T>.UnboundCall() -> void
+Open.Database.Extensions.UnboundCall<T>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.UnboundCall<T>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.UnboundCall<T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.UnboundCall<T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.UnboundCall<TParams, T>
+Open.Database.Extensions.UnboundCall<TParams, T>.UnboundCall() -> void
+Open.Database.Extensions.UnboundCall<TParams, T>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.UnboundCall<TParams, T>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.UnboundCall<TParams, T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.UnboundCall<TParams, T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.MappedQuery<T>
+static Open.Database.Extensions.MappedDbQueryExtensions.AddParam<T, TValue>(this Open.Database.Extensions.MappedQuery<T> query, string! name, TValue value) -> Open.Database.Extensions.MappedQuery<T>
+static Open.Database.Extensions.MappedDbQueryExtensions.AddParam<T, TValue>(this Open.Database.Extensions.MappedQuery<T> query, TValue value, string? expression = null) -> Open.Database.Extensions.MappedQuery<T>
+static Open.Database.Extensions.MappedDbQueryExtensions.AddParam<T>(this Open.Database.Extensions.MappedQuery<T> query, string! name, string? value) -> Open.Database.Extensions.MappedQuery<T>
+static Open.Database.Extensions.MappedDbQueryExtensions.AddParams<T, TValues>(this Open.Database.Extensions.MappedQuery<T> query, TValues values) -> Open.Database.Extensions.MappedQuery<T>
+static Open.Database.Extensions.PooledArray<T>.Empty.get -> Open.Database.Extensions.PooledArray<T>!
+static Open.Database.Extensions.PooledBuffer<T>.From(System.ReadOnlySpan<T> rows) -> Open.Database.Extensions.PooledBuffer<T>!
+static Open.Database.Extensions.PooledBuffer<T>.From(System.ReadOnlySpan<T> rows, System.Buffers.ArrayPool<T>! pool, bool clearOnReturn) -> Open.Database.Extensions.PooledBuffer<T>!
