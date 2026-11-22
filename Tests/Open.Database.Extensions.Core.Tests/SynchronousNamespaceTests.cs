@@ -41,11 +41,11 @@ public static class SynchronousNamespaceTests
 
 		NotSupportedException ex = Assert.Throws<NotSupportedException>(() => command.LoadTable());
 		Assert.Contains(typeof(AsyncOnlyReader).ToString(), ex.Message);
-		Assert.Contains("Open.Database.Extensions.Synchronous.IExecuteReaderSync", ex.Message);
-		Assert.Contains("use the async call", ex.Message);
+		Assert.Contains("Use the async call", ex.Message);
+		Assert.DoesNotContain("Sync", ex.Message.Replace("synchronous", "", StringComparison.OrdinalIgnoreCase));
 
 		NotSupportedException tables = Assert.Throws<NotSupportedException>(() => command.LoadTables());
-		Assert.Contains("IExecuteReaderSync", tables.Message);
+		Assert.Contains("Use the async call", tables.Message);
 	}
 
 	[Fact]

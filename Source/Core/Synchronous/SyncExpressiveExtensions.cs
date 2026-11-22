@@ -14,14 +14,14 @@ public static class SyncExpressiveExtensions
 	/// <param name="action">The function that uses the command.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
 	public static void Execute<TCommand>(
-		this IExecuteCommandSync<TCommand> command,
+		this IExecuteCommand<TCommand> command,
 		Action<TCommand> action)
 		where TCommand : IDbCommand
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		command.Execute(action);
+		command.AsSync().Execute(action);
 	}
 
 	/// <summary>
@@ -34,14 +34,14 @@ public static class SyncExpressiveExtensions
 	/// <returns>The value returned from the transform.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
 	public static T Execute<TCommand, T>(
-		this IExecuteCommandSync<TCommand> command,
+		this IExecuteCommand<TCommand> command,
 		Func<TCommand, T> transform)
 		where TCommand : IDbCommand
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.Execute(transform);
+		return command.AsSync().Execute(transform);
 	}
 
 	/// <summary>
@@ -49,12 +49,12 @@ public static class SyncExpressiveExtensions
 	/// </summary>
 	/// <param name="command">The command to execute.</param>
 	/// <returns>The number of rows affected, as the provider reports it.</returns>
-	public static int ExecuteNonQuery(this IExecuteCommandSync command)
+	public static int ExecuteNonQuery(this IExecuteCommand command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.Execute(static cmd => cmd.ExecuteNonQuery());
+		return command.AsSync().Execute(static cmd => cmd.ExecuteNonQuery());
 	}
 
 	/// <summary>
@@ -62,12 +62,12 @@ public static class SyncExpressiveExtensions
 	/// </summary>
 	/// <param name="command">The command to execute.</param>
 	/// <returns>The raw value the provider returns: <see cref="DBNull.Value"/> when the column is NULL and <see langword="null"/> when there is no row, which is how to tell the two apart. Use <c>ExecuteScalar&lt;T&gt;()</c> to convert it.</returns>
-	public static object? ExecuteScalar(this IExecuteCommandSync command)
+	public static object? ExecuteScalar(this IExecuteCommand command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.Execute(static cmd => cmd.ExecuteScalar());
+		return command.AsSync().Execute(static cmd => cmd.ExecuteScalar());
 	}
 
 	/// <summary>
@@ -80,7 +80,7 @@ public static class SyncExpressiveExtensions
 	/// <see langword="default"/> when the result is NULL or there was no row.
 	/// </returns>
 	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range; the conversion's own error is the inner exception.</exception>
-	public static T ExecuteScalar<T>(this IExecuteCommandSync command)
+	public static T ExecuteScalar<T>(this IExecuteCommand command)
 		=> RowMap<T>.ConvertScalar(command.ExecuteScalar());
 
 	/// <summary>
@@ -93,7 +93,7 @@ public static class SyncExpressiveExtensions
 	/// <returns>The value returned from the transform.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
 	public static T ExecuteScalar<T>(
-		this IExecuteCommandSync command,
+		this IExecuteCommand command,
 		Func<object?, T> transform)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
@@ -109,12 +109,12 @@ public static class SyncExpressiveExtensions
 	/// </summary>
 	/// <param name="command">The command to execute.</param>
 	/// <returns>The value from the return parameter.</returns>
-	public static object? ExecuteReturn(this IExecuteCommandSync command)
+	public static object? ExecuteReturn(this IExecuteCommand command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.Execute(static cmd =>
+		return command.AsSync().Execute(static cmd =>
 		{
 			IDbDataParameter returnParameter = cmd.AddReturnParameter();
 			cmd.ExecuteNonQuery();
@@ -133,7 +133,7 @@ public static class SyncExpressiveExtensions
 	/// The value from the return parameter, converted to <typeparamref name="T"/> as <c>Map&lt;T&gt;()</c> converts a column: a value that is already a <typeparamref name="T"/> is returned as is, and <see langword="default"/> when it is NULL.
 	/// </returns>
 	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range.</exception>
-	public static T ExecuteReturn<T>(this IExecuteCommandSync command)
+	public static T ExecuteReturn<T>(this IExecuteCommand command)
 		=> RowMap<T>.ConvertScalar(command.ExecuteReturn());
 
 	/// <summary>
@@ -145,7 +145,7 @@ public static class SyncExpressiveExtensions
 	/// <param name="behavior">The command behavior.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
 	public static void ExecuteReader<TReader>(
-		this IExecuteReaderSync<TReader> command,
+		this IExecuteReader<TReader> command,
 		Action<TReader> handler,
 		CommandBehavior behavior = CommandBehavior.Default)
 		where TReader : IDataReader
@@ -153,7 +153,7 @@ public static class SyncExpressiveExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		command.ExecuteReader(handler, behavior);
+		command.AsSync().ExecuteReader(handler, behavior);
 	}
 
 	/// <summary>
@@ -167,7 +167,7 @@ public static class SyncExpressiveExtensions
 	/// <returns>The value returned from the transform.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
 	public static T ExecuteReader<TReader, T>(
-		this IExecuteReaderSync<TReader> command,
+		this IExecuteReader<TReader> command,
 		Func<TReader, T> transform,
 		CommandBehavior behavior = CommandBehavior.Default)
 		where TReader : IDataReader
@@ -175,7 +175,7 @@ public static class SyncExpressiveExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReader(transform, behavior);
+		return command.AsSync().ExecuteReader(transform, behavior);
 	}
 
 	/// <summary>
@@ -190,7 +190,7 @@ public static class SyncExpressiveExtensions
 	/// <returns>The value returned from the transform.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
 	public static TResult ExecuteReader<TState, TResult>(
-		this IExecuteReaderSync command,
+		this IExecuteReader command,
 		TState state,
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior = CommandBehavior.Default)
@@ -198,7 +198,83 @@ public static class SyncExpressiveExtensions
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		Contract.EndContractBlock();
 
-		return command.ExecuteReader(state, transform, behavior);
+		return command.AsSync().ExecuteReader(state, transform, behavior);
+	}
+
+	/// <summary>
+	/// Executes the command and passes it to the handler.
+	/// </summary>
+	/// <param name="command">The command to execute.</param>
+	/// <param name="action">The function that uses the command.</param>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="action"/> is <see langword="null"/>.</exception>
+	/// <exception cref="NotSupportedException">The command does not support blocking calls; use the async call.</exception>
+	public static void Execute(
+		this IExecuteCommand command,
+		Action<IDbCommand> action)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		Contract.EndContractBlock();
+
+		command.AsSync().Execute(action);
+	}
+
+	/// <summary>
+	/// Executes the command, passes it to the transform and returns the result.
+	/// </summary>
+	/// <typeparam name="T">The type returned.</typeparam>
+	/// <param name="command">The command to execute.</param>
+	/// <param name="transform">The function that uses the command.</param>
+	/// <returns>The value returned from the transform.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="transform"/> is <see langword="null"/>.</exception>
+	/// <exception cref="NotSupportedException">The command does not support blocking calls; use the async call.</exception>
+	public static T Execute<T>(
+		this IExecuteCommand command,
+		Func<IDbCommand, T> transform)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		Contract.EndContractBlock();
+
+		return command.AsSync().Execute(transform);
+	}
+
+	/// <summary>
+	/// Executes a reader and passes it to the handler.
+	/// </summary>
+	/// <param name="command">The command to execute.</param>
+	/// <param name="handler">The function that uses the reader.</param>
+	/// <param name="behavior">The command behavior.</param>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="handler"/> is <see langword="null"/>.</exception>
+	/// <exception cref="NotSupportedException">The command does not support blocking calls; use the async call.</exception>
+	public static void ExecuteReader(
+		this IExecuteReader command,
+		Action<IDataReader> handler,
+		CommandBehavior behavior = CommandBehavior.Default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		Contract.EndContractBlock();
+
+		command.AsSync().ExecuteReader(handler, behavior);
+	}
+
+	/// <summary>
+	/// Executes a reader, passes it to the transform and returns the result.
+	/// </summary>
+	/// <typeparam name="T">The type returned.</typeparam>
+	/// <param name="command">The command to execute.</param>
+	/// <param name="transform">The function that uses the reader.</param>
+	/// <param name="behavior">The command behavior.</param>
+	/// <returns>The value returned from the transform.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="command"/> or <paramref name="transform"/> is <see langword="null"/>.</exception>
+	/// <exception cref="NotSupportedException">The command does not support blocking calls; use the async call.</exception>
+	public static T ExecuteReader<T>(
+		this IExecuteReader command,
+		Func<IDataReader, T> transform,
+		CommandBehavior behavior = CommandBehavior.Default)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		Contract.EndContractBlock();
+
+		return command.AsSync().ExecuteReader(transform, behavior);
 	}
 
 	private static object? ScalarValue(object? value)

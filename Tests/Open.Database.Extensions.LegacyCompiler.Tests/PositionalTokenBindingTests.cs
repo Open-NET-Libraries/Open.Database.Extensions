@@ -114,13 +114,6 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		}
 
 		[Fact]
-		public static void ToHashSetAsync_OnTheInterface_BindsEachRung()
-			=> HashSetLadder<IMappedQuery<int>>("IMappedQuery<Int32>",
-				q => q.ToHashSetAsync(), q => q.ToHashSetAsync(Token), q => q.ToHashSetAsync(default),
-				q => q.ToHashSetAsync(null), q => q.ToHashSetAsync(IntComparer), q => q.ToHashSetAsync(IntComparer, Token),
-				"MappedQueryExtensions");
-
-		[Fact]
 		public static void ToHashSetAsync_OnACommand_BindsEachRung()
 		{
 			const string Token1 = "IExecuteReaderExtensions.ToHashSetAsync(IExecuteReader,CancellationToken)";
@@ -176,13 +169,6 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				e => e.Map<int>().Take(1).ToDictionaryAsync(Key, null), e => e.Map<int>().Take(1).ToDictionaryAsync(Key, IntComparer), e => e.Map<int>().Take(1).ToDictionaryAsync(Key, IntComparer, Token));
 		}
 
-		[Fact]
-		public static void ToDictionaryAsyncByKey_OnTheInterface_BindsEachRung()
-			=> DictionaryLadder<IMappedQuery<int>>("IMappedQuery<Int32>",
-				q => q.ToDictionaryAsync(Key), q => q.ToDictionaryAsync(Key, Token), q => q.ToDictionaryAsync(Key, default),
-				q => q.ToDictionaryAsync(Key, null), q => q.ToDictionaryAsync(Key, IntComparer), q => q.ToDictionaryAsync(Key, IntComparer, Token),
-				"MappedQueryExtensions");
-
 		// ---- ToDictionaryAsync (key and value): (key, value, token) and (key, value, comparer, token) ----
 
 		static void DictionaryValueLadder<T>(string type, Action<T> none, Action<T> token, Action<T> defaulted, Action<T> comparerNull, Action<T> comparer, Action<T> both, string extension = null)
@@ -224,13 +210,6 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				e => e.Map<int>().Take(1).ToDictionaryAsync(Key, Value), e => e.Map<int>().Take(1).ToDictionaryAsync(Key, Value, Token), e => e.Map<int>().Take(1).ToDictionaryAsync(Key, Value, default),
 				e => e.Map<int>().Take(1).ToDictionaryAsync(Key, Value, null), e => e.Map<int>().Take(1).ToDictionaryAsync(Key, Value, IntComparer), e => e.Map<int>().Take(1).ToDictionaryAsync(Key, Value, IntComparer, Token));
 		}
-
-		[Fact]
-		public static void ToDictionaryAsyncByKeyAndValue_OnTheInterface_BindsEachRung()
-			=> DictionaryValueLadder<IMappedQuery<int>>("IMappedQuery<Int32>",
-				q => q.ToDictionaryAsync(Key, Value), q => q.ToDictionaryAsync(Key, Value, Token), q => q.ToDictionaryAsync(Key, Value, default),
-				q => q.ToDictionaryAsync(Key, Value, null), q => q.ToDictionaryAsync(Key, Value, IntComparer), q => q.ToDictionaryAsync(Key, Value, IntComparer, Token),
-				"MappedQueryExtensions");
 
 		// ---- ExecuteReaderAsync: (command, handler, token) and (command, handler, behavior, token) ----
 

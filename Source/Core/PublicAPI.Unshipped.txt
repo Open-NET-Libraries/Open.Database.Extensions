@@ -443,19 +443,6 @@ Open.Database.Extensions.MappedTable<T>.ToDictionaryAsync<TKey>(System.Func<T, T
 Open.Database.Extensions.MappedTable<T>.ToDictionaryAsync<TKey>(System.Func<T, TKey>! keySelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.Dictionary<TKey, T>!>
 Open.Database.Extensions.MappedTable<T>.ToHashSetAsync(System.Collections.Generic.IEqualityComparer<T>? comparer, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
 Open.Database.Extensions.MappedTable<T>.ToHashSetAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
-Open.Database.Extensions.Synchronous.IExecuteCommandSync
-Open.Database.Extensions.Synchronous.IExecuteCommandSync.Execute(System.Action<System.Data.IDbCommand!>! action) -> void
-Open.Database.Extensions.Synchronous.IExecuteCommandSync.Execute<T>(System.Func<System.Data.IDbCommand!, T>! transform) -> T
-Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>
-Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>.Execute(System.Action<TCommand>! action) -> void
-Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>.Execute<T>(System.Func<TCommand, T>! transform) -> T
-Open.Database.Extensions.Synchronous.IExecuteReaderSync
-Open.Database.Extensions.Synchronous.IExecuteReaderSync.ExecuteReader(System.Action<System.Data.IDataReader!>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
-Open.Database.Extensions.Synchronous.IExecuteReaderSync.ExecuteReader<T>(System.Func<System.Data.IDataReader!, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
-Open.Database.Extensions.Synchronous.IExecuteReaderSync.ExecuteReader<TState, TResult>(TState state, System.Func<System.Data.IDataReader!, TState, TResult>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> TResult
-Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>
-Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>.ExecuteReader(System.Action<TReader>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
-Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>.ExecuteReader<T>(System.Func<TReader, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
 Open.Database.Extensions.Synchronous.SyncCommandExtensions
 Open.Database.Extensions.Synchronous.SyncExecuteReaderExtensions
 Open.Database.Extensions.Synchronous.SyncExpressiveExtensions
@@ -515,17 +502,21 @@ static Open.Database.Extensions.Synchronous.SyncCommandExtensions.ToDataTable(th
 static Open.Database.Extensions.Synchronous.SyncCommandExtensions.ToDataTables(this System.Data.IDbCommand! command, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.SequentialAccess) -> System.Collections.Generic.List<System.Data.DataTable!>!
 static Open.Database.Extensions.Synchronous.SyncExecuteReaderExtensions.LoadTable(this Open.Database.Extensions.IExecuteReader! command) -> System.Data.DataTable!
 static Open.Database.Extensions.Synchronous.SyncExecuteReaderExtensions.LoadTables(this Open.Database.Extensions.IExecuteReader! command) -> System.Collections.Generic.List<System.Data.DataTable!>!
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.Execute<TCommand, T>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>! command, System.Func<TCommand, T>! transform) -> T
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.Execute<TCommand>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync<TCommand>! command, System.Action<TCommand>! action) -> void
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteNonQuery(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> int
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TReader, T>(this Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>! command, System.Func<TReader, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TReader>(this Open.Database.Extensions.Synchronous.IExecuteReaderSync<TReader>! command, System.Action<TReader>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TState, TResult>(this Open.Database.Extensions.Synchronous.IExecuteReaderSync! command, TState state, System.Func<System.Data.IDataReader!, TState, TResult>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> TResult
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReturn(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> object?
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReturn<T>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> T
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> object?
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar<T>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command) -> T
-static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar<T>(this Open.Database.Extensions.Synchronous.IExecuteCommandSync! command, System.Func<object?, T>! transform) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.Execute(this Open.Database.Extensions.IExecuteCommand! command, System.Action<System.Data.IDbCommand!>! action) -> void
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.Execute<T>(this Open.Database.Extensions.IExecuteCommand! command, System.Func<System.Data.IDbCommand!, T>! transform) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.Execute<TCommand, T>(this Open.Database.Extensions.IExecuteCommand<TCommand>! command, System.Func<TCommand, T>! transform) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.Execute<TCommand>(this Open.Database.Extensions.IExecuteCommand<TCommand>! command, System.Action<TCommand>! action) -> void
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteNonQuery(this Open.Database.Extensions.IExecuteCommand! command) -> int
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader(this Open.Database.Extensions.IExecuteReader! command, System.Action<System.Data.IDataReader!>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<T>(this Open.Database.Extensions.IExecuteReader! command, System.Func<System.Data.IDataReader!, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TReader, T>(this Open.Database.Extensions.IExecuteReader<TReader>! command, System.Func<TReader, T>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TReader>(this Open.Database.Extensions.IExecuteReader<TReader>! command, System.Action<TReader>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> void
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReader<TState, TResult>(this Open.Database.Extensions.IExecuteReader! command, TState state, System.Func<System.Data.IDataReader!, TState, TResult>! transform, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default) -> TResult
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReturn(this Open.Database.Extensions.IExecuteCommand! command) -> object?
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteReturn<T>(this Open.Database.Extensions.IExecuteCommand! command) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar(this Open.Database.Extensions.IExecuteCommand! command) -> object?
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar<T>(this Open.Database.Extensions.IExecuteCommand! command) -> T
+static Open.Database.Extensions.Synchronous.SyncExpressiveExtensions.ExecuteScalar<T>(this Open.Database.Extensions.IExecuteCommand! command, System.Func<object?, T>! transform) -> T
 static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.First<T>(this Open.Database.Extensions.MappedCommand<T> query) -> T
 static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.First<T>(this Open.Database.Extensions.MappedQuery<T> query) -> T
 static Open.Database.Extensions.Synchronous.SyncMappedViewExtensions.First<T>(this Open.Database.Extensions.MappedQueryWithSkip<T> query) -> T

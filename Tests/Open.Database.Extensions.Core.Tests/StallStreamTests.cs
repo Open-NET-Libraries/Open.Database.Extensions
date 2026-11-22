@@ -10,6 +10,8 @@ public static class StallStreamTests
 	static readonly TimeSpan Long = TimeSpan.FromSeconds(30);
 	static readonly TimeSpan Short = TimeSpan.FromMilliseconds(100);
 
+	static CancellationToken Ct => TestContext.Current.CancellationToken;
+
 	static DbTally Tally(int rows, int failOnRead = 0)
 		=> new(new DbScript
 		{
@@ -46,7 +48,7 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(25);
 
-		List<int> ids = await Collect(Query(tally).Stream(finite ? Long : Timeout.InfiniteTimeSpan));
+		List<int> ids = await Collect(Query(tally).Stream(finite ? Long : Timeout.InfiniteTimeSpan, Ct));
 
 		Assert.Equal(Enumerable.Range(1, 25), ids);
 		Assert.Single(tally.Readers);
@@ -59,7 +61,7 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(0);
 
-		Assert.Empty(await Collect(Query(tally).Stream(Long)));
+		Assert.Empty(await Collect(Query(tally).Stream(Long, Ct)));
 		Assert.Equal(ConnectionState.Closed, tally.Connections[0].State);
 	}
 
@@ -69,7 +71,7 @@ public static class StallStreamTests
 		DbTally tally = Tally(10);
 
 		List<int> ids = await Collect(
-			Query(tally).Skip(2).Take(3).Stream(Long));
+			Query(tally).Skip(2).Take(3).Stream(Long, Ct));
 
 		Assert.Equal([3, 4, 5], ids);
 	}
@@ -80,7 +82,7 @@ public static class StallStreamTests
 		DbTally tally = Tally(4);
 		IMappedQuery<Row> query = Query(tally);
 
-		Assert.Equal([1, 2, 3, 4], await Collect(query.Stream(Long)));
+		Assert.Equal([1, 2, 3, 4], await Collect(query.Stream(Long, Ct)));
 	}
 
 	[Fact]
@@ -88,14 +90,14 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(3);
 
-		IAsyncEnumerable<Row> rows = Query(tally).Stream(Long);
+		IAsyncEnumerable<Row> rows = Query(tally).Stream(Long, Ct);
 
 		// Nothing was created: no connection, no command.
 		Assert.Empty(tally.Connections);
 		Assert.Empty(tally.Commands);
 
-		await using IAsyncEnumerator<Row> first = rows.GetAsyncEnumerator();
-		Assert.Throws<InvalidOperationException>(() => rows.GetAsyncEnumerator());
+		await using IAsyncEnumerator<Row> first = rows.GetAsyncEnumerator(Ct);
+		Assert.Throws<InvalidOperationException>(() => rows.GetAsyncEnumerator(Ct));
 		Assert.Empty(tally.Connections);
 
 		Assert.True(await first.MoveNextAsync());
@@ -112,13 +114,13 @@ public static class StallStreamTests
 		MappedQuery<Row> query = Query(tally);
 
 		Assert.Throws<ArgumentOutOfRangeException>(
-			() => query.Stream(TimeSpan.FromMilliseconds(milliseconds)));
+			() => query.Stream(TimeSpan.FromMilliseconds(milliseconds), Ct));
 	}
 
 	[Fact]
 	public static void ADefaultView_IsRefusedAtTheCall()
 		=> Assert.Throws<InvalidOperationException>(
-			() => default(MappedQuery<Row>).Stream(Long));
+			() => default(MappedQuery<Row>).Stream(Long, Ct));
 
 	[Fact]
 	public static async Task ACanceledToken_StartsNothing()
@@ -139,7 +141,7 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(50);
 		await using IAsyncEnumerator<Row> rows
-			= Query(tally).Stream(Short).GetAsyncEnumerator();
+			= Query(tally).Stream(Short, Ct).GetAsyncEnumerator(Ct);
 
 		Assert.True(await rows.MoveNextAsync());
 		Assert.Equal(1, rows.Current.Id);
@@ -162,7 +164,7 @@ public static class StallStreamTests
 		List<int> ids = [];
 
 		// Each pull is well inside the timeout; the whole read is several times longer than it.
-		await foreach (Row row in Query(tally).Stream(TimeSpan.FromMilliseconds(500)))
+		await foreach (Row row in Query(tally).Stream(TimeSpan.FromMilliseconds(500), Ct))
 		{
 			ids.Add(row.Id);
 			await Task.Delay(100, TestContext.Current.CancellationToken);
@@ -176,7 +178,7 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(50);
 		IAsyncEnumerator<Row> rows
-			= Query(tally).Stream(Short).GetAsyncEnumerator();
+			= Query(tally).Stream(Short, Ct).GetAsyncEnumerator(Ct);
 
 		Assert.True(await rows.MoveNextAsync());
 
@@ -192,7 +194,7 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(50);
 		IAsyncEnumerator<Row> rows
-			= Query(tally).Stream(Timeout.InfiniteTimeSpan).GetAsyncEnumerator();
+			= Query(tally).Stream(Timeout.InfiniteTimeSpan, Ct).GetAsyncEnumerator(Ct);
 
 		Assert.True(await rows.MoveNextAsync());
 		await Task.Delay(300, TestContext.Current.CancellationToken);
@@ -212,7 +214,7 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(100);
 
-		await foreach (Row row in Query(tally).Stream(finite ? Long : Timeout.InfiniteTimeSpan))
+		await foreach (Row row in Query(tally).Stream(finite ? Long : Timeout.InfiniteTimeSpan, Ct))
 		{
 			if (row.Id == 2) break;
 		}
@@ -228,7 +230,7 @@ public static class StallStreamTests
 		DbTally tally = Tally(100);
 		TrackedConnection connection = tally.NewOpenConnection();
 
-		await foreach (Row row in connection.Command("select").Map<Row>().Stream(Long))
+		await foreach (Row row in connection.Command("select").Map<Row>().Stream(Long, Ct))
 		{
 			if (row.Id == 2) break;
 		}
@@ -245,7 +247,7 @@ public static class StallStreamTests
 		using CancellationTokenSource cts = new();
 		await using IAsyncEnumerator<Row> rows = Query(tally)
 			.Stream(TimeSpan.FromSeconds(30), cts.Token)
-			.GetAsyncEnumerator();
+			.GetAsyncEnumerator(Ct);
 
 		Assert.True(await rows.MoveNextAsync());
 		await cts.CancelAsync();
@@ -269,7 +271,7 @@ public static class StallStreamTests
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			async () =>
 			{
-				await foreach (Row row in Query(tally).Stream(finite ? Long : Timeout.InfiniteTimeSpan))
+				await foreach (Row row in Query(tally).Stream(finite ? Long : Timeout.InfiniteTimeSpan, Ct))
 					ids.Add(row.Id);
 			});
 
@@ -286,7 +288,7 @@ public static class StallStreamTests
 		await Assert.ThrowsAsync<ArgumentException>(
 			async () =>
 			{
-				await foreach (Row row in Query(tally).Stream(Long))
+				await foreach (Row row in Query(tally).Stream(Long, Ct))
 					throw new ArgumentException("consumer");
 			});
 
@@ -303,7 +305,7 @@ public static class StallStreamTests
 			using CancellationTokenSource cts = new();
 			IAsyncEnumerator<Row> rows = Query(tally)
 				.Stream(TimeSpan.FromMilliseconds(1), cts.Token)
-				.GetAsyncEnumerator();
+				.GetAsyncEnumerator(Ct);
 
 			try
 			{
@@ -323,5 +325,47 @@ public static class StallStreamTests
 			Assert.Equal(1, tally.Readers[0].Disposes);
 			Assert.Equal(1, tally.Connections[0].Closes);
 		}
+	}
+
+	[Fact]
+	public static async Task TheStallSignal_IsCanceledAtExpiry_AndOnlyThen()
+	{
+		DbTally tally = Tally(50);
+		IAsyncEnumerable<Row> stream = Query(tally).Stream(Short, Ct);
+		IStallSignal signal = Assert.IsAssignableFrom<IStallSignal>(stream);
+
+		await using IAsyncEnumerator<Row> rows = stream.GetAsyncEnumerator(TestContext.Current.CancellationToken);
+		Assert.True(await rows.MoveNextAsync());
+		Assert.False(signal.Expired.IsCancellationRequested);
+
+		await WaitUntil(() => signal.Expired.IsCancellationRequested);
+
+		TimeoutException thrown = await Assert.ThrowsAsync<TimeoutException>(
+			async () => await rows.MoveNextAsync());
+		Assert.Equal(signal.ToException().Message, thrown.Message);
+	}
+
+	[Fact]
+	public static async Task TheStallSignal_NeverFires_WhenTheConsumerKeepsUp()
+	{
+		DbTally tally = Tally(5);
+		IStallSignal signal = Assert.IsAssignableFrom<IStallSignal>(Query(tally).Stream(Long, Ct));
+		IAsyncEnumerable<Row> stream = (IAsyncEnumerable<Row>)signal;
+
+		Assert.Equal(5, (await Collect(stream)).Count);
+		Assert.False(signal.Expired.IsCancellationRequested);
+	}
+
+	[Theory]
+	[InlineData(-1)]
+	[InlineData(3650)]
+	public static void AnInfiniteOrVeryLongTimeout_HasNoSignalToWaitFor(int days)
+	{
+		DbTally tally = Tally(1);
+		TimeSpan timeout = days < 0 ? Timeout.InfiniteTimeSpan : TimeSpan.FromDays(days);
+
+		IStallSignal signal = Assert.IsAssignableFrom<IStallSignal>(Query(tally).Stream(timeout, Ct));
+
+		Assert.False(signal.Expired.CanBeCanceled);
 	}
 }

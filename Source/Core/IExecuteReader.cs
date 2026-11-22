@@ -20,7 +20,8 @@ public interface IExecuteReader
 	/// Asynchronously executes the command and passes the data reader to
 	/// <paramref name="handler"/>.
 	/// </summary>
-	/// <inheritdoc cref="Synchronous.IExecuteReaderSync.ExecuteReader(Action{IDataReader}, CommandBehavior)" path="/param"/>
+	/// <param name="handler">The function that processes the data reader.</param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='behavior']/*" />
 	/// <returns>A task that represents the asynchronous operation.</returns>
 	ValueTask ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default);
 
@@ -41,7 +42,8 @@ public interface IExecuteReader
 	/// Pass a <see langword="static"/> lambda and the state it needs to avoid
 	/// allocating a closure per call.
 	/// </summary>
-	/// <inheritdoc cref="Synchronous.IExecuteReaderSync.ExecuteReader{TState, TResult}(TState, Func{IDataReader, TState, TResult}, CommandBehavior)" path="/*[not(self::summary) and not(self::returns)]"/>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='reader-state-transform']/*" />
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='behavior']/*" />
 	/// <returns>A task that produces the result of <paramref name="transform"/>.</returns>
 	ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default);
 

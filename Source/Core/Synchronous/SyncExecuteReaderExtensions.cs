@@ -1,7 +1,7 @@
 namespace Open.Database.Extensions.Synchronous;
 
 /// <summary>
-/// Blocking extensions on an <see cref="IExecuteReader"/> that implements <see cref="IExecuteReaderSync"/>.
+/// Blocking extensions on an <see cref="IExecuteReader"/>. Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.
 /// </summary>
 public static class SyncExecuteReaderExtensions
 {
