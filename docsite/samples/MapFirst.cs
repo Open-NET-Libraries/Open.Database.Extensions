@@ -86,8 +86,7 @@ public static class MapFirstSamples
 		=> byAuthor
 			.Using(connectionFactory)
 			.AddParam(author)
-			.Skip(1)
-			.Take(1)
+			.Skip(1).Take(1)
 			.ToListAsync(cancellationToken);
 	#endregion
 }

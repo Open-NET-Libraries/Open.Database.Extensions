@@ -233,10 +233,38 @@ public static class MappedDbQueryTests
 		await c.OpenAsync(Ct);
 		using DbTransaction transaction = await c.BeginTransactionAsync(Ct);
 
+		// A row only this transaction can see (and the provider refuses a command that is not enlisted in a pending
+		// transaction), so a read that sees it ran inside the transaction.
+		await using (DbCommand insert = c.CreateCommand())
+		{
+			insert.Transaction = transaction;
+			insert.CommandText = "insert into Posts (Id, AuthorId, Title, Views) values (99, 1, 'inside', 0)";
+			await insert.ExecuteNonQueryAsync(Ct);
+		}
+
 		List<Post> posts = await DbQuery.Text(AllPostsSql).Map<Post>().Using(transaction).ToListAsync(Ct);
 
-		Assert.Equal([1, 2, 3, 4], Ids(posts));
+		Assert.Equal([1, 2, 3, 4, 99], Ids(posts));
 		Assert.Equal(ConnectionState.Open, c.State);
+
+		await transaction.RollbackAsync(Ct);
+		List<Post> afterRollback = await DbQuery.Text(AllPostsSql).Map<Post>().Using(c).ToListAsync(Ct);
+		Assert.Equal([1, 2, 3, 4], Ids(afterRollback));
+	}
+
+	[Fact]
+	public static async Task AFailingRead_ThroughAFactoryOrAPool_StillReleasesWhatTheSourceOwns()
+	{
+		using var db = new Db();
+		var factory = new Factory(db);
+		var pool = new Pool(db);
+		MappedDbQuery<Post> broken = DbQuery.Text("select Id from NoSuchTable").Map<Post>();
+
+		await Assert.ThrowsAsync<SqliteException>(async () => await broken.Using(factory).ToListAsync(Ct));
+		await Assert.ThrowsAsync<SqliteException>(async () => await broken.Using(pool).ToListAsync(Ct));
+
+		Assert.True(Assert.Single(factory.Made).DisposeCalled);
+		Assert.Same(Assert.Single(pool.Taken), Assert.Single(pool.Given));
 	}
 
 	[Fact]
@@ -278,16 +306,22 @@ public static class MappedDbQueryTests
 	}
 
 	[Fact]
-	public static async Task UsePool_OnTheDefinition_RentsFromThePool()
+	public static async Task UsePool_OnTheDefinition_RentsFromThePool_AndEveryArrayGoesBackCleared()
 	{
 		using var db = new Db();
 		using Tracked c = db.Connect();
-		var pool = new CountingPool<Post>();
+		var pool = new CountingPool<Post>
+		{
+			RoundUp = true,
+			IsDirty = static a => a.Any(p => p is not null),
+		};
 
 		List<Post> posts = await DbQuery.Text(AllPostsSql).Map<Post>().UsePool(pool, true).Using(c).ToListAsync(Ct);
 
 		Assert.Equal([1, 2, 3, 4], Ids(posts));
 		Assert.True(pool.Rents > 0);
+		Assert.Equal(pool.Rents, pool.Returns);
+		Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	[Fact]
@@ -313,7 +347,22 @@ public static class MappedDbQueryTests
 	}
 
 	[Fact]
-	public static async Task ParamsBeforeUsing_AreSentInTheOrderAdded_UnderTheirNames()
+	public static void ParamsBeforeUsing_AreReplayedInTheOrderAdded()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+
+		var replayed = (DbQueryCall)PostsMapped.AddParam("authorId", 7).AddParam("views", 50).Using(c).Command;
+		DbQueryCall sameOrder = Posts.Using(c).AddParam("authorId", 7).AddParam("views", 50);
+		DbQueryCall otherOrder = Posts.Using(c).AddParam("views", 50).AddParam("authorId", 7);
+
+		// A call is equal to another only with the same values in the same order.
+		Assert.Equal(sameOrder, replayed);
+		Assert.NotEqual(otherOrder, replayed);
+	}
+
+	[Fact]
+	public static async Task ParamsBeforeUsing_NamedFromTheVariables_GiveTheRows()
 	{
 		using var db = new Db();
 		using Tracked c = db.Connect();
@@ -406,8 +455,14 @@ public static class MappedDbQueryTests
 		using Tracked c = db.Connect();
 		MappedQuery<int> classic = c.Command("select 1").Map<int>();
 
-		Assert.Throws<InvalidOperationException>(() => classic.AddParam("a", 1));
-		Assert.Throws<InvalidOperationException>(() => classic.AddParams(new { a = 1 }));
+		const string expected
+			= "AddParam after Map applies only to a query made from a DbQuery definition; for a command, call AddParam before Map.";
+		int a = 1;
+
+		Assert.Equal(expected, Assert.Throws<InvalidOperationException>(() => classic.AddParam("a", 1)).Message);
+		Assert.Equal(expected, Assert.Throws<InvalidOperationException>(() => classic.AddParam("a", "text")).Message);
+		Assert.Equal(expected, Assert.Throws<InvalidOperationException>(() => classic.AddParam(a)).Message);
+		Assert.Equal(expected, Assert.Throws<InvalidOperationException>(() => classic.AddParams(new { a = 1 })).Message);
 	}
 
 	[Fact]
@@ -510,9 +565,21 @@ public static class MappedDbQueryTests
 		UnboundCall<AuthorViews, Post> typedNone = default;
 		MappedDbQueryUsing<AuthorViews, Post> usingNone = default;
 
+		int authorId = 7;
+
+		// Every member of a default struct says so: none is left to a null reference.
 		Assert.Throws<InvalidOperationException>(() => none.AddParam("authorId", 7));
+		Assert.Throws<InvalidOperationException>(() => none.AddParam("title", "text"));
+		Assert.Throws<InvalidOperationException>(() => none.AddParam(authorId));
+		Assert.Throws<InvalidOperationException>(() => none.AddParams(new { authorId }));
 		Assert.Throws<InvalidOperationException>(() => none.Using((DbConnection)null!));
+		Assert.Throws<InvalidOperationException>(() => none.Using((DbTransaction)null!));
+		Assert.Throws<InvalidOperationException>(() => none.Using((IDbConnectionPool<Tracked>)null!));
+		Assert.Throws<InvalidOperationException>(() => none.Using((IDbConnectionFactory<Tracked>)null!));
 		Assert.Throws<InvalidOperationException>(() => typedNone.Using((DbConnection)null!));
+		Assert.Throws<InvalidOperationException>(() => typedNone.Using((DbTransaction)null!));
+		Assert.Throws<InvalidOperationException>(() => typedNone.Using((IDbConnectionPool<Tracked>)null!));
+		Assert.Throws<InvalidOperationException>(() => typedNone.Using((IDbConnectionFactory<Tracked>)null!));
 		Assert.Throws<InvalidOperationException>(() => usingNone.AddParams(default));
 	}
 

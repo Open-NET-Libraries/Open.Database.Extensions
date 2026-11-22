@@ -91,10 +91,10 @@ public sealed class PooledBuffer<T>
 	/// There is no lock. The fields that are shared each have one rule, given
 	/// on each of them.
 	/// </para>
-	/// </remarks>
-	/// <remarks>
+	/// <para>
 	/// <see langword="null"/> for a buffer made by <see cref="From(ReadOnlySpan{T})"/>: it is done from the
 	/// start, and <c>DisposeCore</c> only reads this when it is not.
+	/// </para>
 	/// </remarks>
 	readonly ChunkProducer<T>? _producer;
 	/// <summary>The producer's task: it completes when the producer has exited.</summary>
@@ -202,18 +202,33 @@ public sealed class PooledBuffer<T>
 	/// <remarks>
 	/// For a test that fakes the code that returns a buffer, and for any code that needs a buffer without a database:
 	/// one array is rented from <see cref="ArrayPool{T}.Shared"/> and the rows are copied into it.
-	/// Nothing runs in the background. <see cref="Items"/> is complete at once, and <see cref="Dispose"/> returns
-	/// the array. Rows that are references are cleared when it goes back, as for a read.
+	/// Nothing runs in the background and <see cref="Items"/> is complete at once.
+	/// Disposing the buffer sends the array back to the pool: at once for a small array, and for an array of
+	/// 128 KB or more of rows that must be cleared, through the recycle bin, so it reaches the pool shortly after.
+	/// Rows that are references are cleared when it goes back, as for a read.
 	/// No rows give <see cref="PooledArray{T}.Empty"/> and rent nothing.
 	/// </remarks>
 	/// <param name="rows">The rows. They are copied: the buffer does not keep this span.</param>
 	/// <returns>The finished buffer.</returns>
 	/// <exception cref="ArgumentOutOfRangeException">There are more than 2^30 rows.</exception>
 	public static PooledBuffer<T> From(ReadOnlySpan<T> rows)
-		=> From(rows, ArrayPool<T>.Shared, null);
+	{
+		if (rows.Length > MaxFromRows) throw TooManyRows(rows.Length);
+		Contract.EndContractBlock();
+
+		// This entry picks the pool and the clearing: the shared pool, and the app-wide default.
+		return Create(
+			rows,
+			new(ArrayPool<T>.Shared, null, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromBytes));
+	}
 
 	/// <summary>Makes a finished buffer from rows you already have, with an array from a pool you choose.</summary>
-	/// <inheritdoc cref="From(ReadOnlySpan{T})" path="/remarks"/>
+	/// <remarks>
+	/// The same as <see cref="From(ReadOnlySpan{T})"/>, except that the one array is rented from
+	/// <paramref name="pool"/> and goes back to it when the buffer is disposed.
+	/// Rows that are references are always cleared when it goes back; other rows are cleared when
+	/// <paramref name="clearOnReturn"/> is <see langword="true"/>.
+	/// </remarks>
 	/// <param name="rows">The rows. They are copied: the buffer does not keep this span.</param>
 	/// <param name="pool">The pool the array comes from and goes back to.</param>
 	/// <param name="clearOnReturn">Whether the rows are cleared when the array goes back.</param>
@@ -221,13 +236,26 @@ public sealed class PooledBuffer<T>
 	/// <exception cref="ArgumentNullException"><paramref name="pool"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentOutOfRangeException">There are more than 2^30 rows.</exception>
 	public static PooledBuffer<T> From(ReadOnlySpan<T> rows, ArrayPool<T> pool, bool clearOnReturn)
-		=> From(rows, pool, (bool?)clearOnReturn);
-
-	static PooledBuffer<T> From(ReadOnlySpan<T> rows, ArrayPool<T> pool, bool? clearOnReturn)
 	{
 		if (pool is null) throw new ArgumentNullException(nameof(pool));
-		if (rows.Length > 1 << 30) throw new ArgumentOutOfRangeException(nameof(rows), rows.Length, "A buffer holds at most 2^30 rows from a span.");
+		if (rows.Length > MaxFromRows) throw TooManyRows(rows.Length);
 		Contract.EndContractBlock();
+
+		return Create(
+			rows,
+			new(pool, clearOnReturn, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromBytes));
+	}
+
+	/// <summary>The most rows <c>From</c> takes: its one array is a first chunk, which a buffer holds as a power of two.</summary>
+	const int MaxFromRows = 1 << 30;
+
+	static ArgumentOutOfRangeException TooManyRows(int count)
+		=> new("rows", count, "A buffer holds at most 2^30 rows from a span.");
+
+	/// <summary>Builds the buffer for <c>From</c>; the entry has checked the arguments and chosen the configuration.</summary>
+	static PooledBuffer<T> Create(ReadOnlySpan<T> rows, ChunkConfig<T> config)
+	{
+		System.Diagnostics.Debug.Assert(rows.Length <= MaxFromRows);
 
 		if (rows.IsEmpty) return new([], 0, 1);
 
@@ -235,7 +263,6 @@ public sealed class PooledBuffer<T>
 		int firstRows = 1;
 		while (firstRows < rows.Length) firstRows <<= 1;
 
-		ChunkConfig<T> config = new(pool, clearOnReturn, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromBytes);
 		T[] array = config.Rent(firstRows);
 		rows.CopyTo(array);
 		return new([config.Seal(array, rows.Length)], rows.Length, firstRows);
@@ -262,6 +289,8 @@ public sealed class PooledBuffer<T>
 	/// completes, the task can still complete successfully; every
 	/// member of the view then throws
 	/// <see cref="ObjectDisposedException"/>.
+	/// A read that found no rows completes with <see cref="PooledArray{T}.Empty"/>, which holds nothing and
+	/// keeps working after the buffer is disposed.
 	/// </remarks>
 	/// <exception cref="ObjectDisposedException">
 	/// The buffer is disposed.

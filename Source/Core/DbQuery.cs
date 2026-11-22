@@ -157,7 +157,8 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// The result is immutable and has no connection yet, so it can be held in a static field;
 	/// give it a source with <c>Using</c> and read it with a terminal.
-	/// The map is <see cref="RowMap{T}.Default"/>, shared, so its compiled reader is built once.
+	/// A single value such as <see cref="int"/> or <see cref="string"/> is read from the first column.
+	/// Any other type is read through <see cref="RowMap{T}.Default"/>, shared, so its compiled reader is built once.
 	/// </remarks>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <returns>The mapped definition.</returns>
@@ -168,14 +169,14 @@ public sealed class DbQuery : IEquatable<DbQuery>
 
 	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped definition.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does.</param>
+	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload and does not compile).</param>
 	/// <returns>The mapped definition. It keeps <paramref name="map"/>, so its compiled reader is shared by every call.</returns>
 	public MappedDbQuery<T> Map<T>(RowMap<T>? map)
 		=> map is null ? Map<T>() : new(this, map);
 
 	/// <summary>Maps each row with a selector, and returns the mapped definition.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="selector">Called for each row.</param>
+	/// <param name="selector">Called for each row, from any thread and by overlapping calls of the same definition, so it must be safe for concurrent use.</param>
 	/// <returns>The mapped definition.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
 	public MappedDbQuery<T> Map<T>(Func<IDataRecord, T> selector)
@@ -325,14 +326,14 @@ public sealed class DbQuery<TParams>
 
 	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped definition.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does.</param>
+	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload and does not compile).</param>
 	/// <returns>The mapped definition, whose parameters are the struct.</returns>
 	public MappedDbQuery<TParams, T> Map<T>(RowMap<T>? map)
 		=> new(_definition.Map(map));
 
 	/// <summary>Maps each row with a selector, and returns the mapped definition.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="selector">Called for each row.</param>
+	/// <param name="selector">Called for each row, from any thread and by overlapping calls of the same definition, so it must be safe for concurrent use.</param>
 	/// <returns>The mapped definition, whose parameters are the struct.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
 	public MappedDbQuery<TParams, T> Map<T>(Func<IDataRecord, T> selector)

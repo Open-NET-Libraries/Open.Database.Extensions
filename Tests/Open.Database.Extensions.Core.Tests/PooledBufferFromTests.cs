@@ -142,7 +142,7 @@ public static class PooledBufferFromTests
 	}
 
 	[Fact]
-	public static async Task Empty_IsTheSameInstance_HoldsNothing_AndNeedsNoDispose()
+	public static void Empty_IsTheSameInstance_HoldsNothing_AndNeedsNoDispose()
 	{
 		PooledArray<string> empty = PooledArray<string>.Empty;
 
@@ -157,7 +157,6 @@ public static class PooledBufferFromTests
 		empty.Dispose();
 		Assert.Empty(empty);
 		Assert.Same(empty, PooledArray<string>.Empty);
-		await Task.CompletedTask;
 	}
 
 	[Fact]
@@ -189,6 +188,23 @@ public static class PooledBufferFromTests
 
 		Assert.Same(PooledArray<int>.Empty, rows);
 		Assert.Empty(pool.Rented);
+	}
+
+	// The v11 rule: a read of no rows completes Items with the shared empty view, so it is not cut off by a dispose.
+	[Fact]
+	public static async Task AZeroRowRead_AfterTheBufferIsDisposed_StillGivesTheEmptyView_NotAThrow()
+	{
+		using SqliteConnection c = new("Data Source=:memory:");
+		await c.OpenAsync(Ct);
+
+		PooledBuffer<int> buffer = DbQuery.Text("select 1 where 0").Map<int>().Using(c).ToAsyncBuffer(Ct);
+		PooledArray<int> rows = await buffer.Items;
+
+		await buffer.DisposeAsync();
+
+		Assert.Same(PooledArray<int>.Empty, rows);
+		Assert.Empty(rows);
+		Assert.Empty(rows.ToArray());
 	}
 
 	[Fact]

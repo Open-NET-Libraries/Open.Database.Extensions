@@ -27,6 +27,8 @@ namespace Open.Database.Extensions;
 /// <see cref="ObjectDisposedException"/>, an enumeration in
 /// progress included, except <see cref="Dispose"/>, which does
 /// nothing again and does not throw.
+/// The one exception is the view of a read that found no rows, <see cref="Empty"/>:
+/// it holds nothing and has no buffer to dispose, so its members work after the buffer that gave it is disposed.
 /// It is not safe to use while another thread disposes it.
 /// </para>
 /// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />

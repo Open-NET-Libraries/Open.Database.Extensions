@@ -249,6 +249,66 @@ public static class DbQueryAllocationTests
 #endif
 	}
 
+	// Takes a value without boxing it (assigning a struct to an object would box it and be counted).
+	static int _sunk;
+
+	[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+	static void Sink<TValue>(TValue value)
+	{
+		if (value is null) _sunk++;
+	}
+
+	// Where each byte of the map-first path goes, one hop at a time (what the owner asked to see before any change).
+	// Bound so far in this file: the box after Using is the DbQueryUsing struct (a definition and a source, 16 B) boxed
+	// into the IExecuteReader the MappedQuery view holds (16 B of object header on top: 32 B); the classic chain never
+	// boxes it because AddParam is called on the struct itself. A ParamStep is one class per value added before Using.
+	[Fact]
+	public static void EachHopOfTheMapFirstPath_HasItsOwnMeasuredCost()
+	{
+#if DEBUG
+		Assert.Skip("Release only.");
+#else
+		using DbConnection c = NewConnection();
+		int p0 = VA;
+		long p1 = VB;
+
+		UnboundCall<Row> held0 = M2.AddParam("p0", p0);
+		UnboundCall<Row> held01 = M2.AddParam("p0", p0).AddParam("p1", p1);
+		DbQueryCall classicNode = Q2.Using(c).AddParam("p0", p0);
+
+		long classicBind = BytesPerCall(() => Sink(Q2.Using(c)));
+		long classicNodeFirst = BytesPerCall(() => Sink(Q2.Using(c).AddParam("p0", p0)));
+		long classicNodeSecond = BytesPerCall(() => Sink(classicNode.AddParam("p1", p1)));
+
+		long box = BytesPerCall(() => Sink(M2.Using(c)));
+		long boxThenNode = BytesPerCall(() => Sink(M2.Using(c).AddParam("p0", p0)));
+		long stepInt = BytesPerCall(() => Sink(M2.AddParam("p0", p0)));
+		long stepLong = BytesPerCall(() => Sink(M2.AddParam("p1", p1)));
+		long stepSecond = BytesPerCall(() => Sink(held0.AddParam("p1", p1)));
+		long replayOne = BytesPerCall(() => Sink(held0.Using(c)));
+		long replayTwo = BytesPerCall(() => Sink(held01.Using(c)));
+
+		Report($"hops: classic Using {classicBind} B, classic first node {classicNodeFirst} B, classic second node {classicNodeSecond} B; "
+			+ $"map-first Using (the box) {box} B, Using then first node {boxThenNode} B, "
+			+ $"step for an int {stepInt} B, for a long {stepLong} B, a second step {stepSecond} B, "
+			+ $"Using on one held value {replayOne} B, on two {replayTwo} B");
+		// The classic chain binds a source for nothing (the struct is used where it is), and a node costs 40 to 48 B.
+		Assert.Equal(0, classicBind);
+
+		// The box: the DbQueryUsing struct (a definition and a source) boxed into the IExecuteReader the view holds.
+		Assert.Equal(32, box);
+		Assert.Equal(box + classicNodeFirst, boxThenNode);
+
+		// A held value is one step of 40 to 48 B; replaying them at Using builds the same nodes as the classic chain plus
+		// the stack the replay uses to walk the steps oldest first (88 B, whatever the number of values up to four).
+		Assert.InRange(stepInt, 40, 48);
+		Assert.InRange(stepLong, 40, 48);
+		Assert.InRange(stepSecond, 40, 48);
+		Assert.Equal(classicNodeFirst + 88, replayOne);
+		Assert.Equal(classicNodeFirst + classicNodeSecond + 88, replayTwo);
+#endif
+	}
+
 	// One value: the single node (48 B for the first, the one a bound query
 	// returns) is the whole difference from hand-written code.
 	[Fact]

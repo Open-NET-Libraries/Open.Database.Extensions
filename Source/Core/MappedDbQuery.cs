@@ -22,9 +22,10 @@ namespace Open.Database.Extensions;
 /// options of this definition applied, so every terminal, <c>Skip</c> and <c>Take</c> are the ones the view has.
 /// </para>
 /// <para>
-/// Fixed by the definition: the map, <see cref="SingleResult"/>, <see cref="AsyncReads"/>,
+/// Set on the definition, for every query made from it: the map, <see cref="SingleResult"/>, <see cref="AsyncReads"/>,
 /// <see cref="UsePool(ArrayPool{T}, bool)"/> and (on the <see cref="DbQuery"/> before <c>Map</c>)
-/// <see cref="DbQuery.SetTimeout(ushort)"/>. Chosen per call: the parameters, <c>Skip</c> and <c>Take</c>.
+/// <see cref="DbQuery.SetTimeout(ushort)"/>. A query made from it can still apply <c>SingleResult</c>, <c>AsyncReads</c> and
+/// <c>UsePool</c> for one call. Chosen per call: the parameters, <c>Skip</c> and <c>Take</c>.
 /// </para>
 /// </remarks>
 /// <typeparam name="T">The type each row is mapped to.</typeparam>
@@ -414,8 +415,7 @@ enum ParamKind
 /// and replayed on the source's <see cref="DbQueryUsing"/> when <c>Using</c> gives it one.
 /// </summary>
 /// <remarks>
-/// Internal, so a later unit of work can hold the same unbound call and bind it to a
-/// <see cref="DbTransaction"/>, one of the sources <c>Using</c> takes, without a new public member.
+/// Internal: the steps are an implementation detail of <see cref="UnboundCall{T}"/>, so no public member exposes them.
 /// </remarks>
 internal abstract class ParamStep(ParamStep? previous)
 {
@@ -488,12 +488,12 @@ internal sealed class ParamStep<TValue>(ParamStep? previous, string? name, TValu
 public static class MappedDbQueryExtensions
 {
 	const string NotFromADefinition
-		= "AddParam applies to a query made from a DbQuery definition; add the parameter to the command before Map.";
+		= "AddParam after Map applies only to a query made from a DbQuery definition; for a command, call AddParam before Map.";
 
 	/// <summary>Adds a named parameter to the query.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <typeparam name="TValue">The type of the value.</typeparam>
-	/// <param name="query">The query, made by <c>Using</c> on a <see cref="MappedDbQuery{T}"/>.</param>
+	/// <param name="query">The query, made from a <see cref="DbQuery"/> definition: by <c>Using</c> on a <see cref="MappedDbQuery{T}"/>, or after an earlier <c>AddParam</c>.</param>
 	/// <param name="name">The name of the parameter, with or without its prefix.</param>
 	/// <param name="value">The value.</param>
 	/// <returns>A new query with the parameter; <paramref name="query"/> is not changed.</returns>
@@ -519,7 +519,7 @@ public static class MappedDbQueryExtensions
 	/// <summary>Adds a parameter whose name is derived from the argument's expression.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <typeparam name="TValue">The type of the value.</typeparam>
-	/// <param name="query">The query, made by <c>Using</c> on a <see cref="MappedDbQuery{T}"/>.</param>
+	/// <param name="query">The query, made from a <see cref="DbQuery"/> definition: by <c>Using</c> on a <see cref="MappedDbQuery{T}"/>, or after an earlier <c>AddParam</c>.</param>
 	/// <param name="value">The value.</param>
 	/// <param name="expression">The text of the argument, supplied by the compiler. Do not pass it.</param>
 	/// <returns>A new query with the parameter; <paramref name="query"/> is not changed.</returns>
@@ -540,7 +540,7 @@ public static class MappedDbQueryExtensions
 	/// <summary>Adds the members of an object as parameters.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <typeparam name="TValues">The type of the object.</typeparam>
-	/// <param name="query">The query, made by <c>Using</c> on a <see cref="MappedDbQuery{T}"/>.</param>
+	/// <param name="query">The query, made from a <see cref="DbQuery"/> definition: by <c>Using</c> on a <see cref="MappedDbQuery{T}"/>, or after an earlier <c>AddParam</c>.</param>
 	/// <param name="values">The object whose members are the parameters.</param>
 	/// <returns>A new query with the parameters; <paramref name="query"/> is not changed.</returns>
 	/// <exception cref="InvalidOperationException"><paramref name="query"/> was not made from a <see cref="DbQuery"/> definition.</exception>
