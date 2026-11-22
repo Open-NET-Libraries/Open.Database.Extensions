@@ -25,7 +25,7 @@ public static partial class SyntheticChecks
 	{
 		if (RealProviderParams.Get(RealProviderParams.ScratchVariable) is null && RealProviderParams.Get(RealProviderParams.SqliteDirVariable) is null)
 		{
-			Console.WriteLine("--verify-rp: pass --scratch <folder> (the LocalDB database files, and the SQLite file unless --sqlite-dir is given), a folder not on drive C:.");
+			Console.WriteLine("--verify-rp: pass --scratch <folder> (the LocalDB database files, and the SQLite file unless --sqlite-dir is given).");
 			return 2;
 		}
 

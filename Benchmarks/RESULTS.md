@@ -153,7 +153,7 @@ A 12-property model read from a result set whose every column is named different
 
 Machine and protocol for the timings: AMD Ryzen 9 7900 (24 logical cores), Windows 10 22H2, .NET SDK 10.0.403, BenchmarkDotNet 0.15.8, Release, in-process, `--warmupCount 5 --iterationCount 12 --launchCount 1`, normal priority, one benchmark process at a time with the build servers shut down and nothing else running.
 Total CPU was sampled for 15 s (1 s samples) before and after each class: before 6.9% (in-memory), 9.8% (LocalDB), 7.3% (lazy); after 5.3%, 9.1%, 5.7%. All are under the 12% threshold set for calling a class noisy, so none is labelled noisy; single-second peaks reached 15.9%. The samples are of the machine around each class, not during it.
-Reproduce: `dotnet <benchmarks dll> --filter "*.RenamedColumnBenchmarks.*" --warmupCount 5 --iterationCount 12 --launchCount 1 --inprocess` (in-memory), `"*.SqlServerRenamedColumnBenchmarks.*"` (LocalDB), `"*.LazyMapBenchmarks.*"`, and `--map-memory`.
+Reproduce: `dotnet <benchmarks dll> --filter "*.RenamedColumnBenchmarks.*" --warmupCount 5 --iterationCount 12 --launchCount 1 --inprocess` (in-memory), `"*.LazyMapBenchmarks.*"`, and `--map-memory`. The LocalDB variant of this comparison (`SqlServerRenamedColumnBenchmarks`) was removed; `RealProviderBenchmarks` covers LocalDB.
 
 **In-memory provider: time per call (ns)**
 

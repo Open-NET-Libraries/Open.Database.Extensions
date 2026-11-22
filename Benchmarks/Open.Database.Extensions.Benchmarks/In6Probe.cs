@@ -92,7 +92,7 @@ public static partial class In6Probe
 
 		  --in6 --help                 this text
 		  --in6 --dry-run              print the scenarios, the number of operations and the settings; opens no connection, creates nothing
-		  --in6 --scratch <folder>     run everything; (LocalDB mode and SQLite) the folder (never on drive C:) holds the probe's SQL Server database files (ode_in6_<guid>.mdf and _log.ldf) and the SQLite file; all deleted afterwards
+		  --in6 --scratch <folder>     run everything; (LocalDB mode and SQLite) the folder holds the probe's SQL Server database files (ode_in6_<guid>.mdf and _log.ldf) and the SQLite file; all deleted afterwards
 		  --only sqlserver,sqlite,calibration   run only these parts (default: all three; every part needs --scratch, except the SQL Server parts with --sql-tcp)
 		  --pressure auto|N|off|both   auto or N: K busy thread-pool items for the "pressure on" cells (default auto = processor count x 2); off: no pressure cells for any scenario; both (default): pressure off and on
 		  --rows 10000 --warmup 5 --ops 20      rows per scenario, warm-up and measured operations per cell (per path)
@@ -153,7 +153,7 @@ public static partial class In6Probe
 
 		if (s.Scratch is null && (s.Only.Contains("sqlite") || (!s.Tcp && (s.Only.Contains("sqlserver") || s.Only.Contains("calibration")))))
 		{
-			Console.WriteLine("--in6: --scratch <folder> is required (a folder not on drive C:) for the SQLite file and, in LocalDB mode, for the SQL Server database files. Only --sql-tcp with --only sqlserver,calibration can do without it.");
+			Console.WriteLine("--in6: --scratch <folder> is required for the SQLite file and, in LocalDB mode, for the SQL Server database files. Only --sql-tcp with --only sqlserver,calibration can do without it.");
 			return 2;
 		}
 
@@ -291,7 +291,6 @@ public static partial class In6Probe
 		if (s.Scratch is not null)
 		{
 			string full = Path.GetFullPath(s.Scratch);
-			if (full.StartsWith("C:", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("--scratch must not be on drive C:");
 			s.Scratch = full;
 		}
 
@@ -591,7 +590,7 @@ public static partial class In6Probe
 	}
 
 	// ---- SQL Server ----------------------------------------------------------------
-	// LocalDB mode: a dedicated database whose data and log files live in the scratch folder (never on drive C:, never tempdb, never the default location):
+	// LocalDB mode: a dedicated database whose data and log files live in the scratch folder (never tempdb, never the default location):
 	// initial 128 MB data (growth 64 MB) and 64 MB log (growth 64 MB), so the 80 MB big table fits without many growth events.
 	// TCP mode (--sql-tcp): the same database name and ordinary tables, created WITHOUT a FILENAME clause, so its files are in the server's own default
 	// data location (inside the container); the server is removed by whoever started it.
