@@ -51,7 +51,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			return found;
 		}
 
-		static readonly RowMap<Item> Declared = new RowMap<Item>(new KeyValuePair<string, string>("Id", "id"));
+		static readonly RowMap<Item> Declared = new RowMap<Item>((System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>)new[] { new KeyValuePair<string, string>("Id", "id") });
 
 		[Fact]
 		public static void ADeclaredMapAndANewMap_BindTheMapOverload_OnEveryReceiver()
@@ -63,10 +63,10 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Assert.Equal(map, Bound((Func<IDbCommand, object>)(r => r.Map(Declared))));
 			Assert.Equal(map, Bound((Func<DataTable, object>)(r => r.Map(Declared))));
 
-			Assert.Equal(map, Bound((Func<IExecuteReader, object>)(r => r.Map(new RowMap<Item>(new KeyValuePair<string, string>("Id", "a"))))));
-			Assert.Equal(map, Bound((Func<IDataReader, object>)(r => r.Map(new RowMap<Item>(new KeyValuePair<string, string>("Id", "a"))))));
-			Assert.Equal(map, Bound((Func<IDbCommand, object>)(r => r.Map(new RowMap<Item>(new KeyValuePair<string, string>("Id", "a"))))));
-			Assert.Equal(map, Bound((Func<DataTable, object>)(r => r.Map(new RowMap<Item>(new KeyValuePair<string, string>("Id", "a"))))));
+			Assert.Equal(map, Bound((Func<IExecuteReader, object>)(r => r.Map(new RowMap<Item>((System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>)new[] { new KeyValuePair<string, string>("Id", "a") })))));
+			Assert.Equal(map, Bound((Func<IDataReader, object>)(r => r.Map(new RowMap<Item>((System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>)new[] { new KeyValuePair<string, string>("Id", "a") })))));
+			Assert.Equal(map, Bound((Func<IDbCommand, object>)(r => r.Map(new RowMap<Item>((System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>)new[] { new KeyValuePair<string, string>("Id", "a") })))));
+			Assert.Equal(map, Bound((Func<DataTable, object>)(r => r.Map(new RowMap<Item>((System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>)new[] { new KeyValuePair<string, string>("Id", "a") })))));
 
 			Assert.Equal(map, Bound((Func<IExecuteReader, object>)(r => r.Map((RowMap<Item>)null))));
 			Assert.Equal(map, Bound((Func<IDataReader, object>)(r => r.Map((RowMap<Item>)null))));

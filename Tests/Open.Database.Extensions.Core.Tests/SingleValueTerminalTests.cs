@@ -53,7 +53,7 @@ public static class SingleValueTerminalTests
 		Assert.Equal([expected], cmd.Map<T>().ToImmutableArray());
 		Assert.Equal(
 			[expected],
-			cmd.ToListAsync<T>(Ct).AsTask().GetAwaiter().GetResult());
+			cmd.Map<T>().ToListAsync(Ct).AsTask().GetAwaiter().GetResult());
 	}
 
 	// ---- 1. every single-value type, from a column of its own type ----
@@ -242,7 +242,7 @@ public static class SingleValueTerminalTests
 		Assert.Equal(0, cmd.Map<int>().FirstOrDefault());
 		Assert.Null(cmd.Map<int?>().FirstOrDefault());
 		Assert.Equal(0, cmd.Map<int>().SingleOrDefault());
-		Assert.Empty(Block(cmd.ToListAsync<int>(Ct)));
+		Assert.Empty(Block(cmd.Map<int>().ToListAsync(Ct)));
 	}
 
 	[Fact]
@@ -268,82 +268,7 @@ public static class SingleValueTerminalTests
 				.ToHashSet(StringComparer.OrdinalIgnoreCase));
 	}
 
-	// ---- 6. parity with Map<T>() for every terminal,
-	// a single value and a row model ----
-
 	static void Drop<T>(ValueTask<T> _) { }
-
-	static void Parity<T>(FakeExecuteReader cmd)
-	{
-		IEqualityComparer<T> comparer = EqualityComparer<T>.Default;
-		Assert.Equal(
-			cmd.Map<T>().ToListAsync(Ct).AsTask().GetAwaiter().GetResult(),
-			cmd.ToListAsync<T>(Ct).AsTask().GetAwaiter().GetResult());
-		Assert.Equal(
-			cmd.Map<T>().ToArrayAsync(Ct).AsTask().GetAwaiter().GetResult(),
-			cmd.ToArrayAsync<T>(Ct).AsTask().GetAwaiter().GetResult());
-		Assert.Equal(
-			cmd
-				.Map<T>()
-				.ToImmutableArrayAsync(Ct)
-				.AsTask()
-				.GetAwaiter()
-				.GetResult(),
-			cmd.ToImmutableArrayAsync<T>(Ct).AsTask().GetAwaiter().GetResult());
-		Assert.Equal(
-			cmd
-				.Map<T>()
-				.FirstOrDefaultAsync(Ct)
-				.AsTask()
-				.GetAwaiter()
-				.GetResult(),
-			cmd.FirstOrDefaultAsync<T>(Ct).AsTask().GetAwaiter().GetResult());
-		Assert.Equal(
-			cmd
-				.Map<T>()
-				.SingleOrDefaultAsync(Ct)
-				.AsTask()
-				.GetAwaiter()
-				.GetResult(),
-			cmd.SingleOrDefaultAsync<T>(Ct).AsTask().GetAwaiter().GetResult());
-		Assert.True(
-			cmd
-				.Map<T>()
-				.ToHashSetAsync(comparer, Ct)
-				.AsTask()
-				.GetAwaiter()
-				.GetResult()
-				.SetEquals(
-					cmd
-						.ToHashSetAsync(comparer, Ct)
-						.AsTask()
-						.GetAwaiter()
-						.GetResult()));
-	}
-
-	[Fact]
-	public static void EveryTerminal_EqualsItsMapTwin()
-	{
-		ImmutableArray<ColumnDef> columns = [
-			("Id", typeof(int)),
-			("Title", typeof(string))
-		];
-		FakeExecuteReader one = Cmd(columns, [1, "a"]); // SingleOrDefault needs one row
-		FakeExecuteReader many = Cmd(columns, [1, "a"], [2, null], [3, "c"]);
-
-		Parity<int>(one);
-
-		Parity<int?>(one);
-		Parity<string>(one);
-		Parity<PostRow>(one);
-		Assert.Equal(
-			[
-				new() { Id = 1, Title = "a" },
-				new() { Id = 2 },
-				new() { Id = 3, Title = "c" }
-			],
-			many.Map<PostRow>().ToList());
-	}
 
 	// ---- 7. a row model maps by name;
 	// a type that cannot be mapped fails at the call ----
@@ -381,17 +306,17 @@ public static class SingleValueTerminalTests
 		Assert.Throws<InvalidOperationException>(
 			() => cmd.Map<IShapeless>().ToHashSet());
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(cmd.ToListAsync<IShapeless>(Ct)));
+			() => Drop(cmd.Map<IShapeless>().ToListAsync(Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(cmd.ToArrayAsync<IShapeless>(Ct)));
+			() => Drop(cmd.Map<IShapeless>().ToArrayAsync(Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(cmd.ToImmutableArrayAsync<IShapeless>(Ct)));
+			() => Drop(cmd.Map<IShapeless>().ToImmutableArrayAsync(Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(cmd.FirstOrDefaultAsync<IShapeless>(Ct)));
+			() => Drop(cmd.Map<IShapeless>().FirstOrDefaultAsync(Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(cmd.SingleOrDefaultAsync<IShapeless>(Ct)));
+			() => Drop(cmd.Map<IShapeless>().SingleOrDefaultAsync(Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(cmd.ToHashSetAsync<IShapeless>(cancellationToken: Ct)));
+			() => Drop(cmd.Map<IShapeless>().ToHashSetAsync(cancellationToken: Ct)));
 		Assert.Equal(0, cmd.ExecuteCount);
 	}
 
@@ -407,7 +332,7 @@ public static class SingleValueTerminalTests
 		Assert.Equal(
 			"command",
 			Assert.Throws<ArgumentNullException>(
-					() => Drop(none!.ToListAsync<PostRow>(Ct)))
+					() => Drop(none!.Map<PostRow>().ToListAsync(Ct)))
 				.ParamName);
 		Assert.Equal(
 			"command",
@@ -465,16 +390,16 @@ public static class SingleValueTerminalTests
 		CancellationToken token)
 		=> terminal switch
 		{
-			"ToListAsync" => cmd.ToListAsync<int>(token).AsTask(),
-			"ToArrayAsync" => cmd.ToArrayAsync<int>(token).AsTask(),
+			"ToListAsync" => cmd.Map<int>().ToListAsync(token).AsTask(),
+			"ToArrayAsync" => cmd.Map<int>().ToArrayAsync(token).AsTask(),
 			"ToImmutableArrayAsync"
-				=> cmd.ToImmutableArrayAsync<int>(token).AsTask(),
+				=> cmd.Map<int>().ToImmutableArrayAsync(token).AsTask(),
 			"FirstOrDefaultAsync"
-				=> cmd.FirstOrDefaultAsync<int>(token).AsTask(),
+				=> cmd.Map<int>().FirstOrDefaultAsync(token).AsTask(),
 			"SingleOrDefaultAsync"
-				=> cmd.SingleOrDefaultAsync<int>(token).AsTask(),
+				=> cmd.Map<int>().SingleOrDefaultAsync(token).AsTask(),
 			"ToHashSetAsync"
-				=> cmd.ToHashSetAsync<int>(cancellationToken: token).AsTask(),
+				=> cmd.Map<int>().ToHashSetAsync(cancellationToken: token).AsTask(),
 			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 		};
 

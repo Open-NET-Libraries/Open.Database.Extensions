@@ -70,22 +70,22 @@ public static class NullGuardDefectTests
 	}
 
 	[Fact]
-	public static void ConnectionFactoryToPoolAdapter_NullFactory_NamesTheFactory()
+	public static void AsPool_NullFactory_NamesTheFactory()
 	{
 		Assert.Equal("factory", Assert.Throws<ArgumentNullException>(
-			() => new DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter((IDbConnectionFactory)null!)).ParamName);
+			() => ((IDbConnectionFactory)null!).AsPool()).ParamName);
 		Assert.Equal("factory", Assert.Throws<ArgumentNullException>(
-			() => new DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<DbConnection>((IDbConnectionFactory<DbConnection>)null!)).ParamName);
+			() => ((IDbConnectionFactory<DbConnection>)null!).AsPool()).ParamName);
 	}
 
 	// The function constructors too: a null function is refused where it is given, not when the first connection is taken.
 	[Fact]
-	public static void ConnectionFactoryToPoolAdapter_NullFunction_NamesTheFactory()
+	public static void AsPool_NullFunction_NamesTheFactory()
 	{
 		Assert.Equal("factory", Assert.Throws<ArgumentNullException>(
-			() => new DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter((Func<IDbConnection>)null!)).ParamName);
+			() => ((Func<IDbConnection>)null!).AsPool()).ParamName);
 		Assert.Equal("factory", Assert.Throws<ArgumentNullException>(
-			() => new DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<DbConnection>((Func<DbConnection>)null!)).ParamName);
+			() => ((Func<DbConnection>)null!).AsPool()).ParamName);
 	}
 
 	static readonly Dictionary<string, Action> CommandOnNullFunc = new()

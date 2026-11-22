@@ -145,7 +145,7 @@ Check(
 Check(
 	(await ExpressiveCommands.ColumnOfIds(factory, CancellationToken.None))
 		.SequenceEqual([1, 2, 3, 4, 5]),
-	"ToArrayAsync<int>(token) on a command");
+	"Map<int>().ToArrayAsync(token) on a command");
 Check(await Mapping.StreamRowsAsync(connection, CancellationToken.None) == 15, "Stream hands the rows over one at a time");
 Check((await Mapping.ByIdAsync(connection, CancellationToken.None)).Count == 5, "ToDictionaryAsync");
 Check((await connection.Command("select * from posts").Map<Post>().ToDictionaryAsync(static post => post.Id, CancellationToken.None)).Count == 5, "the token goes straight after the key selector");

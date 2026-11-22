@@ -182,10 +182,7 @@ public static class Mapping
 			new(nameof(Person.Id), "person_id"),
 		];
 
-		// The constructor: one pair needs no brackets.
-		var singlePair = new RowMap<Person>(
-			new(nameof(Person.Id), "person_id")
-		);
+		// The constructor: the pairs as arguments.
 		var severalPairs = new RowMap<Person>(
 			new(nameof(Person.Id), "person_id"),
 			new(nameof(Person.FirstName), "first_name")
@@ -203,7 +200,7 @@ public static class Mapping
 		var copy = new RowMap<Person>(collection);
 		#endregion
 
-		return [collection, onePair, singlePair, severalPairs, fromArray, copy];
+		return [collection, onePair, severalPairs, fromArray, copy];
 	}
 
 	public static async Task<Person[]> MapSnakeCaseAsync(

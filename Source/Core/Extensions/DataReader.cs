@@ -619,62 +619,6 @@ public static class DataReaderExtensions
 		? AsAsyncEnumerableInternal(reader, ordinals, false, cancellationToken)
 		: AsAsyncEnumerableInternal(reader, ordinals, false, arrayPool, cancellationToken);
 
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception) and not(self::remarks)]"/>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
-	/// <para>
-	/// <see cref="DBNull"/> values are retained.
-	/// </para>
-	/// <para>
-	/// A canceled token ends the enumeration without an exception,
-	/// and rows already yielded stay yielded.
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
-	/// </exception>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, CancellationToken cancellationToken, int n, params IEnumerable<int> others)
-		=> AsAsyncEnumerable(reader, others.Prepend(n), cancellationToken);
-
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
-	/// </exception>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, CancellationToken cancellationToken, int n, params IEnumerable<int> others)
-		=> AsAsyncEnumerable(reader, others.Prepend(n), arrayPool, cancellationToken);
-
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, IEnumerable{int})" path="/*[not(self::param) and not(self::remarks)]"/>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
-	/// <para>
-	/// <see cref="DBNull"/> values are retained.
-	/// </para>
-	/// <para>
-	/// A canceled token ends the enumeration without an exception,
-	/// and rows already yielded stay yielded.
-	/// </para>
-	/// </remarks>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, int n, params IEnumerable<int> others)
-		=> AsAsyncEnumerable(reader, others.Prepend(n));
-
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, ArrayPool{object?}, CancellationToken, int, IEnumerable{int})" path="/*[not(self::param)]"/>
-	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(this DbDataReader reader, ArrayPool<object>? arrayPool, int n, params IEnumerable<int> others)
-		=> AsAsyncEnumerable(reader, others.Prepend(n), arrayPool);
-
 	/// <summary>
 	/// Asynchronously and lazily transforms each remaining record of a <see cref="DbDataReader"/> through a function.
 	/// </summary>

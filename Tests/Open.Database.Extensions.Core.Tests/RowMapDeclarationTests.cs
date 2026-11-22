@@ -39,7 +39,7 @@ public static class RowMapDeclarationTests
 	[Fact]
 	public static void Constructor_OnePair_CompilesAndMaps()
 	{
-		var map = new RowMap<Item>(new(nameof(Item.Id), "item_id"));
+		var map = new RowMap<Item>([new(nameof(Item.Id), "item_id")]);
 
 		AssertSeven(OneRow().Map(map).ToList());
 	}
@@ -55,7 +55,7 @@ public static class RowMapDeclarationTests
 	[Fact]
 	public static void Constructor_OnePair_ANullColumn_IgnoresTheProperty()
 	{
-		var map = new RowMap<Item>(new(nameof(Item.Name), null));
+		var map = new RowMap<Item>([new(nameof(Item.Name), null)]);
 
 		Item item = Assert.Single(new FakeExecuteReader(["Id", "Name"], [3, "three"]).Map(map).ToList());
 		Assert.Equal(3, item.Id);
@@ -64,7 +64,7 @@ public static class RowMapDeclarationTests
 
 	[Fact]
 	public static void Constructor_OnePair_IsValidatedLikeAnyOther()
-		=> Assert.Throws<ArgumentException>(() => new RowMap<Item>(new("Nope", "x")));
+		=> Assert.Throws<ArgumentException>(() => new RowMap<Item>([new("Nope", "x")]));
 
 	[Fact]
 	public static void Constructor_SeveralPairs_Map()
@@ -265,7 +265,7 @@ public static class RowMapDeclarationTests
 
 		AssertSeven(OneRow().Map<Item>([new(nameof(Item.Id), "item_id")]).ToList());           // one pair, collection expression
 		AssertSeven(OneRow().Map(new RowMap<Item>([new(nameof(Item.Id), "item_id")])).ToList());
-		AssertSeven(OneRow().Map(new RowMap<Item>(new(nameof(Item.Id), "item_id"))).ToList());
+		AssertSeven(OneRow().Map(new RowMap<Item>([new(nameof(Item.Id), "item_id")])).ToList());
 
 		Assert.Equal(7, Assert.Single(new FakeExecuteReader(["Id"], [7]).Map<Item>([]).ToList()).Id); // none, collection expression
 		Assert.Equal(7, Assert.Single(new FakeExecuteReader(["Id"], [7]).Map<Item>().ToList()).Id);   // none

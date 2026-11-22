@@ -107,17 +107,6 @@ namespace Open.Database.Extensions;
 public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRowSource<T>
 {
 	/// <summary>
-	/// Initializes a new instance of the <see cref="RowMap{T}"/> class from one (property name, column name) pair, so <c>new RowMap&lt;T&gt;(new("A", "b"))</c> compiles.
-	/// </summary>
-	/// <remarks>
-	/// <include file="RowMapping.docs.xml" path="docs/members[@name='declare-once']/*" />
-	/// </remarks>
-	/// <param name="mapping">The (property name, column name) pair; a <see langword="null"/> column means "do not map this property".</param>
-	/// <include file="RowMapping.docs.xml" path="docs/members[@name='mapping-exceptions']/*" />
-	[OverloadResolutionPriority(1)]
-	public RowMap(KeyValuePair<string, string?> mapping) : this([mapping]) { }
-
-	/// <summary>
 	/// Initializes a new instance of the <see cref="RowMap{T}"/> class from (property name, column name) pairs.
 	/// </summary>
 	/// <remarks>
@@ -2557,7 +2546,7 @@ sealed class Shape
 		setsRequiredMembers = false;
 		string name = TypeName(type);
 
-		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().";
+		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. On a command use Map<T>(), which reads the first column; else ExecuteScalar<T>().";
 		if (NotConcrete(type) is { } kind) return $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
 		if (IsDictionaryOrDynamic(type)) return $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, use AsDictionaryRows() for the values with their column names, or use Map(selector).";
 

@@ -115,7 +115,7 @@ public static class UnmappableTypeTests
 	}
 
 	static string Single(string name)
-		=> $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().";
+		=> $"'{name}' is a single value, not a row model. On a command use Map<T>(), which reads the first column; else ExecuteScalar<T>().";
 	static string NotConcrete(string name, string kind) => $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
 	static string NoConstructor(string name) => $"'{name}' cannot be mapped: it has no public constructor.";
 	static string Ambiguous(string name, int count, string signatures) => $"'{name}' cannot be mapped: it has {count} public constructors, {signatures}, and none without parameters. Make one of them non-public, or use Map(selector).";
@@ -381,15 +381,15 @@ public static class UnmappableTypeTests
 		["Map<T>().ToListAsync()"] = async () => await Exec().Map<T>().ToListAsync(),
 		["Map<T>().FirstOrDefaultAsync()"] = async () => await Exec().Map<T>().FirstOrDefaultAsync(),
 		["Map<T>().ToDictionaryAsync()"] = async () => await Exec().Map<T>().ToDictionaryAsync(_ => 0),
-		["ToListAsync<T>()"] = async () => await Exec().ToListAsync<T>(),
-		["ToArrayAsync<T>()"] = async () => await Exec().ToArrayAsync<T>(),
+		["ToListAsync<T>()"] = async () => await Exec().Map<T>().ToListAsync(),
+		["ToArrayAsync<T>()"] = async () => await Exec().Map<T>().ToArrayAsync(),
 		["ToImmutableArrayAsync<T>()"]
-			= async () => await Exec().ToImmutableArrayAsync<T>(),
+			= async () => await Exec().Map<T>().ToImmutableArrayAsync(),
 		["FirstOrDefaultAsync<T>()"]
-			= async () => await Exec().FirstOrDefaultAsync<T>(),
+			= async () => await Exec().Map<T>().FirstOrDefaultAsync(),
 		["SingleOrDefaultAsync<T>()"]
-			= async () => await Exec().SingleOrDefaultAsync<T>(),
-		["ToHashSetAsync<T>()"] = async () => await Exec().ToHashSetAsync<T>(),
+			= async () => await Exec().Map<T>().SingleOrDefaultAsync(),
+		["ToHashSetAsync<T>()"] = async () => await Exec().Map<T>().ToHashSetAsync(),
 		["Map(new RowMap<T>(pair))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"))).ToList()),
 		["Map(new RowMap<T>(pairs))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name"))).ToList()),
 

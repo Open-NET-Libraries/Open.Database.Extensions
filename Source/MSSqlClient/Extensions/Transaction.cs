@@ -358,22 +358,6 @@ public static partial class SqlTransactionExtensions
 		Func<SqlTransaction, ValueTask<bool>> conditionalAction)
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
 
-	/// <inheritdoc cref="ExecuteTransactionAsync{T}(SqlConnection, Func{SqlTransaction, ValueTask{T}}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask<T> ExecuteTransactionAsync<T>(
-		this SqlConnection connection,
-		IsolationLevel isolationLevel,
-		CancellationToken cancellationToken,
-		Func<SqlTransaction, ValueTask<T>> action)
-		=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionAsync(SqlConnection, Func{SqlTransaction, ValueTask}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask ExecuteTransactionAsync(
-		this SqlConnection connection,
-		IsolationLevel isolationLevel,
-		CancellationToken cancellationToken,
-		Func<SqlTransaction, ValueTask> action)
-		=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
-
 	#endregion
 
 	#region Optional Token
@@ -393,21 +377,6 @@ public static partial class SqlTransactionExtensions
 		CancellationToken cancellationToken = default)
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
 
-	/// <inheritdoc cref="ExecuteTransactionAsync{T}(SqlConnection, Func{SqlTransaction, ValueTask{T}}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask<T> ExecuteTransactionAsync<T>(
-		this SqlConnection connection,
-		IsolationLevel isolationLevel,
-		Func<SqlTransaction, ValueTask<T>> action,
-		CancellationToken cancellationToken = default)
-		=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionAsync(SqlConnection, Func{SqlTransaction, ValueTask}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask ExecuteTransactionAsync(
-		this SqlConnection connection,
-		IsolationLevel isolationLevel,
-		Func<SqlTransaction, ValueTask> action,
-		CancellationToken cancellationToken = default)
-		=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
 	#endregion
 
 	#endregion

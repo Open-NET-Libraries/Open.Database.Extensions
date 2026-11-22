@@ -117,20 +117,6 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				e => e.Map<int>().Take(1).ToHashSetAsync(null), e => e.Map<int>().Take(1).ToHashSetAsync(IntComparer), e => e.Map<int>().Take(1).ToHashSetAsync(IntComparer, Token));
 		}
 
-		[Fact]
-		public static void ToHashSetAsync_OnACommand_BindsEachRung()
-		{
-			const string Token1 = "IExecuteReaderExtensions.ToHashSetAsync(IExecuteReader,CancellationToken)";
-			const string Comparer1 = "IExecuteReaderExtensions.ToHashSetAsync(IExecuteReader,IEqualityComparer<Int32>,CancellationToken)";
-
-			Binds<IExecuteReader>(Token1, "ToHashSetAsync", e => e.ToHashSetAsync<int>());
-			Binds<IExecuteReader>(Token1, "ToHashSetAsync", e => e.ToHashSetAsync<int>(Token));
-			Binds<IExecuteReader>(Token1, "ToHashSetAsync", e => e.ToHashSetAsync<int>(default));
-			Binds<IExecuteReader>(Comparer1, "ToHashSetAsync", e => e.ToHashSetAsync<int>(null));
-			Binds<IExecuteReader>(Comparer1, "ToHashSetAsync", e => e.ToHashSetAsync(IntComparer));
-			Binds<IExecuteReader>(Comparer1, "ToHashSetAsync", e => e.ToHashSetAsync(IntComparer, Token));
-		}
-
 		// ---- ToDictionaryAsync (key): (key, token) and (key, comparer, token) ----
 
 		static void DictionaryLadder<T>(string type, Action<T> none, Action<T> token, Action<T> defaulted, Action<T> comparerNull, Action<T> comparer, Action<T> both, string extension = null)

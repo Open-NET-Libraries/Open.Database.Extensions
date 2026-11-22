@@ -115,7 +115,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 | An interface | `'IPost' cannot be mapped: it is an interface. Map to a class or struct, or use Map(selector).` |
 | An abstract class or a delegate | The same, with `it is an abstract class` or `it is a delegate` |
 | A dictionary (`Dictionary<,>`, `IDictionary<,>`, `IReadOnlyDictionary<,>`) or a dynamic object (`ExpandoObject`) | ``'Dictionary`2' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, use AsDictionaryRows() for the values with their column names, or use Map(selector).`` |
-| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `AsSourceBlock<T>`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().` |
+| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `AsSourceBlock<T>`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>(), which reads the first column; else ExecuteScalar<T>().` |
 | No public constructor | `'Post' cannot be mapped: it has no public constructor.` |
 | Two or more public constructors, none without parameters | `'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).` |
 | A `required` public field | `'Post' cannot be mapped: its required field 'Title' cannot be set. Make it a property.` |
@@ -123,7 +123,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 
 ## One value per row
 
-On a command, `Map<int>()` reads the first column of each row as one value, and the terminals of `Map<int>()` work as for a row model: `db.Command(sql).Map<int>().ToList()`. The async terminals are also on the command itself, taking the type: `db.Command(sql).ToArrayAsync<int>(ct)` is `db.Command(sql).Map<int>().ToArrayAsync(ct)` (`ToListAsync`, `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `FirstAsync`, `FirstOrDefaultAsync`, `SingleAsync`, `SingleOrDefaultAsync`). For a row model the same terminals map by column name, so `ToListAsync<Post>(ct)` is `Map<Post>().ToListAsync(ct)`. There is no synchronous shortcut on the command: write `Map<T>().ToList()`.
+On a command, `Map<int>()` reads the first column of each row as one value, and the terminals of `Map<int>()` work as for a row model: `db.Command(sql).Map<int>().ToList()`. The async terminals work the same way: `db.Command(sql).Map<int>().ToArrayAsync(ct)`. For a row model the same terminals map by column name, so `Map<Post>().ToListAsync(ct)` reads rows as `Post`. A synchronous read is `Map<T>().ToList()`.
 
 [!code-csharp[](../samples/Mapping.cs#map_single_value)]
 
@@ -167,7 +167,7 @@ Pass it to `Map<T>`. The same `map` parameter is on `AsSourceBlock` and `ToTarge
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_use)]
 
-**Other ways to declare it.** All of these make the same map. The constructor takes one pair (no brackets needed) or several, an `ImmutableArray` or any `IEnumerable` of pairs also works, and a map enumerates the pairs it was declared with, so `new RowMap<T>(map)` makes an equal copy. An empty map, `[]`, maps by name like no map at all:
+**Other ways to declare it.** All of these make the same map. The constructor takes the pairs as arguments, an `ImmutableArray` or any `IEnumerable` of pairs also works, and a map enumerates the pairs it was declared with, so `new RowMap<T>(map)` makes an equal copy. An empty map, `[]`, maps by name like no map at all:
 
 [!code-csharp[](../samples/Mapping.cs#map_declaration_forms)]
 

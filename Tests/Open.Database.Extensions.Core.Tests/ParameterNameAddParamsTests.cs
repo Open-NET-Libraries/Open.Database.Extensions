@@ -321,9 +321,16 @@ public static class ParameterNameAddParamsTests
 		.GetMethod("Candidates", BindingFlags.Static | BindingFlags.NonPublic)!
 		.CreateDelegate<Func<string, ImmutableArray<string>>>();
 
-	static readonly Func<ImmutableArray<string>, ImmutableArray<string>, string, string, string?> Match = Names
-		.GetMethod("Match", BindingFlags.Static | BindingFlags.NonPublic)!
-		.CreateDelegate<Func<ImmutableArray<string>, ImmutableArray<string>, string, string, string?>>();
+	static readonly Func<ImmutableArray<string>, ImmutableArray<string>, ImmutableArray<string>, string, string, string?> MatchBare = Names
+		.GetMethod("MatchBare", BindingFlags.Static | BindingFlags.NonPublic)!
+		.CreateDelegate<Func<ImmutableArray<string>, ImmutableArray<string>, ImmutableArray<string>, string, string, string?>>();
+
+	static readonly Func<ImmutableArray<string>, ImmutableArray<string>> BareNames = Names
+		.GetMethod("BareNames", BindingFlags.Static | BindingFlags.NonPublic)!
+		.CreateDelegate<Func<ImmutableArray<string>, ImmutableArray<string>>>();
+
+	static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames, string expression, string procedure)
+		=> MatchBare(candidates, parameterNames, BareNames(parameterNames), expression, procedure);
 
 	[Theory]
 	[InlineData("x", "x")]

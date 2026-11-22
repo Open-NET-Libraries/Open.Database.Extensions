@@ -198,7 +198,7 @@ public static class RowMapperTests
 	public static void Overrides_UnknownField_Throws()
 	{
 		var cmd = Cmd([("Id", typeof(int))], [1]);
-		Assert.Throws<ArgumentException>(() => cmd.Map(new RowMap<Simple>(new("Nope", "Id"))));
+		Assert.Throws<ArgumentException>(() => cmd.Map(new RowMap<Simple>([new("Nope", "Id")])));
 	}
 
 	[Fact]
@@ -215,7 +215,7 @@ public static class RowMapperTests
 		for (int i = 0; i < 300; i++)
 		{
 			string column = "Key" + i;
-			Simple item = Cmd([(column, typeof(int)), ("Name", typeof(string))], [i, "n"]).Map(new RowMap<Simple>(new("Id", column))).ToList().Single();
+			Simple item = Cmd([(column, typeof(int)), ("Name", typeof(string))], [i, "n"]).Map(new RowMap<Simple>([new("Id", column)])).ToList().Single();
 			Assert.Equal(i, item.Id);
 		}
 	}
@@ -264,8 +264,8 @@ public static class RowMapperTests
 	{
 		var a = Cmd([("A|B=C", typeof(int)), ("A", typeof(int)), ("B", typeof(int))], [1, 2, 3]);
 		// "Id" -> column "A|B=C" must not be confused with ("Id"->"A", "Name"->"B=C" style) combinations.
-		Assert.Equal(1, a.Map(new RowMap<Simple>(new("Id", "A|B=C"))).ToList().Single().Id);
-		Assert.Equal(2, a.Map(new RowMap<Simple>(new("Id", "A"))).ToList().Single().Id);
+		Assert.Equal(1, a.Map(new RowMap<Simple>([new("Id", "A|B=C")])).ToList().Single().Id);
+		Assert.Equal(2, a.Map(new RowMap<Simple>([new("Id", "A")])).ToList().Single().Id);
 	}
 
 	[Fact]

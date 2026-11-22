@@ -48,12 +48,11 @@ public static class ExpressiveCommands
 		CancellationToken cancellationToken)
 	{
 		#region single_value_async
-		// The terminals take the type:
-		// ToArrayAsync<int>(token) reads the first column of each row,
-		// as Map<int>().ToArrayAsync(token) does.
+		// Map<int>() reads the first column of each row.
 		int[] ids = await connectionFactory
 			.Command("select id from posts order by id")
-			.ToArrayAsync<int>(cancellationToken);
+			.Map<int>()
+			.ToArrayAsync(cancellationToken);
 		#endregion
 
 		return ids;
