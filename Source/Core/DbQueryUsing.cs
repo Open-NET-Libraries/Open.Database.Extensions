@@ -62,7 +62,7 @@ public readonly struct DbQueryUsing
 
 	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped query.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does.</param>
+	/// <param name="map">The map. A <see langword="null"/> map reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload).</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public MappedQuery<T> Map<T>(RowMap<T>? map)
@@ -85,14 +85,14 @@ public readonly struct DbQueryUsing
 	}
 
 	/// <summary>Reads each row without a model, as an array of its values.</summary>
-	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>, without boxing this value.</remarks>
+	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>.</remarks>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public MappedQuery<object?[]> AsObjectArrays()
 		=> new(Views.QueryCore(ToCall(), ObjectArraySource.Instance));
 
 	/// <summary>Reads each row without a model, as a <see cref="DictionaryRow"/>.</summary>
-	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>, without boxing this value.</remarks>
+	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>.</remarks>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public MappedQuery<DictionaryRow> AsDictionaryRows()

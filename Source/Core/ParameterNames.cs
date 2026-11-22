@@ -33,7 +33,7 @@ static class ParameterNames
 	internal sealed class DerivedExpression(string expression, string lastMember, ImmutableArray<string> candidates)
 	{
 		/// <summary>The text of the argument the facts were worked out from.</summary>
-		internal string Expression { get; } = expression;
+		public string Expression { get; } = expression;
 
 		internal string LastMember { get; } = lastMember;
 		internal ImmutableArray<string> Candidates { get; } = candidates;
@@ -44,21 +44,21 @@ static class ParameterNames
 		/// <param name="entry">The real name's place in <paramref name="names"/>.</param>
 		internal sealed class Resolution(NameSet names, string real, NameSet.Entry? entry)
 		{
-			internal NameSet Names { get; } = names;
+			public NameSet Names { get; } = names;
 
-			internal string Real { get; } = real;
+			public string Real { get; } = real;
 
-			internal NameSet.Entry? Entry { get; } = entry;
+			public NameSet.Entry? Entry { get; } = entry;
 		}
 
 		/// <summary>
 		/// Gets or sets the last resolution of this expression, so a repeat in the same set of names reads one field and takes no lock.
 		/// </summary>
 		/// <remarks>
-		/// The expression belongs to the call site, which runs against one set of names in the usual case.
+		/// Every call site that writes the same text shares the expression, and its calls usually run against one set of names.
 		/// A thread that loses a race only makes one more resolution.
 		/// </remarks>
-		internal Resolution? Last
+		public Resolution? Last
 		{
 			get => Volatile.Read(ref field);
 			set => Volatile.Write(ref field, value);

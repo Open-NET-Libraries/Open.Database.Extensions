@@ -21,8 +21,6 @@ public static class DbQueryBranchingTests
 
 	static readonly MappedDbQuery<Echo> M = Q.Map<Echo>();
 
-	static CancellationToken Ct => TestContext.Current.CancellationToken;
-
 	// A connection that remembers the commands made on it, to read the parameters each one was sent with.
 	sealed class Tracked() : SqliteConnection("Data Source=:memory:")
 	{
@@ -83,6 +81,23 @@ public static class DbQueryBranchingTests
 		Assert.Equal(["@a=1"], c.SentTo(4));
 	}
 
+	// The first addition to a kept call writes the next entry in place, shared with the call it came from; the next copies.
+	[Fact]
+	public static void TheFirstAdditionToAKeptCall_IsWrittenInPlace_AndTheNextIsCopied()
+	{
+		using var c = new Tracked();
+		DbQueryCall held = Q.Using(c).AddParam("a", 1);
+
+		DbQueryCall first = held.AddParam("b", 2);
+		DbQueryCall second = held.AddParam("b", 3);
+		DbQueryCall onFirst = first.AddParam("c", 4);
+
+		Assert.True(first.Params.SharesEntriesWith(held.Params));
+		Assert.False(second.Params.SharesEntriesWith(held.Params));
+		Assert.True(onFirst.Params.SharesEntriesWith(first.Params));
+		Assert.False(default(DbQueryCall).Params.SharesEntriesWith(default(DbQueryCall).Params));
+	}
+
 	[Fact]
 	public static void ACallThatHasRun_CanBeRunAgain_AddedToAndBranched()
 	{
@@ -116,9 +131,12 @@ public static class DbQueryBranchingTests
 		DbQueryCall x = held.AddParam("b", 10);
 		DbQueryCall y = held.AddParam("b", 20);
 		DbQueryCall twinOfX = Q.Using(c).AddParam("a", 1).AddParam("b", 10);
+		DbQueryCall viaEqualDefinition = DbQuery.Text(EchoSql).Using(c).AddParam("a", 1).AddParam("b", 10);
 
 		Assert.NotEqual(x, y);
 		Assert.Equal(x, twinOfX);
+		Assert.Equal(x, viaEqualDefinition);
+		Assert.Equal(x.GetHashCode(), viaEqualDefinition.GetHashCode());
 		Assert.Equal(x.GetHashCode(), twinOfX.GetHashCode());
 		Assert.NotEqual(held, x);
 	}
@@ -214,6 +232,11 @@ public static class DbQueryBranchingTests
 		Assert.Equal(7, procedure.ParamCapacity);
 		procedure.NoteParams(2);
 		Assert.Equal(7, procedure.ParamCapacity);
+
+		// A text that declares names is sized by them, whatever a call has bound.
+		DbQuery declared = DbQuery.Text("select @only");
+		declared.NoteParams(9);
+		Assert.Equal(1, declared.ParamCapacity);
 	}
 
 	const int Threads = 16;
@@ -232,6 +255,7 @@ public static class DbQueryBranchingTests
 			DbQueryCall held = Q.Using(Source).AddParam("a", 1);
 			using var gate = new Barrier(Threads);
 			Thread[] threads = new Thread[Threads];
+			bool[] inPlace = new bool[Threads];
 			for (int t = 0; t < Threads; t++)
 			{
 				int mine = t;
@@ -241,6 +265,7 @@ public static class DbQueryBranchingTests
 					{
 						gate.SignalAndWait();
 						DbQueryCall b = held.AddParam("b", mine);
+						inPlace[mine] = b.Params.SharesEntriesWith(held.Params);
 						gate.SignalAndWait();
 						DbQueryCall full = b.AddParam("c", mine * 10);
 						Echo echo = One(full);
@@ -261,6 +286,9 @@ public static class DbQueryBranchingTests
 
 			foreach (Thread thread in threads) thread.Join();
 			Assert.Empty(failures);
+
+			// Exactly one thread won the entry and wrote it in place; every other copied.
+			Assert.Equal(1, inPlace.Count(static w => w));
 		}
 	}
 

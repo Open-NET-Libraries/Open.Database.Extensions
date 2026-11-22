@@ -16,10 +16,10 @@ namespace Open.Database.Extensions;
 /// allocates one array, not one object per value.
 /// A call that is kept and added to twice does not interfere with itself: the
 /// second addition works on a copy.
+/// A value that is an object, and the object of <c>AddParams</c>, is read when the query runs.
 /// </para>
 /// <para>
-/// Map it with <c>Map&lt;T&gt;()</c>, which is the same extension every command
-/// uses, then run a terminal. Nothing touches the database before that.
+/// Map it with <c>Map&lt;T&gt;()</c>, then run a terminal. Nothing touches the database before that.
 /// </para>
 /// </remarks>
 public readonly struct DbQueryCall
@@ -103,7 +103,7 @@ public readonly struct DbQueryCall
 
 	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped query.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does.</param>
+	/// <param name="map">The map. A <see langword="null"/> map reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload).</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public MappedQuery<T> Map<T>(RowMap<T>? map)
@@ -126,14 +126,14 @@ public readonly struct DbQueryCall
 	}
 
 	/// <summary>Reads each row without a model, as an array of its values.</summary>
-	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>, without boxing this value.</remarks>
+	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>.</remarks>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public MappedQuery<object?[]> AsObjectArrays()
 		=> new(Views.QueryCore(Bound(), ObjectArraySource.Instance));
 
 	/// <summary>Reads each row without a model, as a <see cref="DictionaryRow"/>.</summary>
-	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>, without boxing this value.</remarks>
+	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>.</remarks>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public MappedQuery<DictionaryRow> AsDictionaryRows()

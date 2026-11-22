@@ -83,6 +83,18 @@ public static class DbQueryNamesTests
 		Assert.Equal(new Echo(7, 3), echo);
 	}
 
+	[Fact]
+	public static void ANullValue_IsSentWithTheTypeOfItsArgument_UnderTheDeclaredName()
+	{
+		using var c = new Tracked();
+		MappedDbQuery<long?> nullable = DbQuery.Text("select @a").Map<long?>();
+
+		Assert.Null(nullable.Using(c).AddParam("a", (int?)null).FirstOrDefault());
+
+		Assert.Equal(["@a"], c.Sent(0));
+		Assert.Equal(System.Data.DbType.Int32, c.Commands[0].Parameters[0].DbType);
+	}
+
 	// More names than one word of bookkeeping holds: the names past the first sixty-four are told apart by looking at what the command has.
 	static string ManyNamesSql(int count)
 		=> "select " + string.Join(" + ", Enumerable.Range(0, count).Select(static i => "@n" + i));

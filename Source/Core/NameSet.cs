@@ -55,10 +55,10 @@ sealed class NameSet
 	internal sealed class Entry(string real, int index)
 	{
 		/// <summary>Gets the name as the set holds it.</summary>
-		internal string Real { get; } = real;
+		public string Real { get; } = real;
 
 		/// <summary>Gets the place of the name in the set.</summary>
-		internal int Index { get; } = index;
+		public int Index { get; } = index;
 	}
 
 	/// <summary>
@@ -97,7 +97,7 @@ sealed class NameSet
 	/// </remarks>
 	/// <param name="name">The name to look for.</param>
 	/// <returns>The entry, or <see langword="null"/> when the set has no such name.</returns>
-	internal Entry? Find(string name)
+	public Entry? Find(string name)
 	{
 		Dictionary<string, Entry> entries = Volatile.Read(ref _entries) ?? BuildEntries();
 		return entries.TryGetValue(name, out Entry? found) ? found : null;
@@ -108,7 +108,6 @@ sealed class NameSet
 		var entries = new Dictionary<string, Entry>(Names.Length, BareComparer.Instance);
 		for (int i = 0; i < Names.Length; i++)
 		{
-			// The first of two names that read the same stays.
 			if (!entries.ContainsKey(Names[i])) entries.Add(Names[i], new Entry(Names[i], i));
 		}
 

@@ -62,9 +62,9 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// It holds the real name of each member in member order
 	/// (<see langword="null"/>: the command does not take it).
-	/// Up to four are kept, newest first (a definition used with more values
-	/// types, or on more sets of names, drops the oldest), so values types
-	/// used in turn cost nothing once matched.
+	/// Up to four are kept, newest first: values types used in turn cost nothing
+	/// once matched, and a definition used with more values types, or on more
+	/// sets of names, matches the oldest again when it returns.
 	/// </remarks>
 	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved, NameSet.Entry?[] entries)
 	{
@@ -96,16 +96,18 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// array a call keeps them in.
 	/// </summary>
 	/// <remarks>
-	/// The number of <c>@name</c> markers of a text, or the most a call of this
-	/// definition has bound, or four.
+	/// The number of <c>@name</c> markers of a text; for a definition that declares
+	/// none, the most a call of it has bound, or four.
 	/// </remarks>
 	internal int ParamCapacity
 	{
 		get
 		{
 			int declared = TextNames?.Names.Length ?? 0;
-			int most = Math.Max(declared, Volatile.Read(ref _seenParams));
-			return most > 0 ? most : 4;
+			if (declared > 0) return declared;
+
+			int seen = Volatile.Read(ref _seenParams);
+			return seen > 0 ? seen : 4;
 		}
 	}
 
@@ -251,7 +253,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// The values are then given in one call, which the compiler checks:
 	/// <c>.Using(db).AddParams(new(AuthorId: authorId, Day: day))</c>.
-	/// A class object that already exists (for example a deserialized request) is added with <c>AddParams</c> on the untyped definition, which costs no more.
+	/// A class object that already exists (for example a deserialized request) is added with <c>AddParams</c> on the untyped definition, which allocates no more.
 	/// </remarks>
 	/// <typeparam name="TParams">The type of the values.</typeparam>
 	/// <returns>The typed definition.</returns>

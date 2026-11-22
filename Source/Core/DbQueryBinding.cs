@@ -282,10 +282,6 @@ static class DbQueryBinding
 	/// Determines whether the command already has a parameter of the name,
 	/// since two parameters of one name would overwrite each other.
 	/// </summary>
-	/// <remarks>
-	/// The names are compared without an <c>@</c> and ignoring case, as the
-	/// command builders compare them.
-	/// </remarks>
 	/// <param name="command">The command.</param>
 	/// <param name="name">The name.</param>
 	/// <returns>

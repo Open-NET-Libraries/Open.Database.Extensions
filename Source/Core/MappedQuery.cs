@@ -141,7 +141,7 @@ public static partial class CoreExtensions
 /// satisfied.
 /// </remarks>
 /// <typeparam name="T">The type each row is mapped to.</typeparam>
-/// <param name="command">The command the rows are read from.</param>
+/// <param name="command">The command the rows are read from, or <see langword="null"/> when the query holds a call.</param>
 /// <param name="call">The query, when it was made from a <see cref="DbQuery"/> definition: held as it is, not boxed, and then <paramref name="command"/> is <see langword="null"/>.</param>
 /// <param name="source">Reads and maps one row.</param>
 /// <param name="skip">The number of rows to skip before the first mapped row.</param>
@@ -192,7 +192,7 @@ readonly struct MappedQueryCore<T>(
 	readonly DbQueryCall _call = call;
 
 	/// <summary>
-	/// Gets the command the query reads from.
+	/// Gets the command the query reads from: its own command, or the call of a <see cref="DbQuery"/> definition (boxed here).
 	/// </summary>
 	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
 	public IExecuteReader Command

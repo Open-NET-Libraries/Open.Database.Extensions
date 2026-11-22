@@ -61,6 +61,12 @@ readonly struct ParamList
 	/// <summary>Gets how many entries are seen.</summary>
 	public int Count { get; }
 
+	/// <summary>Determines whether another value keeps its entries in the same array.</summary>
+	/// <param name="other">The other value.</param>
+	/// <returns><see langword="true"/> if both write to one array; otherwise, <see langword="false"/>.</returns>
+	public bool SharesEntriesWith(ParamList other)
+		=> _items is not null && ReferenceEquals(_items, other._items);
+
 	/// <summary>
 	/// Adds a parameter whose name the caller wrote.
 	/// </summary>
@@ -276,6 +282,9 @@ readonly struct ParamList
 	{
 		definition.NoteParams(Count);
 
+		// A text definition resolves against its own names; a procedure has none of its own.
+		Debug.Assert(names is null || definition.TextNames is null || ReferenceEquals(names, definition.TextNames));
+
 		// The names the entries are looked up in, and which of them this command already has (a name is used once).
 		NameSet? index = names ?? definition.TextNames;
 		ulong seen = 0;
@@ -347,10 +356,13 @@ readonly struct ParamList
 		}
 	}
 
+	// Calls are equal when they send the same parameters under the same spelling:
+	// two spellings of one name are two calls, though binding reads them as one name.
 	static bool KeyEquals(object a, object b)
 		=> (a, b) switch
 		{
 			(string x, string y) => string.Equals(x, y, StringComparison.Ordinal),
+			(NameSet.Entry x, NameSet.Entry y) => string.Equals(x.Real, y.Real, StringComparison.Ordinal),
 			(ParameterNames.DerivedExpression x, ParameterNames.DerivedExpression y)
 				=> string.Equals(x.Expression, y.Expression, StringComparison.Ordinal),
 			_ => ReferenceEquals(a, b),
