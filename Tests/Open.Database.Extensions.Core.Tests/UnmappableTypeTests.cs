@@ -393,24 +393,6 @@ public static class UnmappableTypeTests
 		["Map(new RowMap<T>(pair))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"))).ToList()),
 		["Map(new RowMap<T>(pairs))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name"))).ToList()),
 
-		// Channel: a new channel
-		["ToChannel<T>(IDataReader)"] = () => Done(Reader().ToChannel<T>(true)),
-		["ToChannel<T>(IDataReader, null)"] = () => Done(Reader().ToChannel(true, (RowMap<T>?)null)),
-		["ToChannel<T>(IDbCommand)"] = () => Done(Command().ToChannel<T>(true)),
-		["ToChannel<T>(IExecuteReader)"] = () => Done(Exec().ToChannel<T>(true)),
-		["ToChannelAsync<T>(DbDataReader)"] = () => Done(DbReader().ToChannelAsync<T>(true)),
-		["ToChannelAsync<T>(DbCommand)"] = () => Done(DbCmd().ToChannelAsync<T>(true)),
-		["ToChannelAsync<T>(IExecuteReaderAsync)"] = () => Done(Async().ToChannelAsync<T>(true)),
-
-		// Channel: the caller's writer
-		["ToChannel<T>(writer, IDataReader)"] = () => Done(Reader().ToChannel(Writer<T>().Writer, true)),
-		["ToChannel<T>(writer, IDataReader, null)"] = () => Done(Reader().ToChannel(Writer<T>().Writer, true, (RowMap<T>?)null)),
-		["ToChannel<T>(writer, IDbCommand)"] = () => Done(Command().ToChannel(Writer<T>().Writer, true)),
-		["ToChannel<T>(writer, IExecuteReader)"] = () => Done(Exec().ToChannel(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, DbDataReader)"] = () => Done(DbReader().ToChannelAsync(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, DbCommand)"] = () => Done(DbCmd().ToChannelAsync(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, IExecuteReaderAsync)"] = () => Done(Async().ToChannelAsync(Writer<T>().Writer, true)),
-
 		// Dataflow: into a block
 		["ToTargetBlock<T>(IDataReader)"] = () => Done(new ValueTask<long>(Reader().ToTargetBlock(new BufferBlock<T>(), true, (RowMap<T>?)null))),
 		["ToTargetBlock<T>(IDbCommand)"] = () => Done(new ValueTask<long>(Command().ToTargetBlock(new BufferBlock<T>(), true, (RowMap<T>?)null))),
@@ -556,26 +538,6 @@ public static class UnmappableTypeTests
 	static Dictionary<string, Func<Touched, Task>> BeforeExecutionOf<T>() => new()
 	{
 		["Map<T>() (IExecuteReader)"] = t => Run(() => Exec(t).Map<T>().ToList()),
-
-		// Channel: a command, a new channel
-		["ToChannel<T>(IDbCommand)"] = t => Done(Command(t).ToChannel<T>(true)),
-		["ToChannel<T>(IDbCommand, null)"] = t => Done(Command(t).ToChannel(true, (RowMap<T>?)null)),
-		["ToChannel<T>(IExecuteReader)"] = t => Done(Exec(t).ToChannel<T>(true)),
-		["ToChannelAsync<T>(DbCommand)"] = t => Done(DbCmd(t).ToChannelAsync<T>(true)),
-		["ToChannelAsync<T>(IExecuteReaderAsync)"] = t => Done(Async(t).ToChannelAsync<T>(true)),
-
-		// Channel: a command, the caller's writer
-		["ToChannel<T>(writer, IDbCommand)"] = t => Done(Command(t).ToChannel(Writer<T>().Writer, true)),
-		["ToChannel<T>(writer, IDbCommand, null)"] = t => Done(Command(t).ToChannel(Writer<T>().Writer, true, (RowMap<T>?)null)),
-		["ToChannel<T>(writer, IExecuteReader)"] = t => Done(Exec(t).ToChannel(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, DbCommand)"] = t => Done(DbCmd(t).ToChannelAsync(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(writer, IExecuteReaderAsync)"] = t => Done(Async(t).ToChannelAsync(Writer<T>().Writer, true)),
-
-		// Channel: a reader
-		["ToChannel<T>(IDataReader)"] = t => Done(Reader(t).ToChannel<T>(true)),
-		["ToChannel<T>(writer, IDataReader)"] = t => Done(Reader(t).ToChannel(Writer<T>().Writer, true)),
-		["ToChannelAsync<T>(DbDataReader)"] = t => Done(DbReader(t).ToChannelAsync<T>(true)),
-		["ToChannelAsync<T>(writer, DbDataReader)"] = t => Done(DbReader(t).ToChannelAsync(Writer<T>().Writer, true)),
 
 		// Dataflow: a command
 		["ToTargetBlock<T>(IDbCommand)"] = t => Done(new ValueTask<long>(Command(t).ToTargetBlock(Target<T>(), true, (RowMap<T>?)null))),

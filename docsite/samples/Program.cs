@@ -171,6 +171,10 @@ Check(Throws<InvalidOperationException>(() => connection.Command("select * from 
 // Channels and Dataflow.
 List<Post> viaChannel = await ChannelsAndDataflow.ToChannelSample(factory, CancellationToken.None);
 Check(viaChannel.Select(p => p.Id).SequenceEqual([1, 2, 3, 4, 5]), "ToChannel delivers every row in order");
+(long ownedWritten, List<Post> viaOwned) = await ChannelsAndDataflow.ToChannelOwnedSample(factory, CancellationToken.None);
+Check(ownedWritten == 5 && viaOwned.Select(p => p.Id).SequenceEqual([1, 2, 3, 4, 5]), "ToChannel into a channel you own writes both passes and completes it");
+(long heldWritten, List<Post> viaHeld) = await ChannelsAndDataflow.ToChannelHoldingConnectionSample(factory, CancellationToken.None);
+Check(heldWritten == 5 && viaHeld.Select(p => p.Id).SequenceEqual([1, 2, 3, 4, 5]), "ToChannelHoldingConnection delivers every row in order");
 (long delivered, List<Post> viaBlock) = await ChannelsAndDataflow.ToTargetBlockSample(factory, CancellationToken.None);
 Check(delivered == 5 && viaBlock.Count == 5, "ToTargetBlockAsync delivers every row");
 

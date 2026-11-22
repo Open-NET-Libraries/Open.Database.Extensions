@@ -4,9 +4,9 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions.Tests;
 
-// The Channel and Dataflow pipelines run a reader on behalf of the caller, often in the background, so they are the place where a reader, a
-// command and a connection can be held for as long as somebody forgets about them. For both sinks (a ChannelWriter and a dataflow block), both
-// shapes (raw rows straight to the target, and rows mapped to a model through the two-stage pipeline) and three connection sources:
+// The Dataflow pipelines run a reader on behalf of the caller, often in the background, so they are the place where a reader, a
+// command and a connection can be held for as long as somebody forgets about them. For both shapes
+// (raw rows straight to the target, and rows mapped to a model through the two-stage pipeline) and three connection sources:
 //   - when the producer has written every row, it ends and everything is released;
 //   - when the reader fails, the producer fails with it and everything is released;
 //   - when the target is full and the call is cancelled, the producer ends with the cancellation and everything is released;
@@ -34,7 +34,6 @@ public static class LeakPipelineTests
 
 	public enum Sink
 	{
-		Channel,
 		Block,
 	}
 
@@ -69,12 +68,6 @@ public static class LeakPipelineTests
 	{
 		switch (shape, sink)
 		{
-			case (Shape.Raw, Sink.Channel):
-				Channel<object[]> rawChannel = Make<object[]>(capacity);
-				return new(command.ToChannelAsync(rawChannel.Writer, true).AsTask(), () => rawChannel.Writer.TryComplete());
-			case (Shape.Mapped, Sink.Channel):
-				Channel<Row> mappedChannel = Make<Row>(capacity);
-				return new(command.ToChannelAsync(mappedChannel.Writer, true).AsTask(), () => mappedChannel.Writer.TryComplete());
 			case (Shape.Raw, _):
 				var rawBlock = new BufferBlock<object[]>(Options(capacity));
 				return new(command.ToTargetBlockAsync(rawBlock, true).AsTask(), () => ((IDataflowBlock)rawBlock).Fault(ConsumerGone()));
@@ -86,11 +79,6 @@ public static class LeakPipelineTests
 
 	// A block ends when it is faulted (a block that is only completed first delivers what it holds, and nobody is receiving).
 	static InvalidOperationException ConsumerGone() => new("The consumer is gone.");
-
-	static Channel<T> Make<T>(int capacity)
-		=> capacity <= 0
-			? System.Threading.Channels.Channel.CreateUnbounded<T>()
-			: System.Threading.Channels.Channel.CreateBounded<T>(capacity);
 
 	static DataflowBlockOptions Options(int capacity)
 		=> capacity <= 0 ? new() : new() { BoundedCapacity = capacity };
@@ -228,12 +216,6 @@ public static class LeakPipelineTests
 
 	// The overloads that create the target never wait for a consumer, so a consumer that never shows up costs memory (the rows) but holds no reader.
 	[Theory]
-	[InlineData(LeakSource.Factory, "ToChannel")]
-	[InlineData(LeakSource.BareClosed, "ToChannel")]
-	[InlineData(LeakSource.BareOpen, "ToChannel")]
-	[InlineData(LeakSource.Factory, "ToChannelAsync")]
-	[InlineData(LeakSource.BareClosed, "ToChannelAsync")]
-	[InlineData(LeakSource.BareOpen, "ToChannelAsync")]
 	[InlineData(LeakSource.Factory, "AsSourceBlock")]
 	[InlineData(LeakSource.BareClosed, "AsSourceBlock")]
 	[InlineData(LeakSource.BareOpen, "AsSourceBlock")]
@@ -248,12 +230,6 @@ public static class LeakPipelineTests
 
 		object target = overload switch
 		{
-#pragma warning disable xUnit1051 // The leak checks must see the same token the call has always had: none.
-			"ToChannel" => command.ToChannel<Row>(true),
-#pragma warning restore xUnit1051
-#pragma warning disable xUnit1051 // The leak checks must see the same token the call has always had: none.
-			"ToChannelAsync" => command.ToChannelAsync<Row>(true),
-#pragma warning restore xUnit1051
 			"AsSourceBlock" => command.AsSourceBlock<Row>(),
 #pragma warning disable xUnit1051 // The leak checks must see the same token the call has always had: none.
 			_ => command.AsSourceBlockAsync<Row>(),

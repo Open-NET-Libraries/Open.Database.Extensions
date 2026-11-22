@@ -1,14 +1,14 @@
 # Channels and Dataflow
 
-Query results can be read straight into a pipeline instead of a collection. The core package does it for a mapped query, and two companion packages do it for commands and readers.
+Query results can be read straight into a pipeline instead of a collection. The core package streams a mapped query, and two companion packages put its rows into a channel or a Dataflow block.
 
 | Package | Entry points | Pipeline type |
 |---|---|---|
 | `Open.Database.Extensions.Core` (the views behind `Map<T>()`) | `ToBufferedAsyncStream()`, `ToAsyncBufferStream()` | `IAsyncEnumerable<T>` (elements), `IAsyncEnumerable<ReadOnlyMemory<T>>` (chunks) |
-| `Open.Database.Extensions.Channel` | `ToChannel<T>()`, `ToChannelAsync<T>()` | `System.Threading.Channels` |
+| `Open.Database.Extensions.Channel` | `ToChannelReader()`, `ToChannel()`, `ToChannelHoldingConnection()` | `System.Threading.Channels` |
 | `Open.Database.Extensions.Dataflow` | `ToTargetBlock<T>()`, `ToTargetBlockAsync<T>()`, `AsSourceBlock<T>()` | `System.Threading.Tasks.Dataflow` |
 
-The packages work on expressive commands, on `IDbCommand` and on readers, and map rows the same way as [`Map<T>()`](mapping.md).
+The Channel package takes a mapped query (`Map<T>()`). The Dataflow package works on expressive commands, on `IDbCommand` and on readers. Rows are mapped the same way as [`Map<T>()`](mapping.md).
 
 ## Streaming from a mapped query
 
@@ -44,17 +44,33 @@ To read rows one at a time and stop early, see [`Stream`](mapping.md#terminals):
 
 ### What it costs
 
-The producer is unbounded. It never waits for the consumer, so the read finishes at full speed and frees the connection, while memory grows with the backlog of a slow consumer. A bounded channel would cap the memory, but only by holding the connection at the consumer's pace, so the bounded forms are planned for the Channel library, under their own names.
+The producer is unbounded. It never waits for the consumer, so the read finishes at full speed and frees the connection, while memory grows with the backlog of a slow consumer. A bounded channel caps the channel, not the memory: the query is still read at full speed. To cap memory by holding the connection, see [Channels](#channels).
 
 ## Channels
 
 ![Open.Database.Extensions.Channel: You write the SQL. ODX writes the other twenty lines.](../images/hero-channel.svg)
 
-`ToChannel<T>` returns a `ChannelReader<T>` immediately. The channel is completed when every row has been written, or completed with the exception if reading fails:
+**Import [Open.ChannelExtensions](https://www.nuget.org/packages/Open.ChannelExtensions/) alongside `Open.Database.Extensions.Channel`.** The Channel package depends only on Core and `System.Threading.Channels`, and does one job: it puts the rows of a mapped query into a channel as fast as it can. Everything after the dump (`Transform`, `Batch`, `Join`, `ReadAll`) is what Open.ChannelExtensions is for.
+
+`ToChannelReader()` and `ToChannel()` make an unbounded channel and start reading at the call:
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_channel)]
 
-The overloads that take a `ChannelWriter` as the target return the number of rows read and handed to the internal buffer, not the number delivered. With `complete: true` the writer is completed after the last row has been delivered and the reader released, which can be after the call has returned.
+The query is read at full speed into pooled chunks, and the connection is closed when the read ends, however slowly the consumer reads. The rows the consumer has not read yet wait in memory. The channel is always completed: after the last row, or with the exception that ended the read, a cancel included. `ToChannel(out Task<long> readCount)` also returns the number of rows written. `ToBoundedChannelReader(capacity)` and `ToBoundedChannel(capacity)` make a bounded channel; the bound limits the channel, not memory.
+
+### A channel you own
+
+`ToChannel(channel)` and `ToChannel(writer)` only write. They leave the channel open, so passes can share it, and the returned task is the done signal: it completes with the number of rows written, and a failure or a cancel comes back through it. `ChannelEnd.Complete` completes the channel when the pass ends, with the exception that ended it if there was one.
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#to_channel_owned)]
+
+When the channel is full, the write waits for room, before the command runs and between rows. The rows wait in memory meanwhile, so the channel does not limit memory. If the channel is closed, the pass stops, without an exception, and returns the rows written so far; a channel completed with an error throws that error.
+
+### Capping memory
+
+`ToChannelHoldingConnection` pulls the rows one at a time from [`Stream`](xref:Open.Database.Extensions.IMappedQuery`1.Stream*), so a full channel limits memory. `Stream` says when to use it and what the required `stallTimeout` does.
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#to_channel_holding)]
 
 ## Dataflow
 
@@ -67,6 +83,5 @@ The overloads that take a `ChannelWriter` as the target return the number of row
 ## Honest limits
 
 - These are conveniences for pipelines, not speed-ups. In the published benchmarks, draining a channel or a `BufferBlock` is slower than reading rows in a plain loop; see [Channels and Dataflow against a plain loop](benchmarks/pipelines.md).
-- The mapped overloads read raw rows into a bounded buffer of about 1,024 rows and map them in a second stage. The channel study in the [benchmark results](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md) explains the trade-off.
-- The unmapped `ToChannel` overloads can still lose the row that was in flight when a read fails while the target is full. This is a known limitation of version 11.
+- The mapped Dataflow overloads read raw rows into a bounded buffer of about 1,024 rows and map them in a second stage. The channel study in the [benchmark results](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md) explains the trade-off.
 - The synchronous `ToTargetBlock` overloads post each row without waiting. When the target is complete, or bounded and full, or when the internal 1,024-row buffer of the mapped overloads is full, reading stops without an error and the number the call returns is the only sign of the shortfall. To feed a bounded target, use `ToTargetBlockAsync`, which waits.

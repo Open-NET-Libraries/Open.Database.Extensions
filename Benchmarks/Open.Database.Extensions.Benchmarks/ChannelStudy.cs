@@ -108,10 +108,10 @@ public static class ChannelStudy
 		target.Complete();
 	}
 
-	// ODE's actual ToChannel: raw rows into a bounded buffer, second task maps into the target.
+	// ODE's ToChannel: Core's buffered stream, written into the target.
 	static async Task TwoStage(BenchConnection conn, ChannelWriter<Post> target, Action readerDone)
 	{
-		await conn.Command(Sql).ToChannel<Post>(target, true);
+		await conn.Command(Sql).Map<Post>().ToChannel(target, ChannelEnd.Complete);
 		readerDone();
 	}
 
