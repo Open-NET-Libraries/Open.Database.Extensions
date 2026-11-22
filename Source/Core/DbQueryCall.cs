@@ -85,6 +85,66 @@ public readonly struct DbQueryCall
 			Params.AddDerived(Definition, CheckedExpression(expression), value));
 
 
+	/// <summary>
+	/// Maps each row to a <typeparamref name="T"/> by column name (a single value such as
+	/// <see cref="int"/> is read from the first column), and returns the mapped query.
+	/// </summary>
+	/// <remarks>
+	/// The same as <see cref="CoreExtensions.Map{T}(IExecuteReader)"/>, written the same way, without boxing this value:
+	/// the query holds the call as it is.
+	/// </remarks>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>()
+		=> FirstColumn<T>.Instance is { } firstColumn
+		? new(Views.QueryCore(Bound(), firstColumn))
+		: new(Views.QueryCore(Bound(), RowMap<T>.Default));
+
+	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped query.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does.</param>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>(RowMap<T>? map)
+		=> map is null
+		? Map<T>()
+		: new(Views.QueryCore(Bound(), map));
+
+	/// <summary>Maps each row with a selector, and returns the mapped query.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="selector">Called for each row, from any thread and by overlapping calls, so it must be safe for concurrent use.</param>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>(Func<IDataRecord, T> selector)
+	{
+		if (selector is null) throw new ArgumentNullException(nameof(selector));
+		Contract.EndContractBlock();
+
+		return new(Views.QueryCore(Bound(), new SelectorSource<T>(selector)));
+	}
+
+	/// <summary>Reads each row without a model, as an array of its values.</summary>
+	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>, without boxing this value.</remarks>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<object?[]> AsObjectArrays()
+		=> new(Views.QueryCore(Bound(), ObjectArraySource.Instance));
+
+	/// <summary>Reads each row without a model, as a <see cref="DictionaryRow"/>.</summary>
+	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>, without boxing this value.</remarks>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<DictionaryRow> AsDictionaryRows()
+		=> new(Views.QueryCore(Bound(), DictionaryRowSource.Instance));
+
+	DbQueryCall Bound()
+	{
+		_ = Definition;
+		return this;
+	}
+
 	internal static string CheckedName(string name)
 	{
 		if (name is null) throw new ArgumentNullException(nameof(name));

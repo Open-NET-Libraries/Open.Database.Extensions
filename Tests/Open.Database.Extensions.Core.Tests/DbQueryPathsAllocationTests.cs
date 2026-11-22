@@ -159,6 +159,38 @@ public static class DbQueryPathsAllocationTests
 #endif
 	}
 
+	// The unmapped form, DbQuery.Using(c).AddParam(...).Map<T>(), is the same text with the same cost: the call maps without being
+	// boxed, so what it costs is what the map-first form costs.
+	[Fact]
+	public static void TheUnmappedForm_CostsWhatTheMapFirstFormCosts()
+	{
+#if DEBUG
+		Assert.Skip("Release only.");
+#else
+		using var c = new SqliteConnection("Data Source=:memory:");
+		string p0 = Value, p1 = Value, p2 = Value, p3 = Value, p4 = Value;
+		DbQuery<S5> typed5 = Q5.Params<S5>();
+
+		long using5 = BytesPerCall(() => Sink(Q5.Using(c).Map<long>()));
+		long one = BytesPerCall(() => Sink(Q1.Using(c).AddParam("p0", p0).Map<long>()));
+		long five = BytesPerCall(() => Sink(Q5.Using(c).AddParam("p0", p0).AddParam("p1", p1).AddParam("p2", p2).AddParam("p3", p3).AddParam("p4", p4).Map<long>()));
+		long derived = BytesPerCall(() => Sink(Q5.Using(c).AddParam(p0).AddParam(p1).AddParam(p2).AddParam(p3).AddParam(p4).Map<long>()));
+		long selector = BytesPerCall(() => Sink(Q5.Using(c).AddParam("p0", p0).AddParam("p1", p1).AddParam("p2", p2).AddParam("p3", p3).AddParam("p4", p4).Map(static r => r.GetInt64(0))));
+		long rows = BytesPerCall(() => Sink(Q5.Using(c).AddParam("p0", p0).AddParam("p1", p1).AddParam("p2", p2).AddParam("p3", p3).AddParam("p4", p4).AsObjectArrays()));
+		long typed = BytesPerCall(() => Sink(typed5.Using(c).AddParams(new(p0, p1, p2, p3, p4)).Map<long>()));
+
+		Report($"unmapped: Using {using5}, 1 / 5 values {one} / {five}, derived {derived}, selector {selector}, rows {rows}, typed {typed}");
+
+		Same(0, using5);
+		Same(40, one);
+		Same(104, five, derived, rows);
+
+		// A selector adds the object that holds it (24 B).
+		Same(104 + 24, selector);
+		Same(56, typed);
+#endif
+	}
+
 	// A name spelled without its prefix costs the provider an allocation for every parameter when it is sent as written (SQLite builds
 	// the prefixed names to look for). The definition has scanned the text, so a written name is sent as the text declares it and
 	// both spellings cost the same.

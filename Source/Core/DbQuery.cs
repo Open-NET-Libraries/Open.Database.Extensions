@@ -251,7 +251,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// The values are then given in one call, which the compiler checks:
 	/// <c>.Using(db).AddParams(new(AuthorId: authorId, Day: day))</c>.
-	/// A class object that already exists (for example a deserialized request) is added with <c>AddParams</c> on the untyped definition, at the same 24 B.
+	/// A class object that already exists (for example a deserialized request) is added with <c>AddParams</c> on the untyped definition, which costs no more.
 	/// </remarks>
 	/// <typeparam name="TParams">The type of the values.</typeparam>
 	/// <returns>The typed definition.</returns>

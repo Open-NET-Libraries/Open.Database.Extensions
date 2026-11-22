@@ -44,6 +44,60 @@ public readonly struct DbQueryUsing
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public object Source => SourceOrThrow;
 
+	/// <summary>
+	/// Maps each row to a <typeparamref name="T"/> by column name (a single value such as
+	/// <see cref="int"/> is read from the first column), and returns the mapped query.
+	/// </summary>
+	/// <remarks>
+	/// The same as <see cref="CoreExtensions.Map{T}(IExecuteReader)"/>, written the same way, without boxing this value:
+	/// the query holds the call as it is.
+	/// </remarks>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>()
+		=> FirstColumn<T>.Instance is { } firstColumn
+		? new(Views.QueryCore(ToCall(), firstColumn))
+		: new(Views.QueryCore(ToCall(), RowMap<T>.Default));
+
+	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped query.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does.</param>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>(RowMap<T>? map)
+		=> map is null
+		? Map<T>()
+		: new(Views.QueryCore(ToCall(), map));
+
+	/// <summary>Maps each row with a selector, and returns the mapped query.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="selector">Called for each row, from any thread and by overlapping calls, so it must be safe for concurrent use.</param>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>(Func<IDataRecord, T> selector)
+	{
+		if (selector is null) throw new ArgumentNullException(nameof(selector));
+		Contract.EndContractBlock();
+
+		return new(Views.QueryCore(ToCall(), new SelectorSource<T>(selector)));
+	}
+
+	/// <summary>Reads each row without a model, as an array of its values.</summary>
+	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>, without boxing this value.</remarks>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<object?[]> AsObjectArrays()
+		=> new(Views.QueryCore(ToCall(), ObjectArraySource.Instance));
+
+	/// <summary>Reads each row without a model, as a <see cref="DictionaryRow"/>.</summary>
+	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>, without boxing this value.</remarks>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<DictionaryRow> AsDictionaryRows()
+		=> new(Views.QueryCore(ToCall(), DictionaryRowSource.Instance));
+
 	/// <summary>Gets the query as a call with no values.</summary>
 	internal DbQueryCall ToCall()
 		=> new(Definition, SourceOrThrow, default);
@@ -64,9 +118,7 @@ public readonly struct DbQueryUsing
 	/// <remarks>
 	/// Declare the type with <see cref="DbQuery.Params{TParams}"/>
 	/// to have it checked at compile time.
-	/// A <see langword="readonly"/> <see langword="record"/> <see langword="struct"/> holds its members in itself, so a call allocates one object, a 16 B header and the struct;
-	/// an anonymous object or a class built for the call allocates the object as well (for five strings, 80 B against 56 B).
-	/// An object that already exists costs 24 B either way.
+	/// For the lightest call, use a typed <see cref="DbQuery.Params{TParams}"/> definition with a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
 	/// </remarks>
 	public DbQueryCall AddParams<T>(T values)
 		where T : notnull
@@ -74,9 +126,7 @@ public readonly struct DbQueryUsing
 
 	/// <summary>Adds an input parameter named as you write it.</summary>
 	/// <remarks>
-	/// The values of a call are held in one array, 24 B and 16 B a value.
-	/// Declaring the type of the values with <see cref="DbQuery.Params{TParams}"/> holds them in one object the size of the struct, which is lighter:
-	/// 64 B less for five int values, 128 B less for ten.
+	/// For the lightest call, declare the values with <see cref="DbQuery.Params{TParams}"/> and a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
 	/// </remarks>
 	/// <typeparam name="T">The type of the value.</typeparam>
 	/// <param name="name">The name of the parameter.</param>

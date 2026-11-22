@@ -194,8 +194,8 @@ public static class DbQueryAllocationTests
 	}
 
 	// The bar: a call costs no more than writing it by hand.
-	// At K=1 the array the call keeps its value in and the box that maps it are not
-	// recovered by the rest of the path (see TheFewestValues).
+	// At K=1 the array the call keeps its value in is not recovered by
+	// the rest of the path (see TheFewestValues).
 	[Theory]
 	[InlineData(2)]
 	[InlineData(4)]
@@ -229,8 +229,8 @@ public static class DbQueryAllocationTests
 	static readonly MappedDbQuery<Row> M5 = Q5.Map<Row>();
 	static readonly MappedDbQuery<Row> M10 = Q10.Map<Row>();
 
-	// Map-first: a mapped definition reads the same call at no more than the chain that maps after the source (which boxes
-	// the call it maps), and the values cost the same array whether they come before the source or after it.
+	// Map-first: a mapped definition reads the same call at no more than the chain that maps after the source,
+	// and the values cost the same array whether they come before the source or after it.
 	[Fact]
 	public static void AMappedDefinition_CostsNoMoreThanTheChainThatMapsAfterTheSource()
 	{
@@ -247,8 +247,8 @@ public static class DbQueryAllocationTests
 
 		Report($"mapped definition: classic {classic} B, params after Using {after} B, params before Using {before} B");
 
-		// The definition holds the call as it is, so it skips the box the classic chain pays to map its call.
-		Assert.True(after < classic, $"params after Using {after} B, classic chain {classic} B.");
+		// Mapping the call of an unmapped definition costs no more than a definition that maps first.
+		Assert.True(after <= classic, $"params after Using {after} B, classic chain {classic} B.");
 
 		// Giving the source after the values copies nothing.
 		Assert.Equal(after, before);
@@ -325,8 +325,8 @@ public static class DbQueryAllocationTests
 #endif
 	}
 
-	// One value: the array that holds it (40 B) and the box that maps a call made on the unmapped definition (48 B) are the
-	// whole difference from hand-written code, whose value is boxed as well.
+	// One value: the typed form costs no more than hand-written code, and the ad hoc form (the array that holds the value)
+	// stays within 16 B of it, since hand-written code boxes its value as well.
 	[Fact]
 	public static void TheFewestValues_StayWithinASmallMarginOfHandWrittenAdoNet()
 	{
@@ -341,8 +341,8 @@ public static class DbQueryAllocationTests
 		long builder = Bytes(() => Builder(c, 1));
 
 		Report($"K=1: typed {typed} B, ad hoc {adHoc} B, hand-written {hand} B, today's builder (explicit names) {builder} B");
-		Assert.True(typed <= hand + 48, $"K=1: typed {typed} B, hand-written {hand} B.");
-		Assert.True(adHoc <= hand + 64, $"K=1: ad hoc {adHoc} B, hand-written {hand} B.");
+		Assert.True(typed <= hand, $"K=1: typed {typed} B, hand-written {hand} B.");
+		Assert.True(adHoc <= hand + 16, $"K=1: ad hoc {adHoc} B, hand-written {hand} B.");
 		Assert.True(typed < builder, $"K=1: typed {typed} B, builder {builder} B.");
 #endif
 	}

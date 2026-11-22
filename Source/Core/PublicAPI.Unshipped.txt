@@ -608,3 +608,13 @@ override Open.Database.Extensions.DbQueryCall.Equals(object? obj) -> bool
 override Open.Database.Extensions.DbQueryCall.GetHashCode() -> int
 static Open.Database.Extensions.DbQueryCall.operator !=(Open.Database.Extensions.DbQueryCall left, Open.Database.Extensions.DbQueryCall right) -> bool
 static Open.Database.Extensions.DbQueryCall.operator ==(Open.Database.Extensions.DbQueryCall left, Open.Database.Extensions.DbQueryCall right) -> bool
+Open.Database.Extensions.DbQueryCall.AsDictionaryRows() -> Open.Database.Extensions.MappedQuery<Open.Database.Extensions.DictionaryRow>
+Open.Database.Extensions.DbQueryCall.AsObjectArrays() -> Open.Database.Extensions.MappedQuery<object?[]!>
+Open.Database.Extensions.DbQueryCall.Map<T>() -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryCall.Map<T>(Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryCall.Map<T>(System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryUsing.AsDictionaryRows() -> Open.Database.Extensions.MappedQuery<Open.Database.Extensions.DictionaryRow>
+Open.Database.Extensions.DbQueryUsing.AsObjectArrays() -> Open.Database.Extensions.MappedQuery<object?[]!>
+Open.Database.Extensions.DbQueryUsing.Map<T>() -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryUsing.Map<T>(Open.Database.Extensions.RowMap<T>? map) -> Open.Database.Extensions.MappedQuery<T>
+Open.Database.Extensions.DbQueryUsing.Map<T>(System.Func<System.Data.IDataRecord!, T>! selector) -> Open.Database.Extensions.MappedQuery<T>
