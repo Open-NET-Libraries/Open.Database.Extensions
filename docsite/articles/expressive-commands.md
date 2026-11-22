@@ -69,6 +69,24 @@ List<Post> posts = await PostsByAuthorTyped.Using(db)
     .ToListAsync(cancellationToken);
 ```
 
+### Map the definition too
+
+`Map<T>()` also works on the definition, before any connection exists. The result, a `MappedDbQuery<T>`, is immutable like the `DbQuery` under it, so it too lives in a `static readonly` field, and the map, with the reader compiled from it, lives with it: there is no separate `RowMap<T>` field to declare. (`DbQuery<TParams>` has the same `Map`, giving a `MappedDbQuery<TParams, T>`.) A class that holds its queries as definitions, next to the same class building each command on every call:
+
+[!code-csharp[](../samples/MapFirst.cs#mapfirst_before)]
+
+[!code-csharp[](../samples/MapFirst.cs#mapfirst_after)]
+
+`Using(source)` takes the same four sources and returns the ordinary `MappedQuery<T>` view, with every terminal, `Skip` and `Take` it always had, so a test fake of `IMappedQuery<T>` is the same one. The parameters can come after `Using`, as above, or before it, and the command is the same either way. The values before the source are held without a connection, so the held call has no terminal: it cannot be read until `Using` gives it a source.
+
+[!code-csharp[](../samples/MapFirst.cs#mapfirst_values_first)]
+
+What the definition fixes is what never changes from one call to the next: the command text, the map, and `SingleResult()`, `AsyncReads()` and `UsePool(pool, clearOnReturn)`, each of which returns a new definition. What each call chooses is the values and, on the view, `Skip` and `Take`:
+
+[!code-csharp[](../samples/MapFirst.cs#mapfirst_paged)]
+
+A parameter added after `Using` is added to a query that `Using` made from a definition. A query built the other way (`connection.Command(sql).Map<T>()`) takes its parameters on the command, before `Map`, and `AddParam` on it throws `InvalidOperationException`. A `default` value of one of these types throws the same exception, as the other structs do.
+
 Everything after `Using` is what a command does: `Map<T>()` is the same extension, every terminal and `SingleResult()` apply, the connection is opened late and closed again only if the call opened it, a factory's connection is disposed and a pool's is given back. `SetTimeout(seconds)` on a definition returns a new definition. A `DbQuery` takes the same sources as `Using` does for a command, but only the typed ones: a connection (`DbConnection`), a transaction, an `IDbConnectionPool<TConnection>` or an `IDbConnectionFactory<TConnection>`; a bare `Func<TConnection>` is not one (wrap it in `new DbConnectionFactory<TConnection>(func)`).
 
 A call is cheaper than the command builder and no dearer than ADO.NET written by hand, apart from one small node (at most 48 bytes) at a single value: it is a few small immutable objects, and the typed form is one. Names are resolved as a command resolves them (see [Name a parameter from its argument](#name-a-parameter-from-its-argument)): `AddParam(authorId)` finds `@author_id`, and the typed form matches each member of the values type the same way and, when the names are known, does not send a member the query does not declare. A text definition finds its `@name` markers once, when it is made; a procedure's names are remembered for five minutes per connection source (the factory, the pool or the connection, also for a transaction) and per server and database, and read again only when they do not fit.

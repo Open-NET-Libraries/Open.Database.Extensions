@@ -221,6 +221,34 @@ public static class DbQueryAllocationTests
 #endif
 	}
 
+	static readonly MappedDbQuery<Row> M2 = Q2.Map<Row>();
+
+	// Map-first: a mapped definition reads the same call at the cost of the chain that maps after the source,
+	// plus what the unbound source and the held values need; nothing the definition adds is per call beyond that.
+	[Fact]
+	public static void AMappedDefinition_CostsNoMoreThanTheChainThatMapsAfterTheSource()
+	{
+#if DEBUG
+		// Release only, as ACall_CostsNoMoreThanHandWrittenAdoNet.
+		Assert.Skip("Release only.");
+#else
+		using DbConnection c = NewConnection();
+		int p0 = VA;
+		long p1 = VB;
+		long classic = Bytes(() => Q2.Using(c).AddParam(p0).AddParam(p1).Map<Row>().ToListAsync());
+		long after = Bytes(() => M2.Using(c).AddParam(p0).AddParam(p1).ToListAsync());
+		long before = Bytes(() => M2.AddParam(p0).AddParam(p1).Using(c).ToListAsync());
+
+		Report($"mapped definition: classic {classic} B, params after Using {after} B, params before Using {before} B");
+
+		// After Using: the one box of the unbound source (32 B) is all the definition adds.
+		Assert.True(after <= classic + 32, $"params after Using {after} B, classic chain {classic} B.");
+
+		// Before Using: that box and one small step per held value (two values here), replayed at Using.
+		Assert.True(before <= classic + 192, $"params before Using {before} B, classic chain {classic} B.");
+#endif
+	}
+
 	// One value: the single node (48 B for the first, the one a bound query
 	// returns) is the whole difference from hand-written code.
 	[Fact]

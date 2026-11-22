@@ -58,6 +58,10 @@ The connection was released when the read ended, however long the serialization 
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_items_view)]
 
+A read that finds no rows completes `Items` with `PooledArray<T>.Empty`, one shared view of no rows per row type. Nothing is rented for it, it needs no disposing, and its members never throw `ObjectDisposedException`, even after the buffer that gave it is disposed.
+
+To test code that returns a buffer, without a database, build one from rows you already have: `PooledBuffer<Post>.From(rows)` copies them into one array rented from the shared pool (`From(rows, pool, clearOnReturn)` takes a pool you choose), nothing runs in the background, `Items` is complete at once, and disposing it returns the array. No rows give `PooledArray<T>.Empty`.
+
 `Items` faults with the read's exception. It is cancelled when the read ended with an `OperationCanceledException` of any origin, or when the buffer was disposed first. Reading `Items` after the buffer is disposed throws `ObjectDisposedException`; a task you already hold that is still pending is cancelled. See [Cancellation and disposal](#cancellation-and-disposal).
 
 The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool (a large clear goes to the cleanup queue, and a full queue clears them where they are released: see [Pooled memory](#pooled-memory)). After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included. Disposing again does nothing. Disposing the buffer while the read is still running cancels the query.
