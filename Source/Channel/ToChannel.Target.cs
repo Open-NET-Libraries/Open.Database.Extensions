@@ -169,7 +169,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		=> Channel.Transformer<T>
-			.Create()
+			.Create(null, ArrayPool<object>.Shared)
 			.PipeResultsTo(reader, target, complete, cancellationToken);
 
 	/// <summary>
@@ -192,7 +192,7 @@ public static partial class ChannelDbExtensions
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
 		=> Channel.Transformer<T>
-			.Create(map)
+			.Create(map, ArrayPool<object>.Shared)
 			.PipeResultsTo(reader, target, complete, cancellationToken);
 
 	/// <summary>
@@ -780,7 +780,7 @@ public static partial class ChannelDbExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		=> Channel.Transformer<T>
-			.Create()
+			.Create(null, ArrayPool<object>.Shared)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
@@ -793,7 +793,7 @@ public static partial class ChannelDbExtensions
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
 		=> Channel.Transformer<T>
-			.Create(map)
+			.Create(map, ArrayPool<object>.Shared)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
@@ -1036,9 +1036,7 @@ public static partial class ChannelDbExtensions
 
 		try
 		{
-			return map is null
-				? Channel.Transformer<T>.Create()
-				: Channel.Transformer<T>.Create(map);
+			return Channel.Transformer<T>.Create(map, ArrayPool<object>.Shared);
 		}
 		catch (Exception ex)
 		{

@@ -1,24 +1,25 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Open.Database.Extensions.Dataflow;
 
-/// <inheritdoc />
-internal class Transformer<T>(RowMap<T>? map = null)
-	: Core.Transformer<T>(map)
+/// <summary>Maps the records of a reader through a <see cref="RowMap{T}"/>, in the second stage of a dataflow pipeline.</summary>
+/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
+/// <param name="pool">The pool of the arrays the records are buffered in. The caller provides it; each array is cleared when it is returned.</param>
+internal class Transformer<T>(RowMap<T>? map, ArrayPool<object> pool)
 {
-	/// <inheritdoc cref="Create(RowMap{T}?)"/>
-	[ExcludeFromCodeCoverage]
-	[OverloadResolutionPriority(1)]
-	public static Transformer<T> Create()
-		=> new();
+	/// <summary>How many records are buffered between the two stages.</summary>
+	const int MaxArrayBuffer = 1024;
+
+	readonly RowMap<T> _map = map ?? RowMap<T>.Default;
+	readonly ArrayPool<object> _pool = pool;
 
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	public static Transformer<T> Create(RowMap<T>? map)
-		=> new(map);
+	/// <param name="pool">The pool of the arrays the records are buffered in.</param>
+	public static Transformer<T> Create(RowMap<T>? map, ArrayPool<object> pool)
+		=> new(map, pool);
 
 	/// <summary>
 	/// The internal two-stage pipeline behind the mapped overloads:
@@ -46,6 +47,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 		readonly ITargetBlock<T> _target;
 		readonly TaskCompletionSource<bool> _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		Func<object?[], T>? _transform;
+		ArrayPool<object>? _pool; // The transformer's, set with the columns, before any row is written.
 		int[] _ordinals = [];
 		int _allColumnsInOrder = -1; // The reader's field count when every column is mapped, in order; otherwise -1.
 		Exception? _failure;
@@ -71,7 +73,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 					}
 					finally
 					{
-						LocalPool.Return(a);
+						_pool!.Return(a, clearArray: true);
 					}
 				},
 				options ?? new ExecutionDataflowBlockOptions
@@ -151,7 +153,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			Debug.Assert(transformer is not null);
 			Debug.Assert(reader is not null);
 
-			transformer.MatchingColumns(reader, out int[] ordinals, out ImmutableArray<string> names);
+			transformer._map.MatchingColumns(reader, out int[] ordinals, out ImmutableArray<string> names);
 			bool inOrder = true;
 			for (int i = 0; i < ordinals.Length; i++)
 				if (ordinals[i] != i) inOrder = false;
@@ -159,16 +161,17 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			int fieldCount = reader.FieldCount;
 			_ordinals = ordinals;
 			_allColumnsInOrder = inOrder && ordinals.Length == fieldCount ? fieldCount : -1;
-			_transform = new Processor(transformer, names).Transform;
+			_pool = transformer._pool;
+			_transform = transformer._map.ArrayMapper(names);
 		}
 
 		object[] ReadRow(IDataReader reader)
 		{
 			// Every column is mapped, in order: take the whole record in one call.
-			if (_allColumnsInOrder >= 0) return reader.GetValues(_allColumnsInOrder, LocalPool);
+			if (_allColumnsInOrder >= 0) return reader.GetValues(_allColumnsInOrder, _pool!);
 
 			int[] ordinals = _ordinals;
-			object[] row = LocalPool.Rent(ordinals.Length);
+			object[] row = _pool!.Rent(ordinals.Length);
 			for (int i = 0; i < ordinals.Length; i++)
 				row[i] = reader.GetValue(ordinals[i]);
 
@@ -193,7 +196,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 				object[] row = ReadRow(reader);
 				if (!_block.Post(row))
 				{
-					LocalPool.Return(row);
+					_pool!.Return(row, clearArray: true);
 					break;
 				}
 
@@ -239,7 +242,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 					object[] row = ReadRow(reader);
 					if (!await _block.SendAsync(row, token).ConfigureAwait(false))
 					{
-						LocalPool.Return(row);
+						_pool!.Return(row, clearArray: true);
 						break;
 					}
 

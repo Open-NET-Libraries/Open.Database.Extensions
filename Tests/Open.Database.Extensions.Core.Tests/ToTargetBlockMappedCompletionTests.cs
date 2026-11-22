@@ -1235,7 +1235,7 @@ public static class ToTargetBlockMappedCompletionTests
 		var harness = new Harness<Row>(TargetKind.ActionBlock, ct);
 		var options = new ExecutionDataflowBlockOptions { CancellationToken = cancellation.Token, BoundedCapacity = 1024 };
 
-		Dataflow.Transformer<Row>.Create().PipeResultsTo(FakeReader.Create(Columns, Rows(10)), harness.Target, true, options);
+		Dataflow.Transformer<Row>.Create(null, ArrayPool<object>.Shared).PipeResultsTo(FakeReader.Create(Columns, Rows(10)), harness.Target, true, options);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await harness.Target.Completion.WaitAsync(Timeout, ct));
 		Assert.Null(harness.Target.AcceptedAtComplete);
@@ -1287,15 +1287,6 @@ public static class ToTargetBlockMappedCompletionTests
 		var target = new ActionBlock<Row>(_ => Interlocked.Increment(ref received));
 		bool Delivered(long calls) => Interlocked.Read(ref received) >= calls * rowsPerCall;
 		object?[][] rows = Rows(rowsPerCall);
-
-		// The row arrays come from a bounded static pool that keeps up to its capacity of arrays, once that many rows have been in flight at once.
-		// How many that is depends on how fast the blocks drain, so fill the pool first: afterwards its size cannot change, and any growth is per call.
-		var pool = (ArrayPool<object>)typeof(Core.Transformer<Row>)
-			.GetField("LocalPool", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!
-			.GetValue(null)!;
-		object[][] pooled = new object[4096][]; // More than the pool can keep.
-		for (int i = 0; i < pooled.Length; i++) pooled[i] = pool.Rent(1);
-		for (int i = 0; i < pooled.Length; i++) pool.Return(pooled[i]);
 
 		DbDataReader NewReader()
 		{

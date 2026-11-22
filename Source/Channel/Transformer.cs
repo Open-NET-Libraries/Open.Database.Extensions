@@ -3,23 +3,24 @@ using System.Runtime.ExceptionServices;
 
 namespace Open.Database.Extensions.Channel;
 
-/// <summary>Constructs a <see cref="Transformer{T}"/>.</summary>
+/// <summary>Maps the records of a reader through a <see cref="RowMap{T}"/>, on a second task (the two-stage pipeline of the mapped overloads).</summary>
 /// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-internal class Transformer<T>(RowMap<T>? map = null)
-	: Core.Transformer<T>(map)
+/// <param name="pool">The pool of the arrays the records are buffered in. The caller provides it; each array is cleared when it is returned.</param>
+internal class Transformer<T>(RowMap<T>? map, ArrayPool<object> pool)
 {
-	/// <inheritdoc cref="Create(RowMap{T}?)"/>
-	[ExcludeFromCodeCoverage]
-	[OverloadResolutionPriority(1)]
-	public static Transformer<T> Create()
-		=> new();
+	/// <summary>How many records are buffered between the two stages.</summary>
+	const int MaxArrayBuffer = 1024;
+
+	readonly RowMap<T> _map = map ?? RowMap<T>.Default;
+	readonly ArrayPool<object> _pool = pool;
 
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	public static Transformer<T> Create(RowMap<T>? map)
-		=> new(map);
+	/// <param name="pool">The pool of the arrays the records are buffered in.</param>
+	public static Transformer<T> Create(RowMap<T>? map, ArrayPool<object> pool)
+		=> new(map, pool);
 
 	/// <summary>
 	/// The columns of the reader that map to properties: their ordinals and names, in the order of the ordinals.
@@ -28,7 +29,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 	private (int[] Ordinals, ImmutableArray<string> Names) ResolveColumns(IDataReader reader)
 	{
 		Debug.Assert(reader is not null);
-		MatchingColumns(reader, out int[] ordinals, out ImmutableArray<string> names);
+		_map.MatchingColumns(reader, out int[] ordinals, out ImmutableArray<string> names);
 		return (ordinals, names);
 	}
 
@@ -99,7 +100,8 @@ internal class Transformer<T>(RowMap<T>? map = null)
 	internal sealed class Pipeline
 	{
 		private readonly Transformer<T> _owner;
-		private readonly Processor _processor;
+		private readonly ArrayPool<object> _pool;
+		private Func<object?[], T>? _transform; // Set once the columns are known, before the first record can reach stage 2.
 		private readonly CancellationTokenSource _stop;
 		private readonly ChannelWriter<T> _target;
 		private readonly bool _complete;
@@ -116,7 +118,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			_target = target;
 			_complete = complete;
 			_cancellationToken = cancellationToken;
-			_processor = new Processor(owner); // The column names are only known once there is a reader.
+			_pool = owner._pool; // The column names (and so the mapper) are only known once there is a reader.
 			_stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			Token = _stop.Token;
 
@@ -156,12 +158,12 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			Debug.Assert(reader is not null);
 			Debug.Assert(columns.Ordinals is not null && !columns.Names.IsDefault);
 
-			_processor.SetNames(columns.Names); // Before the first record can reach stage 2.
+			_transform = _owner._map.ArrayMapper(columns.Names); // Before the first record can reach stage 2.
 
 			// When every column is mapped, the whole record is taken in one call.
 			IEnumerable<object[]> records = columns.Ordinals.Length == reader.FieldCount
-				? reader.AsEnumerable(LocalPool)
-				: reader.AsEnumerable(columns.Ordinals, LocalPool);
+				? reader.AsEnumerable(_pool)
+				: reader.AsEnumerable(columns.Ordinals, _pool);
 
 			long count = 0;
 			foreach (object[] record in records)
@@ -180,7 +182,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			Debug.Assert(reader is not null);
 			Debug.Assert(columns.Ordinals is not null && !columns.Names.IsDefault);
 
-			_processor.SetNames(columns.Names);
+			_transform = _owner._map.ArrayMapper(columns.Names);
 
 			int[] ordinals = columns.Ordinals;
 			bool whole = ordinals.Length == reader.FieldCount; // Every column is mapped: the whole record in one call.
@@ -191,7 +193,7 @@ internal class Transformer<T>(RowMap<T>? map = null)
 			// be cancelled tells which of the two it is: if it finds a record, writing that record ends the call with the cancellation.
 			while (await reader.ReadAsync(Token.IsCancellationRequested ? CancellationToken.None : Token).ConfigureAwait(false))
 			{
-				object[] record = LocalPool.Rent(ordinals.Length);
+				object[] record = _pool.Rent(ordinals.Length);
 				if (whole)
 				{
 					reader.GetValues(record);
@@ -272,11 +274,12 @@ internal class Transformer<T>(RowMap<T>? map = null)
 						T item;
 						try
 						{
-							item = _processor.Transform(record);
+							Debug.Assert(_transform is not null, "The columns are bound before any record is written.");
+							item = _transform!(record);
 						}
 						finally
 						{
-							LocalPool.Return(record);
+							_pool.Return(record, clearArray: true);
 						}
 
 						await _target.WriteAsync(item, _cancellationToken).ConfigureAwait(false);

@@ -140,7 +140,7 @@ public static partial class DataflowExtensions
 		ITargetBlock<T> target,
 		bool complete)
 		=> Dataflow.Transformer<T>
-			.Create()
+			.Create(null, ArrayPool<object>.Shared)
 			.PipeResultsTo(reader, target, complete);
 
 	/// <summary>
@@ -167,7 +167,7 @@ public static partial class DataflowExtensions
 		bool complete,
 		RowMap<T>? map)
 		=> Dataflow.Transformer<T>
-			.Create(map)
+			.Create(map, ArrayPool<object>.Shared)
 			.PipeResultsTo(reader, target, complete);
 
 	/// <summary>
@@ -812,7 +812,7 @@ public static partial class DataflowExtensions
 		bool complete,
 		CancellationToken cancellationToken = default)
 		=> Dataflow.Transformer<T>
-			.Create()
+			.Create(null, ArrayPool<object>.Shared)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
@@ -842,7 +842,7 @@ public static partial class DataflowExtensions
 		RowMap<T>? map,
 		CancellationToken cancellationToken = default)
 		=> Dataflow.Transformer<T>
-			.Create(map)
+			.Create(map, ArrayPool<object>.Shared)
 			.PipeResultsToAsync(reader, target, complete, cancellationToken);
 
 	/// <summary>
@@ -1495,7 +1495,7 @@ public static partial class DataflowExtensions
 		try
 		{
 			// An unmappable T fails here, before the command runs (and faults the target, as a failure during the read does).
-			var transformer = Dataflow.Transformer<T>.Create(map);
+			var transformer = Dataflow.Transformer<T>.Create(map, ArrayPool<object>.Shared);
 			total = executeReader(reader => pipeline.Write(reader, transformer));
 		}
 		catch (Exception ex)
@@ -1525,7 +1525,7 @@ public static partial class DataflowExtensions
 		try
 		{
 			// An unmappable T fails here, before the command runs (and faults the target, as a failure during the read does).
-			var transformer = Dataflow.Transformer<T>.Create(map);
+			var transformer = Dataflow.Transformer<T>.Create(map, ArrayPool<object>.Shared);
 			total = await executeReader(reader => pipeline.WriteAsync(reader, transformer, cancellationToken)).ConfigureAwait(false);
 		}
 		catch (Exception ex)
