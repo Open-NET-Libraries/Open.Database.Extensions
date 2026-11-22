@@ -411,7 +411,7 @@ enum ParamKind
 }
 
 /// <summary>
-/// One parameter added before the source is known: kept in order as a list (newest first),
+/// One parameter added before the source is known: kept as a linked list, newest first,
 /// and replayed on the source's <see cref="DbQueryUsing"/> when <c>Using</c> gives it one.
 /// </summary>
 /// <remarks>

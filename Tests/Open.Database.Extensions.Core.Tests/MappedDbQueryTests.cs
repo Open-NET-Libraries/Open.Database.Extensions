@@ -362,6 +362,22 @@ public static class MappedDbQueryTests
 	}
 
 	[Fact]
+	public static void ThreeValuesHeldBeforeUsing_AreReplayedOldestFirst()
+	{
+		using var db = new Db();
+		using Tracked c = db.Connect();
+
+		var replayed = (DbQueryCall)PostsMapped.AddParam("a", 1).AddParam("b", 2L).AddParam("c", "three").Using(c).Command;
+		DbQueryCall classic = Posts.Using(c).AddParam("a", 1).AddParam("b", 2L).AddParam("c", "three");
+		DbQueryCall reordered = Posts.Using(c).AddParam("c", "three").AddParam("b", 2L).AddParam("a", 1);
+		DbQueryCall swappedMiddle = Posts.Using(c).AddParam("a", 1).AddParam("c", "three").AddParam("b", 2L);
+
+		Assert.Equal(classic, replayed);
+		Assert.NotEqual(reordered, replayed);
+		Assert.NotEqual(swappedMiddle, replayed);
+	}
+
+	[Fact]
 	public static async Task ParamsBeforeUsing_NamedFromTheVariables_GiveTheRows()
 	{
 		using var db = new Db();
