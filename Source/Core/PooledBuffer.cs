@@ -219,7 +219,7 @@ public sealed class PooledBuffer<T>
 		// This entry picks the pool and the clearing: the shared pool, and the app-wide default.
 		return Create(
 			rows,
-			new(ArrayPool<T>.Shared, null, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromBytes));
+			new(ArrayPool<T>.Shared, null, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromClearedBytes));
 	}
 
 	/// <summary>Makes a finished buffer from rows you already have, with an array from a pool you choose.</summary>
@@ -243,7 +243,7 @@ public sealed class PooledBuffer<T>
 
 		return Create(
 			rows,
-			new(pool, clearOnReturn, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromBytes));
+			new(pool, clearOnReturn, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromClearedBytes));
 	}
 
 	/// <summary>The most rows <c>From</c> takes: its one array is a first chunk, which a buffer holds as a power of two.</summary>
