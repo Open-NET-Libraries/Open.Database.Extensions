@@ -152,7 +152,7 @@ public static class ArrayLeaseTests
 
 	[Fact]
 	public static void TheDeferThreshold_IsTheMeasuredFourThousandNinetySix()
-		=> Assert.Equal(4096, ChunkConfig<ChannelRow>.DefaultDeferFromRows);
+		=> Assert.Equal(131_072, ChunkConfig<ChannelRow>.DefaultDeferFromBytes);
 
 	[Fact]
 	public static void AChunkOfExactlyTheThreshold_IsPosted()
@@ -172,7 +172,8 @@ public static class ArrayLeaseTests
 	{
 		var pool = Pool();
 		var bin = new TestBin();
-		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 8);
+		// 7 references are 56 bytes on a 64-bit runtime, under the 64-byte threshold.
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 64);
 		ChannelRow[] array = Written(pool, 16, 7);
 
 		config.Seal(array, 7).Release();
@@ -201,26 +202,32 @@ public static class ArrayLeaseTests
 	}
 
 	[Fact]
-	public static void ALargeChunkOfValueRows_IsClearedInline_NeverPosted()
+	public static void ValueRows_FollowTheSameRule_ByBytes()
 	{
-		// The bin pays only for a large clear of rows that hold references:
-		// value rows are cleared where they are released, whatever the size.
+		// The bin pays for a large clear whatever the row is: the rule counts
+		// the bytes cleared (used rows times the row's size), value rows included.
 		var pool = new CountingPool<int>
 		{
 			RoundUp = true,
 			IsDirty = static a => a.Any(v => v > 0),
 		};
 		var bin = new TestBin();
-		var config = TestConfig.Of<int>(pool, true, bin, 8);
-		int[] array = pool.Rent(64);
-		for (int i = 0; i < 40; ++i) array[i] = i + 1;
+		var config = TestConfig.Of<int>(pool, true, bin, 64);
 
-		config.Seal(array, 40).Release();
-
+		// 8 ints are 32 bytes: cleared where they are released.
+		int[] small = pool.Rent(16);
+		for (int i = 0; i < 8; ++i) small[i] = i + 1;
+		config.Seal(small, 8).Release();
 		Assert.Equal(0, bin.Posts);
-		Assert.Equal(1, pool.Returns);
 		Assert.Equal(0, pool.DirtyReturns);
+
+		// 40 ints are 160 bytes: handed to the bin.
+		int[] large = pool.Rent(64);
+		for (int i = 0; i < 40; ++i) large[i] = i + 1;
+		config.Seal(large, 40).Release();
+		Assert.Equal(1, bin.Posts);
 	}
+
 	// ---- release loops continue past a throwing Return -----------------------
 
 	[Fact]

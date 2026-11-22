@@ -269,7 +269,7 @@ readonly struct MappedQueryCore<T>(
 			clearOnReturn,
 			Config.Sizes,
 			Config.Bin,
-			Config.DeferFromRows));
+			Config.DeferFromBytes));
 	}
 
 	/// <summary>
