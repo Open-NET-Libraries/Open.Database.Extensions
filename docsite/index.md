@@ -42,6 +42,7 @@ The stream method has no `async`, `await` or `using`: the stream opens the conne
 |---|---|
 | Install it and run a first query | [Getting started](articles/getting-started.md) |
 | Stream rows into a channel or a dataflow block | [Channels and Dataflow](articles/channels-and-dataflow.md) |
+| Return rows from an ASP.NET Core controller with no service layer | [A controller with no service layer](articles/no-service-layer.md) |
 | See how little code it takes, against Dapper, EF Core and ADO.NET | [How little code](articles/how-little-code.md) |
 | See how it differs from Dapper | [Coming from Dapper](articles/coming-from-dapper.md) |
 | Look up a type or a method | [API reference](api/index.md) |

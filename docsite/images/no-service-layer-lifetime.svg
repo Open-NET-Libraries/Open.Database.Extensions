@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 312" role="img" aria-labelledby="nsl-life-title nsl-life-desc">
+  <title id="nsl-life-title">One request, from the query to the pool</title>
+  <desc id="nsl-life-desc">A timeline of one request, with time running left to right and no numbers. Four bars. The action: it starts the read with ToAsyncBuffer, registers the buffer with RegisterForDispose and awaits Items, then returns. The connection: open only while the read runs; it is released when the read is over, before the action returns. The Post rows: in pooled arrays held by the buffer, from the read until the response is over. The serializer: it writes the JSON from those rows after the action returns. A first marker says the read is over, the connection released and Items complete. A second marker says the response is over, the framework disposes the buffer and the arrays go back to the array pool.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --muted: #4b5563;
+      --plain-fill: #f6f8fa;
+      --plain-line: #57606a;
+      --conn-fill: #fff1e5;
+      --conn-line: #bc4c00;
+      --odx-fill: #ddf4ff;
+      --odx-line: #0969da;
+      --pool-fill: #dafbe1;
+      --pool-line: #1a7f37;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --muted: #b1bac4;
+        --plain-fill: #21262d;
+        --plain-line: #8b949e;
+        --conn-fill: #3d1f00;
+        --conn-line: #f0883e;
+        --odx-fill: #0c2d6b;
+        --odx-line: #58a6ff;
+        --pool-fill: #0f3d1f;
+        --pool-line: #3fb950;
+      }
+    }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 18px; font-weight: 600; }
+    .row { font-weight: 600; }
+    .small { font-size: 12px; fill: var(--muted); }
+    .mid { text-anchor: middle; }
+    .plain { fill: var(--plain-fill); stroke: var(--plain-line); stroke-width: 2; }
+    .conn { fill: var(--conn-fill); stroke: var(--conn-line); stroke-width: 2; }
+    .odx { fill: var(--odx-fill); stroke: var(--odx-line); stroke-width: 2; }
+    .pool { fill: var(--pool-fill); stroke: var(--pool-line); stroke-width: 2; }
+    .guide { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 4; }
+    .axis { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+    .arrow-pool { stroke: var(--pool-line); stroke-width: 2; fill: none; }
+    .head-muted { fill: var(--muted); }
+    .head-pool { fill: var(--pool-line); }
+  </style>
+  <defs>
+    <marker id="nsl-life-axis" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path class="head-muted" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+    <marker id="nsl-life-pool" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path class="head-pool" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <rect class="frame" x="0.5" y="0.5" width="719" height="311" rx="8"/>
+  <text class="title" x="20" y="30">One request, from the query to the pool</text>
+
+  <!-- Markers -->
+  <line class="guide" x1="380" y1="52" x2="380" y2="226"/>
+  <line class="guide" x1="600" y1="52" x2="600" y2="226"/>
+
+  <!-- The action -->
+  <text class="row" x="20" y="77">action</text>
+  <rect class="plain" x="180" y="60" width="220" height="26" rx="5"/>
+  <text x="190" y="78">start, register, await Items</text>
+
+  <!-- The connection -->
+  <text class="row" x="20" y="117">connection</text>
+  <rect class="conn" x="186" y="100" width="194" height="26" rx="5"/>
+  <text x="196" y="118">open while the read runs</text>
+
+  <!-- The rows -->
+  <text class="row" x="20" y="157">Post rows</text>
+  <rect class="odx" x="186" y="140" width="414" height="26" rx="5"/>
+  <text x="196" y="158">in pooled arrays, held by the buffer</text>
+
+  <!-- The serializer -->
+  <text class="row" x="20" y="197">serializer</text>
+  <rect class="plain" x="400" y="180" width="180" height="26" rx="5"/>
+  <text x="410" y="198">writes the JSON</text>
+
+  <!-- The pool -->
+  <line class="arrow-pool" x1="602" y1="153" x2="624" y2="153" marker-end="url(#nsl-life-pool)"/>
+  <rect class="pool" x="626" y="138" width="78" height="30" rx="5"/>
+  <text class="mid" x="665" y="158">array pool</text>
+
+  <!-- Marker labels -->
+  <text class="small mid" x="380" y="246">read over: connection</text>
+  <text class="small mid" x="380" y="262">released, Items complete</text>
+  <text class="small mid" x="600" y="246">response over: buffer</text>
+  <text class="small mid" x="600" y="262">disposed, arrays back</text>
+
+  <!-- Time -->
+  <line class="axis" x1="180" y1="284" x2="700" y2="284" marker-end="url(#nsl-life-axis)"/>
+  <text class="small" x="180" y="302">time</text>
+</svg>

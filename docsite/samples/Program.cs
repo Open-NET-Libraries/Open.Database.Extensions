@@ -632,6 +632,10 @@ Check(
 	ShapingRows.SingleValueFactoryIsRejected(),
 	"a factory map for a single value is rejected: a single value is not a row model");
 
+// No service layer: the controllers and the article's tests, on a test server.
+Db.Seed();
+await NoServiceLayerChecks.RunAsync(Check);
+
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
 
@@ -665,3 +669,6 @@ static async Task<bool> ThrowsAsync<TException>(Func<Task> action) where TExcept
 		return true;
 	}
 }
+
+// Public, so that a WebApplicationFactory<Program> can name it (the "No service layer" tests).
+public partial class Program;
