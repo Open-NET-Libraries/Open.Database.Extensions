@@ -11,12 +11,12 @@ public static class SynchronousNamespaceTests
 		public ValueTask ReadAsync(
 			Func<IAsyncEnumerable<int>, CancellationToken, ValueTask> handler,
 			CancellationToken cancellationToken)
-			=> throw new InvalidOperationException("Not reached.");
+			=> throw new InvalidOperationException("The async-only double was reached.");
 
 		public ValueTask<TResult> ReadAsync<TResult>(
 			Func<IAsyncEnumerable<int>, CancellationToken, ValueTask<TResult>> handler,
 			CancellationToken cancellationToken)
-			=> throw new InvalidOperationException("Not reached.");
+			=> throw new InvalidOperationException("The async-only double was reached.");
 	}
 
 	sealed class AsyncOnlyReader : IExecuteReader
@@ -26,25 +26,25 @@ public static class SynchronousNamespaceTests
 		public ValueTask ExecuteReaderAsync(
 			Func<IDataReader, ValueTask> handler,
 			CommandBehavior behavior = CommandBehavior.Default)
-			=> throw new InvalidOperationException("Not reached.");
+			=> throw new InvalidOperationException("The async-only double was reached.");
 
 		public ValueTask<T> ExecuteReaderAsync<T>(
 			Func<IDataReader, ValueTask<T>> transform,
 			CommandBehavior behavior = CommandBehavior.Default)
-			=> throw new InvalidOperationException("Not reached.");
+			=> throw new InvalidOperationException("The async-only double was reached.");
 
 		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(
 			TState state,
 			Func<IDataReader, TState, ValueTask<TResult>> transform,
 			CommandBehavior behavior = CommandBehavior.Default)
-			=> throw new InvalidOperationException("Not reached.");
+			=> throw new InvalidOperationException("The async-only double was reached.");
 
 		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(
 			TState state,
 			Func<IDataReader, TState, ValueTask<TResult>> transform,
 			CommandBehavior behavior,
 			CancellationToken cancellationToken)
-			=> throw new InvalidOperationException("Not reached.");
+			=> throw new InvalidOperationException("The async-only double was reached.");
 	}
 
 	[Fact]
@@ -56,7 +56,7 @@ public static class SynchronousNamespaceTests
 
 		Assert.Contains(typeof(AsyncOnlyQuery).ToString(), ex.Message);
 		Assert.Contains("Open.Database.Extensions.Synchronous.IMappedQuerySync", ex.Message);
-		Assert.Contains("async", ex.Message);
+		Assert.Contains("use the async call", ex.Message);
 	}
 
 	[Fact]
@@ -93,7 +93,8 @@ public static class SynchronousNamespaceTests
 		Assert.Contains(typeof(AsyncOnlyReader).ToString(), ex.Message);
 		Assert.Contains("Open.Database.Extensions.Synchronous.IExecuteReaderSync", ex.Message);
 
-		Assert.Throws<NotSupportedException>(() => command.LoadTables());
+		NotSupportedException tables = Assert.Throws<NotSupportedException>(() => command.LoadTables());
+		Assert.Contains("IExecuteReaderSync", tables.Message);
 	}
 
 	[Fact]
@@ -120,7 +121,7 @@ public static class SynchronousNamespaceTests
 	static readonly int[] Expected = [1, 2, 3];
 
 	[Fact]
-	public static void AViewTypedAsTheInterface_ReadsThroughTheSyncInterface()
+	public static void AViewTypedAsTheAsyncInterface_ReadsThroughTheSyncInterfaceItImplements()
 	{
 		IMappedQuery<int> query = new FakeExecuteReader(["n"], [1], [2], [3]).Map<int>();
 
