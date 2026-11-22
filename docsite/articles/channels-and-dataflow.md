@@ -60,7 +60,7 @@ The query is read at full speed into pooled chunks, and the connection is closed
 
 ### A channel you own
 
-`ToChannel(channel)` and `ToChannel(writer)` only write. They leave the channel open, so passes can share it, and the returned task is the done signal: it completes with the number of rows written, and a failure or a cancel comes back through it. `ChannelEnd.Complete` completes the channel when the pass ends, with the exception that ended it if there was one.
+`ToChannel(channel)` and `ToChannel(writer)` only write. They leave the channel open, so passes can share it, and the returned task is the done signal: it completes with the number of rows written, and a failure or a cancel comes back through it. `complete: true` completes the channel when the pass ends, with the exception that ended it if there was one.
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_channel_owned)]
 

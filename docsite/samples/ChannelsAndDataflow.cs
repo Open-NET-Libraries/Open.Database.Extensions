@@ -50,7 +50,7 @@ public static class ChannelsAndDataflow
 			.Map<Post>()
 			.ToChannel(
 				channel,
-				ChannelEnd.Complete,
+				complete: true,
 				cancellationToken);
 
 		await foreach (Post post in channel.Reader.ReadAllAsync(cancellationToken))
@@ -77,7 +77,7 @@ public static class ChannelsAndDataflow
 			.ToChannelHoldingConnection(
 				channel,
 				TimeSpan.FromSeconds(30),
-				ChannelEnd.Complete,
+				complete: true,
 				cancellationToken)
 			.AsTask();
 

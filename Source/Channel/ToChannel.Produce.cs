@@ -230,8 +230,8 @@ public static partial class ChannelDbExtensions
 			.Run<T, ChunkFeed<T>>(
 				new(chunks),
 				channel.Writer,
-				ChannelEnd.Complete,
-				false,
+				complete: true,
+				waitFirst: false,
 				cancellationToken)
 			.AsTask();
 
