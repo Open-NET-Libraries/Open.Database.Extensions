@@ -936,7 +936,7 @@ readonly struct MappedQueryCore<T>(
 				"The stall timeout must be a positive span, or Timeout.InfiniteTimeSpan.");
 		}
 
-		_ = Command;
+		EnsureCommand();
 		return new StallStream<T>(this, stallTimeout, cancellationToken);
 	}
 

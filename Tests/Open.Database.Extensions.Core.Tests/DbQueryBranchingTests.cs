@@ -81,6 +81,23 @@ public static class DbQueryBranchingTests
 		Assert.Equal(["@a=1"], c.SentTo(4));
 	}
 
+	// A query that holds a call as it is composes with the unbuffered stream: it reads the rows of the call it holds.
+	[Fact]
+	public static async Task AStreamOverACall_ReadsItsRows()
+	{
+		using var c = new Tracked();
+		var rows = new List<Echo>();
+
+		await foreach (Echo row in M.Using(c).AddParam("a", 1).AddParam("b", 2).AddParam("c", 3)
+			.Stream(Timeout.InfiniteTimeSpan, TestContext.Current.CancellationToken))
+		{
+			rows.Add(row);
+		}
+
+		Assert.Equal([new Echo(1, 2, 3)], rows);
+		Assert.Equal(["@a=1", "@b=2", "@c=3"], c.SentTo(0));
+	}
+
 	// The first addition to a kept call writes the next entry in place, shared with the call it came from; the next copies.
 	[Fact]
 	public static void TheFirstAdditionToAKeptCall_IsWrittenInPlace_AndTheNextIsCopied()
