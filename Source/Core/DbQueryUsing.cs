@@ -44,6 +44,14 @@ public readonly struct DbQueryUsing
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
 	public object Source => SourceOrThrow;
 
+	/// <summary>Gets the query as a call with no values.</summary>
+	internal DbQueryCall ToCall()
+		=> new(Definition, SourceOrThrow, default);
+
+	/// <summary>Gets the query as a call holding the values.</summary>
+	internal DbQueryCall WithParams(ParamList values)
+		=> new(Definition, SourceOrThrow, values);
+
 	/// <summary>
 	/// Adds the public properties and fields of <paramref name="values"/>
 	/// as parameters, each under its own name.
@@ -59,7 +67,7 @@ public readonly struct DbQueryUsing
 	/// </remarks>
 	public DbQueryCall AddParams<T>(T values)
 		where T : notnull
-		=> DbQueryCall.NewRoot(Definition, SourceOrThrow, null, values);
+		=> new DbQueryCall(Definition, SourceOrThrow, default).AddParams(values);
 
 	/// <summary>Adds an input parameter named as you write it.</summary>
 	/// <typeparam name="T">The type of the value.</typeparam>
@@ -78,11 +86,8 @@ public readonly struct DbQueryUsing
 	/// <paramref name="name"/> is empty or white space.
 	/// </exception>
 	public DbQueryCall AddParam<T>(string name, T value)
-		=> DbQueryCall.NewRoot(
-			Definition,
-			SourceOrThrow,
-			DbQueryCall.CheckedName(name),
-			value);
+		=> new DbQueryCall(Definition, SourceOrThrow, default)
+			.AddParam(name, value);
 
 	/// <summary>Adds an input parameter with a string value.</summary>
 	/// <remarks>
@@ -92,11 +97,8 @@ public readonly struct DbQueryUsing
 	/// </remarks>
 	/// <inheritdoc cref="AddParam{T}(string, T)"/>
 	public DbQueryCall AddParam(string name, string? value)
-		=> DbQueryCall.NewRoot(
-			Definition,
-			SourceOrThrow,
-			DbQueryCall.CheckedName(name),
-			value);
+		=> new DbQueryCall(Definition, SourceOrThrow, default)
+			.AddParam(name, value);
 
 	/// <summary>
 	/// Adds an input parameter named for the argument:
@@ -119,11 +121,8 @@ public readonly struct DbQueryUsing
 	public DbQueryCall AddParam<T>(
 		T value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> DbQueryCall.NewDerivedRoot(
-			Definition,
-			SourceOrThrow,
-			DbQueryCall.CheckedExpression(expression),
-			value);
+		=> new DbQueryCall(Definition, SourceOrThrow, default)
+			.AddParam(value, expression);
 
 	/// <inheritdoc />
 	public bool Equals(DbQueryUsing other)
@@ -169,7 +168,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.Run(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			state,
 			transform,
 			behavior);
@@ -182,7 +181,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			state,
 			transform,
 			behavior,
@@ -195,7 +194,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			state,
 			transform,
 			behavior,
@@ -207,7 +206,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.Run(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			handler,
 			behavior);
 
@@ -217,7 +216,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.Run(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			transform,
 			behavior);
 
@@ -227,7 +226,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			handler,
 			behavior);
 
@@ -237,7 +236,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			transform,
 			behavior);
 }
@@ -272,9 +271,8 @@ public readonly struct DbQueryUsing<TParams>
 	/// A new query holding the values; this one is not changed.
 	/// </returns>
 	public DbQueryCall AddParams(TParams values)
-		=> DbQueryCall.NewRoot(
+		=> new DbQueryCall(
 			_definition ?? throw DbQueryRunner.Unbound(),
 			_source ?? throw DbQueryRunner.Unbound(),
-			null,
-			values);
+			default).AddParams(values);
 }

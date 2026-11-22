@@ -937,9 +937,9 @@ public static class DbQueryTests
 		MappedQueryWithSkip<Post> skipped = query.Skip(1);
 		MappedQueryWithTake<Post> taken = query.Take(2);
 
-		Assert.Same(call, query.Command);
-		Assert.Same(call, skipped.Command);
-		Assert.Same(call, taken.Command);
+		Assert.Equal(call, Assert.IsType<DbQueryCall>(query.Command));
+		Assert.Equal(call, Assert.IsType<DbQueryCall>(skipped.Command));
+		Assert.Equal(call, Assert.IsType<DbQueryCall>(taken.Command));
 
 		Assert.Equal(query, call.Map(map));
 		Assert.Equal(query.GetHashCode(), call.Map(map).GetHashCode());

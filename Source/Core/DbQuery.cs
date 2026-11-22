@@ -81,6 +81,42 @@ public sealed class DbQuery : IEquatable<DbQuery>
 		set => Volatile.Write(ref field, value);
 	}
 
+	/// <summary>
+	/// The most parameters a call of this definition has bound, for a
+	/// definition whose text declares no names (a procedure, or a text whose
+	/// parameters are positional).
+	/// </summary>
+	int _seenParams;
+
+	/// <summary>
+	/// Gets how many parameters a call of this definition holds, which sizes the
+	/// array a call keeps them in.
+	/// </summary>
+	/// <remarks>
+	/// The number of <c>@name</c> markers of a text, or the most a call of this
+	/// definition has bound, or four.
+	/// </remarks>
+	internal int ParamCapacity
+	{
+		get
+		{
+			int declared = TextNames?.Names.Length ?? 0;
+			int most = Math.Max(declared, Volatile.Read(ref _seenParams));
+			return most > 0 ? most : 4;
+		}
+	}
+
+	/// <summary>
+	/// Remembers how many parameters a call bound, so the next call sizes its
+	/// array to fit.
+	/// </summary>
+	/// <param name="count">The number of parameters the call bound.</param>
+	internal void NoteParams(int count)
+	{
+		if (count > Volatile.Read(ref _seenParams))
+			Volatile.Write(ref _seenParams, count);
+	}
+
 	internal string CommandText { get; }
 
 	internal CommandType Kind { get; }

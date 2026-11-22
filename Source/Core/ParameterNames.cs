@@ -30,8 +30,11 @@ static class ParameterNames
 	}
 
 	/// <summary>The facts of a derivable expression, worked out once.</summary>
-	internal sealed class DerivedExpression(string lastMember, ImmutableArray<string> candidates)
+	internal sealed class DerivedExpression(string expression, string lastMember, ImmutableArray<string> candidates)
 	{
+		/// <summary>The text of the argument the facts were worked out from.</summary>
+		internal string Expression { get; } = expression;
+
 		internal string LastMember { get; } = lastMember;
 		internal ImmutableArray<string> Candidates { get; } = candidates;
 
@@ -77,7 +80,7 @@ static class ParameterNames
 	{
 		if (expression is null) return null;
 		if (Described.TryGetValue(expression, out DerivedExpression? known)) return known;
-		return IsDerivable(expression) ? Described.GetValue(expression, static e => new DerivedExpression(LastMember(e), Candidates(e))) : null;
+		return IsDerivable(expression) ? Described.GetValue(expression, static e => new DerivedExpression(e, LastMember(e), Candidates(e))) : null;
 	}
 
 	/// <summary>Determines whether the expression is a chain of plain member accesses a name can be derived from. Allocates nothing.</summary>
