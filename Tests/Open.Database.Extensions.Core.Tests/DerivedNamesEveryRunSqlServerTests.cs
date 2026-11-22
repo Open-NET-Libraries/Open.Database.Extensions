@@ -13,6 +13,7 @@ namespace Open.Database.Extensions.Tests;
 // The two databases are tempdb and master of LocalDB, so no file is created.
 // These tests never skip: a missing server is a failure.
 [ExcludeFromCodeCoverage]
+[Collection("LocalDB DDL")]
 public static class DerivedNamesEveryRunSqlServerTests
 {
 	static CancellationToken Token => TestContext.Current.CancellationToken;

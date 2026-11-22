@@ -15,6 +15,7 @@ namespace Open.Database.Extensions.Tests;
 // Core's copies are tested with fakes; SqlConnection and SqlTransaction are concrete, so a fake cannot stand in for these. The tests that need no server (a SqlCommand and its parameters never touch a connection) run everywhere.
 // The tests that need one run on SQL Server LocalDB in tempdb (LocalDbFixture) and are reported as skipped when LocalDB is missing, so the suite stays green on a machine or build agent without it.
 [ExcludeFromCodeCoverage]
+[Collection("LocalDB DDL")]
 public static class SqlServerPackageTests
 {
 	[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors", Justification = "Test Only")]

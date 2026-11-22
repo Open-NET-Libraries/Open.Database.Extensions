@@ -9,6 +9,7 @@ namespace Open.Database.Extensions.Tests;
 // the typed form, a transaction, a factory, and a typed NULL.
 // Skipped without LocalDB (see LocalDbFixture).
 [ExcludeFromCodeCoverage]
+[Collection("LocalDB DDL")]
 public static class DbQueryLocalDbTests
 {
 	static CancellationToken Token => TestContext.Current.CancellationToken;
