@@ -25,7 +25,7 @@ namespace Open.Database.Extensions;
 /// <para>
 /// Reading a value by position or by a name that matches exactly allocates nothing, and so do <see cref="Count"/> and <see cref="Keys"/>.
 /// The first name that does not match exactly builds the ignoring-case lookup of the result set, which every row of the set shares and which is built
-/// when it is first needed; a missing name in the string indexer throws. <see cref="Values"/> and <see cref="ToDictionary"/> build a collection each time,
+/// when it is first needed; a missing name in the string indexer throws <see cref="KeyNotFoundException"/>. <see cref="Values"/> and <see cref="ToDictionary"/> build a collection each time,
 /// and handing the row to an <see cref="IReadOnlyDictionary{TKey, TValue}"/> boxes it.
 /// A result set with no rows gives no row, so no column names: an empty result exposes none.
 /// <c>default(DictionaryRow)</c> is an empty row.
