@@ -919,7 +919,7 @@ public readonly record struct MappedQuery<T>
 
 	/// <summary>Stops after the first result set and does not read through the later ones.</summary>
 	/// <remarks>
-	/// A <em>result</em> here is one whole result set, what <see cref="IDataReader.NextResult"/> moves between; never a row (this library's <c>Results&lt;T&gt;()</c> means rows).
+	/// A <em>result</em> here is one whole result set, what <see cref="IDataReader.NextResult"/> moves between; never a row.
 	/// By default a terminal returns the rows of the first result set only, then reads through the later ones without mapping them, so a failure in a later statement is thrown instead of lost.
 	/// A later failure can follow a write that already committed, so a caller that retries can repeat it, and the rows read are lost when it throws.
 	/// This call asserts nothing: it does not check that there is only one result set. It stops after the first, and a later failure goes unseen.

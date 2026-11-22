@@ -28,11 +28,6 @@ public enum TokenTerminal
 }
 
 /// <summary>
-/// The extension terminals on <see cref="IExecuteReaderAsync"/> that iterate.
-/// </summary>
-public enum IterateShape { Action, While, WhileAsync }
-
-/// <summary>
 /// The Channel overloads on an <c>IExecuteReader</c> source:
 /// the first five are <c>ToChannel</c>, the others <c>ToChannelAsync</c>.
 /// </summary>
@@ -75,8 +70,6 @@ public static class TokenTerminalTests
 
 	public static TheoryData<TokenTerminal> Terminals
 		=> [.. Enum.GetValues<TokenTerminal>()];
-	public static TheoryData<IterateShape> Iterates
-		=> [.. Enum.GetValues<IterateShape>()];
 	public static TheoryData<ChannelShape> Channels
 		=> [.. Enum.GetValues<ChannelShape>()];
 	public static TheoryData<DataflowShape> Dataflows
@@ -370,123 +363,6 @@ public static class TokenTerminalTests
 		Assert.Equal(commandSource.Token, Assert.Single(plain.Open));
 	}
 
-	// ---- overload resolution: a later change breaks this build,
-	// not a user ----
-
-	[Fact]
-	public static async Task OverloadResolution_Compiles_AndBindsTheSameShapes()
-	{
-		var rig = new TokenRig { Recording = false };
-		ExpressiveDbCommand cmd = Make(rig, ConnectionState.Open);
-		CancellationToken ct = new CancellationTokenSource().Token;
-		const CommandBehavior behavior = CommandBehavior.Default;
-
-		await cmd.ExecuteNonQueryAsync();
-		await cmd.ExecuteNonQueryAsync(ct);
-		await cmd.ExecuteScalarAsync();
-		await cmd.ExecuteScalarAsync(ct);
-		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => 1));
-		Assert.Equal(
-			1, await cmd.ExecuteScalarAsync(_ => new ValueTask<int>(1)));
-		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => 1, ct));
-		Assert.Equal(
-			1, await cmd.ExecuteScalarAsync(_ => new ValueTask<int>(1), ct));
-		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>());
-		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(ct));
-		Assert.Equal(
-			0, await cmd.ExecuteScalarAsync<int>(CancellationToken.None));
-		await cmd.ExecuteReturnAsync();
-		await cmd.ExecuteReturnAsync(ct);
-		await cmd.ExecuteReturnAsync<int>(ct);
-
-		// the reader terminals with 1, 2, 3 and 4 arguments,
-		// lambdas and static lambdas
-		await cmd.ExecuteReaderAsync(_ => { });
-		await cmd.ExecuteReaderAsync(_ => { }, behavior);
-		await cmd.ExecuteReaderAsync(_ => { }, ct);
-		await cmd.ExecuteReaderAsync(_ => { }, behavior, ct);
-		await cmd.ExecuteReaderAsync(_ => { }, default); // binds the token overload now: the same call, as default is an empty token and the default behavior
-		await cmd.ExecuteReaderAsync(_ => { }, 0); // an int still binds the behavior
-		Assert.Equal(1, await cmd.ExecuteReaderAsync(_ => 1));
-		Assert.Equal(1, await cmd.ExecuteReaderAsync(_ => 1, ct));
-		Assert.Equal(
-			1, await cmd.ExecuteReaderAsync(_ => new ValueTask<int>(1), ct));
-		await cmd.ExecuteReaderAsync(_ => new ValueTask(), ct);
-		Assert.Equal(
-			7,
-			await cmd.ExecuteReaderAsync(
-				7, static (_, s) => new ValueTask<int>(s)));
-		Assert.Equal(
-			7,
-			await cmd.ExecuteReaderAsync(
-				7,
-				static (_, s) => new ValueTask<int>(s),
-				behavior));
-		Assert.Equal(
-			7,
-			await cmd.ExecuteReaderAsync(
-				7,
-				static (_, s) => new ValueTask<int>(s),
-				behavior,
-				ct));
-
-		// the extensions: the token after the optional parameters
-		await cmd.IterateReaderAsync(_ => { });
-		await cmd.IterateReaderAsync(_ => { }, behavior, ct);
-		await cmd.IterateReaderAsync(_ => { }, cancellationToken: ct);
-		await cmd.IterateReaderWhileAsync(_ => true, cancellationToken: ct);
-		await cmd.IterateReaderWhileAsync(
-			_ => new ValueTask<bool>(true), cancellationToken: ct);
-
-		var channel = System.Threading.Channels.Channel
-			.CreateUnbounded<object[]>();
-		await cmd.ToChannel(channel.Writer, false);
-		await cmd.ToChannel(channel.Writer, false, ct);
-		await cmd.ToChannel(channel.Writer, false, CancellationToken.None);
-		await cmd.ToChannel(
-			channel.Writer,
-			false,
-			ArrayPool<object>.Shared,
-			ct);
-		await cmd.ToChannelAsync(channel.Writer, false, ct);
-		await cmd.ToChannelAsync(channel.Writer, false, CancellationToken.None);
-		await cmd.ToChannelAsync(
-			channel.Writer,
-			false,
-			(ArrayPool<object>?)null,
-			ct);
-
-		// A literal default: the token overload has no default to fill,
-		// so it wins.
-		// ToChannel(..., false, default) used to bind the non-null ArrayPool
-		// overload and throw;
-		// it now binds the token overload and runs.
-		// ToChannelAsync(..., false, default) used
-		// to bind the nullable-pool overload;
-		// it now binds the token one, the same call.
-		// A literal null as that argument is ambiguous
-		// with the transform overloads (it did not compile before either),
-		// so it is not tested.
-		long plainCount = await cmd.ToChannel(channel.Writer, false);
-		Assert.Equal(
-			plainCount, await cmd.ToChannel(channel.Writer, false, default));
-		Assert.Equal(
-			plainCount,
-			await cmd.ToChannelAsync(channel.Writer, false, default));
-
-		var block = new BufferBlock<object[]>();
-		await cmd.ToTargetBlockAsync(block, false);
-		await cmd.ToTargetBlockAsync(block, false, ct);
-		Assert.NotNull(cmd.AsSourceBlockAsync());
-		Assert.NotNull(cmd.AsSourceBlockAsync(null, ct));
-		Assert.NotNull(
-			cmd.AsSourceBlockAsync(ArrayPool<object>.Shared, null, ct));
-		Assert.NotNull(cmd.AsSourceBlockAsync(static _ => 1, null, ct));
-		Assert.NotNull(cmd.AsSourceBlockAsync<int>(null, ct));
-		Assert.NotNull(
-			cmd.AsSourceBlockAsync((RowMap<TokenItem>?)null, null, ct));
-	}
-
 	// A null command is a precondition:
 	// the ValueTask<long> overloads throw at the call (not
 	// through the returned task).
@@ -520,8 +396,6 @@ public static class TokenTerminalTests
 			async () => await viaTask);
 	}
 
-	// ---- the iterating extensions ----
-
 	static RecordingAsyncExecuteReader Rows(
 		int count = 3,
 		bool asyncRead = false)
@@ -531,98 +405,6 @@ public static class TokenTerminalTests
 		{
 			UseAsyncRead = asyncRead
 		};
-
-	static Task Iterate(
-		IterateShape shape,
-		IExecuteReaderAsync cmd,
-		Action? each,
-		CancellationToken token)
-		=> shape switch
-	{
-		IterateShape.Action => cmd
-			.IterateReaderAsync(
-				_ => each?.Invoke(),
-				CommandBehavior.Default,
-				token)
-			.AsTask(),
-		IterateShape.While => cmd
-			.IterateReaderWhileAsync(
-				_ => { each?.Invoke(); return true; },
-				CommandBehavior.Default,
-				token)
-			.AsTask(),
-		IterateShape.WhileAsync => cmd
-			.IterateReaderWhileAsync(
-				_ => { each?.Invoke(); return new ValueTask<bool>(true); },
-				CommandBehavior.Default,
-				token)
-			.AsTask(),
-		_ => throw new ArgumentOutOfRangeException(nameof(shape)),
-	};
-
-	[Theory]
-	[MemberData(nameof(Iterates))]
-	public static async Task Iterate_Cancellation(IterateShape shape)
-	{
-		using var callSource = new CancellationTokenSource();
-
-		// cancelled up front: through either token
-		RecordingAsyncExecuteReader cmd = Rows();
-		callSource.Cancel();
-		await Cancels(Iterate(shape, cmd, null, callSource.Token));
-		Assert.True(Assert.Single(cmd.ReaderTokens).IsCancellationRequested);
-
-		cmd = Rows();
-		cmd.CancellationToken = callSource.Token;
-		await Cancels(Iterate(shape, cmd, null, default));
-
-		// no token
-		cmd = Rows();
-		await Iterate(shape, cmd, null, default);
-		Assert.False(Assert.Single(cmd.ReaderTokens).CanBeCanceled);
-	}
-
-	// Both live:
-	// the execute and every read of the loop get the one linked token;
-	// cancelling either stops a read that is waiting.
-	[Theory]
-	[MemberData(nameof(Iterates))]
-	public static async Task Iterate_BothLive_TheReadLoopUsesTheLinkedToken(
-		IterateShape shape)
-	{
-		using var commandSource = new CancellationTokenSource();
-		using var callSource = new CancellationTokenSource();
-		var rig = new TokenRig { Rows = 2 };
-		await Iterate(
-			shape,
-			Make(rig, ConnectionState.Open)
-				.AsyncReads()
-				.UseCancellationToken(commandSource.Token),
-			null,
-			callSource.Token);
-		CancellationToken seen = Assert.Single(rig.Execute);
-		Assert.NotEqual(callSource.Token, seen);
-		Assert.NotEqual(commandSource.Token, seen);
-		Assert.NotEmpty(rig.Read);
-		Assert.All(rig.Read, t => Assert.Equal(seen, t));
-
-		foreach (bool cancelCall in new[] { true, false })
-		{
-			using var commandSource2 = new CancellationTokenSource();
-			using var callSource2 = new CancellationTokenSource();
-			var stalled = new TokenRig { Stall = TokenStage.Read };
-			Task task = Iterate(
-				shape,
-				Make(stalled, ConnectionState.Open)
-					.AsyncReads()
-					.UseCancellationToken(commandSource2.Token),
-				null,
-				callSource2.Token);
-			await stalled.Entered.Task.WaitAsync(Patience);
-			(cancelCall ? callSource2 : commandSource2).Cancel();
-			await Cancels(task);
-		}
-	}
 
 	// ---- Channel ----
 
@@ -1117,24 +899,6 @@ public static class TokenTerminalTests
 			});
 
 	[Theory]
-	[MemberData(nameof(Iterates))]
-	public static void Allocation_Iterate(IterateShape shape)
-		=> AssertNoMoreThanWithoutAToken(
-			shape.ToString(),
-			(commandToken, callToken) =>
-			{
-				// The command of the token rig, not the big fake reader:
-				// its few bytes per call are what the counter can tell apart.
-				ExpressiveDbCommand cmd = Make(
-					new TokenRig { Recording = false, Rows = 0 },
-					ConnectionState.Open)
-					.UseCancellationToken(commandToken);
-				return () => Iterate(shape, cmd, null, callToken)
-					.GetAwaiter()
-					.GetResult();
-			});
-
-	[Theory]
 	[InlineData(ChannelShape.Plain)]
 	[InlineData(ChannelShape.Pool)]
 	[InlineData(ChannelShape.Transform)]
@@ -1158,5 +922,115 @@ public static class TokenTerminalTests
 					.GetAwaiter()
 					.GetResult();
 			});
+
+	// ---- overload resolution: a later change breaks this build,
+	// not a user ----
+
+	[Fact]
+	public static async Task OverloadResolution_Compiles_AndBindsTheSameShapes()
+	{
+		var rig = new TokenRig { Recording = false };
+		ExpressiveDbCommand cmd = Make(rig, ConnectionState.Open);
+		CancellationToken ct = new CancellationTokenSource().Token;
+		const CommandBehavior behavior = CommandBehavior.Default;
+
+		await cmd.ExecuteNonQueryAsync();
+		await cmd.ExecuteNonQueryAsync(ct);
+		await cmd.ExecuteScalarAsync();
+		await cmd.ExecuteScalarAsync(ct);
+		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => 1));
+		Assert.Equal(
+			1, await cmd.ExecuteScalarAsync(_ => new ValueTask<int>(1)));
+		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => 1, ct));
+		Assert.Equal(
+			1, await cmd.ExecuteScalarAsync(_ => new ValueTask<int>(1), ct));
+		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>());
+		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(ct));
+		Assert.Equal(
+			0, await cmd.ExecuteScalarAsync<int>(CancellationToken.None));
+		await cmd.ExecuteReturnAsync();
+		await cmd.ExecuteReturnAsync(ct);
+		await cmd.ExecuteReturnAsync<int>(ct);
+
+		// the reader terminals with 1, 2, 3 and 4 arguments,
+		// lambdas and static lambdas
+		await cmd.ExecuteReaderAsync(_ => { });
+		await cmd.ExecuteReaderAsync(_ => { }, behavior);
+		await cmd.ExecuteReaderAsync(_ => { }, ct);
+		await cmd.ExecuteReaderAsync(_ => { }, behavior, ct);
+		await cmd.ExecuteReaderAsync(_ => { }, default); // binds the token overload now: the same call, as default is an empty token and the default behavior
+		await cmd.ExecuteReaderAsync(_ => { }, 0); // an int still binds the behavior
+		Assert.Equal(1, await cmd.ExecuteReaderAsync(_ => 1));
+		Assert.Equal(1, await cmd.ExecuteReaderAsync(_ => 1, ct));
+		Assert.Equal(
+			1, await cmd.ExecuteReaderAsync(_ => new ValueTask<int>(1), ct));
+		await cmd.ExecuteReaderAsync(_ => new ValueTask(), ct);
+		Assert.Equal(
+			7,
+			await cmd.ExecuteReaderAsync(
+				7, static (_, s) => new ValueTask<int>(s)));
+		Assert.Equal(
+			7,
+			await cmd.ExecuteReaderAsync(
+				7,
+				static (_, s) => new ValueTask<int>(s),
+				behavior));
+		Assert.Equal(
+			7,
+			await cmd.ExecuteReaderAsync(
+				7,
+				static (_, s) => new ValueTask<int>(s),
+				behavior,
+				ct));
+
+		// the extensions: the token after the optional parameters
+		var channel = System.Threading.Channels.Channel
+			.CreateUnbounded<object[]>();
+		await cmd.ToChannel(channel.Writer, false);
+		await cmd.ToChannel(channel.Writer, false, ct);
+		await cmd.ToChannel(channel.Writer, false, CancellationToken.None);
+		await cmd.ToChannel(
+			channel.Writer,
+			false,
+			ArrayPool<object>.Shared,
+			ct);
+		await cmd.ToChannelAsync(channel.Writer, false, ct);
+		await cmd.ToChannelAsync(channel.Writer, false, CancellationToken.None);
+		await cmd.ToChannelAsync(
+			channel.Writer,
+			false,
+			(ArrayPool<object>?)null,
+			ct);
+
+		// A literal default: the token overload has no default to fill,
+		// so it wins.
+		// ToChannel(..., false, default) used to bind the non-null ArrayPool
+		// overload and throw;
+		// it now binds the token overload and runs.
+		// ToChannelAsync(..., false, default) used
+		// to bind the nullable-pool overload;
+		// it now binds the token one, the same call.
+		// A literal null as that argument is ambiguous
+		// with the transform overloads (it did not compile before either),
+		// so it is not tested.
+		long plainCount = await cmd.ToChannel(channel.Writer, false);
+		Assert.Equal(
+			plainCount, await cmd.ToChannel(channel.Writer, false, default));
+		Assert.Equal(
+			plainCount,
+			await cmd.ToChannelAsync(channel.Writer, false, default));
+
+		var block = new BufferBlock<object[]>();
+		await cmd.ToTargetBlockAsync(block, false);
+		await cmd.ToTargetBlockAsync(block, false, ct);
+		Assert.NotNull(cmd.AsSourceBlockAsync());
+		Assert.NotNull(cmd.AsSourceBlockAsync(null, ct));
+		Assert.NotNull(
+			cmd.AsSourceBlockAsync(ArrayPool<object>.Shared, null, ct));
+		Assert.NotNull(cmd.AsSourceBlockAsync(static _ => 1, null, ct));
+		Assert.NotNull(cmd.AsSourceBlockAsync<int>(null, ct));
+		Assert.NotNull(
+			cmd.AsSourceBlockAsync((RowMap<TokenItem>?)null, null, ct));
+	}
 }
 #pragma warning restore xUnit1051

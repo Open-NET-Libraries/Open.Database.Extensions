@@ -363,15 +363,4 @@ public static class RetrieveSurfaceTests
 		Assert.Equal(2, rows[1]["Id"]);
 		Assert.Equal("b", rows[1]["Name"]);
 	}
-
-	[Fact]
-	public static void Retrieve_DequeueAs_NeedsNoCast()
-	{
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		List<NamedRow> rows = [.. NamedRowsCommand().Retrieve().DequeueAs<NamedRow>()];
-		#pragma warning restore CS0618
-
-		Assert.Equal([1, 2], rows.Select(r => r.Id));
-		Assert.Equal(["a", "b"], rows.Select(r => r.Name));
-	}
 }

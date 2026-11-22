@@ -64,23 +64,6 @@ public static class DataReaderExtensionsTests
 	}
 
 	[Fact]
-	public static void ToList_ToArray_ToImmutableArray_ProduceSameSequence()
-	{
-		static int First(IDataRecord r) => (int)r.GetValue(0);
-
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal([1, 2], FakeReader.Create(["Id"], [1], [2]).ToList(First, TestContext.Current.CancellationToken));
-#pragma warning restore CS0618
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal([1, 2], FakeReader.Create(["Id"], [1], [2]).ToArray(First));
-#pragma warning restore CS0618
-		// ImmutableArray<T> implements IEquatable<T> (reference equality), so compare as a sequence.
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal([1, 2], FakeReader.Create(["Id"], [1], [2]).ToImmutableArray(First).ToArray());
-#pragma warning restore CS0618
-	}
-
-	[Fact]
 	public static void FirstOrdinalResults_ReadsFirstColumn_ConvertsDBNull()
 	{
 		IDataReader reader = FakeReader.Create(IdName, [1, "a"], [DBNull.Value, "b"]);

@@ -9,23 +9,6 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class CaseInsensitiveMappingTests
 {
-	[Theory]
-	[InlineData("firstname")]
-	[InlineData("FIRSTNAME")]
-	[InlineData("FirstName")]
-	[InlineData("fIrStNaMe")]
-	public static void Transformer_MatchesColumn_RegardlessOfCase(string columnName)
-	{
-		var queue = new Queue<object[]>();
-		queue.Enqueue(["Ada"]);
-		var result = new QueryResult<Queue<object[]>>([0], [columnName], queue);
-
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		List<TransformerResultsTests.Person> people = [.. result.DequeueAs<TransformerResultsTests.Person>()];
-		#pragma warning restore CS0618
-
-		Assert.Equal("Ada", Assert.Single(people).FirstName);
-	}
 
 	[Theory]
 	[InlineData("id")]

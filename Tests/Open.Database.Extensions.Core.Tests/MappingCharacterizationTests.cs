@@ -16,16 +16,10 @@ public static class MappingCharacterizationTests
 	static List<T> Read<T>(bool buffered, ImmutableArray<ColumnDef> columns, object?[] row, RowMap<T>? map = null)
 		where T : new()
 	{
-		if (!buffered)
-		{
-			var command = new FakeExecuteReader(() => TypedReader.Create(columns, [row]));
-			return (map is null ? command.Map<T>() : command.Map(map)).ToList();
-		}
-
-		var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object[]>([row!]));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		return result.DequeueAs(map).ToList();
-		#pragma warning restore CS0618
+		// The buffered object[] route was removed in 11 (Retrieve, QueryResult, DequeueAs); `buffered` no longer changes the route.
+		_ = buffered;
+		var command = new FakeExecuteReader(() => TypedReader.Create(columns, [row]));
+		return (map is null ? command.Map<T>() : command.Map(map)).ToList();
 	}
 
 	static ImmutableArray<ColumnDef> Columns(params string[] names) => [.. names.Select(n => new ColumnDef(n, typeof(object)))];

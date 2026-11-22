@@ -12,25 +12,16 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class ConstructorBindingTests
 {
-	// The three ways a row reaches a map: a typed reader (the provider's typed getters, nothing boxed), a reader whose columns report object (the general conversion),
-	// and rows already buffered as object[] (the Retrieve/QueryResult route).
-	public enum Route { Typed, Boxed, Buffered }
+	// The two ways a row reaches a map: a typed reader (the provider's typed getters, nothing boxed) and a reader whose columns report object (the general conversion).
+	public enum Route { Typed, Boxed }
 
-	public static TheoryData<Route> Routes => [Route.Typed, Route.Boxed, Route.Buffered];
+	public static TheoryData<Route> Routes => [Route.Typed, Route.Boxed];
 
 	internal static List<T> Read<T>(Route route, ImmutableArray<ColumnDef> columns, object?[] row, RowMap<T>? map = null)
 		=> ReadRows(route, columns, [row], map);
 
 	internal static List<T> ReadRows<T>(Route route, ImmutableArray<ColumnDef> columns, object?[][] rows, RowMap<T>? map = null)
 	{
-		if (route == Route.Buffered)
-		{
-			var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object[]>(rows!));
-			#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-			return result.DequeueAs(map).ToList();
-			#pragma warning restore CS0618
-		}
-
 		ImmutableArray<ColumnDef> shown = route == Route.Typed ? columns : [.. columns.Select(c => new ColumnDef(c.Name, typeof(object)))];
 		var command = new FakeExecuteReader(() => TypedReader.Create(shown, rows));
 		return (map is null ? command.Map<T>() : command.Map(map)).ToList();
@@ -117,47 +108,11 @@ public static class ConstructorBindingTests
 	}
 
 	[Fact]
-	public static async Task Results_ResultsBuffered_AndTheAsyncTwins_BuildThePositionalRecord()
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		object?[][] rows = [[1, "one"], [2, "two"]];
-		Post[] expected = [new(1, "one"), new(2, "two")];
-
-		// The substitute readers report object columns (the general path); the typed reader reports the real types.
-		Assert.Equal(expected, FakeReader.Create(["Id", "Title"], rows).Results<Post>());
-		Assert.Equal(expected, FakeReader.Create(["Id", "Title"], rows).ResultsBuffered<Post>());
-		Assert.Equal(expected, TypedReader.Create(PostColumns, rows).Results<Post>());
-		Assert.Equal(expected, TypedReader.Create(PostColumns, rows).ResultsBuffered<Post>());
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal(expected, new FakeExecuteReader(() => TypedReader.Create(PostColumns, rows)).Results<Post>());
-		#pragma warning restore CS0618
-		Assert.Equal(expected, await TypedReader.Create(PostColumns, rows).ResultsBufferedAsync<Post>(ct));
-
-		var streamed = new List<Post>();
-		await foreach (Post post in TypedReader.Create(PostColumns, rows).ResultsAsync<Post>(cancellationToken: ct)) streamed.Add(post);
-		Assert.Equal(expected, streamed);
-	}
-
-	[Fact]
-	public static void ADataTable_IsMappedToPositionalRecords()
-	{
-		var table = new DataTable();
-		table.Columns.Add("Id", typeof(int));
-		table.Columns.Add("Title", typeof(string));
-		table.Rows.Add(1, "one");
-		table.Rows.Add(2, DBNull.Value);
-
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal([new(1, "one"), new(2, null!)], table.To<Post>()); // a NULL into a non-nullable reference parameter gets its fallback: no declared default, so null (NullRuleMatrixTests covers one with a default)
-#pragma warning restore CS0618
-	}
-
-	[Fact]
 	public static void AResultWithNoColumnTheRecordCanUse_BuildsItFromItsFallbacks()
 	{
-		Assert.Equal(new Post(0, null!), Assert.Single(Read<Post>(Route.Buffered, [("other", typeof(int))], [5])));
+		Assert.Equal(new Post(0, null!), Assert.Single(Read<Post>(Route.Boxed, [("other", typeof(int))], [5])));
 		Assert.Equal(new Post(0, null!), Assert.Single(Read<Post>(Route.Typed, [("other", typeof(int))], [5])));
-		Assert.Equal(new Post(0, null!), Assert.Single(Read<Post>(Route.Buffered, [], [])));
+		Assert.Equal(new Post(0, null!), Assert.Single(Read<Post>(Route.Boxed, [], [])));
 	}
 
 	// ---- T2: the constructor, then the setters, in one plan ----
@@ -541,10 +496,6 @@ public static class ConstructorBindingTests
 	[InlineData(Route.Typed, "postid", "POSTTITLE")]
 	[InlineData(Route.Typed, "post_id", "Post_Title")]
 	[InlineData(Route.Typed, "_post_id_", "p_o_s_t_t_i_t_l_e")]
-	[InlineData(Route.Buffered, "PostId", "PostTitle")]
-	[InlineData(Route.Buffered, "postid", "POSTTITLE")]
-	[InlineData(Route.Buffered, "post_id", "Post_Title")]
-	[InlineData(Route.Buffered, "_post_id_", "p_o_s_t_t_i_t_l_e")]
 	public static void EachTierFeedsTheParameter(Route route, string idColumn, string titleColumn)
 		=> Assert.Equal(new Tiered(5, "t"), Assert.Single(Read<Tiered>(route, [(idColumn, typeof(int)), (titleColumn, typeof(string))], [5, "t"])));
 
@@ -560,7 +511,7 @@ public static class ConstructorBindingTests
 	[InlineData("POST_ID", "post_id", "POST_ID")]
 	public static void ABetterTierWins_WhateverTheColumnOrder(string first, string second, string winner)
 	{
-		foreach (Route route in (Route[])[Route.Typed, Route.Buffered])
+		foreach (Route route in (Route[])[Route.Typed, Route.Boxed])
 		{
 			Tiered item = Assert.Single(Read<Tiered>(route, IdColumns(first, second), [10, 20]));
 			Assert.Equal(winner == first ? 10 : 20, item.PostId);
@@ -595,7 +546,7 @@ public static class ConstructorBindingTests
 		{
 			Tiered a = Assert.Single(Read(Route.Typed, [("post_id", typeof(int)), ("title_col", typeof(string))], [1, "a"], map));
 			Tiered b = Assert.Single(Read(Route.Typed, [("title_col", typeof(string)), ("PostId", typeof(int)), ("post_id", typeof(int))], ["b", 2, 3], map));
-			Tiered c = Assert.Single(Read(Route.Buffered, [("title_col", typeof(string)), ("PostId", typeof(int))], ["c", 4], map));
+			Tiered c = Assert.Single(Read(Route.Boxed, [("title_col", typeof(string)), ("PostId", typeof(int))], ["c", 4], map));
 			Assert.Equal((1, "a", 2, "b", 4, "c"), (a.PostId, a.PostTitle, b.PostId, b.PostTitle, c.PostId, c.PostTitle));
 		}
 	}

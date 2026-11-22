@@ -19,7 +19,6 @@ namespace Open.Database.Extensions.Core;
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
 public class Transformer<T>
 {
-	const string ResultsObsolete = "Use table.Map(map).ToList() instead, where map is the RowMap<T> you gave Transformer<T>.Create. It returns a List<T>, not a lazy enumerable, and has no clearTable argument: clear the table yourself after reading it. Removed in 12.";
 
 	/// <summary>
 	/// The maximum number of arrays to hold in the local array pool per bucket.
@@ -206,57 +205,5 @@ public class Transformer<T>
 
 			yield return item;
 		}
-	}
-
-	/// <summary>
-	/// Obsolete: use <c>table.Map(map).ToList()</c>.
-	/// Processes the data from the data table into a queue, then dequeues the results and transforms each one by one during enumeration.
-	/// </summary>
-	/// <remarks>
-	/// <include file="RowMapping.docs.xml" path="docs/members[@name='obsolete-12']/*" />
-	/// <para>
-	/// That page has the difference and a before/after example.
-	/// </para>
-	/// </remarks>
-	/// <param name="table">The data to process.</param>
-	/// <param name="clearTable"><see langword="true"/> to clear the table after buffering the data; otherwise, <see langword="false"/>.</param>
-	/// <returns>A dequeuing enumerable of the transformed results.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="table"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ValueMappingException">A required property has no column in the table; the table is not cleared then.</exception>
-	[Obsolete(ResultsObsolete)]
-	public IEnumerable<T> Results(DataTable table, bool clearTable)
-	{
-		if (table is null) throw new ArgumentNullException(nameof(table));
-		Contract.EndContractBlock();
-
-		DataColumnCollection cols = table.Columns;
-		int columnCount = cols.Count;
-
-		// Ordinals + names in a single pass (no double Select iterators).
-		int[] ordinals = new int[columnCount];
-		string[] names = new string[columnCount];
-		for (int i = 0; i < columnCount; i++)
-		{
-			DataColumn c = cols[i];
-			ordinals[i] = c.Ordinal;
-			names[i] = c.ColumnName;
-		}
-
-		// The row count is known, so pre-size the queue and fill it directly.
-		DataRowCollection rows = table.Rows;
-		var buffer = new Queue<object[]>(rows.Count);
-		foreach (DataRow r in rows)
-		{
-			object[] a = LocalPool.Rent(columnCount);
-			for (int i = 0; i < columnCount; i++) a[i] = r[i];
-			buffer.Enqueue(a);
-		}
-
-		var results = new QueryResult<Queue<object[]>>(ordinals, names, buffer);
-
-		// The plan for these columns is built here, and a required property with no column makes that throw: the table is cleared only once it has not.
-		IEnumerable<T> mapped = AsDequeueingEnumerable(results, LocalPool);
-		if (clearTable) table.Rows.Clear();
-		return mapped;
 	}
 }

@@ -36,24 +36,10 @@ public static class CommandExecuteFailureTests
 
 	static readonly Dictionary<string, Func<IDbCommand, object?>> SyncCalls = new()
 	{
-		["ToList"] = c => c.ToList(r => r.GetValue(0)),
-		["ToArray"] = c => c.ToArray(r => r.GetValue(0)),
-		["ToImmutableArray"] = c => c.ToImmutableArray(r => r.GetValue(0)),
 		["ToDataTable"] = c => c.ToDataTable(),
 		["ToDataTables"] = c => c.ToDataTables(),
 		["ExecuteReader(handler)"] = c => { c.ExecuteReader(_ => { }); return null; },
 		["ExecuteReader(transform)"] = c => c.ExecuteReader(r => r.FieldCount),
-		["IterateReader(selector)"] = c => c.IterateReader(r => r.GetValue(0), e => e.Count()),
-		["IterateReader(handler)"] = c => { c.IterateReader(_ => { }); return null; },
-		["IterateReader(behavior, handler)"] = c => { c.IterateReader(CommandBehavior.Default, _ => { }); return null; },
-		["IterateReaderWhile"] = c => { c.IterateReaderWhile(_ => true); return null; },
-		["First"] = c => c.First(r => r.GetValue(0)),
-		["FirstOrDefault"] = c => c.FirstOrDefault(r => r.GetValue(0)),
-		["Single"] = c => c.Single(r => r.GetValue(0)),
-		["SingleOrDefault"] = c => c.SingleOrDefault(r => r.GetValue(0)),
-		["Take"] = c => c.Take(1, r => r.GetValue(0)),
-		["Skip"] = c => c.Skip(1, r => r.GetValue(0)),
-		["SkipThenTake"] = c => c.SkipThenTake(1, 1, r => r.GetValue(0)),
 		["FirstOrdinalResults"] = c => c.FirstOrdinalResults(),
 		["FirstOrdinalResults<T>"] = c => c.FirstOrdinalResults<int>(),
 		["Retrieve()"] = c => c.Retrieve(),
@@ -63,24 +49,12 @@ public static class CommandExecuteFailureTests
 
 	static readonly Dictionary<string, Func<DbCommand, CancellationToken, Task>> AsyncCalls = new()
 	{
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["ToListAsync(transform)"] = (c, t) => c.ToListAsync(r => r.GetValue(0), cancellationToken: t).AsTask(),
-#pragma warning restore CS0618
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["ToListAsync(behavior, transform)"] = (c, t) => c.ToListAsync(CommandBehavior.Default, r => r.GetValue(0), true, t).AsTask(),
-#pragma warning restore CS0618
-		["ToListAsync(async transform)"] = (c, t) => c.ToListAsync(CommandBehavior.Default, r => new ValueTask<object>(r.GetValue(0)), t).AsTask(),
 		["ExecuteReaderAsync(Action)"] = (c, t) => c.ExecuteReaderAsync(_ => { }, CommandBehavior.Default, t).AsTask(),
 		["ExecuteReaderAsync(Func<ValueTask>)"] = (c, t) => c.ExecuteReaderAsync(_ => default, CommandBehavior.Default, t).AsTask(),
 		["ExecuteReaderAsync<T>(Func<T>)"] = (c, t) => c.ExecuteReaderAsync(r => r.FieldCount, CommandBehavior.Default, t).AsTask(),
 		["ExecuteReaderAsync<T>(Func<ValueTask<T>>)"] = (c, t) => c.ExecuteReaderAsync(r => new ValueTask<int>(r.FieldCount), CommandBehavior.Default, t).AsTask(),
 		["ExecuteReaderAsync(IDbCommand, Func<ValueTask>)"] = (c, t) => ((IDbCommand)c).ExecuteReaderAsync(_ => default, CommandBehavior.Default, t).AsTask(),
 		["ExecuteReaderAsync<T>(IDbCommand, Func<ValueTask<T>>)"] = (c, t) => ((IDbCommand)c).ExecuteReaderAsync(r => new ValueTask<int>(r.FieldCount), CommandBehavior.Default, t).AsTask(),
-		["ForEachAsync(Action)"] = (c, t) => c.ForEachAsync(_ => { }, true, t).AsTask(),
-		["ForEachAsync(behavior, Action)"] = (c, t) => c.ForEachAsync(_ => { }, CommandBehavior.Default, true, t).AsTask(),
-		["ForEachAsync(Func<ValueTask>)"] = (c, t) => c.ForEachAsync(_ => default, true, t).AsTask(),
-		["ForEachAsync(behavior, Func<ValueTask>)"] = (c, t) => c.ForEachAsync(_ => default, CommandBehavior.Default, true, t).AsTask(),
-		["IterateReaderWhileAsync"] = (c, t) => c.IterateReaderWhileAsync(_ => new ValueTask<bool>(true), CommandBehavior.Default, true, t).AsTask(),
 		["FirstOrdinalResultsAsync"] = (c, t) => c.FirstOrdinalResultsAsync(CommandBehavior.Default, true, t).AsTask(),
 		["FirstOrdinalResultsAsync<T>"] = (c, t) => c.FirstOrdinalResultsAsync<int>(CommandBehavior.Default, true, t).AsTask(),
 		["RetrieveAsync"] = (c, t) => c.RetrieveAsync(true, t).AsTask(),
@@ -91,9 +65,9 @@ public static class CommandExecuteFailureTests
 	public static TheoryData<string> AsyncNames() => [.. AsyncCalls.Keys];
 
 	// One name per overload shape, for the variants that reach the same helper branch as the full lists above.
-	public static TheoryData<string> RepresentativeSyncNames() => ["ToList", "ExecuteReader(handler)", "First", "Retrieve()"];
+	public static TheoryData<string> RepresentativeSyncNames() => ["ExecuteReader(handler)", "Retrieve()"];
 
-	public static TheoryData<string> RepresentativeAsyncNames() => ["ToListAsync(transform)", "ExecuteReaderAsync(Action)", "ForEachAsync(Action)", "RetrieveAsync"];
+	public static TheoryData<string> RepresentativeAsyncNames() => ["ExecuteReaderAsync(Action)", "RetrieveAsync"];
 
 	static (DbTally Tally, TrackedConnection Connection, DbCommand Command) Closed(Exception failure)
 	{
@@ -149,16 +123,6 @@ public static class CommandExecuteFailureTests
 		Assert.Throws<ProviderFailed>(() => SyncCalls[call](command));
 
 		LeftAsItWas(tally, connection);
-	}
-
-	[Fact]
-	public static void Sync_NotADbCommand_ProviderFails_ClosesTheConnectionItOpened()
-	{
-		(DbTally tally, TrackedConnection connection, DbCommand command) = Closed(new ProviderFailed());
-
-		Assert.Throws<ProviderFailed>(() => new OnlyDbCommand(command).ToList(r => r.GetValue(0)));
-
-		OpenedAndClosedOnce(tally, connection);
 	}
 
 	[Fact]

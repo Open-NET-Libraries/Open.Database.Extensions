@@ -115,7 +115,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 | An interface | `'IPost' cannot be mapped: it is an interface. Map to a class or struct, or use Map(selector).` |
 | An abstract class or a delegate | The same, with `it is an abstract class` or `it is a delegate` |
 | A dictionary (`Dictionary<,>`, `IDictionary<,>`, `IReadOnlyDictionary<,>`) or a dynamic object (`ExpandoObject`) | ``'Dictionary`2' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).`` |
-| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `Results<T>`, `ToChannel<T>`, `To<T>(DataTable)`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().` |
+| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `ToChannel<T>`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().` |
 | No public constructor | `'Post' cannot be mapped: it has no public constructor.` |
 | Two or more public constructors, none without parameters | `'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).` |
 | A `required` public field | `'Post' cannot be mapped: its required field 'Title' cannot be set. Make it a property.` |
@@ -137,7 +137,7 @@ The rules:
 
 It differs from the two other ways to read one column. `FirstOrdinalResults<T>()` returns the provider's own value (its typed getter, or a plain cast) from the first result set only, and is the form for a raw `IDbCommand` or a reader (see [the foundation](foundation.md#reader-and-command-helpers)); `ExecuteScalar<T>()` returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
-Pass the token or nothing to these `Async` forms: `ToListAsync<int>(default)` on an expressive command binds to its older `ToListAsync(transform, behavior)`, which has no transform to call. `ToHashSetAsync<int>(cancellationToken: ct)` names the token because the comparer comes first, as on `MappedQuery<T>`.
+Pass the token or nothing to these `Async` forms: `ToHashSetAsync<int>(cancellationToken: ct)` names the token because the comparer comes first, as on `MappedQuery<T>`.
 
 Errors in the data throw per row: a missing `required` column and an unconvertible value throw `ValueMappingException`, and a constructor that throws is wrapped (see [Values that cannot be mapped](#values-that-cannot-be-mapped)).
 
@@ -163,7 +163,7 @@ Declare it with the collection syntax, created on first use with the C# 14 `fiel
 
 [!code-csharp[](../samples/Mapping.cs#map_declared)]
 
-Pass it to `Map<T>`. The same `map` parameter is on `Results<T>()` on a reader or an `IDbCommand` ([the foundation](foundation.md#reader-and-command-helpers); the `IExecuteReader` form is deprecated, use `Map<T>(map).ToList()`) and on `ToChannel`, `AsSourceBlock` and `ToTargetBlock` ([Channels and Dataflow](channels-and-dataflow.md)). `DequeueAs<T>()` also took one and is deprecated: use `Map<T>(map).ToList()`.
+Pass it to `Map<T>`. The same `map` parameter is on `ToChannel`, `AsSourceBlock` and `ToTargetBlock` ([Channels and Dataflow](channels-and-dataflow.md)).
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_use)]
 
@@ -303,7 +303,7 @@ An async terminal executes and opens asynchronously but reads the rows with `Rea
 ### Streaming holds the connection
 
 > [!WARNING]
-> **Streaming is not the recommended way to read rows: it holds the connection while your code runs for each row.** The `Read` and `ReadAsync` handlers, `ForEach` and `ForEachAsync`, `IterateReader` and `IterateReaderWhile`, and a reader's `AsEnumerable` and `AsAsyncEnumerable` all run your code for each row while the reader, and the connection under it, are open. The connection stays held for as long as your code takes per row, added up over all the rows.
+> **Streaming is not the recommended way to read rows: it holds the connection while your code runs for each row.** The `Read` and `ReadAsync` handlers, `ForEach` and `ForEachAsync`, `IterateWhile` on a reader, and a reader's `AsEnumerable` and `AsAsyncEnumerable` all run your code for each row while the reader, and the connection under it, are open. The connection stays held for as long as your code takes per row, added up over all the rows.
 >
 > In async code that time has no bound: every `await` in the loop body can yield, and nothing says when the loop resumes. Until it does, the connection is on hold: a pooled connection is not returned to the pool, and the server may keep its locks and the open result set.
 >
@@ -342,13 +342,13 @@ A data class can return the mapped query and let each caller pick the terminal:
 
 ## Results, and a failure after the first one
 
-A *result* here is one whole result set: what `NextResult` moves between. It is never a row (this library's `Results<T>()` means rows).
+A *result* here is one whole result set: what `NextResult` moves between. It is never a row.
 
 `Map` returns the rows of the first result set only. Later sets are never mapped. After the rows are read, the terminal reads through the later sets without reading their rows, so a failure in a later statement (a stored procedure or a text batch that fails after its first `SELECT`) is thrown to you as the provider raised it, not lost when the reader is disposed. A trailing status set does not throw and adds no rows.
 
 Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and a `Read` or an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `Single` or `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `First`, `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through (also through `IMappedQuery<T>`), and the provider discards the first set's unread rows on the way.
 
-The deprecated `Results<T>` on an `IExecuteReader`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, the `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()` read only the first result set. `Map` reads through the rest, and `command.SingleResult().Map(...)` restores the old behavior. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
+The calls removed in 11.0 (`Results<T>`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()`) read only the first result set. `Map` reads through the rest, and `command.SingleResult().Map(...)` gives the old behavior. See [Removed in 11.0](whats-new-11.md#deprecated-in-110).
 
 `.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` still works (and so does it on the result of `Skip` and `Take`): the two forms are the same. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `First` and `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
 

@@ -265,47 +265,99 @@ These are obsolete in 11.0 (compile warning CS0618) and will be removed in 12. E
 
 ### Before and after
 
-Each pair below is compiled and run by the documentation build, and a check asserts that the two give the same result.
+The removed call is shown as text, because it no longer compiles. The call to type instead is compiled and run by the documentation build, and a check asserts that it gives the result the removed call did.
 
 `Results<T>` on a command:
 
-[!code-csharp[](../samples/Deprecated.cs#deprecated_results_before)]
-[!code-csharp[](../samples/Deprecated.cs#deprecated_results_after)]
+```csharp
+// Removed in 11.0:
+// List<Post> before = connection
+//     .Command(PostsSql)
+//     .Results<Post>()
+//     .ToList();
+```
+
+[!code-csharp[](../samples/Migration.cs#migration_results_after)]
 
 `ResultsAsync<T>` on an expressive command:
 
-[!code-csharp[](../samples/Deprecated.cs#deprecated_resultsasync_before)]
-[!code-csharp[](../samples/Deprecated.cs#deprecated_resultsasync_after)]
+```csharp
+// Removed in 11.0:
+// List<Post> before = (await connection
+//     .Command(PostsSql)
+//     .ResultsAsync<Post>())
+//     .ToList();
+```
+
+[!code-csharp[](../samples/Migration.cs#migration_resultsasync_after)]
 
 `ResultsFromDataTable<T>`:
 
-[!code-csharp[](../samples/Deprecated.cs#deprecated_resultsfromdatatable_before)]
-[!code-csharp[](../samples/Deprecated.cs#deprecated_resultsfromdatatable_after)]
+```csharp
+// Removed in 11.0, synchronous:
+// List<Post> before = newCommand
+//     .ResultsFromDataTable<Post>()
+//     .ToList();
+```
+
+[!code-csharp[](../samples/Migration.cs#migration_resultsfromdatatable_after)]
 
 The selector forms on an `IExecuteReader`:
 
-[!code-csharp[](../samples/Deprecated.cs#deprecated_selector_before)]
-[!code-csharp[](../samples/Deprecated.cs#deprecated_selector_after)]
+```csharp
+// Removed in 11.0:
+// long? first = command.FirstOrDefault(Id);
+// List<long> taken = command.Take(2, Id);
+// List<long> skipped = command.Skip(3, Id);
+// List<long> sliced = command.SkipThenTake(1, 2, Id);
+```
+
+[!code-csharp[](../samples/Migration.cs#migration_selector_after)]
 
 `TakeAsync` and `ToListAsync` with a selector:
 
-[!code-csharp[](../samples/Deprecated.cs#deprecated_takeasync_before)]
-[!code-csharp[](../samples/Deprecated.cs#deprecated_takeasync_after)]
+```csharp
+// Removed in 11.0:
+// IList<long> taken = await connection
+//     .Command(IdsSql)
+//     .TakeAsync(Id, 2);
+// List<long> all = await connection
+//     .Command(IdsSql)
+//     .ToListAsync(Id);
+```
+
+[!code-csharp[](../samples/Migration.cs#migration_takeasync_after)]
 
 `QueryResultCollection<T>` has no replacement; a list holds the same rows:
 
-[!code-csharp[](../samples/Deprecated.cs#deprecated_collection_before)]
-[!code-csharp[](../samples/Deprecated.cs#deprecated_collection_after)]
+```csharp
+// Removed in 11.0:
+// var rows = new QueryResultCollection<long>([0], ["id"], ids);
+```
+
+[!code-csharp[](../samples/Migration.cs#migration_collection_after)]
 
 `AsMappedDictionaries`:
 
-[!code-csharp[](../samples/Deprecated.cs#deprecated_mappeddictionaries_before)]
-[!code-csharp[](../samples/Deprecated.cs#deprecated_mappeddictionaries_after)]
+```csharp
+// Removed in 11.0, synchronous:
+// IEnumerable<Dictionary<string, object?>> before = source.AsMappedDictionaries();
+```
+
+[!code-csharp[](../samples/Migration.cs#migration_mappeddictionaries_after)]
 
 `Retrieve().DequeueAs<T>()`:
 
-[!code-csharp[](../samples/Deprecated.cs#deprecated_dequeueas_before)]
-[!code-csharp[](../samples/Deprecated.cs#deprecated_dequeueas_after)]
+```csharp
+// Removed in 11.0:
+// List<Post> before = connection
+//     .Command(PostsSql)
+//     .Retrieve()
+//     .DequeueAs<Post>()
+//     .ToList();
+```
+
+[!code-csharp[](../samples/Migration.cs#migration_dequeueas_after)]
 
 ### Why `Map` reads later result sets
 

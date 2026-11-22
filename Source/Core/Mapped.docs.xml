@@ -97,14 +97,6 @@
     </returns>
   </members>
 
-  <members name="obsolete-11">
-    <para>
-      Obsolete in 11.0, removed in 12.
-      See <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>
-      for the difference and a before/after example.
-    </para>
-  </members>
-
   <members name="null-row">
     <para>
       A row whose value is <c>NULL</c> is still a row, and

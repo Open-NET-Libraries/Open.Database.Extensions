@@ -126,33 +126,6 @@ public static class TransformerBufferTests
 			() => transformer.AsDequeueingEnumerable(results, null!)).ParamName);
 	}
 
-	[Fact]
-	public static void Results_DataTable_ClearTable_BuffersRowsThenClearsTheSource()
-	{
-		DataTable table = NewTable();
-
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		var people = Transformer<Person>.Create().Results(table, clearTable: true).ToList();
-#pragma warning restore CS0618
-
-		Assert.Empty(table.Rows);
-		Assert.Equal([1, 2], people.Select(p => p.Id));
-		Assert.Equal(["a", "b"], people.Select(p => p.Name));
-	}
-
-	[Fact]
-	public static void Results_DataTable_NoClear_LeavesTheSourceIntact()
-	{
-		DataTable table = NewTable();
-
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		var people = Transformer<Person>.Create().Results(table, clearTable: false).ToList();
-#pragma warning restore CS0618
-
-		Assert.Equal(2, table.Rows.Count);
-		Assert.Equal(2, people.Count);
-	}
-
 	static DataTable NewTable()
 	{
 		var table = new DataTable();

@@ -12,16 +12,6 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class RowMapFamilyTests
 {
-	[Fact]
-	public static void ExecuteReaderResults_WithoutAMap_ReadsByColumnName()
-	{
-		var command = new FakeExecuteReader(["Id", "Name"], [1, "one"]);
-
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal(1, command.Results<Item>().Single().Id);
-		Assert.Equal(1, command.Results((RowMap<Item>?)null).Single().Id);
-		#pragma warning restore CS0618
-	}
 
 	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
 	{
@@ -123,23 +113,6 @@ public static class RowMapFamilyTests
 	{
 		// Core
 		["Map(IExecuteReader)"] = m => Now(Exec().Map(m).ToList()),
-		["Results(IDataReader)"] = m => Now(Reader().Results(m)),
-		["ResultsBuffered(IDataReader)"] = m => Now(Reader().ResultsBuffered(m)),
-		["Results(IDbCommand)"] = m => Now(Command().Results(m)),
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["Results(IExecuteReader)"] = m => Now(Exec().Results(m)),
-		#pragma warning restore CS0618
-		["ResultsAsync(DbDataReader)"] = m => Enumerate(DbReader().ResultsAsync(m)),
-		["ResultsBufferedAsync(DbDataReader)"] = async m => (await DbReader().ResultsBufferedAsync(m)).ToList(),
-		["ResultsAsync(DbCommand)"] = async m => (await DbCmd().ResultsAsync(m)).ToList(),
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["To(DataTable)"] = m => Now(Table().To(m)),
-#pragma warning restore CS0618
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["DequeueAs(QueryResult)"] = m => Now(Queued().DequeueAs(m)),
-		["DequeueAs(Task)"] = async m => (await Task.FromResult(Queued()).DequeueAs(m)).ToList(),
-		["DequeueAs(ValueTask)"] = async m => (await new ValueTask<QueryResult<Queue<object[]>>>(Queued()).DequeueAs(m)).ToList(),
-		#pragma warning restore CS0618
 
 		// Channel: a new channel
 		["ToChannel(IDataReader)"] = m => Drain(Reader().ToChannel(true, m)),

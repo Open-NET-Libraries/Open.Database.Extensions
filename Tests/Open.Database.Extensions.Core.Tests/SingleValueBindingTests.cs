@@ -44,27 +44,6 @@ public static class SingleValueBindingTests
 		IExecuteReader,
 		CancellationToken> Table = static (cmd, exec, ct) =>
 	{
-		// The transform overloads, as before.
-		Pin(cmd.ToList(r => r.GetInt32(0)));
-		Pin(cmd.ToList(Id));
-		Pin(cmd.ToList(Id, CommandBehavior.SequentialAccess));
-		Pin(cmd.ToList<int>(null!));
-		Pin(cmd.ToArray(r => r.GetInt32(0)));
-		Pin(cmd.ToArray(Id, CommandBehavior.SequentialAccess));
-		Pin(cmd.ToImmutableArray(Id));
-		Pin(
-			cmd.ToImmutableArray(Id, CommandBehavior.SequentialAccess));
-		Pin(cmd.FirstOrDefault(Id));
-		Pin(cmd.SingleOrDefault(Id));
-		Pin(cmd.First(Id));
-		Pin(cmd.Single(Id));
-		Pin(exec.ToList(Id));
-		PinAsync(cmd.ToListAsync(r => r.GetInt32(0)));
-		PinAsync(
-			cmd.ToListAsync(
-				r => r.GetInt32(0),
-				CommandBehavior.SequentialAccess));
-
 		// The new terminals.
 
 		PinAsync(cmd.ToListAsync<int>());
@@ -96,25 +75,4 @@ public static class SingleValueBindingTests
 	public static void TheTableCompiles()
 		=> Assert.NotNull(Table);
 
-	// The one trap:
-	// ToListAsync<int>(default!)
-	// (or null) still binds to the instance transform overload
-	// of an expressive command,
-	// not to the new extension.
-	// With no transform that overload has no guard:
-	// an empty result returns [] and a row throws.
-	[Fact]
-	public static async Task ToListAsyncOfIntWithDefault_BindsToTheInstanceTransformOverload_OfAnExpressiveCommand()
-	{
-		var rig = new TokenRig { Rows = 1 };
-		static ExpressiveDbCommand Command(TokenRig r)
-			=> new(new TokenConnection(r), CommandType.Text, "SELECT Id");
-
-		Assert.Equal([1], await Command(rig).ToListAsync<int>(Ct)); // the token: the new extension
-		await Assert.ThrowsAsync<NullReferenceException>(
-			async () => await Command(rig).ToListAsync<int>(default!));
-
-		rig.Rows = 0;
-		Assert.Empty(await Command(rig).ToListAsync<int>(default!)); // no row, so the missing transform is never called
-	}
 }

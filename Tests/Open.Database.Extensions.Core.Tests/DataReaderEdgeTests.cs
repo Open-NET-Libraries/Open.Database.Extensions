@@ -615,47 +615,6 @@ public static class DataReaderEdgeTests
 				TestContext.Current.CancellationToken));
 	}
 
-	// The command-level helpers hand a plain (non-Db) reader
-	// to ForEach and IterateWhile.
-	[Theory]
-	[InlineData(false)]
-	[InlineData(true)]
-	public static async Task IterateReaderAsync_OverAPlainReader_CancelThrows(
-		bool whileForm)
-	{
-		using var cts = new CancellationTokenSource();
-		var command = new PlainAsyncReaderCommand(static () =>
-			FakeReader.Create(["Id", "Name", "Note"], Rows(10)));
-		int handled = 0;
-		void Handle(IDataRecord _)
-		{
-			if (++handled == 3) cts.Cancel();
-		}
-
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			async () =>
-			{
-				if (whileForm)
-				{
-					await command.IterateReaderWhileAsync(
-						r =>
-						{
-							Handle(r);
-							return true;
-						},
-						cancellationToken: cts.Token);
-				}
-				else
-				{
-					await command.IterateReaderAsync(
-						Handle,
-						cancellationToken: cts.Token);
-				}
-			});
-
-		Assert.Equal(3, handled);
-	}
-
 	// A stream over a plain IDataReader forwards the token,
 	// so a cancel between rows throws instead of a partial result.
 	[Fact]
