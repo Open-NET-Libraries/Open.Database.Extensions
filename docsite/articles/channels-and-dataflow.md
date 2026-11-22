@@ -6,9 +6,9 @@ Query results can be read straight into a pipeline instead of a collection. The 
 |---|---|---|
 | `Open.Database.Extensions.Core` (the views behind `Map<T>()`) | `ToBufferedAsyncStream()`, `ToAsyncBufferStream()` | `IAsyncEnumerable<T>` (elements), `IAsyncEnumerable<ReadOnlyMemory<T>>` (chunks) |
 | `Open.Database.Extensions.Channel` | `ToChannelReader()`, `ToChannel()`, `ToChannelHoldingConnection()` | `System.Threading.Channels` |
-| `Open.Database.Extensions.Dataflow` | `ToTargetBlock<T>()`, `ToTargetBlockAsync<T>()`, `AsSourceBlock<T>()` | `System.Threading.Tasks.Dataflow` |
+| `Open.Database.Extensions.Dataflow` | `ToTargetBlock()`, `AsSourceBlock()`, `ToTargetBlockHoldingConnection()` | `System.Threading.Tasks.Dataflow` |
 
-The Channel package takes a mapped query (`Map<T>()`). The Dataflow package works on expressive commands, on `IDbCommand` and on readers. Rows are mapped the same way as [`Map<T>()`](mapping.md).
+Both packages take a mapped query (`Map<T>()`), so rows are mapped the same way as [`Map<T>()`](mapping.md).
 
 ## Streaming from a mapped query
 
@@ -76,12 +76,20 @@ When the channel is full, the write waits for room, before the command runs and 
 
 ![Open.Database.Extensions.Dataflow: You write the SQL. ODX writes the other twenty lines.](../images/hero-dataflow.svg)
 
-`ToTargetBlock<T>` posts each row to a block. The `complete` argument controls the target: with `true`, the block is completed after every row has been delivered and the reader has been released, or faulted with the exception if reading or mapping failed. With `false`, the block is left open and is never completed or faulted by the call. The number `ToTargetBlock<T>` returns counts the rows read and handed to the internal buffer; delivery to the target can still be in progress.
+The Dataflow package exists to feed whatever pipeline you build, and to start it as fast as the query can be read. It reads a mapped query at full speed into pooled chunks and sends each row to a block, so the blocks, their task schedulers and their priorities stay yours.
+
+`ToTargetBlock` sends the rows to a block you own and leaves it open, so passes can share it. The returned task is the done signal: it completes with the number of rows the block accepted, and a failure or a cancel comes back through it. `BlockEnd.Complete` completes the block when the pass ends, or faults it with the exception that ended it, a cancel included (a faulted block drops the rows it holds that were not received yet).
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_target_block)]
+
+Each row is sent with `SendAsync`, so a bounded block that is full makes the pass wait and no row is dropped. The rows wait in memory meanwhile, and the connection is closed when the read ends. A block has no way to ask for room, so only a block that is already finished is known before the command runs. If the block declines a row for good (completed or faulted), the pass stops without an exception and returns the rows accepted so far.
+
+`AsSourceBlock` makes the block for you: an unbounded `BufferBlock<T>`, or one made from the `DataflowBlockOptions` you pass (its task scheduler, its bound, its name). It starts reading at the call and always finishes the block, completed after the last row or faulted with the exception that ended the read.
+
+[!code-csharp[](../samples/ChannelsAndDataflow.cs#as_source_block)]
+
+`ToTargetBlockHoldingConnection` pulls the rows one at a time from [`Stream`](xref:Open.Database.Extensions.IMappedQuery`1.Stream*), so a full block limits memory. `Stream` says when to use it and what the required `stallTimeout` does.
 
 ## Honest limits
 
 - These are conveniences for pipelines, not speed-ups. In the published benchmarks, draining a channel or a `BufferBlock` is slower than reading rows in a plain loop; see [Channels and Dataflow against a plain loop](benchmarks/pipelines.md).
-- The mapped Dataflow overloads read raw rows into a bounded buffer of about 1,024 rows and map them in a second stage. The channel study in the [benchmark results](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md) explains the trade-off.
-- The synchronous `ToTargetBlock` overloads post each row without waiting. When the target is complete, or bounded and full, or when the internal 1,024-row buffer of the mapped overloads is full, reading stops without an error and the number the call returns is the only sign of the shortfall. To feed a bounded target, use `ToTargetBlockAsync`, which waits.

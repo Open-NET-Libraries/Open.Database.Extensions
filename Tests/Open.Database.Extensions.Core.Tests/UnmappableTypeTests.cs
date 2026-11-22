@@ -393,21 +393,6 @@ public static class UnmappableTypeTests
 		["Map(new RowMap<T>(pair))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"))).ToList()),
 		["Map(new RowMap<T>(pairs))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name"))).ToList()),
 
-		// Dataflow: into a block
-		["ToTargetBlock<T>(IDataReader)"] = () => Done(new ValueTask<long>(Reader().ToTargetBlock(new BufferBlock<T>(), true, (RowMap<T>?)null))),
-		["ToTargetBlock<T>(IDbCommand)"] = () => Done(new ValueTask<long>(Command().ToTargetBlock(new BufferBlock<T>(), true, (RowMap<T>?)null))),
-		["ToTargetBlock<T>(IExecuteReader)"] = () => Done(new ValueTask<long>(Exec().ToTargetBlock(new BufferBlock<T>(), true, (RowMap<T>?)null))),
-		["ToTargetBlockAsync<T>(IDataReader)"] = () => Done(Reader().ToTargetBlockAsync(new BufferBlock<T>(), true, (RowMap<T>?)null)),
-		["ToTargetBlockAsync<T>(IDbCommand)"] = () => Done(Command().ToTargetBlockAsync(new BufferBlock<T>(), true, (RowMap<T>?)null)),
-		["ToTargetBlockAsync<T>(IExecuteReader)"] = () => Done(Exec().ToTargetBlockAsync(new BufferBlock<T>(), true, (RowMap<T>?)null)),
-
-		// Dataflow: a new source block
-		["AsSourceBlock<T>(IDataReader)"] = () => Done(Reader().AsSourceBlock<T>()),
-		["AsSourceBlock<T>(IDbCommand)"] = () => Done(Command().AsSourceBlock<T>()),
-		["AsSourceBlock<T>(IExecuteReader)"] = () => Done(Exec().AsSourceBlock<T>()),
-		["AsSourceBlockAsync<T>(IDataReader)"] = () => Done(Reader().AsSourceBlockAsync<T>()),
-		["AsSourceBlockAsync<T>(IDbCommand)"] = () => Done(Command().AsSourceBlockAsync<T>()),
-		["AsSourceBlockAsync<T>(IExecuteReader)"] = () => Done(Exec().AsSourceBlockAsync<T>()),
 	};
 
 	static readonly Dictionary<string, Func<Task>> Calls = CallsOf<IShapeless>();
@@ -539,21 +524,6 @@ public static class UnmappableTypeTests
 	{
 		["Map<T>() (IExecuteReader)"] = t => Run(() => Exec(t).Map<T>().ToList()),
 
-		// Dataflow: a command
-		["ToTargetBlock<T>(IDbCommand)"] = t => Done(new ValueTask<long>(Command(t).ToTargetBlock(Target<T>(), true, (RowMap<T>?)null))),
-		["ToTargetBlock<T>(IExecuteReader)"] = t => Done(new ValueTask<long>(Exec(t).ToTargetBlock(Target<T>(), true, (RowMap<T>?)null))),
-		["ToTargetBlockAsync<T>(IDbCommand)"] = t => Done(Command(t).ToTargetBlockAsync(Target<T>(), true, (RowMap<T>?)null)),
-		["ToTargetBlockAsync<T>(IExecuteReader)"] = t => Done(Exec(t).ToTargetBlockAsync(Target<T>(), true, (RowMap<T>?)null)),
-		["AsSourceBlock<T>(IDbCommand)"] = t => Done(Command(t).AsSourceBlock<T>()),
-		["AsSourceBlock<T>(IExecuteReader)"] = t => Done(Exec(t).AsSourceBlock<T>()),
-		["AsSourceBlockAsync<T>(IDbCommand)"] = t => Done(Command(t).AsSourceBlockAsync<T>()),
-		["AsSourceBlockAsync<T>(IExecuteReader)"] = t => Done(Exec(t).AsSourceBlockAsync<T>()),
-
-		// Dataflow: a reader
-		["ToTargetBlock<T>(IDataReader)"] = t => Done(new ValueTask<long>(Reader(t).ToTargetBlock(Target<T>(), true, (RowMap<T>?)null))),
-		["ToTargetBlockAsync<T>(IDataReader)"] = t => Done(Reader(t).ToTargetBlockAsync(Target<T>(), true, (RowMap<T>?)null)),
-		["AsSourceBlock<T>(IDataReader)"] = t => Done(Reader(t).AsSourceBlock<T>()),
-		["AsSourceBlockAsync<T>(IDataReader)"] = t => Done(Reader(t).AsSourceBlockAsync<T>()),
 	};
 
 	static readonly Dictionary<string, Func<Touched, Task>> BeforeExecution = BeforeExecutionOf<IShapeless>();

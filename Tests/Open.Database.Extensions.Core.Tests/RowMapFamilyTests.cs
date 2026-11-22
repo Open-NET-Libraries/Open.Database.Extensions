@@ -111,21 +111,6 @@ public static class RowMapFamilyTests
 		// Core
 		["Map(IExecuteReader)"] = m => Now(Exec().Map(m).ToList()),
 
-		// Dataflow: into a block
-		["ToTargetBlock(IDataReader)"] = m => ToBlock(b => new ValueTask<long>(Reader().ToTargetBlock(b, true, m))),
-		["ToTargetBlock(IDbCommand)"] = m => ToBlock(b => new ValueTask<long>(Command().ToTargetBlock(b, true, m))),
-		["ToTargetBlock(IExecuteReader)"] = m => ToBlock(b => new ValueTask<long>(Exec().ToTargetBlock(b, true, m))),
-		["ToTargetBlockAsync(IDataReader)"] = m => ToBlock(b => Reader().ToTargetBlockAsync(b, true, m)),
-		["ToTargetBlockAsync(IDbCommand)"] = m => ToBlock(b => Command().ToTargetBlockAsync(b, true, m)),
-		["ToTargetBlockAsync(IExecuteReader)"] = m => ToBlock(b => Exec().ToTargetBlockAsync(b, true, m)),
-
-		// Dataflow: a new source block
-		["AsSourceBlock(IDataReader)"] = m => Receive(Reader().AsSourceBlock(m)),
-		["AsSourceBlock(IDbCommand)"] = m => Receive(Command().AsSourceBlock(m)),
-		["AsSourceBlock(IExecuteReader)"] = m => Receive(Exec().AsSourceBlock(m)),
-		["AsSourceBlockAsync(IDataReader)"] = m => Receive(Reader().AsSourceBlockAsync(m)),
-		["AsSourceBlockAsync(IDbCommand)"] = m => Receive(Command().AsSourceBlockAsync(m)),
-		["AsSourceBlockAsync(IExecuteReader)"] = m => Receive(Exec().AsSourceBlockAsync(m)),
 	};
 
 	public static TheoryData<string> Names => [.. Cases.Keys];

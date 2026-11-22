@@ -179,7 +179,7 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 | `ExecuteReader(reader => ...)` | Whatever your function returns, given the live reader |
 | `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
 | `ToListAsync<T>()`, `ToArrayAsync<T>()`, `ToImmutableArrayAsync<T>()`, `FirstAsync<T>()`, `FirstOrDefaultAsync<T>()`, `SingleAsync<T>()`, `SingleOrDefaultAsync<T>()`, `ToHashSetAsync<T>()` | `Map<T>()` then that async terminal (for a synchronous read write `Map<T>().ToList()`); a single value such as `int` reads the first column: [One value per row](mapping.md#one-value-per-row) |
-| `Map<T>()` then `ToChannelReader()`, or `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
+| `Map<T>()` then `ToChannelReader()` or `AsSourceBlock()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
 The blocking terminals (`ExecuteNonQuery()`, `ExecuteScalar`, `ExecuteReturn`, `Execute`, `ExecuteReader` and the `Map<T>()` terminals such as `ToList()`) are in the `Open.Database.Extensions.Synchronous` namespace: add `using Open.Database.Extensions.Synchronous;` to call them. The `Async` terminals need no extra `using`.
 

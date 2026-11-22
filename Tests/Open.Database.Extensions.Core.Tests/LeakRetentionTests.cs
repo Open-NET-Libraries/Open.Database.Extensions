@@ -225,7 +225,7 @@ public static class LeakRetentionTests
 					break;
 				case "ToTargetBlockAsync":
 					var block = new BufferBlock<Row>();
-					await command.ToTargetBlockAsync(block, true);
+					await command.Map<Row>().ToTargetBlock(block, BlockEnd.Complete);
 					block.TryReceiveAll(out _);
 					break;
 				default: throw new ArgumentOutOfRangeException(nameof(terminal), terminal, null);
