@@ -40,7 +40,7 @@ If there is one consumer, only a few rows, and nothing else to overlap, you do n
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_buffer)]
 
-To read rows one at a time and stop early, see [`Stream`](mapping.md#stream-to-stop-early): it holds the connection while you pull rows, so it is not the way to do slow work per row.
+To read rows one at a time and stop early, see [`Stream`](mapping.md#terminals): it holds the connection while you pull rows, so it is not the way to do slow work per row.
 
 ### What it costs
 

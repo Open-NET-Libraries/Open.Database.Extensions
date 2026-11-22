@@ -3,7 +3,7 @@
 **The question:** `ToChannel` and the Dataflow methods feed a pipeline from a query. Are they faster than reading the rows in a plain loop?
 
 > [!NOTE]
-> This page rests on an **older run**, recorded in [`RESULTS.md`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md) on .NET 10. It was not repeated on .NET 11. Read the direction of the numbers, not the exact figures.
+> This page rests on an **older run**, recorded in [`RESULTS.md`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md) on .NET 10 with a build older than 11.0.0-rc.8. It was not repeated on .NET 11. Read the direction of the numbers, not the exact figures.
 
 ## In short
 

@@ -66,11 +66,11 @@ See [Mapping rows to objects](mapping.md).
 
 A database NULL is `null` in a row (it was `DBNull`). A column subset is chosen in SQL.
 
-## Buffered terminals, and `Stream(timeout)`
+## Buffered terminals, and `Stream(stallTimeout)`
 
 A buffered terminal (`ToListAsync`, `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `ToDictionaryAsync`, `ToAsyncBuffer`) reads every row, releases the connection, then hands the result over. It is the way to read rows.
 
-`Stream(timeout, cancellationToken)` is for stopping early: it hands rows to your loop while the reader is open, and a consumer that stalls longer than the timeout is stopped.
+`Stream(stallTimeout, cancellationToken)` is for stopping early: it hands rows to your loop while the reader is open, and a consumer that stalls longer than the timeout is stopped.
 
 ```cs
 // 10.x: handler-based row reads
@@ -87,7 +87,7 @@ await foreach (Post post in command
 
 | In 10.x | In 11 |
 |---|---|
-| `Read`, `ReadAsync`, `ForEachAsync`, `IterateReader*` handlers on a command or mapped query | `Stream(timeout, ct)`, or a buffered terminal |
+| `Read`, `ReadAsync`, `ForEachAsync`, `IterateReader*` handlers on a command or mapped query | `Stream(stallTimeout, ct)`, or a buffered terminal |
 | `ToAsyncBuffer(pool, clearOnReturn, ct)` and the flag and pool overloads of the buffer streams | `.UsePool(pool, clearOnReturn).ToAsyncBuffer(ct)` |
 | `EnableAsyncRead(bool)`, `UseAsyncRead`, the `useReadAsync` argument | `AsyncReads()` before or after `Map` |
 | a reader helper's `throwOnCancellation` argument | delete it: a cancel that cuts the read short throws `OperationCanceledException` |
@@ -148,6 +148,10 @@ Every mapped overload takes one `RowMap<T>? map` where 10.x took key/value pairs
 ## Known limitations
 
 - The library is not marked trimmable and does not support native AOT. A trimmed app keeps its model types and the provider's reader type: the recipe is in the [Core README](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Source/Core/README.md#trimming-and-native-aot).
+- Output parameters can be sent, but their values cannot be read back after the call. On providers other than SQL Server, which report no procedure parameter names, `AddParam(search.Author)` sends the last member of the expression, `Author`, as the name.
 - A missing column for a `required` property is reported by `Map` at the first row, so an empty result does not report it.
+- The unmapped `ToChannel` overloads can lose the row that was in flight when a read fails while the target is full. The cause is in the underlying channel library.
+- The synchronous `ToTargetBlock` overloads post each row without waiting: when the target is complete, or bounded and full, reading stops without an error, and only the number the call returns (the rows read and handed over) shows the shortfall. Use the `Async` overload to feed a bounded target.
 - `AddParams(source)` sends every public member of `source` that the procedure declares, so pass an object you trust, and add a value that only the server may decide with `AddParam("name", value)`.
 - The unit tests run on in-memory providers, the documentation samples on SQLite, and the benchmarks on the in-memory provider, SQLite and SQL Server LocalDB. Feedback from other providers and workloads is welcome.
+- The tests of the mapper, the pipelines and the commands run on net10.0 and net11.0. The netstandard2.0, netstandard2.1 and net472 builds share the code through `#if` switches; a small test project runs the `AddParam` overloads on net472, net8.0, net10.0 and net11.0 under older language versions.

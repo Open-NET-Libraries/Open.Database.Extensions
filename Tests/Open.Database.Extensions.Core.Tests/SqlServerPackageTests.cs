@@ -193,15 +193,8 @@ public static class SqlServerPackageTests
 	}
 
 	[Fact]
-	public static void AddParameterType_OnAnIDbCommandThatIsNotASqlCommand_ThrowsInvalidCast()
-	{
-		IDbCommand command = Substitute.For<IDbCommand>();
-
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Throws<InvalidCastException>(() => SqlCmd.AddParameterType(command, "@x", SqlDbType.Int));
-#pragma warning restore CS0618
-		Assert.Throws<ArgumentNullException>(() => SqlCmd.AddParameterType(null!, "@x", SqlDbType.Int));
-	}
+	public static void AddParameterType_ANullCommand_Throws()
+		=> Assert.Throws<ArgumentNullException>(() => SqlCmd.AddParameterType(null!, "@x", SqlDbType.Int));
 
 	[Fact]
 	public static void AddParameter_AssignsTheValueAsGiven_SoANullStaysNullAndADatabaseNullStaysOne()

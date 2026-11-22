@@ -7,7 +7,7 @@ using Open.Database.Extensions.Core;
 namespace Samples;
 
 /// <summary>
-/// The 11 calls shown in the migration guide.
+/// The calls shown in the migration guide.
 /// Each region here is compiled and run by Program.cs.
 /// </summary>
 public static class Migration

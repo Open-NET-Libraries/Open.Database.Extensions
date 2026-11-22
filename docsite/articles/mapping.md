@@ -290,7 +290,7 @@ FrozenDictionary<int, Post> byId = (await query
 
 [!code-csharp[](../samples/Mapping.cs#map_paging)]
 
-To read the rows one at a time and stop early, use `Stream(timeout)` in an `await foreach`: it holds the reader and the connection open while you pull rows, and the timeout is the longest you may go without pulling the next one. To hand rows to another consumer use [`ToBufferedAsyncStream`](channels-and-dataflow.md), and for the raw reader `ExecuteReader(reader => ...)`:
+Buffered terminals are the way to read rows. Only to stop early, `Stream(stallTimeout)` hands rows to an `await foreach` while the reader and the connection stay open; read its remarks before you use it. To hand rows to another consumer, use [`ToBufferedAsyncStream`](channels-and-dataflow.md); for the raw reader, `ExecuteReader(reader => ...)`:
 
 [!code-csharp[](../samples/Mapping.cs#map_stream)]
 
@@ -299,21 +299,6 @@ Every terminal has an `Async` twin that takes a `CancellationToken`:
 [!code-csharp[](../samples/Mapping.cs#map_dictionary_async)]
 
 An async terminal executes and opens asynchronously but reads the rows with `Read()`; [`AsyncReads()`](async-reads.md) opts one call in to `ReadAsync`.
-
-### Stream, to stop early
-
-Buffered terminals are the way to read rows. `Stream(timeout, cancellationToken)` hands each row to your loop while the reader is open, and is only for stopping early:
-
-```cs
-await foreach (Post post in command
-	.Map<Post>()
-	.Stream(TimeSpan.FromSeconds(30), cancellationToken))
-{
-	if (post.Id == target) break;
-}
-```
-
-The timeout is required: a consumer that stalls longer than it is stopped. To read while a consumer works and release the connection early, use [the buffer streams](async-buffers.md).
 
 ## Mapping a reader or a command you already have
 

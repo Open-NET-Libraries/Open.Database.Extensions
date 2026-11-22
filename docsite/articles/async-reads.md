@@ -109,6 +109,6 @@ The [side-by-side sample](#the-default-stated-plainly) at the top of this page i
 
 ## Sources
 
-Every number on this page is on a benchmark page, with its chart, its table, and how it was made: [Sync reads against async reads](benchmarks/sync-vs-async.md) (the model) and [Slow links and large values](benchmarks/slow-links-and-large-values.md) (SQL Server over a simulated link). Those runs used the opt-in under the name `EnableAsyncRead(true)`, the same read as `AsyncReads()`.
+Every number on this page is on a benchmark page, with its chart, its table, and how it was made: [Sync reads against async reads](benchmarks/sync-vs-async.md) (the model) and [Slow links and large values](benchmarks/slow-links-and-large-values.md) (SQL Server over a simulated link).
 
 Two claims here are not measurements. Which reader behavior each map uses (`Map<T>()`: `SequentialAccess`; `Map(Func)`: `Default`, and each adds `SingleResult` after `.SingleResult()`) comes from the library source. That an async terminal calls `Read` and not `ReadAsync` by default, and the reverse after `AsyncReads()`, is pinned by `AsyncReadsTests` in the Core tests.

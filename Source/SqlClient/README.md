@@ -2,7 +2,7 @@
 
 [![Open.Database.Extensions.SqlClient: You write the SQL. ODX writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-sqlclient.svg)](https://open-net-libraries.github.io/Open.Database.Extensions/)
 
-**This package is deprecated in favor of [Open.Database.Extensions.MSSqlClient](https://www.nuget.org/packages/Open.Database.Extensions.MSSqlClient/)**, which uses the actively maintained `Microsoft.Data.SqlClient` and has the same API. Use this package only if your project still needs the older `System.Data.SqlClient`; otherwise install MSSqlClient. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/).
+**Not published for version 11.** Use [Open.Database.Extensions.MSSqlClient](https://www.nuget.org/packages/Open.Database.Extensions.MSSqlClient/), which uses `Microsoft.Data.SqlClient` and has the same API. It includes [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/).
 
 ```sh
 dotnet add package Open.Database.Extensions.SqlClient --prerelease
