@@ -244,8 +244,8 @@ public static class DbQueryAllocationTests
 		// After Using: the one box of the unbound source (32 B) is all the definition adds.
 		Assert.True(after <= classic + 32, $"params after Using {after} B, classic chain {classic} B.");
 
-		// Before Using: that box and one small step per held value (two values here), replayed at Using.
-		Assert.True(before <= classic + 192, $"params before Using {before} B, classic chain {classic} B.");
+		// Before Using: that box and one step of 40 to 48 B per held value (two values here), replayed at Using for nothing more.
+		Assert.True(before <= classic + 128, $"params before Using {before} B, classic chain {classic} B.");
 #endif
 	}
 
@@ -299,13 +299,13 @@ public static class DbQueryAllocationTests
 		Assert.Equal(32, box);
 		Assert.Equal(box + classicNodeFirst, boxThenNode);
 
-		// A held value is one step of 40 to 48 B; replaying them at Using builds the same nodes as the classic chain plus
-		// the stack the replay uses to walk the steps oldest first (88 B, whatever the number of values up to four).
+		// A held value is one step of 40 to 48 B; replaying them at Using builds exactly the nodes the classic chain builds
+		// and nothing else (the replay walks the steps by recursion, so it allocates nothing to do it).
 		Assert.InRange(stepInt, 40, 48);
 		Assert.InRange(stepLong, 40, 48);
 		Assert.InRange(stepSecond, 40, 48);
-		Assert.Equal(classicNodeFirst + 88, replayOne);
-		Assert.Equal(classicNodeFirst + classicNodeSecond + 88, replayTwo);
+		Assert.Equal(classicNodeFirst, replayOne);
+		Assert.Equal(classicNodeFirst + classicNodeSecond, replayTwo);
 #endif
 	}
 

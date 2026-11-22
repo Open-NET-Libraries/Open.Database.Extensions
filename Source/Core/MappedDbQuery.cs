@@ -429,22 +429,17 @@ internal abstract class ParamStep(ParamStep? previous)
 	public abstract DbQueryCall Apply(DbQueryCall call);
 
 	/// <summary>Replays every step, oldest first, on the source's root.</summary>
+	/// <remarks>
+	/// Recursive, so nothing is allocated to walk the steps oldest first; the depth is the number of
+	/// values the caller added before <c>Using</c>.
+	/// </remarks>
 	/// <param name="root">The source with the definition's command.</param>
 	/// <param name="last">The newest step.</param>
 	/// <returns>The call that holds every parameter.</returns>
 	public static DbQueryCall Replay(DbQueryUsing root, ParamStep last)
-	{
-		var steps = new Stack<ParamStep>();
-		for (ParamStep? step = last; step is not null; step = step.Previous)
-			steps.Push(step);
-
-		DbQueryCall? call = null;
-		foreach (ParamStep step in steps)
-			call = call is null ? step.Apply(root) : step.Apply(call);
-
-		Debug.Assert(call is not null);
-		return call;
-	}
+		=> last.Previous is { } previous
+			? last.Apply(Replay(root, previous))
+			: last.Apply(root);
 }
 
 /// <summary>A parameter step for one value type.</summary>

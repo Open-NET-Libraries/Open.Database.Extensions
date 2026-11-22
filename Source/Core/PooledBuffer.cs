@@ -249,8 +249,8 @@ public sealed class PooledBuffer<T>
 	/// <summary>The most rows <c>From</c> takes: its one array is a first chunk, which a buffer holds as a power of two.</summary>
 	const int MaxFromRows = 1 << 30;
 
-	static ArgumentOutOfRangeException TooManyRows(int count)
-		=> new("rows", count, "A buffer holds at most 2^30 rows from a span.");
+	static ArgumentOutOfRangeException TooManyRows(int rows)
+		=> new(nameof(rows), rows, "A buffer holds at most 2^30 rows from a span.");
 
 	/// <summary>Builds the buffer for <c>From</c>; the entry has checked the arguments and chosen the configuration.</summary>
 	static PooledBuffer<T> Create(ReadOnlySpan<T> rows, ChunkConfig<T> config)
