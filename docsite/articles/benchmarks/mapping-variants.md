@@ -4,6 +4,8 @@
 
 This is the long version of the [library comparison](library-comparison.md): all 16 ways, three measures, one synthetic reader.
 
+> **Older build.** These numbers are from build `b27a02f` (2026-11-14). The newer run on the [library comparison](library-comparison.md) (build `b5b0014`, 2026-11-21) repeats only four of the 16 ways: `Map<T>()` took 84.9 µs and the hand-written selector 44.8 µs there (81.6 and 46.8 here), and Dapper `Query<T>` 246.0 µs (202.4 here). `Map<T>()` is ahead of Dapper in both. The 16-way ranking is from this older run because the newer one did not measure the others.
+
 ## In short
 
 - **Connection held open.** A hand-written selector is fastest (46.8 µs). `Map<T>()` is next among the simple ones (81.6 µs). Dapper's variants take 197.5 to 257.6 µs, 2.4 to 3.2 times `Map<T>()`.

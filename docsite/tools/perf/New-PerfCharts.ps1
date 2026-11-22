@@ -69,9 +69,9 @@ function Get-Words([string]$text, [int]$max) {
 }
 
 # Family key -> CSS class, legend text, legend order.
-$famClass = @{ 'arr' = 'one'; 'alt' = 'grey'; 'p-none' = 'grey'; 'p-inline' = 'one'; 'p-bin' = 'select'; 'loop' = 'grey'; 'odx' = 'one'; 'rd-sync' = 'one'; 'rd-async' = 'select'; 'raw' = 'grey'; 'odx-one' = 'one'; 'odx-select' = 'select'; 'odx-raw' = 'grey'; 'reference' = 'grey'; 'dapper' = 'dapper' }
-$famName = @{ 'arr' = 'Arrays from ArrayPool (the lease per chunk is what ODX uses)'; 'alt' = 'The alternatives measured'; 'p-none' = 'No clear'; 'p-inline' = 'Inline clear'; 'p-bin' = 'Post to the recycle bin'; 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89' }
-$famOrder = 'arr', 'alt', 'p-none', 'p-inline', 'p-bin', 'loop', 'odx', 'rd-sync', 'rd-async', 'raw', 'odx-one', 'odx-select', 'odx-raw', 'reference', 'dapper'
+$famClass = @{ 'arr' = 'one'; 'alt' = 'grey'; 'p-none' = 'grey'; 'p-inline' = 'one'; 'p-bin' = 'select'; 'loop' = 'grey'; 'odx' = 'one'; 'rd-sync' = 'one'; 'rd-async' = 'select'; 'raw' = 'grey'; 'odx-one' = 'one'; 'odx-select' = 'select'; 'odx-raw' = 'grey'; 'reference' = 'grey'; 'dapper' = 'dapper'; 'dapper-aot' = 'select' }
+$famName = @{ 'arr' = 'Arrays from ArrayPool (the lease per chunk is what ODX uses)'; 'alt' = 'The alternatives measured'; 'p-none' = 'No clear'; 'p-inline' = 'Inline clear'; 'p-bin' = 'Post to the recycle bin'; 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89'; 'dapper-aot' = 'Dapper.AOT 1.1.0' }
+$famOrder = 'arr', 'alt', 'p-none', 'p-inline', 'p-bin', 'loop', 'odx', 'rd-sync', 'rd-async', 'raw', 'odx-one', 'odx-select', 'odx-raw', 'reference', 'dapper', 'dapper-aot'
 
 $css = @'
     :root {
@@ -229,11 +229,13 @@ function Pick($rows, [string]$id) { $rows | Where-Object { $_.variant_id -eq $id
 foreach ($set in $syn, $swp, $rp) { foreach ($r in $set) { if ($r.variant_id -eq 'V1') { $r.variant = 'Map<T>()' } } }
 
 # ---------- 1. the summary chart ----------
-# Four ways to read the same 20 columns and 1,000 rows from the synthetic reader. Two panels, each on its own scale.
-$v1 = Pick $syn 'V1'; $v2 = Pick $syn 'V2'; $v0 = Pick $syn 'V0'; $dap = Pick $syn 'V7_V1'
-$sumNames = @{ 'V2' = 'Hand-written selector'; 'V1' = 'Map<T>()'; 'V0' = 'object[] rows'; 'V7_V1' = 'Dapper Query<T>' }
+# Four ways to read the same 20 columns and 1,000 rows from the synthetic reader (the library comparison run). Two panels, each on its own scale.
+$ls = Read-Data 'library-synthetic'; $lsSrc = Read-Source 'library-synthetic'
+$lr = Read-Data 'library-real';      $lrSrc = Read-Source 'library-real'
+$v1 = Pick $ls 'V1'
+$sumNames = @{ 'V2' = 'Hand-written selector'; 'V1' = 'Map<T>()'; 'V7a' = 'Dapper.AOT'; 'V7' = 'Dapper Query<T>' }
 function Get-SumPanel([string]$title, [string]$col, [scriptblock]$fmt) {
-  $rows = @('V2', 'V1', 'V0', 'V7_V1' | ForEach-Object { Pick $syn $_ } | Sort-Object { [double]$_.$col } -Stable | ForEach-Object {
+  $rows = @('V2', 'V1', 'V7a', 'V7' | ForEach-Object { Pick $ls $_ } | Sort-Object { [double]$_.$col } -Stable | ForEach-Object {
     [pscustomobject]@{ Name = $sumNames[$_.variant_id]; Fam = $_.family; Value = [double]$_.$col
       Detail = "$($sumNames[$_.variant_id]): connection held $(Format-Micro ([double]$_.reader_open_us)), $(F ([double]$_.allocated_kb) 1) KB allocated per call." } })
   @{ Title = $title; Rows = $rows; Format = $fmt }
@@ -241,7 +243,7 @@ function Get-SumPanel([string]$title, [string]$col, [scriptblock]$fmt) {
 $sumPanels = @(
   (Get-SumPanel 'Connection held open (shorter is better)' 'reader_open_us' { param($v) Format-MicroX $v }),
   (Get-SumPanel 'Memory allocated (smaller is better)' 'allocated_kb' { param($v) (F $v 1) + ' KB' }))
-Write-Lf (Join-Path $ImageDir 'perf-summary.svg') (New-BarSvg 'summary' 'Map<T>() against Dapper and hand-written code' 'One call reads 20 columns and 1,000 rows from a synthetic reader.' $sumPanels { param($v) "$v" } '' (Footer $synSrc 'synthetic-overhead') 'panel' 150 'Two panels of four bars each, each panel on its own scale: how long the connection is held open, and how much memory is allocated, for four ways of reading 20 columns and 1,000 rows from a synthetic in-memory reader.' 520)
+Write-Lf (Join-Path $ImageDir 'perf-summary.svg') (New-BarSvg 'summary' 'Map<T>() against Dapper and hand-written code' 'One call reads 20 columns and 1,000 rows from a synthetic reader.' $sumPanels { param($v) "$v" } '' (Footer $lsSrc 'library-synthetic') 'panel' 150 'Two panels of four bars each, each panel on its own scale: how long the connection is held open, and how much memory is allocated, for four ways of reading 20 columns and 1,000 rows from a synthetic in-memory reader.' 520)
 
 # ---------- 2. synthetic bars: reader-open, total, memory ----------
 function Get-SynRows([string]$col, [scriptblock]$fmt) {
@@ -326,6 +328,26 @@ function Get-RpPanels([string]$col, [double]$div) {
 $rpIntro = 'Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; bars are ranked best first inside each panel.'
 Write-Lf (Join-Path $ImageDir 'perf-real-time.svg') (New-BarSvg 'real-time' 'Real databases: time per call' 'Shorter is better. 20 columns, 10,000 rows, one scale for both panels.' (Get-RpPanels 'total_us' 1000) { param($v) (F $v 1) + ' ms' } 'milliseconds per call' (Footer $rpSrc 'real-providers') 'shared' 196 $rpIntro)
 Write-Lf (Join-Path $ImageDir 'perf-real-memory.svg') (New-BarSvg 'real-memory' 'Real databases: memory per call' 'Smaller is better. 20 columns, 10,000 rows, one scale for both panels.' (Get-RpPanels 'allocated_kb' 1024) { param($v) (F $v 2) + ' MB' } 'megabytes allocated per call' (Footer $rpSrc 'real-providers') 'shared' 196 $rpIntro)
+
+# ---------- 5b. the library comparison on real databases (two runs of each provider) ----------
+$lrProv = 'SQL Server LocalDB', 'SQLite file'
+function Get-LrPanels([string]$col, [double]$div, [scriptblock]$detailFmt) {
+  $panels = @()
+  foreach ($prov in $lrProv) {
+    $rows = @('V2', 'V1', 'V7a', 'V7' | ForEach-Object {
+      $id = $_
+      $g = @($lr | Where-Object { $_.provider -eq $prov -and $_.variant_id -eq $id } | Sort-Object run)
+      $mean = ($g | ForEach-Object { [double]$_.$col } | Measure-Object -Average).Average
+      [pscustomobject]@{ Name = $sumNames[$id]; Fam = $g[0].family; Value = $mean / $div
+        Detail = "$($sumNames[$id]), $prov, 20 columns, 10,000 rows: " + (($g | ForEach-Object { "run $($_.run) " + (& $detailFmt ([double]$_.$col)) }) -join ', ') + '.' } } | Sort-Object { $_.Value } -Stable)
+    $panels += @{ Title = $prov; Rows = $rows }
+  }
+  ,$panels
+}
+$lrIntro = 'Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; each bar is the mean of two runs, ranked best first inside each panel.'
+$lrFooter = "Build $($lrSrc.Build), $($lrSrc.Date), mean of 2 runs. Numbers: library-real.csv"
+Write-Lf (Join-Path $ImageDir 'perf-lib-real-time.svg') (New-BarSvg 'lib-real-time' 'Real databases: time per call' 'Shorter is better. Mean of two runs, 20 columns, 10,000 rows, one scale for both panels.' (Get-LrPanels 'total_us' 1000 { param($v) Format-Micro $v }) { param($v) (F $v 1) + ' ms' } 'milliseconds per call' $lrFooter 'shared' 196 $lrIntro)
+Write-Lf (Join-Path $ImageDir 'perf-lib-real-memory.svg') (New-BarSvg 'lib-real-memory' 'Real databases: memory per call' 'Smaller is better. 20 columns, 10,000 rows, one scale for both panels.' (Get-LrPanels 'allocated_kb' 1024 { param($v) (F ($v / 1024) 2) + ' MB' }) { param($v) (F $v 2) + ' MB' } 'megabytes allocated per call' $lrFooter 'shared' 196 $lrIntro)
 
 # ---------- 6. sync against async ----------
 $saPanels = @()
@@ -435,11 +457,38 @@ function Write-Table([string]$name, [string[]]$lines) { Write-Lf (Join-Path $Inc
 function Fmt-Ratio([double]$v, [double]$base) { (F ($v / $base) 2) + $times }
 
 # The summary table: the four approaches of the summary chart, ranked by the time the connection is held.
-$t = @("| Approach | Connection held open | Memory allocated | Time against ``Map<T>()`` | Memory against ``Map<T>()`` |", '|---|---:|---:|---:|---:|')
-foreach ($r in @('V2', 'V1', 'V0', 'V7_V1' | ForEach-Object { Pick $syn $_ } | Sort-Object { [double]$_.reader_open_us } -Stable)) {
-  $t += "| $(M $sumNames[$r.variant_id]) | $(Format-Micro ([double]$r.reader_open_us)) | $(F ([double]$r.allocated_kb) 1) KB | $(Fmt-Ratio ([double]$r.reader_open_us) ([double]$v1.reader_open_us)) | $(Fmt-Ratio ([double]$r.allocated_kb) ([double]$v1.allocated_kb)) |"
+$t = @("| Approach | Connection held open | Whole call (error margin) | Memory allocated | Time against ``Map<T>()`` | Memory against ``Map<T>()`` |", '|---|---:|---:|---:|---:|---:|')
+foreach ($r in @('V2', 'V1', 'V7a', 'V7' | ForEach-Object { Pick $ls $_ } | Sort-Object { [double]$_.reader_open_us } -Stable)) {
+  $t += "| $(M $sumNames[$r.variant_id]) | $(Format-Micro ([double]$r.reader_open_us)) | $(Format-Micro ([double]$r.total_us)) (±$(F (100 * [double]$r.error_us / [double]$r.total_us) 1)%) | $(F ([double]$r.allocated_kb) 1) KB | $(Fmt-Ratio ([double]$r.reader_open_us) ([double]$v1.reader_open_us)) | $(Fmt-Ratio ([double]$r.allocated_kb) ([double]$v1.allocated_kb)) |"
 }
 Write-Table 'summary' $t
+
+# The real-database tables of the library comparison: each run on its own, with its own ratio to Map<T>().
+$t = @("| Database | Approach | Run a | Run b | Run a against ``Map<T>()`` | Run b against ``Map<T>()`` |", '|---|---|---:|---:|---:|---:|')
+foreach ($prov in $lrProv) {
+  $at = @{}; foreach ($run in 'a', 'b') { $at[$run] = [double](($lr | Where-Object { $_.provider -eq $prov -and $_.variant_id -eq 'V1' -and $_.run -eq $run }).total_us) }
+  foreach ($id in 'V2', 'V1', 'V7a', 'V7') {
+    $cells = @{}; $ratios = @{}
+    foreach ($run in 'a', 'b') {
+      $r = $lr | Where-Object { $_.provider -eq $prov -and $_.variant_id -eq $id -and $_.run -eq $run }
+      $cells[$run] = "$(F ([double]$r.total_us / 1000) 2) ms (±$(F ([double]$r.error_us / 1000) 2))"
+      $ratios[$run] = Fmt-Ratio ([double]$r.total_us) $at[$run]
+    }
+    $t += "| $prov | $(M $sumNames[$id]) | $($cells['a']) | $($cells['b']) | $($ratios['a']) | $($ratios['b']) |"
+  }
+}
+Write-Table 'lib-real-time' $t
+
+$t = @("| Database | Approach | Memory allocated | Against ``Map<T>()`` |", '|---|---|---:|---:|')
+foreach ($prov in $lrProv) {
+  $base = [double](($lr | Where-Object { $_.provider -eq $prov -and $_.variant_id -eq 'V1' -and $_.run -eq 'a' }).allocated_kb)
+  foreach ($id in 'V2', 'V1', 'V7a', 'V7') {
+    $kbs = @($lr | Where-Object { $_.provider -eq $prov -and $_.variant_id -eq $id } | ForEach-Object { [double]$_.allocated_kb })
+    if (($kbs | Measure-Object -Maximum).Maximum - ($kbs | Measure-Object -Minimum).Minimum -gt 1) { throw "memory differs between the runs: $prov $id" }
+    $t += "| $prov | $(M $sumNames[$id]) | $(F ($kbs[0] / 1024) 2) MB | $(Fmt-Ratio $kbs[0] $base) |"
+  }
+}
+Write-Table 'lib-real-memory' $t
 
 # All 16 variants, ranked by the time the connection is held.
 $t = @("| Rank | Variant | What it does | Connection held ($($mu)s) | Whole call ($($mu)s) | Allocated (KB) |", '|---:|---|---|---:|---:|---:|')
@@ -579,10 +628,12 @@ foreach ($set in @(@('pool-e2e', $pe), @('pool-bin-cost', $pbc))) {
 # How fresh each data set is.
 $t = @('| Data file | Used on | Build | Run date | Machine | Runtime |', '|---|---|---|---|---|---|')
 foreach ($p in @(
-    @('synthetic-overhead', 'library comparison, all variants, the summary', $synSrc),
+    @('library-synthetic', 'library comparison, the summary', $lsSrc),
+    @('library-real', 'library comparison, real databases', $lrSrc),
+    @('synthetic-overhead', 'mapping variants (all variants, older build)', $synSrc),
     @('width-sweep', 'cost per column', $swpSrc),
     @('map-cost', 'cost of building a map', $mapSrc),
-    @('real-providers', 'real databases, library comparison', $rpSrc),
+    @('real-providers', 'real databases (older build)', $rpSrc),
     @('sync-async', 'sync reads against async reads', $saSrc),
     @('link-time', 'slow links and large values', $ltSrc),
     @('link-memory', 'slow links and large values', $lmSrc),

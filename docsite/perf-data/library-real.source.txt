@@ -1,0 +1,14 @@
+Benchmark build: b5b0014
+Run date: 2026-11-21
+Machine: AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores, Windows 10 (10.0.19045.6466/22H2/2022Update)
+Runtime: .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4; .NET SDK 11.0.100; BenchmarkDotNet v0.15.8
+Toolchain=InProcessEmitToolchain  IterationCount=12  LaunchCount=1  WarmupCount=5
+Benchmark: RealProviderBenchmarks (the library against SQL Server LocalDB through Microsoft.Data.SqlClient, and against a SQLite file through Microsoft.Data.Sqlite): V1_Sync, V2_Sync, V7_Sync (Dapper), V7a_Sync (Dapper.AOT)
+Conditions: 10,000 rows per call, 20 typed columns, synchronous terminals; each provider was run twice, runs a and b, one after the other; the LocalDB database and the SQLite file are created for the run and removed after it
+SQLite: Dapper maps text to Guid through the usual SqlMapper.TypeHandler recipe; it does not convert it on its own
+Columns: total_us = mean time of the whole call (BenchmarkDotNet Mean); error_us = BenchmarkDotNet Error, the half-width of the 99.9% confidence interval of total_us; allocated_kb = allocated per call (BenchmarkDotNet, KB = 1024 bytes)
+Source files (the BenchmarkDotNet console log of each run, its Summary table; the logs are not in the repository):
+  bench4d-sqlite-a.log
+  bench4d-sqlite-b.log
+  bench4d-sqlserver-a.log
+  bench4d-sqlserver-b.log

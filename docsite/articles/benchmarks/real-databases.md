@@ -2,11 +2,13 @@
 
 **The question:** the synthetic reader has no database behind it. How much of ODX's lead survives when a real provider does the work?
 
+> **This page is an older run.** Its numbers are from build `fbb13d7` (2026-11-14). A newer run, from build `b5b0014` (2026-11-21), repeats `Map<T>()` against Dapper, Dapper.AOT and a hand-written selector on both databases, and it does *not* show the SQLite lag against Dapper that this page shows: see [ODX against Dapper and hand-written code](library-comparison.md#on-real-databases). The newer run did not include a hand loop on the provider's reader, the row class with `Select`, or the 5-column case, so this page is kept for those. Where its text and the newer run disagree, trust the newer run.
+
 ## In short
 
 - **On SQL Server LocalDB, `Map<T>()` ties with hand-written code and with Dapper.** For 10,000 rows of 20 columns it took 25.9 ms, a hand-written selector 25.2 ms and Dapper 27.6 ms. BenchmarkDotNet's own error margin on the 20-column SQL Server runs is 3.1 to 8.8% of the mean (the tables show each one), so those gaps are not a result.
 - **Memory is where ODX still wins over Dapper.** On SQL Server `Map<T>()` allocates 9.48 MB, the same as hand-written code; Dapper allocates 12.27 MB, 29.4% more. On SQLite `Map<T>()` allocates 14.11 MB: 4.6% less than Dapper (14.79) and 17.9% more than hand-written code (11.96).
-- **Not faster on SQLite.** `Map<T>()` is 20.9% slower than a hand-written selector at 20 columns (31.3 against 25.9 ms) and 24.3% slower at 5 columns. Against Dapper it is 5.1% slower at 20 columns and 2.1% faster at 5. These runs do not show why.
+- **Not faster on SQLite, on this older build.** `Map<T>()` is 20.9% slower than a hand-written selector at 20 columns (31.3 against 25.9 ms) and 24.3% slower at 5 columns. Against Dapper it is 5.1% slower at 20 columns and 2.1% faster at 5. These runs do not show why.
 
 ## Time per call
 
