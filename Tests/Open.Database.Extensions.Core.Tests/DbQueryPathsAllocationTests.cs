@@ -99,7 +99,7 @@ public static class DbQueryPathsAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using var c = new SqliteConnection("Data Source=:memory:");
-		const string p0 = Value, p1 = Value, p2 = Value, p3 = Value, p4 = Value;
+		string p0 = Value, p1 = Value, p2 = Value, p3 = Value, p4 = Value;
 		var existing1 = new Existing1();
 		var existing5 = new Existing5();
 
@@ -173,7 +173,7 @@ public static class DbQueryPathsAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using var c = new SqliteConnection("Data Source=:memory:");
-		const string p0 = Value, p1 = Value, p2 = Value, p3 = Value, p4 = Value;
+		string p0 = Value, p1 = Value, p2 = Value, p3 = Value, p4 = Value;
 		DbQuery<S5> typed5 = Q5.Params<S5>();
 
 		long using5 = BytesPerCall(() => Sink(Q5.Using(c).Map<long>()));
@@ -209,7 +209,8 @@ public static class DbQueryPathsAllocationTests
 #else
 		using var c = new SqliteConnection("Data Source=:memory:");
 		c.Open();
-		const int p0 = 1, p1 = 2, p2 = 3, p3 = 4, p4 = 5, p5 = 6, p6 = 7, p7 = 8, p8 = 9, p9 = 10;
+		// Locals, not constants: the values stand for values known only at run time.
+		int p0 = 1, p1 = 2, p2 = 3, p3 = 4, p4 = 5, p5 = 6, p6 = 7, p7 = 8, p8 = 9, p9 = 10;
 		var q5 = DbQuery.Text("select @p0 + @p1 + @p2 + @p3 + @p4");
 		var q10 = DbQuery.Text("select @p0 + @p1 + @p2 + @p3 + @p4 + @p5 + @p6 + @p7 + @p8 + @p9");
 		MappedDbQuery<long> m5 = q5.Map<long>();

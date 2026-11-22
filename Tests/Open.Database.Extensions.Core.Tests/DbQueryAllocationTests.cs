@@ -69,10 +69,10 @@ public static class DbQueryAllocationTests
 	// The names come from the variables.
 	static ValueTask<List<Row>> AdHoc(DbConnection c, int k)
 	{
-		const int p0 = VA;
-		const long p1 = VB;
-		const string p2 = VC;
-		const int p3 = VD;
+		int p0 = VA;
+		long p1 = VB;
+		string p2 = VC;
+		int p3 = VD;
 		if (k == 1)
 			return Q1.Using(c).AddParam(p0).Map<Row>().ToListAsync();
 		if (k == 2)
@@ -245,8 +245,8 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		const int p0 = VA;
-		const long p1 = VB;
+		int p0 = VA;
+		long p1 = VB;
 		long classic = Bytes(() => Q2.Using(c).AddParam(p0).AddParam(p1).Map<Row>().ToListAsync());
 		long after = Bytes(() => M2.Using(c).AddParam(p0).AddParam(p1).ToListAsync());
 		long before = Bytes(() => M2.AddParam(p0).AddParam(p1).Using(c).ToListAsync());
@@ -282,7 +282,7 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		const string s = VC;
+		string s = VC;
 
 		long using0 = BytesPerCall(() => Sink(M2.Using(c)));
 		long after1 = BytesPerCall(() => Sink(M1.Using(c).AddParam("p0", s)));
@@ -319,8 +319,8 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		const int i = VA;
-		const long l = VB;
+		int i = VA;
+		long l = VB;
 
 		long oneInt = BytesPerCall(() => Sink(M1.Using(c).AddParam("p0", i)));
 		long intAndLong = BytesPerCall(() => Sink(M2.Using(c).AddParam("p0", i).AddParam("p1", l)));
@@ -360,10 +360,10 @@ public static class DbQueryAllocationTests
 	public static void DerivedNames_CostNoMoreThanNamedOnes(int k)
 	{
 		using DbConnection c = NewConnection();
-		const int p0 = VA;
-		const long p1 = VB;
-		const string p2 = VC;
-		const int p3 = VD;
+		int p0 = VA;
+		long p1 = VB;
+		string p2 = VC;
+		int p3 = VD;
 		DbQuery q = k switch { 1 => Q1, 2 => Q2, _ => Q4 };
 
 		long derived = Bytes(() => k switch
