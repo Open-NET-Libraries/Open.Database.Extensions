@@ -30,7 +30,6 @@ namespace Open.Database.Extensions;
 /// <typeparam name="T">The type each row is mapped to.</typeparam>
 public sealed class MappedDbQuery<T>
 {
-	readonly DbQuery _definition;
 	readonly IRowSource<T> _source;
 	readonly bool _singleResult;
 	readonly bool _asyncReads;
@@ -53,7 +52,7 @@ public sealed class MappedDbQuery<T>
 		Debug.Assert(definition is not null);
 		Debug.Assert(source is not null);
 
-		_definition = definition;
+		Query = definition;
 		_source = source;
 		_singleResult = singleResult;
 		_asyncReads = asyncReads;
@@ -62,7 +61,7 @@ public sealed class MappedDbQuery<T>
 	}
 
 	/// <summary>Gets the command definition under this mapped one.</summary>
-	internal DbQuery Query => _definition;
+	internal DbQuery Query { get; }
 
 	/// <summary>
 	/// Reads only the first result set, in every query made from this definition
@@ -71,7 +70,7 @@ public sealed class MappedDbQuery<T>
 	/// <returns>A definition that reads only the first result set.</returns>
 
 	public MappedDbQuery<T> SingleResult()
-		=> new(_definition, _source, true, _asyncReads, _pool, _clearOnReturn);
+		=> new(Query, _source, true, _asyncReads, _pool, _clearOnReturn);
 
 	/// <summary>
 	/// Reads the rows with the asynchronous read of the provider, in every query made from this definition
@@ -79,7 +78,7 @@ public sealed class MappedDbQuery<T>
 	/// </summary>
 	/// <returns>A definition that reads asynchronously.</returns>
 	public MappedDbQuery<T> AsyncReads()
-		=> new(_definition, _source, _singleResult, true, _pool, _clearOnReturn);
+		=> new(Query, _source, _singleResult, true, _pool, _clearOnReturn);
 
 	/// <summary>
 	/// Takes the arrays that hold the rows from <paramref name="pool"/>, in every query made from this definition
@@ -94,7 +93,7 @@ public sealed class MappedDbQuery<T>
 		if (pool is null) throw new ArgumentNullException(nameof(pool));
 		Contract.EndContractBlock();
 
-		return new(_definition, _source, _singleResult, _asyncReads, pool, clearOnReturn);
+		return new(Query, _source, _singleResult, _asyncReads, pool, clearOnReturn);
 	}
 
 	/// <summary>Reads the query on a connection the caller owns.</summary>
@@ -103,7 +102,7 @@ public sealed class MappedDbQuery<T>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
 	public MappedQuery<T> Using(DbConnection connection)
 		// DbQuery.Using throws ArgumentNullException for a null source.
-		=> View(_definition.Using(connection));
+		=> View(Query.Using(connection));
 
 	/// <summary>Reads the query inside a transaction the caller owns.</summary>
 	/// <param name="transaction">The transaction. Its connection is used, and left open.</param>
@@ -111,7 +110,7 @@ public sealed class MappedDbQuery<T>
 	/// <exception cref="ArgumentNullException"><paramref name="transaction"/> is <see langword="null"/>.</exception>
 	public MappedQuery<T> Using(DbTransaction transaction)
 		// DbQuery.Using throws ArgumentNullException for a null source.
-		=> View(_definition.Using(transaction));
+		=> View(Query.Using(transaction));
 
 	/// <summary>Reads the query on a connection taken from a pool.</summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
@@ -121,7 +120,7 @@ public sealed class MappedDbQuery<T>
 	public MappedQuery<T> Using<TConnection>(IDbConnectionPool<TConnection> pool)
 		where TConnection : DbConnection
 		// DbQuery.Using throws ArgumentNullException for a null source.
-		=> View(_definition.Using(pool));
+		=> View(Query.Using(pool));
 
 	/// <summary>Reads the query on a connection made by a factory.</summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
@@ -131,7 +130,7 @@ public sealed class MappedDbQuery<T>
 	public MappedQuery<T> Using<TConnection>(IDbConnectionFactory<TConnection> factory)
 		where TConnection : DbConnection
 		// DbQuery.Using throws ArgumentNullException for a null source.
-		=> View(_definition.Using(factory));
+		=> View(Query.Using(factory));
 
 	/// <summary>Adds a named parameter before the source is known.</summary>
 	/// <typeparam name="TValue">The type of the value.</typeparam>
@@ -267,7 +266,7 @@ public readonly struct MappedDbQueryUsing<TParams, T>
 /// <typeparam name="T">The type each row is mapped to.</typeparam>
 public readonly struct UnboundCall<T>
 {
-	readonly MappedDbQuery<T>? _definition;
+	MappedDbQuery<T>? Held { get; }
 	readonly ParamStep? _last;
 
 	internal UnboundCall(MappedDbQuery<T> definition, ParamStep last)
@@ -275,12 +274,12 @@ public readonly struct UnboundCall<T>
 		Debug.Assert(definition is not null);
 		Debug.Assert(last is not null);
 
-		_definition = definition;
+		Held = definition;
 		_last = last;
 	}
 
 	MappedDbQuery<T> Definition
-		=> _definition ?? throw DbQueryRunner.Unbound();
+		=> Held ?? throw DbQueryRunner.Unbound();
 
 	/// <inheritdoc cref="MappedDbQuery{T}.AddParam{TValue}(string, TValue)"/>
 	public UnboundCall<T> AddParam<TValue>(string name, TValue value)
@@ -360,19 +359,19 @@ public readonly struct UnboundCall<T>
 public readonly struct UnboundCall<TParams, T>
 	where TParams : struct, IEquatable<TParams>
 {
-	readonly MappedDbQuery<T>? _definition;
+	MappedDbQuery<T>? Held { get; }
 	readonly TParams _values;
 
 	internal UnboundCall(MappedDbQuery<T> definition, TParams values)
 	{
 		Debug.Assert(definition is not null);
 
-		_definition = definition;
+		Held = definition;
 		_values = values;
 	}
 
 	MappedDbQuery<T> Definition
-		=> _definition ?? throw DbQueryRunner.Unbound();
+		=> Held ?? throw DbQueryRunner.Unbound();
 
 	/// <inheritdoc cref="UnboundCall{T}.Using(DbConnection)"/>
 	public MappedQuery<T> Using(DbConnection connection)

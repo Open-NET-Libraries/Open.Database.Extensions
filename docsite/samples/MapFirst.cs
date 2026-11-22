@@ -77,19 +77,17 @@ public static class MapFirstSamples
 	}
 
 	// Paging is chosen where the query runs, not where it is defined.
+	#region mapfirst_paged
 	public static ValueTask<List<Post>> PagedAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
 		MappedDbQuery<Post> byAuthor,
 		int author,
 		CancellationToken cancellationToken)
-	{
-		#region mapfirst_paged
-		return byAuthor
+		=> byAuthor
 			.Using(connectionFactory)
 			.AddParam(author)
 			.Skip(1)
 			.Take(1)
 			.ToListAsync(cancellationToken);
-		#endregion
-	}
+	#endregion
 }

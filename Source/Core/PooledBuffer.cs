@@ -1,5 +1,3 @@
-using System.Numerics;
-
 namespace Open.Database.Extensions;
 
 /// <summary>
@@ -234,7 +232,9 @@ public sealed class PooledBuffer<T>
 		if (rows.IsEmpty) return new([], 0, 1);
 
 		// One array that is one first chunk: row i is at i, so the indexer always lands in chunk 0.
-		int firstRows = (int)BitOperations.RoundUpToPowerOf2((uint)rows.Length);
+		int firstRows = 1;
+		while (firstRows < rows.Length) firstRows <<= 1;
+
 		ChunkConfig<T> config = new(pool, clearOnReturn, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromRows);
 		T[] array = config.Rent(firstRows);
 		rows.CopyTo(array);
