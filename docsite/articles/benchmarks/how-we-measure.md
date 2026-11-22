@@ -34,7 +34,7 @@ The synthetic reader can also add a wait every N rows (a buffer refill) and keep
 1. **Same job.** Every approach on a page runs the same query and returns the same rows as the same kind of objects. `--verify` compares them.
 2. **Warm.** Each case runs 5 warm-up iterations, then 12 measured ones, in one launch. The compiled mapping is built before the first measured call, except in the one benchmark that measures building it ([What building a map costs](map-cost.md)).
 3. **One at a time.** Each benchmark runs alone, on a machine with nothing else running.
-4. **Dapper is written the way its documentation shows.** `Query<T>` for a list, and the usual type handler recipe where it needs one (on SQLite, text to `Guid`).
+4. **Dapper is written the way its documentation shows.** `Query<T>` for a list, and the usual type handler recipe where it needs one (on SQLite, text to `Guid`). Dapper.AOT is run through its intercepted path.
 5. **Reference points are labelled.** A *hand loop* is a loop written directly on the provider's reader with typed getters. It is the reference point, not a limit: on SQL Server at 20 columns a hand-written selector came out 1.7% faster than it, which is within the noise.
 
 ## What we do not measure
@@ -53,7 +53,7 @@ Each data set has a CSV file in the repository and a source file beside it that 
 
 [!include[](../../includes/perf/freshness.md)]
 
-Data files and sources: [synthetic-overhead](../../perf-data/synthetic-overhead.csv) ([source](../../perf-data/synthetic-overhead.source.txt)), [width-sweep](../../perf-data/width-sweep.csv) ([source](../../perf-data/width-sweep.source.txt)), [map-cost](../../perf-data/map-cost.csv) ([source](../../perf-data/map-cost.source.txt)), [real-providers](../../perf-data/real-providers.csv) ([source](../../perf-data/real-providers.source.txt)), [sync-async](../../perf-data/sync-async.csv) ([source](../../perf-data/sync-async.source.txt)).
+Data files and sources: [library-synthetic](../../perf-data/library-synthetic.csv) ([source](../../perf-data/library-synthetic.source.txt)), [library-real](../../perf-data/library-real.csv) ([source](../../perf-data/library-real.source.txt)), [synthetic-overhead](../../perf-data/synthetic-overhead.csv) ([source](../../perf-data/synthetic-overhead.source.txt)), [width-sweep](../../perf-data/width-sweep.csv) ([source](../../perf-data/width-sweep.source.txt)), [map-cost](../../perf-data/map-cost.csv) ([source](../../perf-data/map-cost.source.txt)), [real-providers](../../perf-data/real-providers.csv) ([source](../../perf-data/real-providers.source.txt)), [sync-async](../../perf-data/sync-async.csv) ([source](../../perf-data/sync-async.source.txt)).
 
 The synthetic, real-database, map-cost and sync-against-async runs were made on 2026-11-14, before 11.0.0-rc.6; the slow-link memory and large-value runs on 2026-11-15; the channel numbers are older. A page says so at the top when it rests on older or hand-recorded numbers.
 

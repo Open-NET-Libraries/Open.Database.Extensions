@@ -8,6 +8,7 @@ except the sentences that quote a number (see step 4 below).
 | `docsite/perf-data/*.csv` | The numbers behind every chart, one CSV per data set (units in the column names). |
 | `docsite/perf-data/*.source.txt` | Beside each CSV: the benchmark, the build, the run date, the machine, the conditions and the BenchmarkDotNet result file of every number. |
 | `docsite/tools/perf/Extract-PerfData.ps1` | Reads BenchmarkDotNet's own `*-report.csv` and `*-report-github.md` files of a run and writes the CSVs and the source files. |
+| `docsite/tools/perf/Extract-LibraryComparison.ps1` | Reads the summary table of the console logs of the library comparison run (the synthetic reader, SQL Server LocalDB and SQLite, two runs of each real provider) and writes `library-synthetic.csv`, `library-real.csv` and their source files. |
 | `docsite/tools/perf/New-PerfCharts.ps1` | Reads the CSVs and writes the SVG charts (`docsite/images/perf/`) and the tables the benchmark pages include (`docsite/includes/perf/*.md`). |
 
 Regenerate every chart and the tables from the committed CSVs, with one command:

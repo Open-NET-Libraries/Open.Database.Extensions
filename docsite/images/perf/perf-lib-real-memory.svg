@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 470" role="img" aria-labelledby="lib-real-memory-title lib-real-memory-desc">
+  <title id="lib-real-memory-title">Real databases: memory per call</title>
+  <desc id="lib-real-memory-desc">Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; each bar is the mean of two runs, ranked best first inside each panel. Every bar starts at zero. SQL Server LocalDB: Hand-written selector 9.48 MB; Map&lt;T&gt;() 9.48 MB; Dapper.AOT 9.48 MB; Dapper Query&lt;T&gt; 12.27 MB. SQLite file: Hand-written selector 11.96 MB; Map&lt;T&gt;() 12.51 MB; Dapper.AOT 12.72 MB; Dapper Query&lt;T&gt; 14.79 MB.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #4b5563;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --grid: #e6eaef;
+      --axis: #8c959f;
+      --one-line: #2a78d6;
+      --select-line: #1baf7a;
+      --dapper-line: #eb6834;
+      --grey-line: #8b929c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --muted: #b1bac4;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --grid: #21262d;
+        --axis: #8b949e;
+        --one-line: #3987e5;
+        --select-line: #199e70;
+        --dapper-line: #d95926;
+        --grey-line: #7a828c;
+      }
+    }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 16px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .muted { fill: var(--muted); }
+    .small { font-size: 11.5px; }
+    .val { font-size: 12.5px; }
+    .big { font-size: 30px; font-weight: 600; }
+    .name { text-anchor: end; }
+    .mid { text-anchor: middle; }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1.5; }
+    .hit { fill: transparent; }
+    .tile { fill: none; stroke: var(--frame); stroke-width: 1; }
+    .one { fill: var(--one-line); }
+    .select { fill: var(--select-line); }
+    .dapper { fill: var(--dapper-line); }
+    .grey { fill: var(--grey-line); }
+    .l-one { fill: none; stroke: var(--one-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-select { fill: none; stroke: var(--select-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-dapper { fill: none; stroke: var(--dapper-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .l-grey { fill: none; stroke: var(--grey-line); stroke-width: 2.5; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 7 4; }
+    .m-one { fill: var(--one-line); stroke: var(--bg); stroke-width: 2; }
+    .m-select { fill: var(--select-line); stroke: var(--bg); stroke-width: 2; }
+    .m-dapper { fill: var(--dapper-line); stroke: var(--bg); stroke-width: 2; }
+    .m-grey { fill: var(--grey-line); stroke: var(--bg); stroke-width: 2; }
+  </style>
+  <rect class="frame" x="0.5" y="0.5" width="559" height="469" rx="8"/>
+  <text class="title" x="16" y="28">Real databases: memory per call</text>
+  <text class="muted" x="16" y="48">Smaller is better. 20 columns, 10,000 rows, one scale for both panels.</text>
+  <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="34" y="72">ODX: one object per row</text>
+  <rect class="dapper" x="200" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="218" y="72">Dapper 2.1.89</text>
+  <rect class="select" x="318" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="336" y="72">Dapper.AOT 1.1.0</text>
+  <text class="head" x="16" y="108">SQL Server LocalDB</text>
+  <line class="grid" x1="196" y1="118" x2="196" y2="222"/>
+  <text class="muted small mid" x="196" y="238">0</text>
+  <line class="grid" x1="293.33" y1="118" x2="293.33" y2="222"/>
+  <text class="muted small mid" x="293.33" y="238">5</text>
+  <line class="grid" x1="390.67" y1="118" x2="390.67" y2="222"/>
+  <text class="muted small mid" x="390.67" y="238">10</text>
+  <line class="grid" x1="488" y1="118" x2="488" y2="222"/>
+  <text class="muted small mid" x="488" y="238">15</text>
+  <g>
+    <title>Hand-written selector, SQL Server LocalDB, 20 columns, 10,000 rows: run a 9.48 MB, run b 9.48 MB.</title>
+    <rect class="hit" x="0" y="118" width="560" height="26"/>
+    <text class="name" x="186" y="135">Hand-written selector</text>
+    <path class="one" d="M196,123 h180.54 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-180.54 z"/>
+    <text class="val" x="386.54" y="135">9.48 MB</text>
+  </g>
+  <g>
+    <title>Map&lt;T&gt;(), SQL Server LocalDB, 20 columns, 10,000 rows: run a 9.48 MB, run b 9.48 MB.</title>
+    <rect class="hit" x="0" y="144" width="560" height="26"/>
+    <text class="name" x="186" y="161">Map&lt;T&gt;()</text>
+    <path class="one" d="M196,149 h180.54 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-180.54 z"/>
+    <text class="val" x="386.54" y="161">9.48 MB</text>
+  </g>
+  <g>
+    <title>Dapper.AOT, SQL Server LocalDB, 20 columns, 10,000 rows: run a 9.48 MB, run b 9.48 MB.</title>
+    <rect class="hit" x="0" y="170" width="560" height="26"/>
+    <text class="name" x="186" y="187">Dapper.AOT</text>
+    <path class="select" d="M196,175 h180.54 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-180.54 z"/>
+    <text class="val" x="386.54" y="187">9.48 MB</text>
+  </g>
+  <g>
+    <title>Dapper Query&lt;T&gt;, SQL Server LocalDB, 20 columns, 10,000 rows: run a 12.27 MB, run b 12.27 MB.</title>
+    <rect class="hit" x="0" y="196" width="560" height="26"/>
+    <text class="name" x="186" y="213">Dapper Query&lt;T&gt;</text>
+    <path class="dapper" d="M196,201 h234.86 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-234.86 z"/>
+    <text class="val" x="440.86" y="213">12.27 MB</text>
+  </g>
+  <line class="axis" x1="196" y1="118" x2="196" y2="222"/>
+  <text class="head" x="16" y="274">SQLite file</text>
+  <line class="grid" x1="196" y1="284" x2="196" y2="388"/>
+  <text class="muted small mid" x="196" y="404">0</text>
+  <line class="grid" x1="293.33" y1="284" x2="293.33" y2="388"/>
+  <text class="muted small mid" x="293.33" y="404">5</text>
+  <line class="grid" x1="390.67" y1="284" x2="390.67" y2="388"/>
+  <text class="muted small mid" x="390.67" y="404">10</text>
+  <line class="grid" x1="488" y1="284" x2="488" y2="388"/>
+  <text class="muted small mid" x="488" y="404">15</text>
+  <g>
+    <title>Hand-written selector, SQLite file, 20 columns, 10,000 rows: run a 11.96 MB, run b 11.96 MB.</title>
+    <rect class="hit" x="0" y="284" width="560" height="26"/>
+    <text class="name" x="186" y="301">Hand-written selector</text>
+    <path class="one" d="M196,289 h228.82 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-228.82 z"/>
+    <text class="val" x="434.82" y="301">11.96 MB</text>
+  </g>
+  <g>
+    <title>Map&lt;T&gt;(), SQLite file, 20 columns, 10,000 rows: run a 12.51 MB, run b 12.51 MB.</title>
+    <rect class="hit" x="0" y="310" width="560" height="26"/>
+    <text class="name" x="186" y="327">Map&lt;T&gt;()</text>
+    <path class="one" d="M196,315 h239.53 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-239.53 z"/>
+    <text class="val" x="445.53" y="327">12.51 MB</text>
+  </g>
+  <g>
+    <title>Dapper.AOT, SQLite file, 20 columns, 10,000 rows: run a 12.72 MB, run b 12.72 MB.</title>
+    <rect class="hit" x="0" y="336" width="560" height="26"/>
+    <text class="name" x="186" y="353">Dapper.AOT</text>
+    <path class="select" d="M196,341 h243.62 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-243.62 z"/>
+    <text class="val" x="449.62" y="353">12.72 MB</text>
+  </g>
+  <g>
+    <title>Dapper Query&lt;T&gt;, SQLite file, 20 columns, 10,000 rows: run a 14.79 MB, run b 14.79 MB.</title>
+    <rect class="hit" x="0" y="362" width="560" height="26"/>
+    <text class="name" x="186" y="379">Dapper Query&lt;T&gt;</text>
+    <path class="dapper" d="M196,367 h283.91 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-283.91 z"/>
+    <text class="val" x="489.91" y="379">14.79 MB</text>
+  </g>
+  <line class="axis" x1="196" y1="284" x2="196" y2="388"/>
+  <text class="muted small mid" x="342" y="420">megabytes allocated per call</text>
+  <text class="muted small" x="16" y="448">Build b5b0014, 2026-11-21, mean of 2 runs. Numbers: library-real.csv</text>
+</svg>

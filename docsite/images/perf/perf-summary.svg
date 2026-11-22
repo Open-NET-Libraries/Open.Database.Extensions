@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 408" role="img" aria-labelledby="summary-title summary-desc">
   <title id="summary-title">Map&lt;T&gt;() against Dapper and hand-written code</title>
-  <desc id="summary-desc">Two panels of four bars each, each panel on its own scale: how long the connection is held open, and how much memory is allocated, for four ways of reading 20 columns and 1,000 rows from a synthetic in-memory reader. Every bar starts at zero. Connection held open (shorter is better): Hand-written selector 46.8 µs; Map&lt;T&gt;() 81.6 µs; object[] rows 178.4 µs; Dapper Query&lt;T&gt; 202.4 µs. Memory allocated (smaller is better): Map&lt;T&gt;() 227.4 KB; Hand-written selector 227.4 KB; object[] rows 516.6 KB; Dapper Query&lt;T&gt; 548.1 KB.</desc>
+  <desc id="summary-desc">Two panels of four bars each, each panel on its own scale: how long the connection is held open, and how much memory is allocated, for four ways of reading 20 columns and 1,000 rows from a synthetic in-memory reader. Every bar starts at zero. Connection held open (shorter is better): Hand-written selector 44.8 µs; Dapper.AOT 63.4 µs; Map&lt;T&gt;() 84.9 µs; Dapper Query&lt;T&gt; 246.0 µs. Memory allocated (smaller is better): Dapper.AOT 227.4 KB; Map&lt;T&gt;() 227.4 KB; Hand-written selector 227.4 KB; Dapper Query&lt;T&gt; 548.1 KB.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -61,69 +61,69 @@
   <text class="muted" x="16" y="48">One call reads 20 columns and 1,000 rows from a synthetic reader.</text>
   <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
   <text class="small" x="34" y="72">ODX: one object per row</text>
-  <rect class="grey" x="200" y="62" width="12" height="12" rx="3"/>
-  <text class="small" x="218" y="72">ODX: raw object[] rows</text>
-  <rect class="dapper" x="378" y="62" width="12" height="12" rx="3"/>
-  <text class="small" x="396" y="72">Dapper 2.1.89</text>
+  <rect class="dapper" x="200" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="218" y="72">Dapper 2.1.89</text>
+  <rect class="select" x="318" y="62" width="12" height="12" rx="3"/>
+  <text class="small" x="336" y="72">Dapper.AOT 1.1.0</text>
   <text class="head" x="16" y="108">Connection held open (shorter is better)</text>
   <g>
-    <title>Hand-written selector: connection held 46.8 µs, 227.4 KB allocated per call.</title>
+    <title>Hand-written selector: connection held 44.8 µs, 227.4 KB allocated per call.</title>
     <rect class="hit" x="0" y="118" width="520" height="26"/>
     <text class="name" x="140" y="135">Hand-written selector</text>
-    <path class="one" d="M150,123 h64.94 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-64.94 z"/>
-    <text class="val" x="224.94" y="135">46.8 µs</text>
+    <path class="one" d="M150,123 h50.26 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-50.26 z"/>
+    <text class="val" x="210.26" y="135">44.8 µs</text>
   </g>
   <g>
-    <title>Map&lt;T&gt;(): connection held 81.6 µs, 227.4 KB allocated per call.</title>
+    <title>Dapper.AOT: connection held 63.4 µs, 227.4 KB allocated per call.</title>
     <rect class="hit" x="0" y="144" width="520" height="26"/>
-    <text class="name" x="140" y="161">Map&lt;T&gt;()</text>
-    <path class="one" d="M150,149 h116.14 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-116.14 z"/>
-    <text class="val" x="276.14" y="161">81.6 µs</text>
+    <text class="name" x="140" y="161">Dapper.AOT</text>
+    <path class="select" d="M150,149 h72.82 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-72.82 z"/>
+    <text class="val" x="232.82" y="161">63.4 µs</text>
   </g>
   <g>
-    <title>object[] rows: connection held 178.4 µs, 516.6 KB allocated per call.</title>
+    <title>Map&lt;T&gt;(): connection held 84.9 µs, 227.4 KB allocated per call.</title>
     <rect class="hit" x="0" y="170" width="520" height="26"/>
-    <text class="name" x="140" y="187">object[] rows</text>
-    <path class="grey" d="M150,175 h258.64 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-258.64 z"/>
-    <text class="val" x="418.64" y="187">178.4 µs</text>
+    <text class="name" x="140" y="187">Map&lt;T&gt;()</text>
+    <path class="one" d="M150,175 h98.9 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-98.9 z"/>
+    <text class="val" x="258.9" y="187">84.9 µs</text>
   </g>
   <g>
-    <title>Dapper Query&lt;T&gt;: connection held 202.4 µs, 548.1 KB allocated per call.</title>
+    <title>Dapper Query&lt;T&gt;: connection held 246.0 µs, 548.1 KB allocated per call.</title>
     <rect class="hit" x="0" y="196" width="520" height="26"/>
     <text class="name" x="140" y="213">Dapper Query&lt;T&gt;</text>
     <path class="dapper" d="M150,201 h294 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-294 z"/>
-    <text class="val" x="454" y="213">202.4 µs</text>
+    <text class="val" x="454" y="213">246.0 µs</text>
   </g>
   <line class="axis" x1="150" y1="118" x2="150" y2="222"/>
   <text class="head" x="16" y="250">Memory allocated (smaller is better)</text>
   <g>
-    <title>Map&lt;T&gt;(): connection held 81.6 µs, 227.4 KB allocated per call.</title>
+    <title>Dapper.AOT: connection held 63.4 µs, 227.4 KB allocated per call.</title>
     <rect class="hit" x="0" y="260" width="520" height="26"/>
-    <text class="name" x="140" y="277">Map&lt;T&gt;()</text>
-    <path class="one" d="M150,265 h119.64 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-119.64 z"/>
+    <text class="name" x="140" y="277">Dapper.AOT</text>
+    <path class="select" d="M150,265 h119.64 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-119.64 z"/>
     <text class="val" x="279.64" y="277">227.4 KB</text>
   </g>
   <g>
-    <title>Hand-written selector: connection held 46.8 µs, 227.4 KB allocated per call.</title>
+    <title>Map&lt;T&gt;(): connection held 84.9 µs, 227.4 KB allocated per call.</title>
     <rect class="hit" x="0" y="286" width="520" height="26"/>
-    <text class="name" x="140" y="303">Hand-written selector</text>
+    <text class="name" x="140" y="303">Map&lt;T&gt;()</text>
     <path class="one" d="M150,291 h119.65 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-119.65 z"/>
     <text class="val" x="279.65" y="303">227.4 KB</text>
   </g>
   <g>
-    <title>object[] rows: connection held 178.4 µs, 516.6 KB allocated per call.</title>
+    <title>Hand-written selector: connection held 44.8 µs, 227.4 KB allocated per call.</title>
     <rect class="hit" x="0" y="312" width="520" height="26"/>
-    <text class="name" x="140" y="329">object[] rows</text>
-    <path class="grey" d="M150,317 h276.86 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-276.86 z"/>
-    <text class="val" x="436.86" y="329">516.6 KB</text>
+    <text class="name" x="140" y="329">Hand-written selector</text>
+    <path class="one" d="M150,317 h119.66 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-119.66 z"/>
+    <text class="val" x="279.66" y="329">227.4 KB</text>
   </g>
   <g>
-    <title>Dapper Query&lt;T&gt;: connection held 202.4 µs, 548.1 KB allocated per call.</title>
+    <title>Dapper Query&lt;T&gt;: connection held 246.0 µs, 548.1 KB allocated per call.</title>
     <rect class="hit" x="0" y="338" width="520" height="26"/>
     <text class="name" x="140" y="355">Dapper Query&lt;T&gt;</text>
     <path class="dapper" d="M150,343 h294 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-294 z"/>
     <text class="val" x="454" y="355">548.1 KB</text>
   </g>
   <line class="axis" x1="150" y1="260" x2="150" y2="364"/>
-  <text class="muted small" x="16" y="386">Build b27a02f, 2026-11-14, one run per case. Numbers: synthetic-overhead.csv</text>
+  <text class="muted small" x="16" y="386">Build b5b0014, 2026-11-21, one run per case. Numbers: library-synthetic.csv</text>
 </svg>

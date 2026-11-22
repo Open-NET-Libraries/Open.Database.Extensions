@@ -1,0 +1,5 @@
+variant_id,variant,family,description,columns,rows,reader_open_us,total_us,error_us,allocated_kb,source_run
+V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,1000,84.927,85.09,3.078,227.42,bench4d-syn.log
+V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,1000,44.782,44.95,2.578,227.45,bench4d-syn.log
+V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,1000,245.952,246.36,30.659,548.11,bench4d-syn.log
+V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,1000,63.404,63.57,3.854,227.41,bench4d-syn.log

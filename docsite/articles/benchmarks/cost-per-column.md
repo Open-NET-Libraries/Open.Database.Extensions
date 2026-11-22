@@ -2,6 +2,8 @@
 
 **The question:** if a query returns more columns, how much longer does each approach take?
 
+> **Older build.** These numbers are from build `b27a02f` (2026-11-14), the only run that measured widths other than 20. The newer run on the [library comparison](library-comparison.md) (build `b5b0014`, 2026-11-21) measured 20 columns only: `Map<T>()` 85.1 µs and Dapper 246.4 µs for 1,000 rows (81.7 and 202.7 here).
+
 ## In short
 
 - Every approach grows in a nearly straight line, so each has a **cost per cell**. `Map<T>()` costs **3.65 ns** per cell. Dapper costs 9.70 ns, and `object[]` rows 8.90 ns.

@@ -2,10 +2,12 @@
 
 | Data file | Used on | Build | Run date | Machine | Runtime |
 |---|---|---|---|---|---|
-| `synthetic-overhead.csv` | library comparison, all variants, the summary | `b27a02f` | 2026-11-14 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4 |
+| `library-synthetic.csv` | library comparison, the summary | `b5b0014` | 2026-11-21 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores, Windows 10 (10.0.19045.6466/22H2/2022Update) | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4; .NET SDK 11.0.100; BenchmarkDotNet v0.15.8 |
+| `library-real.csv` | library comparison, real databases | `b5b0014` | 2026-11-21 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores, Windows 10 (10.0.19045.6466/22H2/2022Update) | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4; .NET SDK 11.0.100; BenchmarkDotNet v0.15.8 |
+| `synthetic-overhead.csv` | mapping variants (all variants, older build) | `b27a02f` | 2026-11-14 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4 |
 | `width-sweep.csv` | cost per column | `b27a02f` | 2026-11-14 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4 |
 | `map-cost.csv` | cost of building a map | `544cc01` | 2026-11-14 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4 |
-| `real-providers.csv` | real databases, library comparison | `fbb13d7` | 2026-11-14 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4 |
+| `real-providers.csv` | real databases (older build) | `fbb13d7` | 2026-11-14 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4 |
 | `sync-async.csv` | sync reads against async reads | `ea5f096` | 2026-11-14 | AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores | .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4 |
 | `link-time.csv` | slow links and large values | `not recorded` | 2026-11-14 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); SQL Server 2022 (RTM-CU28) in a Docker container on it, limited to 4 CPUs | .NET 11.0.0 |
 | `link-memory.csv` | slow links and large values | `not recorded` | 2026-11-15 | AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets); SQL Server 2022 (RTM-CU28) in a Docker container on it, limited to 4 CPUs | .NET 11.0.0 |
