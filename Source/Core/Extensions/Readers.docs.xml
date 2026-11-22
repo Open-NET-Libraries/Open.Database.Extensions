@@ -35,9 +35,9 @@
       open, for example a result too large to buffer or a row-by-row
       pipeline.
       Otherwise use a call that lets go of the connection first:
-      <see cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+      <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>
       and
-      <see cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+      <see cref="MappedQuery{T}.ToArrayAsync(CancellationToken)"/>
       buffer the rows and release the connection
       (call <c>.Map&lt;T&gt;()</c> first), and
       <see cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>

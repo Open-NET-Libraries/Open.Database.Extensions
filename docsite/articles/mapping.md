@@ -264,7 +264,7 @@ Some columns are not the type the model wants: a number the model keeps as text,
 
 ## Terminals
 
-`ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `First`, `FirstOrDefault`, `Single`, `SingleOrDefault` and `Read`, each with an `Async` twin. `First` and `Single` throw `InvalidOperationException` when the query returns no row (and `Single` when it returns more than one); the `OrDefault` forms return `null` for no rows. A row whose value is `NULL` is still a row. Prefer `ToArray` for results you only read: it allocates one exactly sized array, and an empty result is the shared empty array. Use `ToList` when you add to or remove from the result afterwards. Called through `IMappedQuery<T>` (in generic code), `First`, `FirstOrDefault`, `Single` and `SingleOrDefault` do the same as the members of every `Map` type of the library, the no-rows message and the read-through included; another implementation of the interface gets a LINQ fallback that stops at the row, so it cannot read through the later result sets.
+`ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `First`, `FirstOrDefault`, `Single`, and `SingleOrDefault`, each with an `Async` twin. `First` and `Single` throw `InvalidOperationException` when the query returns no row (and `Single` when it returns more than one); the `OrDefault` forms return `null` for no rows. A row whose value is `NULL` is still a row. Prefer `ToArray` for results you only read: it allocates one exactly sized array, and an empty result is the shared empty array. Use `ToList` when you add to or remove from the result afterwards.
 
 [!code-csharp[](../samples/Mapping.cs#map_first_single)]
 
@@ -290,7 +290,7 @@ FrozenDictionary<int, Post> byId = (await query
 
 [!code-csharp[](../samples/Mapping.cs#map_paging)]
 
-To process a large result one row at a time without holding it all, use `Read(rows => ...)` (`Action<IEnumerable<T>>`, or `Func<IEnumerable<T>, TResult>` to return a value). `rows` is a lazy sequence that is only valid inside the handler. In async code use `ReadAsync(handler, cancellationToken)`, whose handler is a `Func<IAsyncEnumerable<T>, CancellationToken, ValueTask>` (or `ValueTask<TResult>` to return a value): enumerate the rows inside it with `await foreach`. To hand rows to another consumer use [`ToBufferedAsyncStream`](channels-and-dataflow.md), and for the raw reader `ExecuteReader(reader => ...)`:
+To read the rows one at a time and stop early, use `Stream(timeout)` in an `await foreach`: it holds the reader and the connection open while you pull rows, and the timeout is the longest you may go without pulling the next one. To hand rows to another consumer use [`ToBufferedAsyncStream`](channels-and-dataflow.md), and for the raw reader `ExecuteReader(reader => ...)`:
 
 [!code-csharp[](../samples/Mapping.cs#map_stream)]
 
@@ -303,7 +303,7 @@ An async terminal executes and opens asynchronously but reads the rows with `Rea
 ### Streaming holds the connection
 
 > [!WARNING]
-> **Streaming is not the recommended way to read rows: it holds the connection while your code runs for each row.** The `Read` and `ReadAsync` handlers, `ForEach` and `ForEachAsync`, `IterateWhile` on a reader, and a reader's `AsEnumerable` and `AsAsyncEnumerable` all run your code for each row while the reader, and the connection under it, are open. The connection stays held for as long as your code takes per row, added up over all the rows.
+> **Streaming is not the recommended way to read rows: it holds the connection while your code runs for each row.** `Stream`, `ForEach` and `ForEachAsync`, `IterateWhile` on a reader, and a reader's `AsEnumerable` and `AsAsyncEnumerable` all run your code for each row while the reader, and the connection under it, are open. The connection stays held for as long as your code takes per row, added up over all the rows.
 >
 > In async code that time has no bound: every `await` in the loop body can yield, and nothing says when the loop resumes. Until it does, the connection is on hold: a pooled connection is not returned to the pool, and the server may keep its locks and the open result set.
 >
@@ -358,7 +358,7 @@ A *result* here is one whole result set: what `NextResult` moves between. It is 
 
 `Map` returns the rows of the first result set only. Later sets are never mapped. After the rows are read, the terminal reads through the later sets without reading their rows, so a failure in a later statement (a stored procedure or a text batch that fails after its first `SELECT`) is thrown to you as the provider raised it, not lost when the reader is disposed. A trailing status set does not throw and adds no rows.
 
-Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and a `Read` or an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `Single` or `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `First`, `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through (also through `IMappedQuery<T>`), and the provider discards the first set's unread rows on the way.
+Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `Single` or `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `First`, `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through, and the provider discards the first set's unread rows on the way.
 
 The calls removed in 11.0 (`Results<T>`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()`) read only the first result set. `Map` reads through the rest, and `command.SingleResult().Map(...)` gives the old behavior. See [Removed in 11.0](whats-new-11.md#deprecated-in-110).
 

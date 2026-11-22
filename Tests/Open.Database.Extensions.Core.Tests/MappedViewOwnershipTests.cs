@@ -225,25 +225,15 @@ public static class MappedViewOwnershipTests
 	}
 
 	[Fact]
-	public static void AConnectionTheViewOpened_IsClosedWhenTheHandlerThrows()
+	public static async Task AConnectionTheViewOpened_IsClosedWhenTheConsumerThrows()
 	{
 		(FakeDbConnection connection, FakeDbCommand command) = Command();
 
-		Assert.Throws<InvalidOperationException>(
-			() => command.Map<Row>().Read(_ => throw new InvalidOperationException()));
-
-		Assert.Equal(["open", "close"], connection.Log);
-	}
-
-	[Fact]
-	public static async Task AConnectionTheViewOpened_IsClosedWhenTheHandlerThrows_Async()
-	{
-		(FakeDbConnection connection, FakeDbCommand command) = Command();
-
-		await Assert.ThrowsAsync<InvalidOperationException>(
-			async () => await command.Map<Row>().ReadAsync(
-				(_, _) => throw new InvalidOperationException(),
-				Ct));
+		await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+		{
+			await foreach (Row _ in command.Map<Row>().Stream(Timeout.InfiniteTimeSpan, Ct))
+				throw new InvalidOperationException();
+		});
 
 		Assert.Equal(["open", "close"], connection.Log);
 	}

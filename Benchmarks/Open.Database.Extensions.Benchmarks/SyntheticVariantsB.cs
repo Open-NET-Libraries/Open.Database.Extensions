@@ -217,17 +217,19 @@ public static class SyntheticVariantsB
 	/// IAsyncEnumerable terminal; the pace is paid in the consumer's loop.
 	/// </summary>
 	public static ValueTask<List<SynItem>> V3s(SyntheticConnection connection, int pace)
-		=> connection.Command(Sql).Map(ItemMap(0)).ReadAsync<SynItem, List<SynItem>>(async rows =>
-		{
-			var list = new List<SynItem>();
-			await foreach (var item in rows.ConfigureAwait(false))
-			{
-				if (pace > 0) Spin.Iterations(pace);
-				list.Add(item);
-			}
+		=> StreamAll(connection, pace);
 
-			return list;
-		});
+	static async ValueTask<List<SynItem>> StreamAll(SyntheticConnection connection, int pace)
+	{
+		var list = new List<SynItem>();
+		await foreach (SynItem item in connection.Command(Sql).Map(ItemMap(0)).Stream(Timeout.InfiniteTimeSpan).ConfigureAwait(false))
+		{
+			if (pace > 0) Spin.Iterations(pace);
+			list.Add(item);
+		}
+
+		return list;
+	}
 
 	// ---- V4: the intermediate row reused or pooled ----------------------------------------------------------------
 	// Map<Row>() always allocates a new Row (there is no overload that fills a given instance), so the reuse is built where a caller can build it:

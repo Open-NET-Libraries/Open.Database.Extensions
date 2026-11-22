@@ -64,6 +64,13 @@ public static class LeakMatrixTests
 
 	const Traits RM = Traits.Reader | Traits.Mapped;
 
+	// Takes the first element of a stream and walks away from it.
+	static async ValueTask<bool> FirstOfStream(MappedQuery<Row> query, CancellationToken ct)
+	{
+		await using IAsyncEnumerator<Row> e = query.Stream(Timeout.InfiniteTimeSpan, ct).GetAsyncEnumerator(ct);
+		return await e.MoveNextAsync();
+	}
+
 	static readonly Terminal<ExpressiveDbCommand>[] DbTerminals =
 	[
 		Sync<ExpressiveDbCommand, List<Row>>("Map.ToList", RM, c => c.Map<Row>().ToList()),
@@ -73,11 +80,6 @@ public static class LeakMatrixTests
 		Sync<ExpressiveDbCommand, Dictionary<int, Row>>("Map.ToDictionary", RM, c => c.Map<Row>().ToDictionary(r => r.Id)),
 		Sync<ExpressiveDbCommand, HashSet<Row>>("Map.ToHashSet", RM, c => c.Map<Row>().ToHashSet()),
 		Sync<ExpressiveDbCommand, ImmutableArray<Row>>("Map.ToImmutableArray", RM, c => c.Map<Row>().ToImmutableArray()),
-		Sync<ExpressiveDbCommand, bool>("Map.Read.Abandon", RM | Traits.Streams, c => c.Map<Row>().Read(seq =>
-		{
-			using IEnumerator<Row> e = seq.GetEnumerator();
-			return e.MoveNext();
-		})),
 		Sync<ExpressiveDbCommand, bool>("ExecuteReader.State", Traits.Reader, c => c.ExecuteReader(0, static (r, _) => r.Read())),
 		Sync<ExpressiveDbCommand, object?>("ExecuteScalar", Traits.None, c => c.ExecuteScalar()),
 		Sync<ExpressiveDbCommand, int>("ExecuteNonQuery", Traits.None, c => c.ExecuteNonQuery()),
@@ -90,11 +92,7 @@ public static class LeakMatrixTests
 		Async<ExpressiveDbCommand, Dictionary<int, Row>>("Map.ToDictionaryAsync", RM, (c, ct) => c.Map<Row>().ToDictionaryAsync(r => r.Id, cancellationToken: ct)),
 		Async<ExpressiveDbCommand, HashSet<Row>>("Map.ToHashSetAsync", RM, (c, ct) => c.Map<Row>().ToHashSetAsync(cancellationToken: ct)),
 		Async<ExpressiveDbCommand, ImmutableArray<Row>>("Map.ToImmutableArrayAsync", RM, (c, ct) => c.Map<Row>().ToImmutableArrayAsync(ct)),
-		Async<ExpressiveDbCommand, bool>("Map.ReadAsync.Abandon", RM | Traits.Streams, (c, ct) => c.Map<Row>().ReadAsync(async seq =>
-		{
-			await using IAsyncEnumerator<Row> e = seq.GetAsyncEnumerator(ct);
-			return await e.MoveNextAsync();
-		}, ct)),
+		Async<ExpressiveDbCommand, bool>("Map.Stream.Abandon", RM | Traits.Streams, (c, ct) => FirstOfStream(c.Map<Row>(), ct)),
 		Async<ExpressiveDbCommand, bool>("ExecuteReaderAsync.State", Traits.Reader, (c, ct) => c.UseCancellationToken(ct).ExecuteReaderAsync(0, static (r, _) => new ValueTask<bool>(r.Read()))),
 		Async<ExpressiveDbCommand, object?>("ExecuteScalarAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteScalarAsync()),
 		Async<ExpressiveDbCommand, int>("ExecuteNonQueryAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteNonQueryAsync()),
@@ -106,20 +104,11 @@ public static class LeakMatrixTests
 	[
 		Sync<ExpressiveCommand, List<Row>>("Map.ToList", RM, c => c.Map<Row>().ToList()),
 		Sync<ExpressiveCommand, Row?>("Map.FirstOrDefault", RM, c => c.Map<Row>().FirstOrDefault()),
-		Sync<ExpressiveCommand, bool>("Map.Read.Abandon", RM | Traits.Streams, c => c.Map<Row>().Read(seq =>
-		{
-			using IEnumerator<Row> e = seq.GetEnumerator();
-			return e.MoveNext();
-		})),
 		Sync<ExpressiveCommand, bool>("ExecuteReader.State", Traits.Reader, c => c.ExecuteReader(0, static (r, _) => r.Read())),
 		Sync<ExpressiveCommand, object?>("ExecuteScalar", Traits.None, c => c.ExecuteScalar()),
 		Sync<ExpressiveCommand, int>("ExecuteNonQuery", Traits.None, c => c.ExecuteNonQuery()),
 		Async<ExpressiveCommand, List<Row>>("Map.ToListAsync", RM, (c, ct) => c.Map<Row>().ToListAsync(ct)),
-		Async<ExpressiveCommand, bool>("Map.ReadAsync.Abandon", RM | Traits.Streams, (c, ct) => c.Map<Row>().ReadAsync(async seq =>
-		{
-			await using IAsyncEnumerator<Row> e = seq.GetAsyncEnumerator(ct);
-			return await e.MoveNextAsync();
-		}, ct)),
+		Async<ExpressiveCommand, bool>("Map.Stream.Abandon", RM | Traits.Streams, (c, ct) => FirstOfStream(c.Map<Row>(), ct)),
 	];
 
 	static bool Applies(Traits traits, Outcome outcome) => outcome switch

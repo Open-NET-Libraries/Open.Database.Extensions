@@ -77,7 +77,7 @@ List<Post> posts = await PostsByAuthorTyped.Using(db)
 
 [!code-csharp[](../samples/MapFirst.cs#mapfirst_after)]
 
-`Using(source)` takes the same four sources and returns the ordinary `MappedQuery<T>` view, with every terminal, `Skip` and `Take` it always had, so a test fake of `IMappedQuery<T>` is the same one. The parameters can come after `Using`, as above, or before it, and the command is the same either way. The values before the source are held without a connection, so the held call has no terminal: it cannot be read until `Using` gives it a source.
+`Using(source)` takes the same four sources and returns the ordinary `MappedQuery<T>` view, with every terminal, `Skip` and `Take`. The parameters can come after `Using`, as above, or before it, and the command is the same either way. The values before the source are held without a connection, so the held call has no terminal: it cannot be read until `Using` gives it a source.
 
 [!code-csharp[](../samples/MapFirst.cs#mapfirst_values_first)]
 

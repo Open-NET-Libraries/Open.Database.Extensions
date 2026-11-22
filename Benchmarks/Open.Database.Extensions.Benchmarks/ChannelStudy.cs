@@ -102,10 +102,8 @@ public static class ChannelStudy
 	// Maps on the reading thread and writes straight to the target (back-pressure blocks the reader).
 	static async Task OneStage(BenchConnection conn, ChannelWriter<Post> target, Action readerDone)
 	{
-		await conn.Command(Sql).Map<Post>().ReadAsync(async (items, ct) =>
-		{
-			await foreach (Post p in items.WithCancellation(ct)) await target.WriteAsync(p, ct);
-		}, default);
+		await foreach (Post p in conn.Command(Sql).Map<Post>().Stream(Timeout.InfiniteTimeSpan))
+			await target.WriteAsync(p);
 		readerDone();
 		target.Complete();
 	}
@@ -123,9 +121,9 @@ public static class ChannelStudy
 	{
 		Channel<Post>? overflow = null;
 		Task? pump = null;
-		await conn.Command(Sql).Map<Post>().ReadAsync(async (items, ct) =>
+		CancellationToken ct = default;
 		{
-			await foreach (Post p in items.WithCancellation(ct))
+			await foreach (Post p in conn.Command(Sql).Map<Post>().Stream(Timeout.InfiniteTimeSpan, ct))
 			{
 				if (overflow is null)
 				{
@@ -141,7 +139,7 @@ public static class ChannelStudy
 
 				await overflow.Writer.WriteAsync(p, ct);
 			}
-		}, default);
+		}
 
 		readerDone();
 		if (overflow is not null)

@@ -109,18 +109,6 @@ public static class NullGuardDefectTests
 	}
 
 	[Fact]
-	public static void ReadAsync_NullQuery_IsRefusedByTheCall_NamingTheQuery()
-	{
-		static ValueTask Handler(IAsyncEnumerable<int> _) => ValueTask.CompletedTask;
-		static ValueTask<int> HandlerOfResult(IAsyncEnumerable<int> _) => new(1);
-
-		Assert.Equal("query", Assert.Throws<ArgumentNullException>(
-			() => { _ = MappedQueryExtensions.ReadAsync<int>(null!, Handler, TestContext.Current.CancellationToken).AsTask(); }).ParamName);
-		Assert.Equal("query", Assert.Throws<ArgumentNullException>(
-			() => { _ = MappedQueryExtensions.ReadAsync<int, int>(null!, HandlerOfResult, TestContext.Current.CancellationToken).AsTask(); }).ParamName);
-	}
-
-	[Fact]
 	public static void GetNames_NullOrdinals_NamesTheOrdinals()
 	{
 		IDataRecord record = Substitute.For<IDataRecord>();

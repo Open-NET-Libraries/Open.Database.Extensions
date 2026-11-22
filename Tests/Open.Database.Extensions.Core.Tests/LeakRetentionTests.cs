@@ -207,12 +207,9 @@ public static class LeakRetentionTests
 				case "ToListAsync": await command.Map<Row>().ToListAsync(none); break;
 				case "ToArrayAsync": await command.Map<Row>().ToArrayAsync(none); break;
 				case "ToDictionaryAsync": await command.Map<Row>().ToDictionaryAsync(r => r.Id, cancellationToken: none); break;
-				case "ReadAsyncAbandon":
-					await command.Map<Row>().ReadAsync(async seq =>
-					{
-						await using IAsyncEnumerator<Row> e = seq.GetAsyncEnumerator(none);
-						return await e.MoveNextAsync();
-					}, none);
+				case "StreamAbandon":
+					await using (IAsyncEnumerator<Row> e = command.Map<Row>().Stream(Timeout.InfiniteTimeSpan, none).GetAsyncEnumerator(none))
+						await e.MoveNextAsync();
 					break;
 				case "ExecuteScalar": command.ExecuteScalar(); break;
 				case "ExecuteNonQueryAsync": await command.ExecuteNonQueryAsync(); break;
@@ -246,7 +243,7 @@ public static class LeakRetentionTests
 	[InlineData("ToListAsync")]
 	[InlineData("ToArrayAsync")]
 	[InlineData("ToDictionaryAsync")]
-	[InlineData("ReadAsyncAbandon")]
+	[InlineData("StreamAbandon")]
 	[InlineData("ExecuteScalar")]
 	[InlineData("ExecuteNonQueryAsync")]
 	[InlineData("ToListAsyncFails")]

@@ -25,28 +25,33 @@ public static class MappedViewParityTests
 	static readonly string[] Terminals =
 	[
 		"ToList", "ToArray", "ToImmutableArray", "FirstOrDefault",
-		"SingleOrDefault", "ToDictionary", "ToHashSet", "Read", "ReadResult",
+		"SingleOrDefault", "ToDictionary", "ToHashSet",
 		"Skip", "Take", "SkipTake", "First", "Single", "ToDictionaryValues",
 	];
 
 	static readonly string[] Sets = ["three", "nulls", "one", "empty"];
 
-	public static TheoryData<string, string> Cases
+	static TheoryData<string, string> Build(IEnumerable<string> terminals)
 	{
-		get
+		TheoryData<string, string> data = [];
+		foreach (string set in Sets)
 		{
-			TheoryData<string, string> data = [];
-			foreach (string set in Sets)
+			foreach (string terminal in terminals)
 			{
-				foreach (string terminal in Terminals)
-				{
-					data.Add(set, terminal);
-				}
+				data.Add(set, terminal);
 			}
-
-			return data;
 		}
+
+		return data;
 	}
+
+	public static TheoryData<string, string> Cases => Build(Terminals);
+
+	// The views of a MappedQuery stream; a reader view does not.
+	public static TheoryData<string, string> AsyncCases => Build([.. Terminals, "Stream"]);
+
+	// A reader view hands its rows to a handler.
+	public static TheoryData<string, string> ReaderReadCases => Build(["Read", "ReadResult"]);
 
 	static object?[][] Data(string set)
 		=> set switch
@@ -106,7 +111,7 @@ public static class MappedViewParityTests
 		Assert.Equal(expected, Run(CommandView(rows), terminal));
 	}
 
-	[Theory, MemberData(nameof(Cases))]
+	[Theory, MemberData(nameof(AsyncCases))]
 	public static async Task EveryAsyncTerminal_GivesTheSameResultAsAMappedQuery(
 		string set,
 		string terminal)
@@ -114,8 +119,29 @@ public static class MappedViewParityTests
 		object?[][] rows = Data(set);
 		string expected = await RunAsync(Baseline(rows), terminal, Ct);
 
-		Assert.Equal(expected, await RunAsync(ReaderView(rows), terminal, Ct));
+		if (terminal != "Stream")
+		{
+			Assert.Equal(expected, await RunAsync(ReaderView(rows), terminal, Ct));
+		}
+
 		Assert.Equal(expected, await RunAsync(CommandView(rows), terminal, Ct));
+	}
+
+	// What a handler on a reader view reads is what ToList returns.
+	[Theory, MemberData(nameof(ReaderReadCases))]
+	public static void AReaderViewHandler_ReadsTheRowsToListReturns(string set, string terminal)
+	{
+		object?[][] rows = Data(set);
+
+		Assert.Equal(Run(Baseline(rows), "ToList"), Run(ReaderView(rows), terminal));
+	}
+
+	[Theory, MemberData(nameof(ReaderReadCases))]
+	public static async Task AReaderViewAsyncHandler_ReadsTheRowsToListReturns(string set, string terminal)
+	{
+		object?[][] rows = Data(set);
+
+		Assert.Equal(await RunAsync(Baseline(rows), "ToList", Ct), await RunAsync(ReaderView(rows), terminal, Ct));
 	}
 
 	[Fact]
@@ -270,19 +296,69 @@ public static class MappedViewParityTests
 		static ValueTask<int> H2(IAsyncEnumerable<int> __, CancellationToken _)
 			=> new(0);
 
-		static void All<TQuery>(TQuery q, Action<TQuery> more)
-			where TQuery : IMappedQuerySync<int>
+		Throws(() => default(MappedQuery<int>).ToList());
 		{
+			MappedQuery<int> q = default;
+			Throws(() => q.Stream(Timeout.InfiniteTimeSpan));
+			Throws(() => q.ToList());
+			Throws(() => q.ToArray());
+			Throws(() => q.FirstOrDefault());
+			Throws(() => q.SingleOrDefault());
+			Throws(() => q.ToImmutableArray());
+			Throws(() => q.ToDictionary(i => i));
+			Throws(() => q.ToHashSet());
+			Fails(() => q.ToListAsync());
+			Fails(() => q.ToArrayAsync());
+			Fails(() => q.FirstOrDefaultAsync());
+			Fails(() => q.SingleOrDefaultAsync());
+			Fails(() => q.ToImmutableArrayAsync());
+			Fails(() => q.ToDictionaryAsync(i => i));
+			Fails(() => q.ToHashSetAsync());
+			Throws(() => q.Skip(1));
+			Throws(() => q.Take(1));
+			Throws(() => q.SingleResult());
+		}
+		{
+			MappedQueryWithSkip<int> q = default;
+			Throws(() => q.Stream(Timeout.InfiniteTimeSpan));
+			Throws(() => q.ToList());
+			Fails(() => q.ToListAsync());
+			Throws(() => q.Take(1));
+			Throws(() => q.SingleResult());
+		}
+		{
+			MappedQueryWithTake<int> q = default;
+			Throws(() => q.Stream(Timeout.InfiniteTimeSpan));
+			Throws(() => q.ToList());
+			Fails(() => q.FirstOrDefaultAsync());
+			Throws(() => q.SingleResult());
+		}
+		{
+			MappedReader<int> q = default;
 			Throws(() => q.Read(_ => { }));
 			Throws(() => q.Read(items => items.Count()));
 			FailsPlain(() => q.ReadAsync(H1, default));
 			Fails(() => q.ReadAsync(H2, default));
-			more(q);
+			Throws(() => q.ToList());
+			Throws(() => q.ToArray());
+			Throws(() => q.FirstOrDefault());
+			Throws(() => q.SingleOrDefault());
+			Throws(() => q.ToImmutableArray());
+			Throws(() => q.ToDictionary(i => i));
+			Throws(() => q.ToHashSet());
+			Fails(() => q.ToListAsync());
+			Fails(() => q.ToArrayAsync());
+			Fails(() => q.FirstOrDefaultAsync());
+			Fails(() => q.SingleOrDefaultAsync());
+			Fails(() => q.ToImmutableArrayAsync());
+			Fails(() => q.ToDictionaryAsync(i => i));
+			Fails(() => q.ToHashSetAsync());
+			Throws(() => q.Skip(1));
+			Throws(() => q.Take(1));
 		}
-
-		Throws(() => default(MappedQuery<int>).ToList());
-		All(default(MappedQuery<int>), q =>
 		{
+			MappedCommand<int> q = default;
+			Throws(() => q.Stream(Timeout.InfiniteTimeSpan));
 			Throws(() => q.ToList());
 			Throws(() => q.ToArray());
 			Throws(() => q.FirstOrDefault());
@@ -300,59 +376,7 @@ public static class MappedViewParityTests
 			Throws(() => q.Skip(1));
 			Throws(() => q.Take(1));
 			Throws(() => q.SingleResult());
-		});
-		All(default(MappedQueryWithSkip<int>), q =>
-		{
-			Throws(() => q.ToList());
-			Fails(() => q.ToListAsync());
-			Throws(() => q.Take(1));
-			Throws(() => q.SingleResult());
-		});
-		All(default(MappedQueryWithTake<int>), q =>
-		{
-			Throws(() => q.ToList());
-			Fails(() => q.FirstOrDefaultAsync());
-			Throws(() => q.SingleResult());
-		});
-		All(default(MappedReader<int>), q =>
-		{
-			Throws(() => q.ToList());
-			Throws(() => q.ToArray());
-			Throws(() => q.FirstOrDefault());
-			Throws(() => q.SingleOrDefault());
-			Throws(() => q.ToImmutableArray());
-			Throws(() => q.ToDictionary(i => i));
-			Throws(() => q.ToHashSet());
-			Fails(() => q.ToListAsync());
-			Fails(() => q.ToArrayAsync());
-			Fails(() => q.FirstOrDefaultAsync());
-			Fails(() => q.SingleOrDefaultAsync());
-			Fails(() => q.ToImmutableArrayAsync());
-			Fails(() => q.ToDictionaryAsync(i => i));
-			Fails(() => q.ToHashSetAsync());
-			Throws(() => q.Skip(1));
-			Throws(() => q.Take(1));
-		});
-		All(default(MappedCommand<int>), q =>
-		{
-			Throws(() => q.ToList());
-			Throws(() => q.ToArray());
-			Throws(() => q.FirstOrDefault());
-			Throws(() => q.SingleOrDefault());
-			Throws(() => q.ToImmutableArray());
-			Throws(() => q.ToDictionary(i => i));
-			Throws(() => q.ToHashSet());
-			Fails(() => q.ToListAsync());
-			Fails(() => q.ToArrayAsync());
-			Fails(() => q.FirstOrDefaultAsync());
-			Fails(() => q.SingleOrDefaultAsync());
-			Fails(() => q.ToImmutableArrayAsync());
-			Fails(() => q.ToDictionaryAsync(i => i));
-			Fails(() => q.ToHashSetAsync());
-			Throws(() => q.Skip(1));
-			Throws(() => q.Take(1));
-			Throws(() => q.SingleResult());
-		});
+		}
 
 		MappedReader<int> reader = default;
 		MappedCommand<int> command = default;
@@ -420,18 +444,16 @@ public static class MappedViewParityTests
 			"ToDictionaryValues" => q.ToDictionary(p => p.Id, p => p.Name),
 			"ToDictionary" => q.ToDictionary(p => p.Id),
 			"ToHashSet" => q.ToHashSet(),
-			"Read" => ReadAll(q),
-			"ReadResult" => q.Read(items => items.ToList()),
 			"Skip" => q.Skip(1).ToList(),
 			"Take" => q.Take(1).ToList(),
 			"SkipTake" => q.Skip(1).Take(1).ToList(),
 			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 		});
 
-	static List<Person> ReadAll(MappedQuery<Person> q)
+	static async Task<List<Person>> StreamAll(IAsyncEnumerable<Person> rows)
 	{
 		List<Person> list = [];
-		q.Read(items => list.AddRange(items));
+		await foreach (Person p in rows) list.Add(p);
 		return list;
 	}
 
@@ -455,16 +477,7 @@ public static class MappedViewParityTests
 					p => p.Id, p => p.Name, null, ct),
 				"ToDictionary" => await q.ToDictionaryAsync(p => p.Id, null, ct),
 				"ToHashSet" => await q.ToHashSetAsync(null, ct),
-				"Read" => await ReadAllAsync(q, ct),
-				"ReadResult" => await q.ReadAsync(
-					async (items, token) =>
-					{
-						List<Person> list = [];
-						await foreach (Person p in items.WithCancellation(token))
-							list.Add(p);
-						return list;
-					},
-					ct),
+				"Stream" => await StreamAll(q.Stream(Timeout.InfiniteTimeSpan, ct)),
 				"Skip" => await q.Skip(1).ToListAsync(ct),
 				"Take" => await q.Take(1).ToListAsync(ct),
 				"SkipTake" => await q.Skip(1).Take(1).ToListAsync(ct),
@@ -476,21 +489,6 @@ public static class MappedViewParityTests
 		{
 			return ex.GetType().Name;
 		}
-	}
-
-	static async Task<List<Person>> ReadAllAsync(
-		MappedQuery<Person> q,
-		CancellationToken ct)
-	{
-		List<Person> list = [];
-		await q.ReadAsync(
-			async (items, token) =>
-			{
-				await foreach (Person p in items.WithCancellation(token))
-					list.Add(p);
-			},
-			ct);
-		return list;
 	}
 
 	static string Run(MappedReader<Person> q, string terminal)
@@ -592,20 +590,11 @@ public static class MappedViewParityTests
 			"ToDictionaryValues" => q.ToDictionary(p => p.Id, p => p.Name),
 			"ToDictionary" => q.ToDictionary(p => p.Id),
 			"ToHashSet" => q.ToHashSet(),
-			"Read" => ReadAll(q),
-			"ReadResult" => q.Read(items => items.ToList()),
 			"Skip" => q.Skip(1).ToList(),
 			"Take" => q.Take(1).ToList(),
 			"SkipTake" => q.Skip(1).Take(1).ToList(),
 			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 		});
-
-	static List<Person> ReadAll(MappedCommand<Person> q)
-	{
-		List<Person> list = [];
-		q.Read(items => list.AddRange(items));
-		return list;
-	}
 
 	static async Task<string> RunAsync(
 		MappedCommand<Person> q,
@@ -627,16 +616,7 @@ public static class MappedViewParityTests
 					p => p.Id, p => p.Name, null, ct),
 				"ToDictionary" => await q.ToDictionaryAsync(p => p.Id, null, ct),
 				"ToHashSet" => await q.ToHashSetAsync(null, ct),
-				"Read" => await ReadAllAsync(q, ct),
-				"ReadResult" => await q.ReadAsync(
-					async (items, token) =>
-					{
-						List<Person> list = [];
-						await foreach (Person p in items.WithCancellation(token))
-							list.Add(p);
-						return list;
-					},
-					ct),
+				"Stream" => await StreamAll(q.Stream(Timeout.InfiniteTimeSpan, ct)),
 				"Skip" => await q.Skip(1).ToListAsync(ct),
 				"Take" => await q.Take(1).ToListAsync(ct),
 				"SkipTake" => await q.Skip(1).Take(1).ToListAsync(ct),
@@ -648,21 +628,6 @@ public static class MappedViewParityTests
 		{
 			return ex.GetType().Name;
 		}
-	}
-
-	static async Task<List<Person>> ReadAllAsync(
-		MappedCommand<Person> q,
-		CancellationToken ct)
-	{
-		List<Person> list = [];
-		await q.ReadAsync(
-			async (items, token) =>
-			{
-				await foreach (Person p in items.WithCancellation(token))
-					list.Add(p);
-			},
-			ct);
-		return list;
 	}
 
 	// A default value has no command: UsePool says so, like every other member of

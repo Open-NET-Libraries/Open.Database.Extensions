@@ -65,7 +65,13 @@ public static class SingleResultBeforeMapTests
 	public static TheoryData<string> Terminals
 		=> [
 			"ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault",
-			"ToDictionary", "ToHashSet", "Read", "ReadResult",
+			"ToDictionary", "ToHashSet",
+			"Skip", "Take", "SkipTake", "TakeFirst"];
+
+	public static TheoryData<string> AsyncTerminals
+		=> [
+			"ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault",
+			"ToDictionary", "ToHashSet", "Stream",
 			"Skip", "Take", "SkipTake", "TakeFirst"];
 
 	// SingleOrDefault throws on a second row, so it reads a one-row set.
@@ -77,25 +83,10 @@ public static class SingleResultBeforeMapTests
 			? string.Join(",", items.Cast<object?>())
 			: result?.ToString() ?? "null";
 
-	static int Sum(Action<Action<IEnumerable<int>>> read)
+	static async Task<int> SumAsync(IAsyncEnumerable<int> items)
 	{
 		int sum = 0;
-		read(items =>
-		{
-			foreach (int i in items) sum += i;
-		});
-
-		return sum;
-	}
-
-	static async Task<int> SumAsync(Func<Func<IAsyncEnumerable<int>, CancellationToken, ValueTask>, ValueTask> read)
-	{
-		int sum = 0;
-		await read(async (items, token) =>
-		{
-			await foreach (int i in items.WithCancellation(token)) sum += i;
-		});
-
+		await foreach (int i in items) sum += i;
 		return sum;
 	}
 
@@ -109,8 +100,6 @@ public static class SingleResultBeforeMapTests
 			"SingleOrDefault" => q.SingleOrDefault(),
 			"ToDictionary" => q.ToDictionary(i => i),
 			"ToHashSet" => q.ToHashSet(),
-			"Read" => Sum(q.Read),
-			"ReadResult" => q.Read(items => items.Sum()),
 			"Skip" => q.Skip(1).ToList(),
 			"Take" => q.Take(2).ToList(),
 			"SkipTake" => q.Skip(1).Take(1).ToList(),
@@ -128,8 +117,6 @@ public static class SingleResultBeforeMapTests
 			"SingleOrDefault" => q.SingleOrDefault(),
 			"ToDictionary" => q.ToDictionary(i => i),
 			"ToHashSet" => q.ToHashSet(),
-			"Read" => Sum(q.Read),
-			"ReadResult" => q.Read(items => items.Sum()),
 			"Skip" => q.Skip(1).ToList(),
 			"Take" => q.Take(2).ToList(),
 			"SkipTake" => q.Skip(1).Take(1).ToList(),
@@ -147,16 +134,7 @@ public static class SingleResultBeforeMapTests
 			"SingleOrDefault" => await q.SingleOrDefaultAsync(Ct),
 			"ToDictionary" => await q.ToDictionaryAsync(i => i, null, Ct),
 			"ToHashSet" => await q.ToHashSetAsync(null, Ct),
-			"Read" => await SumAsync(handler => q.ReadAsync(handler, Ct)),
-			"ReadResult" =>
-				await q.ReadAsync(
-					async (items, token) =>
-					{
-						int sum = 0;
-						await foreach (int i in items.WithCancellation(token)) sum += i;
-						return sum;
-					},
-					Ct),
+			"Stream" => await SumAsync(q.Stream(Timeout.InfiniteTimeSpan, Ct)),
 			"Skip" => await q.Skip(1).ToListAsync(Ct),
 			"Take" => await q.Take(2).ToListAsync(Ct),
 			"SkipTake" => await q.Skip(1).Take(1).ToListAsync(Ct),
@@ -174,16 +152,7 @@ public static class SingleResultBeforeMapTests
 			"SingleOrDefault" => await q.SingleOrDefaultAsync(Ct),
 			"ToDictionary" => await q.ToDictionaryAsync(i => i, null, Ct),
 			"ToHashSet" => await q.ToHashSetAsync(null, Ct),
-			"Read" => await SumAsync(handler => q.ReadAsync(handler, Ct)),
-			"ReadResult" =>
-				await q.ReadAsync(
-					async (items, token) =>
-					{
-						int sum = 0;
-						await foreach (int i in items.WithCancellation(token)) sum += i;
-						return sum;
-					},
-					Ct),
+			"Stream" => await SumAsync(q.Stream(Timeout.InfiniteTimeSpan, Ct)),
 			"Skip" => await q.Skip(1).ToListAsync(Ct),
 			"Take" => await q.Take(2).ToListAsync(Ct),
 			"SkipTake" => await q.Skip(1).Take(1).ToListAsync(Ct),
@@ -210,7 +179,7 @@ public static class SingleResultBeforeMapTests
 		Assert.Equal(0, afterReader().NextResultCalls);
 	}
 
-	[Theory, MemberData(nameof(Terminals))]
+	[Theory, MemberData(nameof(AsyncTerminals))]
 	public static async Task Expressive_BeforeMap_IsTheSameAsAfterMap_Async(string terminal)
 	{
 		FakeExecuteReader before = Expressive(RowCount(terminal), out Func<MultiSetReader> beforeReader);
@@ -240,7 +209,7 @@ public static class SingleResultBeforeMapTests
 		Assert.Equal(0, singleReader().NextResultCalls);
 	}
 
-	[Theory, MemberData(nameof(Terminals))]
+	[Theory, MemberData(nameof(AsyncTerminals))]
 	public static async Task Expressive_ALaterFailure_IsSeenWithoutTheOptOut_AndNotWithIt_Async(string terminal)
 	{
 		FakeExecuteReader plain = Expressive(RowCount(terminal), out Func<MultiSetReader> plainReader, failAt: 1);
@@ -273,7 +242,7 @@ public static class SingleResultBeforeMapTests
 		Assert.Equal(["open", "close"], beforeConnection.Log);
 	}
 
-	[Theory, MemberData(nameof(Terminals))]
+	[Theory, MemberData(nameof(AsyncTerminals))]
 	public static async Task DbCommand_BeforeMap_IsTheSameAsAfterMap_Async(string terminal)
 	{
 		(FakeDbConnection beforeConnection, FakeDbCommand before) = Raw(RowCount(terminal), out Func<MultiSetReader> beforeReader);
@@ -305,7 +274,7 @@ public static class SingleResultBeforeMapTests
 		Assert.Equal(["open", "close"], connection.Log);
 	}
 
-	[Theory, MemberData(nameof(Terminals))]
+	[Theory, MemberData(nameof(AsyncTerminals))]
 	public static async Task DbCommand_ALaterFailure_IsSeenWithoutTheOptOut_AndNotWithIt_Async(string terminal)
 	{
 		(_, FakeDbCommand plain) = Raw(RowCount(terminal), out Func<MultiSetReader> plainReader, failAt: 1);
@@ -340,7 +309,7 @@ public static class SingleResultBeforeMapTests
 		Assert.Equal(0, afterReader().NextResultCalls);
 	}
 
-	[Theory, MemberData(nameof(Terminals))]
+	[Theory, MemberData(nameof(AsyncTerminals))]
 	public static async Task IDbCommand_BeforeMap_IsTheSameAsAfterMap_Async(string terminal)
 	{
 		List<CommandBehavior> beforeBehaviors = [];
