@@ -161,49 +161,40 @@ internal readonly struct RowFeed<T>(IAsyncEnumerable<T> rows)
 		// Finite timeouts only: the plain path has no signal that can fire,
 		// so it waits on the caller's token and creates nothing.
 		IStallSignal? signal = rows as IStallSignal;
-		CancellationTokenSource? link = null;
-		CancellationToken wait = cancellationToken;
-		if (signal is not null && signal.Expired.CanBeCanceled)
-		{
-			link = CancellationTokenSource.CreateLinkedTokenSource(
-				cancellationToken,
-				signal.Expired);
-			wait = link.Token;
-		}
+		using CancellationTokenSource? link
+			= signal is not null && signal.Expired.CanBeCanceled
+				? CancellationTokenSource.CreateLinkedTokenSource(
+					cancellationToken,
+					signal.Expired)
+				: null;
+		CancellationToken wait = link?.Token ?? cancellationToken;
 
-		try
+		long count = 0;
+		await foreach (T row in rows
+			.WithCancellation(cancellationToken)
+			.ConfigureAwait(false))
 		{
-			long count = 0;
-			await foreach (T row in rows
-				.WithCancellation(cancellationToken)
-				.ConfigureAwait(false))
+			while (!writer.TryWrite(row))
 			{
-				while (!writer.TryWrite(row))
-				{
-					// Without a link there is no signal that can fire:
-					// the plain wait, nothing created.
-					bool room = link is null
-						? await writer
-							.WaitToWriteAsync(cancellationToken)
-							.ConfigureAwait(false)
-						: await WaitAsync(
-							writer,
-							signal!,
-							wait,
-							cancellationToken).ConfigureAwait(false);
+				// Without a link there is no signal that can fire:
+				// the plain wait, nothing created.
+				bool room = link is null
+					? await writer
+						.WaitToWriteAsync(cancellationToken)
+						.ConfigureAwait(false)
+					: await WaitAsync(
+						writer,
+						signal!,
+						wait,
+						cancellationToken).ConfigureAwait(false);
 
-					if (!room) return count;
-				}
-
-				++count;
+				if (!room) return count;
 			}
 
-			return count;
+			++count;
 		}
-		finally
-		{
-			link?.Dispose();
-		}
+
+		return count;
 	}
 
 	static async ValueTask<bool> WaitAsync(
