@@ -97,7 +97,8 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.ScopeConnection();
 		IDbConnectionFactory factory = new CountingFactory(connection);
 
-		await using (ConnectionScope<IDbConnection> scope = factory.EnsureOpenScope())
+		// The synchronous scope: plain using is what this test checks (Dispose, not DisposeAsync).
+		using (ConnectionScope<IDbConnection> scope = factory.EnsureOpenScope())
 			Assert.Same(connection, scope.Connection);
 
 		// The fake keeps its state when disposed; a real connection would not be open.
@@ -243,7 +244,8 @@ public static class ConnectionSourceScopeTests
 		var counting = new CountingPool(connection);
 		IDbConnectionPool pool = counting;
 
-		await using (ConnectionScope<IDbConnection> scope = pool.EnsureOpenScope())
+		// The synchronous scope: plain using is what this test checks (Dispose, not DisposeAsync).
+		using (ConnectionScope<IDbConnection> scope = pool.EnsureOpenScope())
 			Assert.Same(connection, scope.Connection);
 
 		await using (ConnectionScope<IDbConnection> scope = await pool.EnsureOpenScopeAsync(Ct))
