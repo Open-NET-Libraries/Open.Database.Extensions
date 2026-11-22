@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.CompilerServices;
 using Open.Database.Extensions.Core;
 using static Open.Database.Extensions.Tests.ChannelWait;
 
@@ -7,10 +8,10 @@ using static Open.Database.Extensions.Tests.ChannelWait;
 namespace Open.Database.Extensions.Tests;
 
 // A lease is a pooled array and the rows written to it, released once. What
-// releasing does is decided when it is sealed, from the number of rows:
+// releasing does is decided when it is sealed, from the bytes the rows hold:
 // - nothing to clear: the array goes straight back;
-// - a small chunk: the rows are cleared where it is released;
-// - a large chunk: it is posted to the recycle bin;
+// - a chunk under the threshold: the rows are cleared where it is released;
+// - a chunk at or over it (128 KB by default, value rows included): it is posted to the recycle bin;
 // and whichever clears, only the rows that were written are cleared: when
 // that is the whole array the pool is asked to do it (Return with the flag),
 // otherwise the rows are cleared with a span and the array goes back without.
@@ -130,10 +131,12 @@ public static class ArrayLeaseTests
 	// ---- clearing in the bin (a large chunk) ---------------------------------
 
 	[Fact]
-	public static async Task ALargeChunk_IsPostedToTheBin_AndClearedThere()
+	public static async Task AChunkOverTheThresholdBytes_IsPostedToTheBin_AndClearedThere()
 	{
 		var pool = Pool();
 		var bin = new TestBin();
+
+		// A threshold of 8 bytes: ten references are far over it.
 		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 8);
 		ChannelRow[] array = Written(pool, 16, 10);
 
@@ -151,20 +154,102 @@ public static class ArrayLeaseTests
 	}
 
 	[Fact]
-	public static void TheDeferThreshold_IsTheMeasuredFourThousandNinetySix()
-		=> Assert.Equal(131_072, ChunkConfig<ChannelRow>.DefaultDeferFromBytes);
+	public static void TheDeferThreshold_Is128KB()
+		=> Assert.Equal(131_072, ChunkConfig<ChannelRow>.DefaultDeferFromClearedBytes);
 
 	[Fact]
-	public static void AChunkOfExactlyTheThreshold_IsPosted()
+	public static void AChunkOfExactlyTheThresholdBytes_IsPosted()
 	{
 		var pool = Pool();
 		var bin = new TestBin { Mode = "Full" };
-		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 8);
+
+		// Eight references are exactly the threshold, whatever the size of a pointer.
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 8 * Unsafe.SizeOf<ChannelRow>());
 		ChannelRow[] array = Written(pool, 16, 8);
 
 		config.Seal(array, 8).Release();
 
 		Assert.Equal(1, bin.Posts);
+	}
+
+	[Fact]
+	public static void AChunkOneRowUnderTheThresholdBytes_IsNotPosted()
+	{
+		var pool = Pool();
+		var bin = new TestBin();
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin, 8 * Unsafe.SizeOf<ChannelRow>());
+		ChannelRow[] array = Written(pool, 16, 7);
+
+		config.Seal(array, 7).Release();
+
+		Assert.Equal(0, bin.Posts);
+		Assert.Equal(0, pool.DirtyReturns);
+	}
+
+	// The default threshold, 128 KB, on both sides: the rule counts bytes, so an int row is a quarter
+	// of a reference row's weight and its chunk is handed over at four times the rows.
+	[Theory]
+	[InlineData(32_767, 0)]
+	[InlineData(32_768, 1)]
+	public static void IntRows_AreHandedOverFrom128KB_AtTheDefaultThreshold(int rows, int posts)
+	{
+		var pool = new CountingPool<int>
+		{
+			RoundUp = true,
+			IsDirty = static a => a.Any(v => v > 0),
+		};
+		var bin = new TestBin();
+		var config = TestConfig.Of<int>(pool, true, bin);
+		int[] array = pool.Rent(rows);
+		for (int i = 0; i < rows; ++i) array[i] = i + 1;
+
+		config.Seal(array, rows).Release();
+
+		Assert.Equal(posts, bin.Posts);
+	}
+
+	[Theory]
+	[InlineData(false, 0)]
+	[InlineData(true, 1)]
+	public static void ReferenceRows_AreHandedOverFrom128KB_AtTheDefaultThreshold(bool atThreshold, int posts)
+	{
+		var pool = Pool();
+		var bin = new TestBin();
+		var config = TestConfig.Of<ChannelRow>(pool, true, bin);
+		int atRows = ChunkConfig<ChannelRow>.DefaultDeferFromClearedBytes / Unsafe.SizeOf<ChannelRow>();
+		int rows = atThreshold ? atRows : atRows - 1;
+		ChannelRow[] array = Written(pool, rows, rows);
+
+		config.Seal(array, rows).Release();
+
+		Assert.Equal(posts, bin.Posts);
+	}
+
+	// A row that is a struct holding a reference and a long: its size is the whole struct, and it is always
+	// cleared (it holds a reference), whatever clearing was asked.
+	readonly record struct RefAndLong(string? Name, long Value);
+
+	[Theory]
+	[InlineData(3, 0)]
+	[InlineData(4, 1)]
+	public static void AStructWithAReference_IsCountedByItsWholeSize_AndAlwaysCleared(int rows, int posts)
+	{
+		var pool = new CountingPool<RefAndLong>
+		{
+			RoundUp = true,
+			IsDirty = static a => a.Any(r => r.Name is not null),
+		};
+		var bin = new TestBin();
+
+		// Clearing is asked off; the reference makes it happen anyway.
+		var config = TestConfig.Of<RefAndLong>(pool, false, bin, 4 * Unsafe.SizeOf<RefAndLong>());
+		RefAndLong[] array = pool.Rent(8);
+		for (int i = 0; i < rows; ++i) array[i] = new RefAndLong("row", i + 1);
+
+		config.Seal(array, rows).Release();
+
+		Assert.Equal(posts, bin.Posts);
+		if (posts == 0) Assert.Equal(0, pool.DirtyReturns);
 	}
 
 	[Fact]

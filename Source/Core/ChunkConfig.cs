@@ -20,7 +20,7 @@ namespace Open.Database.Extensions.Core;
 /// clears the same slots), otherwise the used part is cleared with a span
 /// and the array is returned without the flag.
 /// Whether that happens where the release happens or in the recycle bin is
-/// decided per chunk, by the bytes it holds (<see cref="DeferFromBytes"/>).
+/// decided per chunk, by the bytes it holds (<see cref="DeferFromClearedBytes"/>).
 /// </para>
 /// </remarks>
 /// <typeparam name="T">The type of each row.</typeparam>
@@ -32,19 +32,19 @@ namespace Open.Database.Extensions.Core;
 /// </param>
 /// <param name="sizes">The chunk sizes of the collectors, buffers and streams.</param>
 /// <param name="bin">The recycle bin that clears deferred chunks.</param>
-/// <param name="deferFromBytes">
+/// <param name="deferFromClearedBytes">
 /// The bytes of rows (rows written times the size of a row) from which a chunk is
-/// cleared in the recycle bin (see <see cref="DeferFromBytes"/>).
+/// cleared in the recycle bin (see <see cref="DeferFromClearedBytes"/>).
 /// </param>
 internal sealed class ChunkConfig<T>(
 	ArrayPool<T> pool,
 	bool? clearOnReturn,
 	ChunkSizes sizes,
 	RecycleBin bin,
-	int deferFromBytes)
+	int deferFromClearedBytes)
 {
 	/// <summary>
-	/// The bytes of rows (rows written times the size of a row: a reference is 8)
+	/// The bytes of rows (rows written times the size of a row: a pointer is 8 on 64-bit)
 	/// from which the rows of a chunk are cleared in the recycle bin instead of
 	/// where the chunk is released, for every kind of row.
 	/// </summary>
@@ -56,18 +56,16 @@ internal sealed class ChunkConfig<T>(
 	/// rows of 80 bytes without references: 21 microseconds at 1.3 MB, 123 at 5.2 MB;
 	/// references: 508 ns at 32 KB, 2.0 microseconds at 128 KB, 9.9 at 512 KB).
 	/// Handing a chunk to the bin costs the releasing thread a flat 0.8 to 3 microseconds
-	/// whatever the size, and the bin's thread then pays the clear: the total CPU is higher
-	/// than clearing in place for a small chunk and equal or lower from about 256 KB.
+	/// whatever the size, and the bin's thread then pays the clear.
 	/// </para>
 	/// <para>
 	/// The two release costs meet at about 128 to 256 KB.
 	/// The default is the lower end: the rule is to hand off unless clearing in place is
 	/// certainly cheaper, and at 128 KB of references it is a tie.
-	/// Rows that hold no references are included, which the earlier rule (4,096 rows, references
-	/// only) was not: a large chunk of value rows is cleared in the bin too.
+	/// Rows that hold no references are included: a large chunk of value rows is cleared in the bin too.
 	/// </para>
 	/// </remarks>
-	public const int DefaultDeferFromBytes = 131_072;
+	public const int DefaultDeferFromClearedBytes = 131_072;
 
 	/// <summary>Gets the pool the arrays come from and go back to.</summary>
 	public ArrayPool<T> Pool { get; } = pool;
@@ -91,10 +89,10 @@ internal sealed class ChunkConfig<T>(
 	public RecycleBin Bin { get; } = bin;
 
 	/// <summary>
-	/// Gets the number of rows from which a chunk is cleared in the recycle
-	/// bin; a smaller one is cleared where it is released.
+	/// Gets the bytes of rows (rows written times the size of a row) from which a chunk is
+	/// cleared in the recycle bin; a smaller one is cleared where it is released.
 	/// </summary>
-	public int DeferFromBytes { get; } = deferFromBytes;
+	public int DeferFromClearedBytes { get; } = deferFromClearedBytes;
 
 	/// <summary>
 	/// Rents an array of at least <paramref name="size"/> slots.
@@ -137,14 +135,14 @@ internal sealed class ChunkConfig<T>(
 	/// clearing asked and no references to keep alive, see the constructor), or
 	/// no rows were written.
 	/// <see cref="ClearMode.Deferred"/>: a chunk of (rows written times the size of a
-	/// row) <see cref="DefaultDeferFromBytes"/> or more, of any kind of row; everything
+	/// row) <see cref="DefaultDeferFromClearedBytes"/> or more, of any kind of row; everything
 	/// else that clears does it right away.
 	/// </remarks>
 	/// <include file="Internals.docs.xml" path="docs/members[@name='used']/*" />
 	ClearMode ModeFor(int used)
 		=> !ClearOnReturn || used == 0
 			? ClearMode.None
-			: (long)used * RowBytes >= DeferFromBytes
+			: (long)used * RowBytes >= DeferFromClearedBytes
 				? ClearMode.Deferred
 				: ClearMode.Immediate;
 

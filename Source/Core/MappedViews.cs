@@ -353,7 +353,7 @@ static class Views
 			null,
 			ChunkSizes.Default,
 			RecycleBin.Default,
-			ChunkConfig<T>.DefaultDeferFromBytes);
+			ChunkConfig<T>.DefaultDeferFromClearedBytes);
 	}
 }
 /// <summary>
