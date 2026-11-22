@@ -7,7 +7,7 @@ namespace Open.Database.Extensions.Generator;
 //   - per model type, a binder class M_T: its Row method is the selector. It binds once per reader (and again when the column count changes),
 //     against a small static cache of the layouts met lately, and then reads every row with typed getters in one of four read modes.
 //   - a layout the generated code does not serve, and a row an object initializer cannot build (an init-only or required member whose cell is a
-//     NULL that must keep its value), is mapped by the runtime RowMap<T> (through Transformer<T>, the public route to its object[] row reader),
+//     NULL that must keep its value), is mapped by the runtime RowMap<T> (through its public, hidden ArrayMapper, the route to its object[] row reader),
 //     so the rows, and the exceptions, are the runtime's.
 static class Emitter
 {
@@ -417,12 +417,10 @@ static class Emitter
 		sb.AppendLine("\t\t}");
 		sb.AppendLine();
 
-		// The runtime's row reader for object[] rows, reached through Transformer<T> (public, its constructor protected).
-		sb.AppendLine($"\t\tsealed class Runtime : {Ns}.Core.Transformer<{T}>");
+		// The runtime's row reader for object[] rows: the default RowMap<T>'s array mapper (public, hidden from IntelliSense).
+		sb.AppendLine("\t\tstatic class Runtime");
 		sb.AppendLine("\t\t{");
-		sb.AppendLine("\t\t\tstatic readonly Runtime Instance = new();");
-		sb.AppendLine("\t\t\tRuntime() : base(null) { }");
-		sb.AppendLine($"\t\t\tpublic static global::System.Func<object[], {T}> For(string[] names) => new Processor(Instance, global::System.Collections.Immutable.ImmutableArray.Create(names)).Transform;");
+		sb.AppendLine($"\t\t\tpublic static global::System.Func<object[], {T}> For(string[] names) => {Ns}.RowMap<{T}>.Default.ArrayMapper(global::System.Collections.Immutable.ImmutableArray.Create(names));");
 		sb.AppendLine("\t\t}");
 		sb.AppendLine();
 

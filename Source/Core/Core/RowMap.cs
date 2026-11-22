@@ -1229,10 +1229,12 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	/// <summary>Returns the mapper from <c>object[]</c> rows whose columns are, in order, <paramref name="names"/>.</summary>
+	/// <remarks>For generated code.</remarks>
 	/// <param name="names">The names of the columns, in order.</param>
 	/// <returns>The delegate that maps a row to a <typeparamref name="T"/>.</returns>
 	/// <exception cref="ValueMappingException">A required property has no column among <paramref name="names"/>.</exception>
-	internal Func<object?[], T> ArrayMapper(ImmutableArray<string> names)
+	[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+	public Func<object?[], T> ArrayMapper(ImmutableArray<string> names)
 	{
 		ArrayLayout? l = _lastArray;
 		if (l?.Matches(names) != true) l = ResolveArray(names);

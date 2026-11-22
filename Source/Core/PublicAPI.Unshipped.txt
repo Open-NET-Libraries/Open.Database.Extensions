@@ -584,3 +584,14 @@ static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTra
 static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Data.IsolationLevel isolationLevel, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction) -> (bool Commit, T Value)
 static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction, System.Data.IsolationLevel isolationLevel = System.Data.IsolationLevel.Unspecified, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> (bool Commit, T Value)
 static Open.Database.Extensions.Synchronous.SyncTransactionExtensions.ExecuteTransactionConditional<T>(this System.Data.Common.DbConnection! connection, System.Func<System.Data.Common.DbTransaction!, (bool Commit, T Value)>! conditionalAction, System.Threading.CancellationToken cancellationToken) -> (bool Commit, T Value)
+*REMOVED*Open.Database.Extensions.Core.Transformer<T>
+*REMOVED*Open.Database.Extensions.Core.Transformer<T>.Processor
+*REMOVED*Open.Database.Extensions.Core.Transformer<T>.Processor.Processor(Open.Database.Extensions.Core.Transformer<T>! transformer) -> void
+*REMOVED*Open.Database.Extensions.Core.Transformer<T>.Processor.Processor(Open.Database.Extensions.Core.Transformer<T>! transformer, System.Collections.Immutable.ImmutableArray<string!> names) -> void
+*REMOVED*Open.Database.Extensions.Core.Transformer<T>.Processor.SetNames(System.Collections.Immutable.ImmutableArray<string!> names) -> void
+*REMOVED*Open.Database.Extensions.Core.Transformer<T>.Processor.Transform.get -> System.Func<object?[]!, T>!
+*REMOVED*Open.Database.Extensions.Core.Transformer<T>.Processor.Transformer.get -> Open.Database.Extensions.Core.Transformer<T>!
+*REMOVED*Open.Database.Extensions.Core.Transformer<T>.Transformer(Open.Database.Extensions.RowMap<T>? map = null) -> void
+*REMOVED*const Open.Database.Extensions.Core.Transformer<T>.MaxArrayBuffer = 1024 -> int
+*REMOVED*static readonly Open.Database.Extensions.Core.Transformer<T>.LocalPool -> System.Buffers.ArrayPool<object!>!
+Open.Database.Extensions.RowMap<T>.ArrayMapper(System.Collections.Immutable.ImmutableArray<string!> names) -> System.Func<object?[]!, T>!
