@@ -281,7 +281,7 @@ To shape a stream's rows, use `System.Linq.Async` over `ToBufferedAsyncStream`, 
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
 
-The channel terminals (`ToChannelReader()` and `ToChannel()`) left the typed views of Core in 11.0.0-rc.8. The buffer streams do the same job. At a million rows they held the connection for a shorter time than `ToChannelReader`; at 10,000 rows the two were about the same (the benchmark round is unpublished). See [Channels and Dataflow](channels-and-dataflow.md).
+To put the rows into a channel, see [Channels and Dataflow](channels-and-dataflow.md).
 
 ## Sources
 

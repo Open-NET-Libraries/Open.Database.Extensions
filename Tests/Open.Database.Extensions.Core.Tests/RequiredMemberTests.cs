@@ -303,40 +303,6 @@ public static class RequiredMemberTests
 	}
 
 	[Fact]
-	public static async Task Channel_MapsARequiredType_AndReportsAMissingColumn()
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		object?[][] rows = [[1, "one"], [2, "two"], [3, "three"]];
-		string message = Missing("RequiredPost", "Title", "String", "Title");
-
-		Assert.Equal([1, 2, 3], (await Drain(TypedReader.Create(IdTitle, rows).ToChannel<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct)).Select(p => p.Id));
-		Assert.Equal([1, 2, 3], (await Drain(TypedReader.Create(IdTitle, rows).ToChannelAsync<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct)).Select(p => p.Id));
-		Assert.Equal(
-			[1, 2, 3],
-			(await Drain(
-				new FakeExecuteReader(() => TypedReader.Create(IdTitle, rows))
-					.ToChannel<RequiredPost>(
-						true,
-						cancellationToken: TestContext.Current.CancellationToken),
-				ct)
-				.WaitAsync(Timeout, ct))
-				.Select(p => p.Id));
-		Assert.Equal([1, 2, 3], (await Drain(TypedReader.Create([("post_id", typeof(int)), ("post_title", typeof(string))], rows).ToChannel(true, PostMap, ct), ct).WaitAsync(Timeout, ct)).Select(p => p.Id));
-
-		ValueMappingException ex = await Assert.ThrowsAsync<ValueMappingException>(() => Drain(TypedReader.Create(IdOnly, [1], [2]).ToChannel<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct));
-		Assert.Equal(message, ex.Message);
-		ex = await Assert.ThrowsAsync<ValueMappingException>(() => Drain(TypedReader.Create(IdOnly, [1], [2]).ToChannelAsync<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct));
-		Assert.Equal(message, ex.Message);
-
-		// The pipeline binds the columns of the reader before its first row, so it reports the missing column even when no row follows (pinned, as for the buffered routes).
-		ex = await Assert.ThrowsAsync<ValueMappingException>(() => Drain(TypedReader.Create(IdOnly).ToChannel<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct));
-		Assert.Equal(message, ex.Message);
-
-		// With every column present, no rows is an empty channel.
-		Assert.Empty(await Drain(TypedReader.Create(IdTitle).ToChannel<RequiredPost>(true, ct), ct).WaitAsync(Timeout, ct));
-	}
-
-	[Fact]
 	public static async Task Dataflow_MapsARequiredType_AndReportsAMissingColumn()
 	{
 		CancellationToken ct = TestContext.Current.CancellationToken;

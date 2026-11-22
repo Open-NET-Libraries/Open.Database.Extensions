@@ -4,7 +4,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Open.Database.Extensions.Tests;
 
-// T10: Channel and Dataflow pick the columns to buffer with the same match a row read uses (MatchingColumns), and then map the buffered rows.
+// T10: Dataflow picks the columns to buffer with the same match a row read uses (MatchingColumns), and then map the buffered rows.
 // A column that feeds only a constructor parameter must be kept, an unmapped column dropped, wherever the columns are.
 [ExcludeFromCodeCoverage]
 public static class ConstructorBindingPipelineTests
@@ -41,13 +41,6 @@ public static class ConstructorBindingPipelineTests
 			Assert.Equal(new Entry(i + 1, "n" + (i + 1)), items[i]);
 	}
 
-	static async Task<List<Entry>> Drain(ChannelReader<Entry> reader, CancellationToken ct)
-	{
-		var items = new List<Entry>();
-		await foreach (Entry item in reader.ReadAllAsync(ct).ConfigureAwait(false)) items.Add(item);
-		return items;
-	}
-
 	// A source block completes only once everything it holds has been received, and the pipelines map on a second task, so the rows are taken as they become available.
 	static async Task<List<Entry>> Received(IReceivableSourceBlock<Entry> block, CancellationToken ct)
 	{
@@ -64,45 +57,6 @@ public static class ConstructorBindingPipelineTests
 
 	// The map renames the parameter Name to a column called full_name; Id still maps by name.
 	static readonly RowMap<Entry> NameMap = new([new(nameof(Entry.Name), "full_name")]);
-
-	[Theory]
-	[MemberData(nameof(LayoutIndexes))]
-	public static async Task ToChannel_KeepsTheColumnsThatFeedOnlyConstructorParameters(int layout)
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		ImmutableArray<ColumnDef> columns = Columns(Layouts[layout]);
-
-		AssertEntries(await Drain(Reader(columns).ToChannel<Entry>(true, ct), ct).WaitAsync(Timeout, ct));
-		AssertEntries(
-			await Drain(
-				new FakeExecuteReader(() => Reader(columns))
-					.ToChannel<Entry>(
-						true,
-						cancellationToken: TestContext.Current.CancellationToken),
-				ct)
-				.WaitAsync(Timeout, ct));
-	}
-
-	[Theory]
-	[MemberData(nameof(LayoutIndexes))]
-	public static async Task ToChannelAsync_KeepsTheColumnsThatFeedOnlyConstructorParameters(int layout)
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		ImmutableArray<ColumnDef> columns = Columns(Layouts[layout]);
-
-		AssertEntries(await Drain(Reader(columns).ToChannelAsync<Entry>(true, ct), ct).WaitAsync(Timeout, ct));
-	}
-
-	[Theory]
-	[MemberData(nameof(LayoutIndexes))]
-	public static async Task ToChannel_WithAMapThatNamesAParameter_KeepsItsColumn(int layout)
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		ImmutableArray<ColumnDef> columns = Columns(Layouts[layout], name: "full_name");
-
-		AssertEntries(await Drain(Reader(columns).ToChannel(true, NameMap, ct), ct).WaitAsync(Timeout, ct));
-		AssertEntries(await Drain(Reader(columns).ToChannelAsync(true, NameMap, ct), ct).WaitAsync(Timeout, ct));
-	}
 
 	[Theory]
 	[MemberData(nameof(LayoutIndexes))]
@@ -142,7 +96,7 @@ public static class ConstructorBindingPipelineTests
 		CancellationToken ct = TestContext.Current.CancellationToken;
 		ImmutableArray<ColumnDef> columns = [("junk", typeof(string))];
 
-		List<Entry> items = await Drain(TypedReader.Create(columns, ["a"], ["b"]).ToChannel<Entry>(true, ct), ct).WaitAsync(Timeout, ct);
+		List<Entry> items = await Received(TypedReader.Create(columns, ["a"], ["b"]).AsSourceBlock<Entry>(), ct);
 		Assert.Equal<Entry>([new(0, null!), new(0, null!)], items);
 	}
 }

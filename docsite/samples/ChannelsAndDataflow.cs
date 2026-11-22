@@ -14,19 +14,80 @@ public static class ChannelsAndDataflow
 		var received = new List<Post>();
 
 		#region to_channel
-		// Returns right away; rows are produced in the background
+		// Returns right away: the rows are read in the background
 		// and the channel completes when they are all written.
 		ChannelReader<Post> reader = connectionFactory
 			.Command("select * from posts order by id")
-			.ToChannel<Post>(
-				singleReader: true,
-				cancellationToken: cancellationToken);
+			.Map<Post>()
+			.ToChannelReader(cancellationToken);
 
 		await foreach (Post post in reader.ReadAllAsync(cancellationToken))
 			received.Add(post);
 		#endregion
 
 		return received;
+	}
+
+	public static async Task<(long Written, List<Post> Received)> ToChannelOwnedSample(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		var received = new List<Post>();
+
+		#region to_channel_owned
+		// You own the channel. A pass only writes: it leaves the
+		// channel open, so passes can share it.
+		Channel<Post> channel = Channel.CreateUnbounded<Post>();
+
+		long first = await connectionFactory
+			.Command("select * from posts where id <= 3 order by id")
+			.Map<Post>()
+			.ToChannel(channel, cancellationToken);
+
+		// The last pass completes the channel when it ends.
+		long second = await connectionFactory
+			.Command("select * from posts where id > 3 order by id")
+			.Map<Post>()
+			.ToChannel(
+				channel,
+				ChannelEnd.Complete,
+				cancellationToken);
+
+		await foreach (Post post in channel.Reader.ReadAllAsync(cancellationToken))
+			received.Add(post);
+		#endregion
+
+		return (first + second, received);
+	}
+
+	public static async Task<(long Written, List<Post> Received)> ToChannelHoldingConnectionSample(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		var received = new List<Post>();
+
+		#region to_channel_holding
+		// The channel holds at most two rows. The next row is pulled
+		// only after the last one was written.
+		Channel<Post> channel = Channel.CreateBounded<Post>(2);
+
+		Task<long> write = connectionFactory
+			.Command("select * from posts order by id")
+			.Map<Post>()
+			.ToChannelHoldingConnection(
+				channel,
+				TimeSpan.FromSeconds(30),
+				ChannelEnd.Complete,
+				cancellationToken)
+			.AsTask();
+
+		await foreach (Post post in channel.Reader.ReadAllAsync(cancellationToken))
+			received.Add(post);
+
+		long written = await write;
+		#endregion
+
+		return (written, received);
 	}
 
 	// A stand-in for slow per-row work: a web call, a file write,

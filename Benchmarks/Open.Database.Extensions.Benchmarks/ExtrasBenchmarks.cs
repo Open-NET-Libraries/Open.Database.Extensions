@@ -102,7 +102,7 @@ public class ChannelBenchmarks
 	public async Task<long> Channel_ODE()
 	{
 		long n = 0;
-		await foreach (Post _ in _conn.Command(Sql).ToChannel<Post>(true).ReadAllAsync()) n++;
+		await foreach (Post _ in _conn.Command(Sql).Map<Post>().ToChannelReader(true).ReadAllAsync()) n++;
 		return n;
 	}
 }

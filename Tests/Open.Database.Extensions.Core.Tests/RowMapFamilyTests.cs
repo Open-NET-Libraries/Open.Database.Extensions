@@ -111,22 +111,6 @@ public static class RowMapFamilyTests
 		// Core
 		["Map(IExecuteReader)"] = m => Now(Exec().Map(m).ToList()),
 
-		// Channel: a new channel
-		["ToChannel(IDataReader)"] = m => Drain(Reader().ToChannel(true, m)),
-		["ToChannel(IDbCommand)"] = m => Drain(Command().ToChannel(true, m)),
-		["ToChannel(IExecuteReader)"] = m => Drain(Exec().ToChannel(true, m)),
-		["ToChannelAsync(DbDataReader)"] = m => Drain(DbReader().ToChannelAsync(true, m)),
-		["ToChannelAsync(DbCommand)"] = m => Drain(DbCmd().ToChannelAsync(true, m)),
-		["ToChannelAsync(IExecuteReaderAsync)"] = m => Drain(Async().ToChannelAsync(true, m)),
-
-		// Channel: the caller's writer
-		["ToChannel(writer, IDataReader)"] = m => ToWriter(w => Reader().ToChannel(w, true, m)),
-		["ToChannel(writer, IDbCommand)"] = m => ToWriter(w => Command().ToChannel(w, true, m)),
-		["ToChannel(writer, IExecuteReader)"] = m => ToWriter(w => Exec().ToChannel(w, true, m)),
-		["ToChannelAsync(writer, DbDataReader)"] = m => ToWriter(w => DbReader().ToChannelAsync(w, true, m)),
-		["ToChannelAsync(writer, DbCommand)"] = m => ToWriter(w => DbCmd().ToChannelAsync(w, true, m)),
-		["ToChannelAsync(writer, IExecuteReaderAsync)"] = m => ToWriter(w => Async().ToChannelAsync(w, true, m)),
-
 		// Dataflow: into a block
 		["ToTargetBlock(IDataReader)"] = m => ToBlock(b => new ValueTask<long>(Reader().ToTargetBlock(b, true, m))),
 		["ToTargetBlock(IDbCommand)"] = m => ToBlock(b => new ValueTask<long>(Command().ToTargetBlock(b, true, m))),

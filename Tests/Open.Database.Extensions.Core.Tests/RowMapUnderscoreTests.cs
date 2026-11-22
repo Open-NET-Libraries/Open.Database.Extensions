@@ -322,7 +322,7 @@ public static class RowMapUnderscoreTests
 		Assert.True(matched > 500, "The generated layouts should match often enough to mean something.");
 	}
 
-	// ---- the pipelines (ToChannel, ToTargetBlock, AsSourceBlock) choose the reader's columns with the same match, with no explicit map ----
+	// ---- the pipelines (ToTargetBlock, AsSourceBlock) choose the reader's columns with the same match, with no explicit map ----
 
 	static readonly TimeSpan Wait = TimeSpan.FromSeconds(10);
 
@@ -336,16 +336,6 @@ public static class RowMapUnderscoreTests
 		return TypedReader.Create(columns, row);
 	}
 
-	static async Task<Small> ViaToChannel(TypedReader reader)
-	{
-		var channel = System.Threading.Channels.Channel.CreateUnbounded<Small>();
-		await reader.ToChannel(channel.Writer, true);
-		using var cts = new CancellationTokenSource(Wait);
-		var items = new List<Small>();
-		await foreach (Small item in channel.Reader.ReadAllAsync(cts.Token)) items.Add(item);
-		return items.Single();
-	}
-
 	static async Task<Small> ViaToTargetBlock(TypedReader reader)
 	{
 		var block = new BufferBlock<Small>();
@@ -356,11 +346,10 @@ public static class RowMapUnderscoreTests
 	static Task<Small> ViaAsSourceBlock(TypedReader reader)
 		=> reader.AsSourceBlock<Small>().ReceiveAsync(Wait);
 
-	public static TheoryData<string> Pipelines => ["ToChannel", "ToTargetBlock", "AsSourceBlock"];
+	public static TheoryData<string> Pipelines => ["ToTargetBlock", "AsSourceBlock"];
 
 	static Task<Small> Pipe(string pipeline, TypedReader reader) => pipeline switch
 	{
-		"ToChannel" => ViaToChannel(reader),
 		"ToTargetBlock" => ViaToTargetBlock(reader),
 		_ => ViaAsSourceBlock(reader),
 	};
@@ -385,7 +374,7 @@ public static class RowMapUnderscoreTests
 			? PipelineReader(exact, fuzzy, Cell("min_date", Stamp))
 			: PipelineReader(fuzzy, exact, Cell("min_date", Stamp));
 
-		Small row = await ViaToChannel(reader);
+		Small row = await ViaToTargetBlock(reader);
 
 		Assert.Equal("exact", row.QType);
 		Assert.Equal(Stamp, row.MinDate);
@@ -395,7 +384,7 @@ public static class RowMapUnderscoreTests
 	public static async Task Pipelines_StillLeaveOutAColumnThatMapsToNothing()
 	{
 		// The unrelated columns sit before, between and after the mapped ones: the rows only line up if they are left out.
-		Small row = await ViaToChannel(PipelineReader(Cell("note", "ignored"), Cell("q_type", "T1"), Cell("other_thing", 5), Cell("min_date", Stamp), Cell("extra", 1.5)));
+		Small row = await ViaToTargetBlock(PipelineReader(Cell("note", "ignored"), Cell("q_type", "T1"), Cell("other_thing", 5), Cell("min_date", Stamp), Cell("extra", 1.5)));
 
 		Assert.Equal("T1", row.QType);
 		Assert.Equal(Stamp, row.MinDate);

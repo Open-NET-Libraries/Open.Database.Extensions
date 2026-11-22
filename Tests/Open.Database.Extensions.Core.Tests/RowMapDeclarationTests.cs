@@ -271,35 +271,6 @@ public static class RowMapDeclarationTests
 		Assert.Equal(7, Assert.Single(new FakeExecuteReader(["Id"], [7]).Map<Item>().ToList()).Id);   // none
 	}
 
-	[Fact]
-	public static async Task Probe_ToChannel_AcceptsACollectionExpression_AndAVariable()
-	{
-		static async Task<List<Item>> Drain(ChannelReader<Item> reader)
-		{
-			var items = new List<Item>();
-			await foreach (Item item in reader.ReadAllAsync()) items.Add(item);
-			return items;
-		}
-
-		RowMap<Item> declared = [new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")];
-
-		AssertRenamed(await Drain(Reader().ToChannel(true, declared, TestContext.Current.CancellationToken)));
-		AssertRenamed(await Drain(Reader().ToChannel<Item>(true, [new(nameof(Item.Id), "item_id"), new(nameof(Item.Name), "item_name"), new(nameof(Item.Total), "item_total"), new(nameof(Item.Note), "item_note")], TestContext.Current.CancellationToken)));
-		AssertRenamed(
-			await Drain(
-				RowMapTests
-					.Cmd(RowMapTests.Renamed, 2)
-					.ToChannel<Item>(
-						true,
-						[
-							new(nameof(Item.Id), "item_id"),
-							new(nameof(Item.Name), "item_name"),
-							new(nameof(Item.Total), "item_total"),
-							new(nameof(Item.Note), "item_note")
-						],
-						cancellationToken: TestContext.Current.CancellationToken)));
-	}
-
 	// ---- the builder ----
 
 	[Fact]
