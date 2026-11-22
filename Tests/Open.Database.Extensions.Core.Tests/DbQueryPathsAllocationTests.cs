@@ -58,12 +58,15 @@ public static class DbQueryPathsAllocationTests
 	}
 
 	// Bytes per call: after a warm-up, the smallest of five rounds of 2,000 calls.
+	// The pause before each round lets the JIT finish replacing its first, unoptimized code in the background,
+	// so the smallest round measures the optimized code an application runs, whatever the runner's timing.
 	static long BytesPerCall(Action call)
 	{
 		for (int i = 0; i < 300; i++) call();
 		long best = long.MaxValue;
 		for (int round = 0; round < 5; round++)
 		{
+			Thread.Sleep(200);
 			long before = GC.GetAllocatedBytesForCurrentThread();
 			for (int i = 0; i < 2000; i++) call();
 			best = Math.Min(best, (GC.GetAllocatedBytesForCurrentThread() - before) / 2000);
