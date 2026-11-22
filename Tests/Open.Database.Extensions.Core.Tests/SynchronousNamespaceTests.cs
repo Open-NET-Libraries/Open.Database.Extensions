@@ -110,12 +110,12 @@ public static class SynchronousNamespaceTests
 	[Fact]
 	public static void TheViewsAndTheirReaderAndTableSiblingsAllImplementTheInterface()
 	{
-		Assert.IsAssignableFrom<IMappedQuerySync<int>>(default(MappedQuery<int>));
-		Assert.IsAssignableFrom<IMappedQuerySync<int>>(default(MappedQueryWithSkip<int>));
-		Assert.IsAssignableFrom<IMappedQuerySync<int>>(default(MappedQueryWithTake<int>));
-		Assert.IsAssignableFrom<IMappedQuerySync<int>>(default(MappedCommand<int>));
-		Assert.IsAssignableFrom<IMappedQuerySync<int>>(default(MappedReader<int>));
-		Assert.IsAssignableFrom<IMappedQuerySync<int>>(default(MappedTable<int>));
+		Assert.IsType<IMappedQuerySync<int>>(default(MappedQuery<int>), exactMatch: false);
+		Assert.IsType<IMappedQuerySync<int>>(default(MappedQueryWithSkip<int>), exactMatch: false);
+		Assert.IsType<IMappedQuerySync<int>>(default(MappedQueryWithTake<int>), exactMatch: false);
+		Assert.IsType<IMappedQuerySync<int>>(default(MappedCommand<int>), exactMatch: false);
+		Assert.IsType<IMappedQuerySync<int>>(default(MappedReader<int>), exactMatch: false);
+		Assert.IsType<IMappedQuerySync<int>>(default(MappedTable<int>), exactMatch: false);
 	}
 
 	static readonly int[] Expected = [1, 2, 3];
