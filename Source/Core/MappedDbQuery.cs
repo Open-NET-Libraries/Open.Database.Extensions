@@ -134,6 +134,11 @@ public sealed class MappedDbQuery<T>
 		=> View(Query.Using(factory).ToCall());
 
 	/// <summary>Adds a named parameter before the source is known.</summary>
+	/// <remarks>
+	/// The values of a call are held in one array, 24 B and 16 B a value.
+	/// Declaring the type of the values with <see cref="DbQuery.Params{TParams}"/> holds them in one object the size of the struct, which is lighter:
+	/// 64 B less for five int values, 128 B less for ten.
+	/// </remarks>
 	/// <typeparam name="TValue">The type of the value.</typeparam>
 	/// <param name="name">The name of the parameter, with or without its prefix.</param>
 	/// <param name="value">The value.</param>
@@ -158,6 +163,11 @@ public sealed class MappedDbQuery<T>
 		=> new(this, default(ParamList).AddDerived(Query, DbQueryCall.CheckedExpression(expression), value));
 
 	/// <summary>Adds the members of an object as parameters, before the source is known.</summary>
+	/// <remarks>
+	/// A <see langword="readonly"/> <see langword="record"/> <see langword="struct"/> holds its members in itself, so a call allocates one object, a 16 B header and the struct;
+	/// an anonymous object or a class built for the call allocates the object as well (for five strings, 80 B against 56 B).
+	/// An object that already exists costs 24 B either way.
+	/// </remarks>
 	/// <typeparam name="TValues">The type of the object.</typeparam>
 	/// <param name="values">The object whose members are the parameters.</param>
 	/// <returns>The parameters so far, to be given a source with <c>Using</c>.</returns>

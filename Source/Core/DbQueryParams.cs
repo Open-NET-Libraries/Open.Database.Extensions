@@ -9,7 +9,10 @@ namespace Open.Database.Extensions;
 /// <remarks>
 /// <para>
 /// An entry is two slots. The first holds how the parameter is named: the
-/// name the caller wrote (a <see cref="string"/>), the argument's text
+/// name the caller wrote (a <see cref="string"/>), or that name found among the
+/// names the definition's text declares (a <c>NameSet.Entry</c>, held once per
+/// definition, so the spelling with or without the <c>@</c> is stored as the same
+/// thing), the argument's text
 /// resolved when the query runs (a <c>ParameterNames.DerivedExpression</c>),
 /// or a marker for the members of an object. The second holds the value,
 /// boxed once, a stand-in for a <see langword="null"/> that remembers its
@@ -67,7 +70,7 @@ readonly struct ParamList
 	/// <param name="value">The value.</param>
 	/// <returns>A value that sees one more entry.</returns>
 	public ParamList AddNamed<T>(DbQuery definition, string name, T value)
-		=> Append(definition, name, Box(value));
+		=> Append(definition, (object?)definition.TextNames?.Find(name) ?? name, Box(value));
 
 	/// <summary>
 	/// Adds a parameter whose name is derived from the argument's text.
@@ -172,7 +175,7 @@ readonly struct ParamList
 			for (int i = 0; i < Count; i++)
 			{
 				Get(i, out object key, out _);
-				if (key is not string) return true;
+				if (key is not (string or NameSet.Entry)) return true;
 			}
 
 			return false;
@@ -202,7 +205,7 @@ readonly struct ParamList
 					if (names.Match(derived.Expression, command) is null) return false;
 					break;
 
-				case string:
+				case string or NameSet.Entry:
 					break;
 
 				default:
@@ -244,6 +247,10 @@ readonly struct ParamList
 					if (DbQueryBinding.SameName(written, name)) return true;
 					break;
 
+				case NameSet.Entry entry:
+					if (DbQueryBinding.SameName(entry.Real, name)) return true;
+					break;
+
 				case ParameterNames.DerivedExpression derived:
 					if (DbQueryBinding.SameName(
 						DbQueryBinding.ResolveDerived(derived, names, definition),
@@ -268,26 +275,30 @@ readonly struct ParamList
 	public void BindAll(DbCommand command, DbQuery definition, NameSet? names)
 	{
 		definition.NoteParams(Count);
+
+		// The names the entries are looked up in, and which of them this command already has (a name is used once).
+		NameSet? index = names ?? definition.TextNames;
+		ulong seen = 0;
 		for (int i = 0; i < Count; i++)
 		{
 			Get(i, out object key, out object value);
 			switch (key)
 			{
+				case NameSet.Entry entry:
+					DbQueryBinding.AddValue(command, entry.Real, entry, value, definition, names, index, ref seen);
+					break;
+
 				case string written:
-					DbQueryBinding.AddValue(command, written, value, definition, names);
+					DbQueryBinding.AddValue(command, written, null, value, definition, names, index, ref seen);
 					break;
 
 				case ParameterNames.DerivedExpression derived:
-					DbQueryBinding.AddValue(
-						command,
-						DbQueryBinding.ResolveDerived(derived, names, definition),
-						value,
-						definition,
-						names);
+					string real = DbQueryBinding.ResolveDerived(derived, names, definition, out NameSet.Entry? found);
+					DbQueryBinding.AddValue(command, real, found, value, definition, names, index, ref seen);
 					break;
 
 				default:
-					((MemberValues)value).Bind(command, definition, names, this);
+					((MemberValues)value).Bind(command, definition, names, index, this, ref seen);
 					break;
 			}
 		}
@@ -388,12 +399,16 @@ abstract class MemberValues
 	/// <param name="command">The command to add the parameters to.</param>
 	/// <param name="definition">The query definition.</param>
 	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
+	/// <param name="index">The names the command is looked up in, or <see langword="null"/>.</param>
 	/// <param name="whole">The entries of the whole call.</param>
+	/// <param name="seen">Which names of <paramref name="index"/> the command already has.</param>
 	public abstract void Bind(
 		DbCommand command,
 		DbQuery definition,
 		NameSet? names,
-		ParamList whole);
+		NameSet? index,
+		ParamList whole,
+		ref ulong seen);
 
 	public abstract bool ValueEquals(object other);
 
@@ -423,8 +438,10 @@ sealed class MemberValues<T>(T value) : MemberValues
 		DbCommand command,
 		DbQuery definition,
 		NameSet? names,
-		ParamList whole)
-		=> DbQueryBinding.BindMembers(command, value, definition, names, whole);
+		NameSet? index,
+		ParamList whole,
+		ref ulong seen)
+		=> DbQueryBinding.BindMembers(command, value, definition, names, index, whole, ref seen);
 
 	public override bool ValueEquals(object other)
 		=> other is MemberValues<T> o

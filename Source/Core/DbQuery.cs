@@ -66,13 +66,16 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// types, or on more sets of names, drops the oldest), so values types
 	/// used in turn cost nothing once matched.
 	/// </remarks>
-	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved)
+	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved, NameSet.Entry?[] entries)
 	{
 		public Type Type { get; } = type;
 
 		public NameSet Names { get; } = names;
 
 		public string?[] Resolved { get; } = resolved;
+
+		/// <summary>Gets the place of each real name in <see cref="Names"/>, in member order.</summary>
+		public NameSet.Entry?[] Entries { get; } = entries;
 	}
 
 	internal MemberMatch[]? Matches
@@ -248,6 +251,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// The values are then given in one call, which the compiler checks:
 	/// <c>.Using(db).AddParams(new(AuthorId: authorId, Day: day))</c>.
+	/// A class object that already exists (for example a deserialized request) is added with <c>AddParams</c> on the untyped definition, at the same 24 B.
 	/// </remarks>
 	/// <typeparam name="TParams">The type of the values.</typeparam>
 	/// <returns>The typed definition.</returns>

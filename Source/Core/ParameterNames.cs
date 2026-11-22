@@ -38,6 +38,32 @@ static class ParameterNames
 		internal string LastMember { get; } = lastMember;
 		internal ImmutableArray<string> Candidates { get; } = candidates;
 
+		/// <summary>The name an expression resolved to in a set of names.</summary>
+		/// <param name="names">The set of names.</param>
+		/// <param name="real">The real name.</param>
+		/// <param name="entry">The real name's place in <paramref name="names"/>.</param>
+		internal sealed class Resolution(NameSet names, string real, NameSet.Entry? entry)
+		{
+			internal NameSet Names { get; } = names;
+
+			internal string Real { get; } = real;
+
+			internal NameSet.Entry? Entry { get; } = entry;
+		}
+
+		/// <summary>
+		/// Gets or sets the last resolution of this expression, so a repeat in the same set of names reads one field and takes no lock.
+		/// </summary>
+		/// <remarks>
+		/// The expression belongs to the call site, which runs against one set of names in the usual case.
+		/// A thread that loses a race only makes one more resolution.
+		/// </remarks>
+		internal Resolution? Last
+		{
+			get => Volatile.Read(ref field);
+			set => Volatile.Write(ref field, value);
+		}
+
 		/// <summary>
 		/// The last real name this expression resolved to in a SQL text, so a
 		/// repeat scan hands back the same string.

@@ -31,10 +31,42 @@ static class DbQueryBinding
 		ParameterNames.DerivedExpression derived,
 		NameSet? names,
 		DbQuery definition)
-		=> Known(names)
-			? names!.Match(derived.Expression, definition.CommandText)
-				?? throw NoMatch(derived.Expression, names!, definition)
-			: derived.LastMember;
+		=> ResolveDerived(derived, names, definition, out _);
+
+	/// <summary>
+	/// Gets the real name an argument of <c>AddParam(value)</c> stands for, and its place in the names.
+	/// </summary>
+	/// <param name="derived">The facts of the argument's text.</param>
+	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
+	/// <param name="definition">The query definition.</param>
+	/// <param name="entry">The place of the real name in <paramref name="names"/>, or <see langword="null"/> when the names are not known.</param>
+	/// <returns>The real name; the last member as written when the names are not known.</returns>
+	/// <exception cref="InvalidOperationException">The expression matches none of the names, or more than one equally well.</exception>
+	public static string ResolveDerived(
+		ParameterNames.DerivedExpression derived,
+		NameSet? names,
+		DbQuery definition,
+		out NameSet.Entry? entry)
+	{
+		if (!Known(names))
+		{
+			entry = null;
+			return derived.LastMember;
+		}
+
+		// The expression remembers its last answer, so a repeat in the same names reads one field.
+		ParameterNames.DerivedExpression.Resolution? last = derived.Last;
+		if (last is null || !ReferenceEquals(last.Names, names))
+		{
+			string real = names!.Match(derived.Expression, definition.CommandText)
+				?? throw NoMatch(derived.Expression, names!, definition);
+			last = new(names!, real, names!.Find(real));
+			derived.Last = last;
+		}
+
+		entry = last.Entry;
+		return last.Real;
+	}
 
 	/// <summary>
 	/// Gets the names of the members of an object.
@@ -52,20 +84,26 @@ static class DbQueryBinding
 	/// </summary>
 	/// <param name="command">The command to add the parameter to.</param>
 	/// <param name="name">The real name of the parameter.</param>
+	/// <param name="entry">The name's place in <paramref name="index"/> when it is known, or <see langword="null"/>.</param>
 	/// <param name="value">The value as a call holds it: boxed, or a <see cref="NullValue"/>.</param>
 	/// <param name="definition">The query definition.</param>
 	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
+	/// <param name="index">The names the command is looked up in, or <see langword="null"/>.</param>
+	/// <param name="seen">Which names of <paramref name="index"/> the command already has.</param>
 	public static void AddValue(
 		DbCommand command,
 		string name,
+		NameSet.Entry? entry,
 		object value,
 		DbQuery definition,
-		NameSet? names)
+		NameSet? names,
+		NameSet? index,
+		ref ulong seen)
 	{
 		if (value is NullValue none)
-			Add(command, name, null, none.ClrType, definition, names);
+			Add(command, name, entry, null, none.ClrType, definition, names, index, ref seen);
 		else
-			Add(command, name, value, value.GetType(), definition, names);
+			Add(command, name, entry, value, value.GetType(), definition, names, index, ref seen);
 	}
 
 	/// <summary>
@@ -83,13 +121,17 @@ static class DbQueryBinding
 	/// <param name="value">The values.</param>
 	/// <param name="definition">The query definition.</param>
 	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
+	/// <param name="index">The names the command is looked up in, or <see langword="null"/>.</param>
 	/// <param name="whole">The entries of the whole call.</param>
+	/// <param name="seen">Which names of <paramref name="index"/> the command already has.</param>
 	public static void BindMembers<T>(
 		DbCommand command,
 		T value,
 		DbQuery definition,
 		NameSet? names,
-		ParamList whole)
+		NameSet? index,
+		ParamList whole,
+		ref ulong seen)
 	{
 		bool known = Known(names);
 		if (typeof(T) == typeof(object))
@@ -107,10 +149,13 @@ static class DbQueryBinding
 				Add(
 					command,
 					name,
+					null,
 					members.Getters[i](source),
 					members.Types[i],
 					definition,
-					names);
+					names,
+					index,
+					ref seen);
 			}
 
 			return;
@@ -119,28 +164,29 @@ static class DbQueryBinding
 		string[] memberNames = ParamSource<T>.Names;
 		Func<T, object?>[] getters = ParamSource<T>.Getters;
 		Type[] types = ParamSource<T>.Types;
-		string?[]? resolved = known
+		DbQuery.MemberMatch? match = known
 			? Resolved<T>(definition, names!, memberNames)
 			: null;
+		string?[]? resolved = match?.Resolved;
 		for (int i = 0; i < memberNames.Length; i++)
 		{
 			string? name = known ? resolved![i] : memberNames[i];
 			if (name is null || whole.Claims(name, names, definition)) continue;
 
-			Add(command, name, getters[i](value), types[i], definition, names);
+			Add(command, name, match?.Entries[i], getters[i](value), types[i], definition, names, index, ref seen);
 		}
 	}
 
 	/// <summary>
-	/// Gets the real name of each member in member order, matched once per
+	/// Gets the real name and place of each member in member order, matched once per
 	/// definition, values type and set of names.
 	/// </summary>
 	/// <typeparam name="T">The type of the values.</typeparam>
 	/// <param name="definition">The query definition, which keeps the matches.</param>
 	/// <param name="names">The remembered names.</param>
 	/// <param name="members">The names of the members.</param>
-	/// <returns>The real name of each member, or <see langword="null"/> for one the command does not take.</returns>
-	static string?[] Resolved<T>(
+	/// <returns>The match: the real name of each member (<see langword="null"/> for one the command does not take) and its place in the names.</returns>
+	static DbQuery.MemberMatch Resolved<T>(
 		DbQuery definition,
 		NameSet names,
 		string[] members)
@@ -151,31 +197,50 @@ static class DbQueryBinding
 		{
 			DbQuery.MemberMatch m = known![i];
 			if (ReferenceEquals(m.Names, names) && m.Type == typeof(T))
-				return m.Resolved;
+				return m;
 		}
 
 		var resolved = new string?[members.Length];
+		var entries = new NameSet.Entry?[members.Length];
 		for (int i = 0; i < members.Length; i++)
+		{
 			resolved[i] = names.Match(members[i], definition.CommandText);
+			if (resolved[i] is { } real) entries[i] = names.Find(real);
+		}
 
 		// Newest first; the oldest of four goes.
 		kept = Math.Min(kept, MaxMatches - 1);
 		var next = new DbQuery.MemberMatch[kept + 1];
-		next[0] = new(typeof(T), names, resolved);
+		next[0] = new(typeof(T), names, resolved, entries);
 		if (kept > 0) Array.Copy(known!, 0, next, 1, kept);
 		definition.Matches = next;
-		return resolved;
+		return next[0];
 	}
 
 	static void Add(
 		DbCommand command,
 		string name,
+		NameSet.Entry? entry,
 		object? value,
 		Type clrType,
 		DbQuery definition,
-		NameSet? names)
+		NameSet? names,
+		NameSet? index,
+		ref ulong seen)
 	{
-		if (Has(command, name)) throw Collision(name, definition, names);
+		// A name of the set is told apart by its place, in one step; any other name is looked for among the parameters the command has.
+		entry ??= index?.Find(name);
+		if (entry is { Index: < 64 })
+		{
+			ulong bit = 1UL << entry.Index;
+			if ((seen & bit) != 0) throw Collision(name, definition, names);
+
+			seen |= bit;
+		}
+		else if (Has(command, name))
+		{
+			throw Collision(name, definition, names);
+		}
 
 		Append(command, name, value, clrType);
 	}

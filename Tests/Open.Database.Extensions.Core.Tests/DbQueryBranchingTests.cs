@@ -73,14 +73,14 @@ public static class DbQueryBranchingTests
 		Assert.Equal(new Echo(1, 30, 300), One(z));
 		Assert.Equal(new Echo(1, 10, 100), One(x2));
 
-		Assert.Equal(["a=1", "b=20", "c=200"], c.SentTo(0));
-		Assert.Equal(["a=1", "b=10", "c=100"], c.SentTo(1));
-		Assert.Equal(["a=1", "b=30", "c=300"], c.SentTo(2));
-		Assert.Equal(["a=1", "b=10", "c=100"], c.SentTo(3));
+		Assert.Equal(["@a=1", "@b=20", "@c=200"], c.SentTo(0));
+		Assert.Equal(["@a=1", "@b=10", "@c=100"], c.SentTo(1));
+		Assert.Equal(["@a=1", "@b=30", "@c=300"], c.SentTo(2));
+		Assert.Equal(["@a=1", "@b=10", "@c=100"], c.SentTo(3));
 
 		// The kept call still has its one value: the provider reports the others as missing.
 		Assert.Throws<InvalidOperationException>(() => One(held));
-		Assert.Equal(["a=1"], c.SentTo(4));
+		Assert.Equal(["@a=1"], c.SentTo(4));
 	}
 
 	[Fact]
@@ -96,8 +96,8 @@ public static class DbQueryBranchingTests
 		DbQueryCall extra = full.AddParam("d", 4);
 		Assert.Equal(new Echo(1, 2, 3), One(extra));
 		Assert.Equal(new Echo(1, 2, 3), One(full));
-		Assert.Equal(["a=1", "b=2", "c=3"], c.SentTo(3));
-		Assert.Equal(["a=1", "b=2", "c=3", "d=4"], c.SentTo(2));
+		Assert.Equal(["@a=1", "@b=2", "@c=3"], c.SentTo(3));
+		Assert.Equal(["@a=1", "@b=2", "@c=3", "d=4"], c.SentTo(2));
 
 		// A branch of the first value, made after the later ones ran.
 		DbQueryCall first = Q.Using(c).AddParam("a", 9);
@@ -134,15 +134,15 @@ public static class DbQueryBranchingTests
 		using var c2 = new Tracked();
 		Assert.Equal(new Echo(1, 20, 2), One(y.AddParam("c", 2).Using(c1)));
 		Assert.Equal(new Echo(1, 10, 3), One(x.AddParam("c", 3).Using(c2)));
-		Assert.Equal(["a=1", "b=20", "c=2"], c1.SentTo(0));
-		Assert.Equal(["a=1", "b=10", "c=3"], c2.SentTo(0));
+		Assert.Equal(["@a=1", "@b=20", "@c=2"], c1.SentTo(0));
+		Assert.Equal(["@a=1", "@b=10", "@c=3"], c2.SentTo(0));
 
 		// The source is given to the same values twice.
 		using var c3 = new Tracked();
 		UnboundCall<Echo> full = x.AddParam("c", 4);
 		Assert.Equal(new Echo(1, 10, 4), One(full.Using(c3)));
 		Assert.Equal(new Echo(1, 10, 4), One(full.Using(Source)));
-		Assert.Equal(["a=1", "b=10", "c=4"], c3.SentTo(0));
+		Assert.Equal(["@a=1", "@b=10", "@c=4"], c3.SentTo(0));
 	}
 
 	[Fact]
@@ -157,10 +157,10 @@ public static class DbQueryBranchingTests
 		Assert.Equal(new Echo(1, 5, 6), One(y));
 		Assert.Equal(new Echo(1, 2, 3), One(x));
 		Assert.Equal(new Echo(7, 8, 9), One(before));
-		// The members are sent under the names the text declares; the values written by hand under the names written.
-		Assert.Equal(["@a=1", "b=5", "c=6"], c.SentTo(0));
-		Assert.Equal(["@a=1", "b=2", "c=3"], c.SentTo(1));
-		Assert.Equal(["a=7", "@b=8", "@c=9"], c.SentTo(2));
+		// A name written by hand, with or without its prefix, and a member of an object are sent under the name the text declares.
+		Assert.Equal(["@a=1", "@b=5", "@c=6"], c.SentTo(0));
+		Assert.Equal(["@a=1", "@b=2", "@c=3"], c.SentTo(1));
+		Assert.Equal(["@a=7", "@b=8", "@c=9"], c.SentTo(2));
 		Assert.Throws<InvalidOperationException>(() => One(members));
 		Assert.Equal(["@a=1"], c.SentTo(3));
 	}

@@ -64,12 +64,20 @@ public readonly struct DbQueryUsing
 	/// <remarks>
 	/// Declare the type with <see cref="DbQuery.Params{TParams}"/>
 	/// to have it checked at compile time.
+	/// A <see langword="readonly"/> <see langword="record"/> <see langword="struct"/> holds its members in itself, so a call allocates one object, a 16 B header and the struct;
+	/// an anonymous object or a class built for the call allocates the object as well (for five strings, 80 B against 56 B).
+	/// An object that already exists costs 24 B either way.
 	/// </remarks>
 	public DbQueryCall AddParams<T>(T values)
 		where T : notnull
 		=> new DbQueryCall(Definition, SourceOrThrow, default).AddParams(values);
 
 	/// <summary>Adds an input parameter named as you write it.</summary>
+	/// <remarks>
+	/// The values of a call are held in one array, 24 B and 16 B a value.
+	/// Declaring the type of the values with <see cref="DbQuery.Params{TParams}"/> holds them in one object the size of the struct, which is lighter:
+	/// 64 B less for five int values, 128 B less for ten.
+	/// </remarks>
 	/// <typeparam name="T">The type of the value.</typeparam>
 	/// <param name="name">The name of the parameter.</param>
 	/// <param name="value">
