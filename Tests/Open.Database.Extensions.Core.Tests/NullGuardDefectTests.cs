@@ -60,7 +60,6 @@ public static class NullGuardDefectTests
 
 		Assert.Equal("reader", ex.ParamName);
 	}
-		#pragma warning restore CS0618
 
 	// Defect 7: a null remainder means no more ordinals. It used to be a NullReferenceException while enumerated, after the first value.
 	[Fact]

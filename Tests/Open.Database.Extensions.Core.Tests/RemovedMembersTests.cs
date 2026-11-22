@@ -4,8 +4,9 @@ using System.Reflection;
 
 namespace Open.Database.Extensions.Tests;
 
-// 11.0 removes every member that earlier releases marked [Obsolete] (and the Results family, DequeueEach and the per-row command terminals that Map replaces),
+// 11.0 removes every member that earlier releases marked [Obsolete] (and the Results family and the per-row command terminals that Map replaces),
 // so the Core package ships nothing obsolete. A member that is deprecated again in a later release is a new decision, not an accident: this fails so it is made on purpose.
+// This guards the attribute only. That the removed members stay gone is guarded by the *REMOVED* lines in PublicAPI.Unshipped.txt: re-adding one fails the public API analyzer.
 [ExcludeFromCodeCoverage]
 public static class RemovedMembersTests
 {

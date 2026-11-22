@@ -408,15 +408,15 @@ factory.Command("delete from posts where id = 6").ExecuteNonQuery();
 // Removed in 11.0: the calls that replace them give the expected rows.
 Db.Seed();
 string five = "1:Post 1,2:Post 2,3:Post 3,4:Post 4,5:Post 5";
-Check(Deprecated.Results(connection) == five, "Map<T>().ToList() returns the five posts (it replaces Results<T>())");
+Check(await Deprecated.Results(connection, CancellationToken.None) == five, "Map<T>().ToList() returns the five posts (it replaces Results<T>())");
 Check(await Deprecated.ResultsAsync(connection, CancellationToken.None) == five, "Map<T>().ToListAsync() returns the five posts (it replaces ResultsAsync<T>())");
 Check(Deprecated.ResultsFromDataTable(connection) == five, "ToDataTable().Map(map).ToList() returns the five posts (it replaces ResultsFromDataTable<T>())");
-Check(Deprecated.SelectorForms(connection) == "1|1,2|4,5|2,3", "Map(selector) with First, Take, Skip and Skip then Take returns what the old selector terminals did");
+Check(await Deprecated.SelectorForms(connection, CancellationToken.None) == "1|1,2|4,5|2,3", "Map(selector) with First, Take, Skip and Skip then Take returns what the old selector terminals did");
 Check(await Deprecated.TakeAsyncAndToListAsync(connection, CancellationToken.None) == "1,2|1,2,3,4,5", "Map(selector).Take(2).ToListAsync() and .ToListAsync() return what TakeAsync and ToListAsync did");
 Check(await Deprecated.CollectionAsync(connection, CancellationToken.None) == 5, "a List<T> from Map holds the rows a QueryResultCollection held");
 (string dictAfter, string dictAfterAsync) = await Deprecated.MappedDictionaries(connection);
 Check(dictAfter.Length > 0 && dictAfter == dictAfterAsync, "Retrieve().DequeueAsMappedDictionaries() and its awaited async form return the same rows");
-Check(Deprecated.DequeueAs(connection) == five, "Map<T>().ToList() returns the five posts (it replaces Retrieve().DequeueAs<T>())");
+Check(await Deprecated.DequeueAs(connection, CancellationToken.None) == five, "Map<T>().ToList() returns the five posts (it replaces Retrieve().DequeueAs<T>())");
 
 // AsyncReads(): the rows are the same as with the default.
 // SQLite cannot show which read was used;

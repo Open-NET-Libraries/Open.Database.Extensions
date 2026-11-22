@@ -113,7 +113,6 @@ public static class RowMapFamilyTests
 	{
 		// Core
 		["Map(IExecuteReader)"] = m => Now(Exec().Map(m).ToList()),
-		#pragma warning restore CS0618
 
 		// Channel: a new channel
 		["ToChannel(IDataReader)"] = m => Drain(Reader().ToChannel(true, m)),

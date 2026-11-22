@@ -821,18 +821,6 @@ public static class DataReaderExtensions
 		}
 	}
 
-	internal static async ValueTask<List<T>> ToListAsyncCore<T>(DbDataReader reader,
-		Func<IDataRecord, T> transform, CancellationToken cancellationToken)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		if (transform is null) throw new ArgumentNullException(nameof(transform));
-		Contract.EndContractBlock();
-
-		var list = new List<T>();
-		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false)) list.Add(transform(reader));
-		return list;
-	}
-
 	/// <summary>
 	/// Asynchronously iterates the remaining records of the current result set and returns the results of an asynchronous transform as a list.
 	/// </summary>

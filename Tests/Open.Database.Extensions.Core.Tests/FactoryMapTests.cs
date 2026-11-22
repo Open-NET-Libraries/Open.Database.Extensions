@@ -54,7 +54,7 @@ public static class FactoryMapTests
 		get
 		{
 			var data = new TheoryData<Route, int>();
-			foreach (Route route in (Route[])[Route.Typed, Route.Boxed, Route.Buffered])
+			foreach (Route route in (Route[])[Route.Typed, Route.Boxed])
 			{
 				for (int i = 0; i < Cases.Length; i++)
 					data.Add(route, i);

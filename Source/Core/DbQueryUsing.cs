@@ -11,9 +11,8 @@ namespace Open.Database.Extensions;
 /// Add the values with <c>AddParam</c> or <c>AddParams</c> and then
 /// <c>Map&lt;T&gt;()</c>; or call <c>Map&lt;T&gt;()</c> for a query that takes
 /// no values.
-/// It is a reader the same way a command is, so the <c>Map</c> and
-/// <c>IterateReader</c> extensions on <see cref="IExecuteReader"/>
-/// apply to it.
+/// It is a reader the same way a command is, so the <c>Map</c>
+/// extensions on <see cref="IExecuteReader"/> apply to it.
 /// </remarks>
 public readonly struct DbQueryUsing
 	: IExecuteReaderAsync, IEquatable<DbQueryUsing>

@@ -25,10 +25,12 @@ public static class Deprecated
 	// The selector the old calls and Map both take.
 	static long Id(IDataRecord record) => record.GetInt64(0);
 
-	public static string Results(SqliteConnection connection)
+	public static async Task<string> Results(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region deprecated_results_before
-		// Removed in 11.0, synchronous:
+		// Removed in 11.0:
 		// List<Post> before = connection
 		//     .Command(PostsSql)
 		//     .Results<Post>()
@@ -36,12 +38,10 @@ public static class Deprecated
 		#endregion
 
 		#region deprecated_results_after
-		// Synchronous, like the call it replaces;
-		// the async form is ToListAsync(cancellationToken).
-		List<Post> after = connection
+		List<Post> after = await connection
 			.Command(PostsSql)
 			.Map<Post>()
-			.ToList();
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return Key(after);
@@ -76,7 +76,7 @@ public static class Deprecated
 
 		#region deprecated_resultsfromdatatable_before
 		// Removed in 11.0, synchronous:
-		// List<Post> before = oldCommand
+		// List<Post> before = newCommand
 		//     .ResultsFromDataTable<Post>()
 		//     .ToList();
 		#endregion
@@ -96,12 +96,14 @@ public static class Deprecated
 		return Key(after);
 	}
 
-	public static string SelectorForms(SqliteConnection connection)
+	public static async Task<string> SelectorForms(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		IExecuteReader command = connection.Command(IdsSql);
 
 		#region deprecated_selector_before
-		// Removed in 11.0, synchronous:
+		// Removed in 11.0:
 		// long? first = command.FirstOrDefault(Id);
 		// List<long> taken = command.Take(2, Id);
 		// List<long> skipped = command.Skip(3, Id);
@@ -109,24 +111,22 @@ public static class Deprecated
 		#endregion
 
 		#region deprecated_selector_after
-		// Synchronous, like the calls they replace;
-		// each terminal has an async form that takes a token.
-		long? firstAfter = command
+		long? firstAfter = await command
 			.Map(Id)
-			.FirstOrDefault();
-		List<long> takenAfter = command
+			.FirstOrDefaultAsync(cancellationToken);
+		List<long> takenAfter = await command
 			.Map(Id)
 			.Take(2)
-			.ToList();
-		List<long> skippedAfter = command
+			.ToListAsync(cancellationToken);
+		List<long> skippedAfter = await command
 			.Map(Id)
 			.Skip(3)
-			.ToList();
-		List<long> slicedAfter = command
+			.ToListAsync(cancellationToken);
+		List<long> slicedAfter = await command
 			.Map(Id)
 			.Skip(1)
 			.Take(2)
-			.ToList();
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return $"{firstAfter}|{Key(takenAfter)}|{Key(skippedAfter)}|{Key(slicedAfter)}";
@@ -204,10 +204,12 @@ public static class Deprecated
 		return (Key(after), Key(afterAsync));
 	}
 
-	public static string DequeueAs(SqliteConnection connection)
+	public static async Task<string> DequeueAs(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region deprecated_dequeueas_before
-		// Removed in 11.0, synchronous:
+		// Removed in 11.0:
 		// List<Post> before = connection
 		//     .Command(PostsSql)
 		//     .Retrieve()
@@ -216,12 +218,10 @@ public static class Deprecated
 		#endregion
 
 		#region deprecated_dequeueas_after
-		// Synchronous, like the call it replaces;
-		// the async form is ToListAsync(cancellationToken).
-		List<Post> after = connection
+		List<Post> after = await connection
 			.Command(PostsSql)
 			.Map<Post>()
-			.ToList();
+			.ToListAsync(cancellationToken);
 		#endregion
 
 		return Key(after);

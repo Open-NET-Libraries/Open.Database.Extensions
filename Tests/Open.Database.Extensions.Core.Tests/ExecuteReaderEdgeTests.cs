@@ -71,7 +71,6 @@ public static class ExecuteReaderEdgeTests
 			switch (call)
 			{
 				case "Retrieve columnNames": command.Retrieve((IEnumerable<string>)null!); break;
-#pragma warning restore CS0618
 			}
 		});
 

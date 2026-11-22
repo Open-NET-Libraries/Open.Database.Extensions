@@ -137,7 +137,7 @@ The rules:
 
 It differs from the two other ways to read one column. `FirstOrdinalResults<T>()` returns the provider's own value (its typed getter, or a plain cast) from the first result set only, and is the form for a raw `IDbCommand` or a reader (see [the foundation](foundation.md#reader-and-command-helpers)); `ExecuteScalar<T>()` returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
-Pass the token or nothing to these `Async` forms: `ToListAsync<int>(default)` on an expressive command binds to its older `ToListAsync(transform, behavior)`, which has no transform to call. `ToHashSetAsync<int>(cancellationToken: ct)` names the token because the comparer comes first, as on `MappedQuery<T>`.
+Pass the token or nothing to these `Async` forms: `ToHashSetAsync<int>(cancellationToken: ct)` names the token because the comparer comes first, as on `MappedQuery<T>`.
 
 Errors in the data throw per row: a missing `required` column and an unconvertible value throw `ValueMappingException`, and a constructor that throws is wrapped (see [Values that cannot be mapped](#values-that-cannot-be-mapped)).
 
@@ -303,7 +303,7 @@ An async terminal executes and opens asynchronously but reads the rows with `Rea
 ### Streaming holds the connection
 
 > [!WARNING]
-> **Streaming is not the recommended way to read rows: it holds the connection while your code runs for each row.** The `Read` and `ReadAsync` handlers, `ForEach` and `ForEachAsync`, `IterateReader` and `IterateReaderWhile`, and a reader's `AsEnumerable` and `AsAsyncEnumerable` all run your code for each row while the reader, and the connection under it, are open. The connection stays held for as long as your code takes per row, added up over all the rows.
+> **Streaming is not the recommended way to read rows: it holds the connection while your code runs for each row.** The `Read` and `ReadAsync` handlers, `ForEach` and `ForEachAsync`, `IterateWhile` on a reader, and a reader's `AsEnumerable` and `AsAsyncEnumerable` all run your code for each row while the reader, and the connection under it, are open. The connection stays held for as long as your code takes per row, added up over all the rows.
 >
 > In async code that time has no bound: every `await` in the loop body can yield, and nothing says when the loop resumes. Until it does, the connection is on hold: a pooled connection is not returned to the pool, and the server may keep its locks and the open result set.
 >
@@ -348,7 +348,7 @@ A *result* here is one whole result set: what `NextResult` moves between. It is 
 
 Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and a `Read` or an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `Single` or `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `First`, `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through (also through `IMappedQuery<T>`), and the provider discards the first set's unread rows on the way.
 
-The deprecated `Results<T>` on an `IExecuteReader`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, the `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()` read only the first result set. `Map` reads through the rest, and `command.SingleResult().Map(...)` restores the old behavior. See [Deprecated in 11.0](whats-new-11.md#deprecated-in-110).
+The calls removed in 11.0 (`Results<T>`, the selector `FirstOrDefault`, `SingleOrDefault`, `Take`, `Skip` and `SkipThenTake`, `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader` with a transform, `ExpressiveDbCommand.TakeAsync` and `ToListAsync(selector)`, and `Retrieve().DequeueAs<T>()`) read only the first result set. `Map` reads through the rest, and `command.SingleResult().Map(...)` gives the old behavior. See [Removed in 11.0](whats-new-11.md#deprecated-in-110).
 
 `.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` still works (and so does it on the result of `Skip` and `Take`): the two forms are the same. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `First` and `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
 

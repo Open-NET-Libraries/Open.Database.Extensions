@@ -126,7 +126,7 @@ public static class NullRuleMatrixTests
 			var data = new TheoryData<string, Route, bool>();
 			foreach (Case c in Cases)
 			{
-				foreach (Route route in (Route[])[Route.Typed, Route.Boxed, Route.Buffered])
+				foreach (Route route in (Route[])[Route.Typed, Route.Boxed])
 				{
 					foreach (bool isNull in (bool[])[true, false])
 						data.Add(c.Name, route, isNull);
@@ -173,7 +173,7 @@ public static class NullRuleMatrixTests
 			var data = new TheoryData<string, Route>();
 			foreach (string name in Runtime.Keys)
 			{
-				foreach (Route route in (Route[])[Route.Typed, Route.Boxed, Route.Buffered])
+				foreach (Route route in (Route[])[Route.Typed, Route.Boxed])
 					data.Add(name, route);
 			}
 

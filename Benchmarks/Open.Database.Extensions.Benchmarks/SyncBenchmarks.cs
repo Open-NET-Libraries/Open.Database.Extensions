@@ -86,7 +86,6 @@ public class SyncBenchmarks
 
 	[BenchmarkCategory("Untyped"), Benchmark]
 	public int Untyped_ODE() => _conn.Command(Sql).Retrieve().Result.Count;
-#pragma warning restore CS0618
 
 	[BenchmarkCategory("Dictionary"), Benchmark(Baseline = true)]
 	public Dictionary<int, Post> Dictionary_Dapper() => _conn.Query<Post>(Sql).ToDictionary(p => p.Id);

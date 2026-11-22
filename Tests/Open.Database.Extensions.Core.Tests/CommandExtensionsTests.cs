@@ -56,6 +56,47 @@ public static class CommandExtensionsTests
 		Assert.False(probe.Behaviors.Single().HasFlag(CommandBehavior.CloseConnection));
 	}
 
+
+	// The asynchronous reader helpers decide the same way: a closed connection is opened and closed again by the call,
+	// an open one is left alone.
+	[Fact]
+	public static async Task ExecuteReaderAsync_ClosedConnection_OpensItAndRequestsCloseConnection()
+	{
+		var connection = new FakeDbConnection();
+		var command = new FakeDbCommand(connection, () => FakeReader.CreateDb(["id"], [1]));
+
+		await command.ExecuteReaderAsync(_ => { }, CommandBehavior.Default, TestContext.Current.CancellationToken);
+
+		Assert.Equal(["open"], connection.Log);
+		Assert.True(Assert.Single(command.Behaviors).HasFlag(CommandBehavior.CloseConnection));
+	}
+
+	[Fact]
+	public static async Task ExecuteReaderAsync_OpenConnection_LeavesItAlone()
+	{
+		var connection = new FakeDbConnection();
+		connection.SetState(ConnectionState.Open);
+		var command = new FakeDbCommand(connection, () => FakeReader.CreateDb(["id"], [1]));
+
+		await command.ExecuteReaderAsync(_ => { }, CommandBehavior.Default, TestContext.Current.CancellationToken);
+
+		Assert.Empty(connection.Log);
+		Assert.False(Assert.Single(command.Behaviors).HasFlag(CommandBehavior.CloseConnection));
+		Assert.Equal(ConnectionState.Open, connection.State);
+	}
+
+	[Fact]
+	public static void ExecuteReader_ANullHandler_IsRefusedBeforeTheConnectionIsTouched()
+	{
+		var probe = new ConnectionProbe();
+
+		Assert.Equal("handler", Assert.Throws<ArgumentNullException>(
+			() => probe.Command.ExecuteReader((Action<IDataReader>)null!)).ParamName);
+		Assert.Equal("command", Assert.Throws<ArgumentNullException>(
+			() => ((IDbCommand)null!).ExecuteReader(_ => { })).ParamName);
+		Assert.Equal(string.Empty, probe.Log);
+	}
+
 	[Fact]
 	public static void FirstOrdinalResults_ReadsFirstColumn_ConvertsDBNullToNull_AndRequestsSequentialSingleResult()
 	{

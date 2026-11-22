@@ -19,7 +19,6 @@ namespace Open.Database.Extensions.Core;
 /// <typeparam name="T">The type of the model to create from the data.</typeparam>
 public class Transformer<T>
 {
-	const string ResultsObsolete = "Use table.Map(map).ToList() instead, where map is the RowMap<T> you gave Transformer<T>.Create. It returns a List<T>, not a lazy enumerable, and has no clearTable argument: clear the table yourself after reading it. Removed in 12.";
 
 	/// <summary>
 	/// The maximum number of arrays to hold in the local array pool per bucket.

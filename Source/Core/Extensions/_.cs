@@ -1,13 +1,12 @@
-﻿namespace Open.Database.Extensions;
+﻿using System.Diagnostics;
+
+namespace Open.Database.Extensions;
 
 /// <summary>
 /// Core non-DB-specific extensions for building a command and retrieving data using best practices.
 /// </summary>
 public static partial class CoreExtensions
 {
-
-	internal static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
-		=> (remaining == null || remaining.Count == 0) ? [first] : remaining.Prepend(first);
 
 	internal static ValueTask<bool> CancelledAsFalse(this ValueTask<bool> task)
 	{
@@ -235,13 +234,9 @@ public static partial class CoreExtensions
 	/// <typeparam name="T">The type of the items in the queue.</typeparam>
 	/// <param name="source">The queue to dequeue from.</param>
 	/// <returns>An enumerable of the items contained within the queue.</returns>
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="source"/> is <see langword="null"/>. It is thrown when the enumeration starts.
-	/// </exception>
 	internal static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
 	{
-		if (source is null) throw new ArgumentNullException(nameof(source));
-		Contract.EndContractBlock();
+		Debug.Assert(source is not null);
 
 #if NETSTANDARD2_0
 		while (source.Count != 0)

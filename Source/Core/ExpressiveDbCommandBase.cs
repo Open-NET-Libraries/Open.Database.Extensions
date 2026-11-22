@@ -18,8 +18,6 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	where TDbType : struct
 	where TThis : ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 {
-	const string LaterSets = "Map also reads the later result sets, so a failure in one is thrown; to read only the first, as this method does, call .SingleResult() before Map (cmd.SingleResult().Map(...); .Map(...).SingleResult() still works).";
-	const string ToListAsyncObsolete = "Use .Map(selector).ToListAsync(cancellationToken) instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use var list = new List<T>(); await cmd.IterateReaderAsync(r => list.Add(selector(r)), behavior). Removed in 12.";
 
 	/// <summary>
 	/// Initializes a new instance that takes its connections from a

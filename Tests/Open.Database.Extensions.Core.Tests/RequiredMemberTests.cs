@@ -207,7 +207,7 @@ public static class RequiredMemberTests
 			Assert.Equal("t", Assert.Single(Read(Route.Typed, good, [1, "t"], map)).Title);
 			Assert.Equal(Missing("RequiredPost", "Title", "String", "Title"), Assert.Throws<ValueMappingException>(() => Read(Route.Typed, bad, [1], map)).Message);
 			Assert.Equal("u", Assert.Single(Read(Route.Boxed, good, [1, "u"], map)).Title);
-			Assert.Equal(Missing("RequiredPost", "Title", "String", "Title"), Assert.Throws<ValueMappingException>(() => Read(Route.Buffered, bad, [1], map)).Message);
+			Assert.Equal(Missing("RequiredPost", "Title", "String", "Title"), Assert.Throws<ValueMappingException>(() => Read(Route.Boxed, bad, [1], map)).Message);
 		}
 	}
 

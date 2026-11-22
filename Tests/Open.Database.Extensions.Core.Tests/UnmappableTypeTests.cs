@@ -394,7 +394,6 @@ public static class UnmappableTypeTests
 		["ToHashSetAsync<T>()"] = async () => await Exec().ToHashSetAsync<T>(),
 		["Map(new RowMap<T>(pair))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"))).ToList()),
 		["Map(new RowMap<T>(pairs))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name"))).ToList()),
-#pragma warning restore CS0618
 		["new Transformer<T>()"] = () => Run(() => Transformer<T>.Create()),
 
 		// Channel: a new channel
@@ -559,9 +558,7 @@ public static class UnmappableTypeTests
 	// name -> the call, for the model type T: over a command that must never be executed or a reader that must never be read.
 	static Dictionary<string, Func<Touched, Task>> BeforeExecutionOf<T>() => new()
 	{
-#pragma warning restore CS0618
 		["Map<T>() (IExecuteReader)"] = t => Run(() => Exec(t).Map<T>().ToList()),
-#pragma warning restore CS0618
 
 		// Channel: a command, a new channel
 		["ToChannel<T>(IDbCommand)"] = t => Done(Command(t).ToChannel<T>(true)),

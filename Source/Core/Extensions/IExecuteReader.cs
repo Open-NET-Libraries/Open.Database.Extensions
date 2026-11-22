@@ -6,8 +6,6 @@
 /// </summary>
 public static class IExecuteReaderExtensions
 {
-	const string LaterSets = "Map also reads the later result sets, so a failure in one is thrown; to read only the first, as this method does, call .SingleResult() before Map (cmd.SingleResult().Map(...); .Map(...).SingleResult() still works).";
-	const string ResultsObsolete = "Use .Map<T>().ToList() instead (.Map(map).ToList() when you pass a RowMap; Map does not accept a null map). " + LaterSets + " Map returns a List<T>. Removed in 12.";
 
 	#region Async terminals that take the type: Map<T>() then the terminal
 

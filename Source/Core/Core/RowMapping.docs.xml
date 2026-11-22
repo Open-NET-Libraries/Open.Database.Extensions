@@ -55,10 +55,4 @@
     </exception>
   </members>
 
-  <members name="obsolete-12">
-    <para>
-      Obsolete in 11.0, removed in 12. See
-      <see href="https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html#deprecated-in-110">Deprecated in 11.0</see>.
-    </para>
-  </members>
 </docs>
