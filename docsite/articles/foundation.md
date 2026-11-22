@@ -35,7 +35,7 @@ A command built from a single connection refuses concurrent terminals: a second 
 Several helpers exist to keep the time a connection is open short:
 
 - `EnsureOpen()` and `EnsureOpenAsync()` open a closed (or broken) connection and return its prior state, so you can restore it.
-- `Results<T>()`, `ResultsBuffered<T>()` and the per-row terminals that took a transform (`FirstOrDefault(selector)`, `SingleOrDefault(selector)`, `Take`, `Skip`, `SkipThenTake`, `ToList`, `ToArray`, `ToImmutableArray` and `IterateReader`) were removed in 11.0; use `Map(...)`. See [Removed in 11.0](whats-new-11.md#deprecated-in-110).
+- Rows are read with `Map(...)` and a terminal: [Mapping rows to objects](mapping.md).
 - `Map<T>()` streams rows straight out of the reader while the connection is open; the connection is released as soon as the terminal returns.
 
 ## Transactions

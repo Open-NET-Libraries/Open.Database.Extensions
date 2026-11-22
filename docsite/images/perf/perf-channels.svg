@@ -95,5 +95,5 @@
     <text class="val" x="454" y="251">325.0 µs</text>
   </g>
   <line class="axis" x1="100" y1="208" x2="100" y2="260"/>
-  <text class="muted small" x="16" y="282">Older run, before 11.0.0-rc.8. Numbers: channels.csv</text>
+  <text class="muted small" x="16" y="282">Older run. Numbers: channels.csv</text>
 </svg>

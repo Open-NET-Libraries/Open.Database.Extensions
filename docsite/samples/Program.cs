@@ -416,13 +416,13 @@ factory.Command("delete from posts where id = 6").ExecuteNonQuery();
 long draftId = await Mapping.InsertReturningIdAsync(factory, CancellationToken.None);
 Check(draftId == 6 && factory.Command("select title from posts where id = 6").ExecuteScalar<string>() == "Draft", "an insert returns its new id, read with SingleAsync");
 factory.Command("delete from posts where id = 6").ExecuteNonQuery();
-// Removed in 11.0: the calls that replace them give the expected rows.
+// The calls of the migration guide give the expected rows.
 Db.Seed();
 string five = "1:Post 1,2:Post 2,3:Post 3,4:Post 4,5:Post 5";
-Check(await Migration.Results(connection, CancellationToken.None) == five, "Map<T>().ToList() returns the five posts (it replaces Results<T>())");
-Check(await Migration.ResultsAsync(connection, CancellationToken.None) == five, "Map<T>().ToListAsync() returns the five posts (it replaces ResultsAsync<T>())");
-Check(Migration.ResultsFromDataTable(connection) == five, "ToDataTable().Map(map).ToList() returns the five posts (it replaces ResultsFromDataTable<T>())");
-Check(await Migration.SelectorForms(connection, CancellationToken.None) == "1|1,2|4,5|2,3", "Map(selector) with First, Take, Skip and Skip then Take returns what the old selector terminals did");
+Check(await Migration.Results(connection, CancellationToken.None) == five, "Map<T>().ToList() returns the five posts");
+Check(await Migration.ResultsAsync(connection, CancellationToken.None) == five, "Map<T>().ToListAsync() returns the five posts");
+Check(Migration.ResultsFromDataTable(connection) == five, "ToDataTable().Map(map).ToList() returns the five posts");
+Check(await Migration.SelectorForms(connection, CancellationToken.None) == "1|1,2|4,5|2,3", "Map(selector) with First, Take, Skip and Skip then Take returns the expected rows");
 Check(await Migration.TakeAsyncAndToListAsync(connection, CancellationToken.None) == "1,2|1,2,3,4,5", "Map(selector).Take(2).ToListAsync() and .ToListAsync() return what TakeAsync and ToListAsync did");
 Check(await Migration.CollectionAsync(connection, CancellationToken.None) == 5, "a List<T> from Map holds the rows a QueryResultCollection held");
 string dictAfter = await Migration.MappedDictionaries(connection, CancellationToken.None);

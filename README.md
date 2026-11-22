@@ -6,7 +6,7 @@
 [![Docs](https://github.com/Open-NET-Libraries/Open.Database.Extensions/actions/workflows/docs.yml/badge.svg)](https://github.com/Open-NET-Libraries/Open.Database.Extensions/actions/workflows/docs.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/LICENSE)
 
-Open.Database.Extensions replaces the ADO.NET code around your own SQL with one fluent command: create the connection, add the parameters, run it, map the rows, dispose everything, the way ADO.NET best practice says. It works with any ADO.NET provider and the ADO.NET types you already use, holds a connection open as briefly as it can, and allocates little.
+Open.Database.Extensions handles the ADO.NET code around your own SQL with one fluent command: create the connection, add the parameters, run it, map the rows, dispose everything, the way ADO.NET best practice says. It works with any ADO.NET provider and the ADO.NET types you already use, holds a connection open as briefly as it can, and allocates little.
 
 **[Documentation](https://open-net-libraries.github.io/Open.Database.Extensions/)** · [Getting started](https://open-net-libraries.github.io/Open.Database.Extensions/articles/getting-started.html) · [API reference](https://open-net-libraries.github.io/Open.Database.Extensions/api/index.html) · [Benchmarks](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md)
 
@@ -66,7 +66,7 @@ Each job is one complete call: open the connection, run the SQL with one paramet
 | A scalar (`count(*)`) | 9 | 4 |
 | A command with no result set (`update`) | 10 | 4 |
 
-What you no longer write: opening and closing the connection, creating the command and setting its text, creating and adding every parameter, the read loop, copying columns into properties (ordinals, `IsDBNull`), and disposing all of it.
+What you do not write: opening and closing the connection, creating the command and setting its text, creating and adding every parameter, the read loop, copying columns into properties (ordinals, `IsDBNull`), and disposing all of it.
 
 ## How little code
 
@@ -162,10 +162,9 @@ dotnet add package Microsoft.Data.Sqlite
 | `Open.Database.Extensions.Channel` | Rows into `System.Threading.Channels`. |
 | `Open.Database.Extensions.Dataflow` | Rows into TPL Dataflow blocks. |
 | `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient`. |
-| `Open.Database.Extensions.SqlClient` | The same API on the older `System.Data.SqlClient`. Deprecated: use `MSSqlClient`. |
 | `Open.Database.Extensions` | Discontinued. It only referenced Core: use `Open.Database.Extensions.Core`. The last published version is 9.0.3. |
 
-Targets: `netstandard2.0`, `netstandard2.1`, `net10.0` and `net11.0` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Version 11 is a release candidate (`11.0.0-rc.11`): see [What's new in 11](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html) for the changes, the breaking changes and the known limitations, and the [release notes](https://open-net-libraries.github.io/Open.Database.Extensions/articles/release-notes.html) for earlier versions. Please try it and tell us what you find.
+Targets: `netstandard2.0`, `netstandard2.1`, `net10.0` and `net11.0` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Version 11 is a release candidate (`11.0.0-rc.12`). Please try it and tell us what you find.
 
 Publishing trimmed or native AOT? See [Trimming and native AOT](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Source/Core/README.md#trimming-and-native-aot).
 
@@ -289,6 +288,8 @@ These figures come from the 11.0.0-preview01 build, re-run independently on a no
 - **Channels and Dataflow:** stream rows into a `Channel<T>` or a dataflow block. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/channels-and-dataflow.html)
 - **SQL Server:** `SqlConnectionFactory` and stored procedures on `Microsoft.Data.SqlClient`. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/getting-started.html#with-sql-server)
 - **Coming from Dapper:** the same jobs side by side. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html)
+
+**Coming from v10?** Version 11 is a significant break. The ADO.NET extensions themselves changed little; how typed results are mapped and returned changed a lot. See the [migration guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html).
 
 ## Contributing and license
 

@@ -59,7 +59,7 @@ Each table lists time and memory for the same five ways of reading the rows. *Ha
 ## How this was measured
 
 - **Question:** how do the mapping approaches compare when a real provider is behind them?
-- **Setup:** a table of 10,000 rows, 20 typed columns (and a second run at 5 columns). SQL Server LocalDB through `Microsoft.Data.SqlClient` 7.1.1; a SQLite file through `Microsoft.Data.Sqlite`. The database and the file are created for the run and removed after it. Synchronous terminals. Every approach returns the same objects. On SQLite, Dapper maps text to `Guid` with the usual `SqlMapper.TypeHandler` recipe, because it does not convert it on its own.
+- **Setup:** a table of 10,000 rows, 20 typed columns (and a second run at 5 columns). SQL Server LocalDB through `Microsoft.Data.SqlClient` 7.1.1; a SQLite file through `Microsoft.Data.Sqlite`. The database and the file are created for the run and deleted after it. Synchronous terminals. Every approach returns the same objects. On SQLite, Dapper maps text to `Guid` with the usual `SqlMapper.TypeHandler` recipe, because it does not convert it on its own.
 - **Settings:** BenchmarkDotNet 0.15.8, in-process, 5 warm-up and 12 measured iterations, one launch, one run per case. See [How we measure](how-we-measure.md).
 - **Build, date, machine:** build `fbb13d7`, 2026-11-14; AMD Ryzen 9 7900 (12 cores), .NET 11.0.0, Windows 10.
 - **Data:** [real-providers.csv](../../perf-data/real-providers.csv) ([source and conditions](../../perf-data/real-providers.source.txt)).

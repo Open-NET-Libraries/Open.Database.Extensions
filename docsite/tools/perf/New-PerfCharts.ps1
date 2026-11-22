@@ -401,7 +401,7 @@ foreach ($feat in @($ch | ForEach-Object { $_.feature } | Select-Object -Unique)
     [pscustomobject]@{ Name = $short; Fam = 'odx'; Value = [double]$r.odx_us; Detail = "$feat over 1,000 rows: $(F ([double]$r.odx_us) 0) $muX`s, $($r.time_ratio)$timesX the loop." })
   $chPanels += @{ Title = $feat; Rows = $rows }
 }
-Write-Lf (Join-Path $ImageDir 'perf-channels.svg') (New-BarSvg 'channels' 'Draining 1,000 rows: a plain loop against ODX' 'Shorter is better. In-memory provider.' $chPanels { param($v) Format-MicroX $v } '' "Older run, before 11.0.0-rc.8. Numbers: channels.csv" 'panel' 100 'Two panels of two bars each, each panel on its own scale: the time to drain 1,000 rows with a hand-written loop and with ODX, for a channel and for a BufferBlock.' 520)
+Write-Lf (Join-Path $ImageDir 'perf-channels.svg') (New-BarSvg 'channels' 'Draining 1,000 rows: a plain loop against ODX' 'Shorter is better. In-memory provider.' $chPanels { param($v) Format-MicroX $v } '' "Older run. Numbers: channels.csv" 'panel' 100 'Two panels of two bars each, each panel on its own scale: the time to drain 1,000 rows with a hand-written loop and with ODX, for a channel and for a BufferBlock.' 520)
 
 # ---------- 9. pooling and clearing (the pool spike and the end-to-end pairs) ----------
 $ps = Read-Data 'pool-store';      $psSrc = Read-Source 'pool-store'

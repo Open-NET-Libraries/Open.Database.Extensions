@@ -39,7 +39,7 @@ Also: [How we measure](benchmarks/how-we-measure.md) (the method, the settings, 
 - A hand-written selector is faster than `Map<T>()` at every width, and `object[]` rows are faster at one column. [Cost per column](benchmarks/cost-per-column.md).
 - `AsyncReads()` costs more than the default. With a 20 µs wait every 100 rows and a busy thread pool it took 40 times as long (a synthetic model); with only a busy pool, no refill, it took 8% more than a fully sync read (102.4 against 94.4 µs). [Sync reads against async reads](benchmarks/sync-vs-async.md).
 - `ToChannel` and the Dataflow methods are not faster than reading rows in a plain loop. They exist to feed pipelines: see [Channels and Dataflow](channels-and-dataflow.md).
-- `Retrieve().DequeueAs<T>()` was removed in 11: it copied every row to `object[]` first and mapped later, and in an older run it took 1.29 and 1.33 times as long as a plain loop at 100 and 1,000 rows (6% less at one row; [`RESULTS.md`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md)). Use `Map<T>()`.
+- `Map<T>()` reads each row once, straight into the model. A route that copies every row to `object[]` first and maps later took 1.29 and 1.33 times as long as a plain loop at 100 and 1,000 rows in an older run (6% less at one row; [`RESULTS.md`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md)).
 
 ## Limits of these numbers
 
