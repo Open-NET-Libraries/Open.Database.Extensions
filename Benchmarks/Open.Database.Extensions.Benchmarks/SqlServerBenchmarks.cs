@@ -8,7 +8,7 @@ namespace Open.Database.Extensions.Benchmarks;
 
 // The same comparison against SQL Server (LocalDB), a statically typed provider: column types match the
 // model exactly, so ODE's typed (unboxed) path is taken for every column. Skipped when LocalDB is unavailable.
-// A throwaway database is created in Setup and dropped in Cleanup.
+// A throwaway database (files in the scratch folder, ODX_RP_SCRATCH) is created in Setup and dropped in Cleanup.
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [CategoriesColumn]
@@ -27,12 +27,8 @@ public class SqlServerBenchmarks
 	[GlobalSetup]
 	public void Setup()
 	{
-		_database = "OdeBench_" + Guid.NewGuid().ToString("N");
-		using (var master = new SqlConnection(Server))
-		{
-			master.Open();
-			master.Execute($"create database [{_database}]");
-		}
+		LocalDbScratch.Sweep(Server);
+		_database = LocalDbScratch.Create(Server);
 
 		_conn = new SqlConnection(Server + $"Database={_database};");
 		_conn.Open();

@@ -8,7 +8,7 @@ namespace Open.Database.Extensions.Benchmarks;
 
 // The renamed-column comparison against SQL Server (LocalDB): the same rows in a table whose every column is
 // snake_case, read through a declared RowMap<T>, through a new RowMap<T> built from the pairs inside each call (which builds a new map every time), and through Dapper with a type map set once.
-// A throwaway database is created in Setup and dropped in Cleanup.
+// A throwaway database (files in the scratch folder, ODX_RP_SCRATCH) is created in Setup and dropped in Cleanup.
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [CategoriesColumn]
@@ -27,12 +27,8 @@ public class SqlServerRenamedColumnBenchmarks
 	[GlobalSetup]
 	public void Setup()
 	{
-		_database = "OdeBench_" + Guid.NewGuid().ToString("N");
-		using (var master = new SqlConnection(Server))
-		{
-			master.Open();
-			master.Execute($"create database [{_database}]");
-		}
+		LocalDbScratch.Sweep(Server);
+		_database = LocalDbScratch.Create(Server);
 
 		_conn = new SqlConnection(Server + $"Database={_database};");
 		_conn.Open();
