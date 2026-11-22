@@ -27,6 +27,8 @@ namespace Open.Database.Extensions;
 /// <see cref="ObjectDisposedException"/>, an enumeration in
 /// progress included, except <see cref="Dispose"/>, which does
 /// nothing again and does not throw.
+/// The one exception is the view of a read that found no rows, <see cref="Empty"/>:
+/// it holds nothing and has no buffer to dispose, so its members work after the buffer that gave it is disposed.
 /// It is not safe to use while another thread disposes it.
 /// </para>
 /// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
@@ -88,6 +90,16 @@ public sealed class PooledArray<T>
 		_first = firstRows;
 		_shift = ChunkSizing.Log2(firstRows);
 	}
+
+	/// <summary>
+	/// Gets the view of no rows: one shared instance per row type, which a read that found no rows completes with.
+	/// </summary>
+	/// <value>A view with no rows that holds nothing and needs no disposing.</value>
+	/// <remarks>
+	/// Nothing is rented for it. It is the same instance every time, it has no buffer that can be disposed,
+	/// so its members never throw <see cref="ObjectDisposedException"/>, and <see cref="Dispose"/> does nothing.
+	/// </remarks>
+	public static PooledArray<T> Empty { get; } = new(PooledBuffer<T>.CreateEmptyOwner(), [], 0, 1);
 
 	/// <summary>Gets the number of rows.</summary>
 	/// <value>The number of rows.</value>
@@ -429,8 +441,11 @@ public sealed class PooledArray<T>
 	/// the arrays go back to the pool.
 	/// </summary>
 	/// <remarks>
-	/// See <see cref="PooledBuffer{T}.Dispose"/>. Disposing again does nothing.
+	/// See <see cref="PooledBuffer{T}.Dispose"/>. Disposing again does nothing,
+	/// and disposing <see cref="Empty"/> does nothing at all.
 	/// </remarks>
 	public void Dispose()
-		=> _owner.Dispose();
+	{
+		if (!ReferenceEquals(this, Empty)) _owner.Dispose();
+	}
 }

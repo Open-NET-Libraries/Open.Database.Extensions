@@ -829,8 +829,9 @@ public static class PooledBufferTests
 		AssertBalanced(pool);
 	}
 
+	// A read of no rows completes with the shared empty view (PooledArray<T>.Empty): it owns nothing, so a dispose changes
+	// nothing for it (PooledBufferFromTests pins that). Only a view over rows throws.
 	[Theory]
-	[InlineData(0)]
 	[InlineData(3)]
 	public static async Task ADrainedEnumerator_ThrowsAfterDispose(int n)
 	{

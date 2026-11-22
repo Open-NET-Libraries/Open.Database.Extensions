@@ -91,8 +91,12 @@ public sealed class PooledBuffer<T>
 	/// There is no lock. The fields that are shared each have one rule, given
 	/// on each of them.
 	/// </para>
+	/// <para>
+	/// <see langword="null"/> for a buffer made by <see cref="From(ReadOnlySpan{T})"/>: it is done from the
+	/// start, and <c>DisposeCore</c> only reads this when it is not.
+	/// </para>
 	/// </remarks>
-	readonly ChunkProducer<T> _producer;
+	readonly ChunkProducer<T>? _producer;
 	/// <summary>The producer's task: it completes when the producer has exited.</summary>
 	readonly Task _producerTask;
 
@@ -174,6 +178,96 @@ public sealed class PooledBuffer<T>
 		_producerTask = _producer.Start();
 	}
 
+	/// <summary>Creates a buffer whose read is already over: no producer, done from the start.</summary>
+	/// <param name="chunks">The leases of its chunks.</param>
+	/// <param name="total">The number of rows in them.</param>
+	/// <param name="firstRows">The rows of the first chunk (a power of two).</param>
+	PooledBuffer(List<ArrayLease<T>> chunks, int total, int firstRows)
+	{
+		_firstRows = firstRows;
+		_producerTask = Task.CompletedTask;
+		_chunks = chunks;
+		_total = total;
+		_done = 1;
+	}
+
+	/// <summary>Makes the buffer that owns <see cref="PooledArray{T}.Empty"/>: it holds nothing and is never disposed.</summary>
+	/// <returns>A finished buffer with no rows.</returns>
+	internal static PooledBuffer<T> CreateEmptyOwner()
+		=> new([], 0, 1);
+
+	/// <summary>
+	/// Makes a finished buffer from rows you already have, as if a read had produced them.
+	/// </summary>
+	/// <remarks>
+	/// For a test that fakes the code that returns a buffer, and for any code that needs a buffer without a database:
+	/// one array is rented from <see cref="ArrayPool{T}.Shared"/> and the rows are copied into it.
+	/// Nothing runs in the background and <see cref="Items"/> is complete at once.
+	/// Disposing the buffer sends the array back to the pool: at once for a small array, and for an array of
+	/// 128 KB or more of rows that must be cleared, through the recycle bin, so it reaches the pool shortly after.
+	/// Rows that are references are cleared when it goes back, as for a read.
+	/// No rows give <see cref="PooledArray{T}.Empty"/> and rent nothing.
+	/// </remarks>
+	/// <param name="rows">The rows. They are copied: the buffer does not keep this span.</param>
+	/// <returns>The finished buffer.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">There are more than 2^30 rows.</exception>
+	public static PooledBuffer<T> From(ReadOnlySpan<T> rows)
+	{
+		if (rows.Length > MaxFromRows) throw TooManyRows(rows.Length);
+		Contract.EndContractBlock();
+
+		// This entry picks the pool and the clearing: the shared pool, and the app-wide default.
+		return Create(
+			rows,
+			new(ArrayPool<T>.Shared, null, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromClearedBytes));
+	}
+
+	/// <summary>Makes a finished buffer from rows you already have, with an array from a pool you choose.</summary>
+	/// <remarks>
+	/// The same as <see cref="From(ReadOnlySpan{T})"/>, except that the one array is rented from
+	/// <paramref name="pool"/> and goes back to it when the buffer is disposed.
+	/// Rows that are references are always cleared when it goes back; other rows are cleared when
+	/// <paramref name="clearOnReturn"/> is <see langword="true"/>.
+	/// </remarks>
+	/// <param name="rows">The rows. They are copied: the buffer does not keep this span.</param>
+	/// <param name="pool">The pool the array comes from and goes back to.</param>
+	/// <param name="clearOnReturn">Whether the rows are cleared when the array goes back.</param>
+	/// <returns>The finished buffer.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="pool"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">There are more than 2^30 rows.</exception>
+	public static PooledBuffer<T> From(ReadOnlySpan<T> rows, ArrayPool<T> pool, bool clearOnReturn)
+	{
+		if (pool is null) throw new ArgumentNullException(nameof(pool));
+		if (rows.Length > MaxFromRows) throw TooManyRows(rows.Length);
+		Contract.EndContractBlock();
+
+		return Create(
+			rows,
+			new(pool, clearOnReturn, ChunkSizes.Default, RecycleBin.Default, ChunkConfig<T>.DefaultDeferFromClearedBytes));
+	}
+
+	/// <summary>The most rows <c>From</c> takes: its one array is a first chunk, which a buffer holds as a power of two.</summary>
+	const int MaxFromRows = 1 << 30;
+
+	static ArgumentOutOfRangeException TooManyRows(int rows)
+		=> new(nameof(rows), rows, "A buffer holds at most 2^30 rows from a span.");
+
+	/// <summary>Builds the buffer for <c>From</c>; the entry has checked the arguments and chosen the configuration.</summary>
+	static PooledBuffer<T> Create(ReadOnlySpan<T> rows, ChunkConfig<T> config)
+	{
+		System.Diagnostics.Debug.Assert(rows.Length <= MaxFromRows);
+
+		if (rows.IsEmpty) return new([], 0, 1);
+
+		// One array that is one first chunk: row i is at i, so the indexer always lands in chunk 0.
+		int firstRows = 1;
+		while (firstRows < rows.Length) firstRows <<= 1;
+
+		T[] array = config.Rent(firstRows);
+		rows.CopyTo(array);
+		return new([config.Seal(array, rows.Length)], rows.Length, firstRows);
+	}
+
 	/// <summary>
 	/// Gets a task that completes with the rows, once the read is done.
 	/// </summary>
@@ -195,6 +289,8 @@ public sealed class PooledBuffer<T>
 	/// completes, the task can still complete successfully; every
 	/// member of the view then throws
 	/// <see cref="ObjectDisposedException"/>.
+	/// A read that found no rows completes with <see cref="PooledArray{T}.Empty"/>, which holds nothing and
+	/// keeps working after the buffer is disposed.
 	/// </remarks>
 	/// <exception cref="ObjectDisposedException">
 	/// The buffer is disposed.
@@ -336,7 +432,7 @@ public sealed class PooledBuffer<T>
 
 		// A running producer releases the arrays itself, in Finish.
 		// A finished one has nothing left to cancel or to write.
-		if (Volatile.Read(ref _done) == 0) _producer.Cancel();
+		if (Volatile.Read(ref _done) == 0) _producer!.Cancel();
 		else ReleaseAll();
 
 		return _producerTask;
@@ -388,6 +484,12 @@ public sealed class PooledBuffer<T>
 			// Observed here: an Items nobody awaits must not raise
 			// UnobservedTaskException.
 			if (items.TrySetException(error)) _ = items.Task.Exception;
+		}
+		else if (_total == 0)
+		{
+			// No rows: the shared empty view, so no view is built. The buffer still
+			// owns whatever it holds, and releases it when it is disposed.
+			items.TrySetResult(PooledArray<T>.Empty);
 		}
 		else
 		{

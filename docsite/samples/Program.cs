@@ -350,6 +350,14 @@ Check((await ConnectionPattern.DapperFirstAsync(connectionString))?.Title == (aw
 Check(await ConnectionPattern.DapperScalarAsync(connectionString) == 3 && await ConnectionPattern.OdeScalarAsync(factory, CancellationToken.None) == 3, "Dapper and factory scalar agree");
 Check(await ConnectionPattern.DapperNonQueryAsync(connectionString) == 3 && await ConnectionPattern.OdeNonQueryAsync(factory, CancellationToken.None) == 3, "Dapper and factory non-query agree");
 Check((await DependencyInjectionSample.ResolveAndUseAsync(CancellationToken.None)).Count == 3, "a factory registered once is injected");
+// Map-first: a query declared once, mapped, gives the rows of the command built on every call.
+MappedDbQuery<Post> mapFirstByAuthor = DbQuery.Text(Sql.ListSql).Map<Post>();
+List<Post> mapFirstBefore = await new PostQueriesBefore(factory).ByAuthorAsync(42, CancellationToken.None);
+List<Post> mapFirstAfter = await new PostQueriesAfter(factory).ByAuthorAsync(42, CancellationToken.None);
+Check(mapFirstBefore.Count == 3 && mapFirstBefore.Select(p => p.Id).SequenceEqual(mapFirstAfter.Select(p => p.Id)), "a mapped definition and the command built on every call return the same rows");
+Check((await new PostQueriesBefore(factory).FirstByAuthorAsync(42, CancellationToken.None))?.Id == (await new PostQueriesAfter(factory).FirstByAuthorAsync(42, CancellationToken.None))?.Id, "a mapped definition and the command built on every call return the same first row");
+Check((await MapFirstSamples.ValuesFirstAsync(factory, 42, CancellationToken.None)).Select(p => p.Id).SequenceEqual([1, 2, 3]), "the values can come before the source");
+Check((await MapFirstSamples.PagedAsync(factory, mapFirstByAuthor, 42, CancellationToken.None)).Select(p => p.Id).SequenceEqual([2]), "Skip and Take are chosen where the definition runs");
 Check((await ConnectionPattern.RenamedColumnsAsync(connection, CancellationToken.None)) is [{ FirstName: "Ada" }, { FirstName: "Alan" }], "renamed columns with nameof");
 Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts").Map<Post>().SingleOrDefault()), "SingleOrDefault throws for more than one row (again)");
 Check(factory.Command("select * from posts where id = 999").Map<Post>().FirstOrDefault() is null, "FirstOrDefault is null for no rows");

@@ -281,6 +281,10 @@ readonly struct MappedQueryCore<T>(
 	public MappedQueryCore<T> WithConfig(ChunkConfig<T> config)
 		=> new(Command, _source, _skip, _take, _singleResult, _asyncReads, config);
 
+	/// <summary>Returns the same query over another command.</summary>
+	public MappedQueryCore<T> WithCommand(IExecuteReader command)
+		=> new(command, _source, _skip, _take, _singleResult, _asyncReads, Config);
+
 	public MappedQueryCore<T> WithSkip(int count)
 		=> count >= 0
 			? new(
@@ -1002,6 +1006,10 @@ public readonly record struct MappedQuery<T>
 	/// <returns>A copy of the query that uses <paramref name="config"/>.</returns>
 	internal MappedQuery<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
+
+	/// <summary>Returns the same query, with every option kept, over another command.</summary>
+	internal MappedQuery<T> WithCommand(IExecuteReader command)
+		=> new(_core.WithCommand(command));
 
 	/// <inheritdoc />
 	public void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
