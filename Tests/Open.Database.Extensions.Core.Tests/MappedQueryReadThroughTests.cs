@@ -27,7 +27,10 @@ public static class MappedQueryReadThroughTests
 	// ---- every terminal ----
 
 	public static TheoryData<string> Terminals
-		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "First", "Single", "ToDictionary", "ToDictionaryValues", "ToHashSet", "Read", "ReadResult"];
+		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "First", "Single", "ToDictionary", "ToDictionaryValues", "ToHashSet"];
+
+	public static TheoryData<string> AsyncTerminals
+		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "First", "Single", "ToDictionary", "ToDictionaryValues", "ToHashSet", "Stream"];
 
 	static void RunSync(MappedQuery<int> query, string terminal)
 	{
@@ -43,8 +46,6 @@ public static class MappedQueryReadThroughTests
 			case "ToDictionary": query.ToDictionary(i => i); break;
 			case "ToDictionaryValues": query.ToDictionary(i => i, i => i * 2); break;
 			case "ToHashSet": query.ToHashSet(); break;
-			case "Read": query.Read(items => { foreach (int _ in items) { } }); break;
-			case "ReadResult": query.Read(items => items.Count()); break;
 			default: throw new ArgumentOutOfRangeException(nameof(terminal));
 		}
 	}
@@ -63,8 +64,7 @@ public static class MappedQueryReadThroughTests
 			case "ToDictionary": await query.ToDictionaryAsync(i => i, null, token); break;
 			case "ToDictionaryValues": await query.ToDictionaryAsync(i => i, i => i * 2, null, token); break;
 			case "ToHashSet": await query.ToHashSetAsync(null, token); break;
-			case "Read": await query.ReadAsync(async (items, t) => { await foreach (int _ in items.WithCancellation(t)) { } }, token); break;
-			case "ReadResult": await query.ReadAsync(async (items, t) => { int n = 0; await foreach (int _ in items.WithCancellation(t)) n++; return n; }, token); break;
+			case "Stream": await foreach (int _ in query.Stream(Timeout.InfiniteTimeSpan, token)) { } break;
 			default: throw new ArgumentOutOfRangeException(nameof(terminal));
 		}
 	}
@@ -90,7 +90,7 @@ public static class MappedQueryReadThroughTests
 		Assert.Equal(2, reader().NextResultCalls);
 	}
 
-	[Theory, MemberData(nameof(Terminals))]
+	[Theory, MemberData(nameof(AsyncTerminals))]
 	public static async Task EveryTerminalAsync_ReadsThroughWithTheCallersToken_AndNeverReadsTheirRows(string terminal)
 	{
 		using var cts = new CancellationTokenSource();
@@ -100,11 +100,13 @@ public static class MappedQueryReadThroughTests
 
 		Assert.Equal(LaterSets + 1, reader().NextResultCalls);
 		Assert.Equal(LaterSets + 1, reader().AsyncCalls);
-		Assert.Equal(cts.Token, reader().LastToken);
+		// A stream hands the read a token linked to the caller's, so the caller's own token is not the one it sees.
+		if (terminal == "Stream") Assert.True(reader().LastToken.CanBeCanceled);
+		else Assert.Equal(cts.Token, reader().LastToken);
 		Assert.Equal(0, reader().ReadsAfterNextResult);
 	}
 
-	[Theory, MemberData(nameof(Terminals))]
+	[Theory, MemberData(nameof(AsyncTerminals))]
 	public static async Task EveryTerminalAsync_ThrowsALaterFailureUnwrapped(string terminal)
 	{
 		FakeExecuteReader command = Command(1, out Func<MultiSetReader> reader, failAt: 1);
@@ -212,72 +214,36 @@ public static class MappedQueryReadThroughTests
 	// ---- the caller stopped, or something of the caller's threw: no read-through, and its exception is never replaced ----
 
 	[Fact]
-	public static void ABreakOutOfTheStream_DoesNotReadThrough()
-	{
-		FakeExecuteReader command = Command(3, out Func<MultiSetReader> reader, failAt: 1);
-
-		Assert.Equal(1, Query(command).Read(items => items.First()));
-		Query(command).Read(items => { foreach (int _ in items) break; });
-
-		Assert.Equal(0, reader().NextResultCalls);
-	}
-
-	[Fact]
 	public static async Task ABreakOutOfTheAsyncStream_DoesNotReadThrough()
 	{
 		FakeExecuteReader command = Command(3, out Func<MultiSetReader> reader, failAt: 1);
 
-		await Query(command).ReadAsync(async (items, t) => { await foreach (int _ in items.WithCancellation(t)) break; }, Ct);
+		await foreach (int _ in Query(command).Stream(Timeout.InfiniteTimeSpan, Ct)) break;
 
 		Assert.Equal(0, reader().NextResultCalls);
 	}
 
 	[Fact]
-	public static void AStreamRead_ToTheTakeLimit_ReadsThrough_AndSoDoesOneToTheLastRow()
-	{
-		FakeExecuteReader limited = Command(5, out Func<MultiSetReader> limitedReader);
-		Assert.Equal(2, Query(limited).Take(2).Read(items => items.Count()));
-		Assert.Equal(LaterSets + 1, limitedReader().NextResultCalls);
-
-		FakeExecuteReader all = Command(5, out Func<MultiSetReader> allReader);
-		Assert.Equal(5, Query(all).Read(items => items.Count()));
-		Assert.Equal(LaterSets + 1, allReader().NextResultCalls);
-	}
-
-	[Fact]
-	public static async Task AnAsyncStreamRead_ToTheTakeLimit_ReadsThrough()
+	public static async Task AStream_ToTheTakeLimit_ReadsThrough()
 	{
 		FakeExecuteReader command = Command(5, out Func<MultiSetReader> reader);
 
-		int count = await Query(command).Take(2).ReadAsync(async (items, t) => { int n = 0; await foreach (int _ in items.WithCancellation(t)) n++; return n; }, Ct);
+		int count = 0;
+		await foreach (int _ in Query(command).Take(2).Stream(Timeout.InfiniteTimeSpan, Ct)) count++;
 
 		Assert.Equal(2, count);
 		Assert.Equal(LaterSets + 1, reader().NextResultCalls);
 	}
 
 	[Fact]
-	public static void AHandlerThatThrows_IsNotReplaced_AndNothingIsReadThrough()
+	public static async Task AConsumerThatThrows_IsNotReplaced_AndNothingIsReadThrough()
 	{
 		FakeExecuteReader command = Command(3, out Func<MultiSetReader> reader, failAt: 1);
 
-		FormatException ex = Assert.Throws<FormatException>(() => Query(command).Read(items =>
+		FormatException ex = await Assert.ThrowsAsync<FormatException>(async () =>
 		{
-			foreach (int _ in items) throw new FormatException("mine");
-		}));
-
-		Assert.Equal("mine", ex.Message);
-		Assert.Equal(0, reader().NextResultCalls);
-	}
-
-	[Fact]
-	public static async Task AnAsyncHandlerThatThrows_IsNotReplaced_AndNothingIsReadThrough()
-	{
-		FakeExecuteReader command = Command(3, out Func<MultiSetReader> reader, failAt: 1);
-
-		FormatException ex = await Assert.ThrowsAsync<FormatException>(async () => await Query(command).ReadAsync(async (items, t) =>
-		{
-			await foreach (int _ in items.WithCancellation(t)) throw new FormatException("mine");
-		}, Ct));
+			await foreach (int _ in Query(command).Stream(Timeout.InfiniteTimeSpan, Ct)) throw new FormatException("mine");
+		});
 
 		Assert.Equal("mine", ex.Message);
 		Assert.Equal(0, reader().NextResultCalls);
@@ -323,9 +289,8 @@ public static class MappedQueryReadThroughTests
 		Assert.Equal(1, Query(command).SingleResult().FirstOrDefault()); // nothing skipped: SingleRow
 		Assert.Equal(2, Query(command).Skip(1).SingleResult().FirstOrDefault()); // a row is skipped first: no SingleRow
 		Assert.Equal(1, Query(command).Take(2).SingleResult().FirstOrDefault());
-		Assert.Equal(1, Query(command).SingleResult().Read(items => items.First()));
 
-		Assert.Equal([Result, Result, Result, Result, Result, ResultAndRow, Result, ResultAndRow, Result], command.Behaviors);
+		Assert.Equal([Result, Result, Result, Result, Result, ResultAndRow, Result, ResultAndRow], command.Behaviors);
 		Assert.Equal(0, reader().NextResultCalls);
 	}
 
@@ -337,7 +302,7 @@ public static class MappedQueryReadThroughTests
 		Assert.Equal([1, 2], await Query(command).SingleResult().ToListAsync(Ct));
 		Assert.Equal([new IdRow(1), new IdRow(2)], await command.Map<IdRow>().SingleResult().ToListAsync(Ct));
 		Assert.Equal(1, await Query(command).SingleResult().FirstOrDefaultAsync(Ct));
-		await Query(command).SingleResult().ReadAsync(async (items, t) => { await foreach (int _ in items.WithCancellation(t)) { } }, Ct);
+		await foreach (int _ in Query(command).SingleResult().Stream(Timeout.InfiniteTimeSpan, Ct)) { }
 
 		Assert.Equal(
 			[CommandBehavior.SingleResult, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess, CommandBehavior.SingleResult | CommandBehavior.SingleRow, CommandBehavior.SingleResult],

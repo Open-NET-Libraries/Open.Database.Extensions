@@ -5,10 +5,10 @@ using System.Data.Common;
 namespace Open.Database.Extensions.Tests;
 
 /// <summary>The query types an async terminal can be called on.</summary>
-public enum QueryShape { Plain, Skip, Take, Interface }
+public enum QueryShape { Plain, Skip, Take }
 
-/// <summary>The async terminals (the <c>ReadAsync</c> forms are the primitives; the rest are built on them or beside them).</summary>
-public enum QueryTerminal { ToList, ToArray, First, Single, ToImmutableArray, ToDictionary, ToHashSet, ReadHandler, ReadResult, ReadHandlerNoToken, ReadResultNoToken }
+/// <summary>The async terminals, and the stream.</summary>
+public enum QueryTerminal { ToList, ToArray, First, Single, ToImmutableArray, ToDictionary, ToHashSet, Stream }
 
 /// <summary>Which of the two tokens a call has.</summary>
 public enum TokenSetup { CallOnly, CommandOnly, SameOnBoth, DifferentOnBoth }
@@ -40,15 +40,8 @@ public static class PerCallCancellationTests
 		await foreach (TokenItem _ in items) { }
 	}
 
-	static async ValueTask<int> DrainAndCount(IAsyncEnumerable<TokenItem> items)
-	{
-		int n = 0;
-		await foreach (TokenItem _ in items) n++;
-		return n;
-	}
-
-	// The same calls on each type: the instance terminals of the three structs, and the extension methods on IMappedQuery<T>.
-	static Task Call(MappedQuery<TokenItem> q, QueryTerminal terminal, TokenRig rig, CancellationToken token) => terminal switch
+	// The same calls on each type: the instance terminals of the three views.
+	static Task Call(MappedQuery<TokenItem> q, QueryTerminal terminal, CancellationToken token) => terminal switch
 	{
 		QueryTerminal.ToList => q.ToListAsync(token).AsTask(),
 		QueryTerminal.ToArray => q.ToArrayAsync(token).AsTask(),
@@ -57,14 +50,11 @@ public static class PerCallCancellationTests
 		QueryTerminal.ToImmutableArray => q.ToImmutableArrayAsync(token).AsTask(),
 		QueryTerminal.ToDictionary => q.ToDictionaryAsync(static i => i.Id, null, token).AsTask(),
 		QueryTerminal.ToHashSet => q.ToHashSetAsync(null, token).AsTask(),
-		QueryTerminal.ReadHandler => q.ReadAsync((items, t) => { rig.Handler.Add(t); return Drain(items); }, token).AsTask(),
-		QueryTerminal.ReadResult => q.ReadAsync((items, t) => { rig.Handler.Add(t); return DrainAndCount(items); }, token).AsTask(),
-		QueryTerminal.ReadHandlerNoToken => q.ReadAsync(Drain, token).AsTask(),
-		QueryTerminal.ReadResultNoToken => q.ReadAsync(DrainAndCount, token).AsTask(),
+		QueryTerminal.Stream => Drain(q.Stream(Timeout.InfiniteTimeSpan, token)).AsTask(),
 		_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 	};
 
-	static Task Call(MappedQueryWithSkip<TokenItem> q, QueryTerminal terminal, TokenRig rig, CancellationToken token) => terminal switch
+	static Task Call(MappedQueryWithSkip<TokenItem> q, QueryTerminal terminal, CancellationToken token) => terminal switch
 	{
 		QueryTerminal.ToList => q.ToListAsync(token).AsTask(),
 		QueryTerminal.ToArray => q.ToArrayAsync(token).AsTask(),
@@ -73,14 +63,11 @@ public static class PerCallCancellationTests
 		QueryTerminal.ToImmutableArray => q.ToImmutableArrayAsync(token).AsTask(),
 		QueryTerminal.ToDictionary => q.ToDictionaryAsync(static i => i.Id, null, token).AsTask(),
 		QueryTerminal.ToHashSet => q.ToHashSetAsync(null, token).AsTask(),
-		QueryTerminal.ReadHandler => q.ReadAsync((items, t) => { rig.Handler.Add(t); return Drain(items); }, token).AsTask(),
-		QueryTerminal.ReadResult => q.ReadAsync((items, t) => { rig.Handler.Add(t); return DrainAndCount(items); }, token).AsTask(),
-		QueryTerminal.ReadHandlerNoToken => q.ReadAsync(Drain, token).AsTask(),
-		QueryTerminal.ReadResultNoToken => q.ReadAsync(DrainAndCount, token).AsTask(),
+		QueryTerminal.Stream => Drain(q.Stream(Timeout.InfiniteTimeSpan, token)).AsTask(),
 		_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 	};
 
-	static Task Call(MappedQueryWithTake<TokenItem> q, QueryTerminal terminal, TokenRig rig, CancellationToken token) => terminal switch
+	static Task Call(MappedQueryWithTake<TokenItem> q, QueryTerminal terminal, CancellationToken token) => terminal switch
 	{
 		QueryTerminal.ToList => q.ToListAsync(token).AsTask(),
 		QueryTerminal.ToArray => q.ToArrayAsync(token).AsTask(),
@@ -89,37 +76,15 @@ public static class PerCallCancellationTests
 		QueryTerminal.ToImmutableArray => q.ToImmutableArrayAsync(token).AsTask(),
 		QueryTerminal.ToDictionary => q.ToDictionaryAsync(static i => i.Id, null, token).AsTask(),
 		QueryTerminal.ToHashSet => q.ToHashSetAsync(null, token).AsTask(),
-		QueryTerminal.ReadHandler => q.ReadAsync((items, t) => { rig.Handler.Add(t); return Drain(items); }, token).AsTask(),
-		QueryTerminal.ReadResult => q.ReadAsync((items, t) => { rig.Handler.Add(t); return DrainAndCount(items); }, token).AsTask(),
-		QueryTerminal.ReadHandlerNoToken => q.ReadAsync(Drain, token).AsTask(),
-		QueryTerminal.ReadResultNoToken => q.ReadAsync(DrainAndCount, token).AsTask(),
+		QueryTerminal.Stream => Drain(q.Stream(Timeout.InfiniteTimeSpan, token)).AsTask(),
 		_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
 	};
-
-	// The generic constraint makes the calls below the extension methods on IMappedQuery<T>, never the instance methods of the struct.
-	static Task CallInterface<TQuery>(TQuery q, QueryTerminal terminal, TokenRig rig, CancellationToken token)
-		where TQuery : IMappedQuery<TokenItem> => terminal switch
-		{
-			QueryTerminal.ToList => q.ToListAsync(token).AsTask(),
-			QueryTerminal.ToArray => q.ToArrayAsync(token).AsTask(),
-			QueryTerminal.First => q.FirstOrDefaultAsync(token).AsTask(),
-			QueryTerminal.Single => q.SingleOrDefaultAsync(token).AsTask(),
-			QueryTerminal.ToImmutableArray => q.ToImmutableArrayAsync(token).AsTask(),
-			QueryTerminal.ToDictionary => q.ToDictionaryAsync(static i => i.Id, null, token).AsTask(),
-			QueryTerminal.ToHashSet => q.ToHashSetAsync(null, token).AsTask(),
-			QueryTerminal.ReadHandler => q.ReadAsync((items, t) => { rig.Handler.Add(t); return Drain(items); }, token).AsTask(),
-			QueryTerminal.ReadResult => q.ReadAsync((items, t) => { rig.Handler.Add(t); return DrainAndCount(items); }, token).AsTask(),
-			QueryTerminal.ReadHandlerNoToken => q.ReadAsync(Drain, token).AsTask(),
-			QueryTerminal.ReadResultNoToken => q.ReadAsync(DrainAndCount, token).AsTask(),
-			_ => throw new ArgumentOutOfRangeException(nameof(terminal)),
-		};
 
 	static Task Run(ExpressiveDbCommand command, QueryShape shape, QueryTerminal terminal, TokenRig rig, CancellationToken token) => shape switch
 	{
-		QueryShape.Plain => Call(command.Map<TokenItem>(), terminal, rig, token),
-		QueryShape.Skip => Call(command.Map<TokenItem>().Skip(0), terminal, rig, token),
-		QueryShape.Take => Call(command.Map<TokenItem>().Take(100), terminal, rig, token),
-		QueryShape.Interface => CallInterface(command.Map<TokenItem>(), terminal, rig, token),
+		QueryShape.Plain => Call(command.Map<TokenItem>(), terminal, token),
+		QueryShape.Skip => Call(command.Map<TokenItem>().Skip(0), terminal, token),
+		QueryShape.Take => Call(command.Map<TokenItem>().Take(100), terminal, token),
 		_ => throw new ArgumentOutOfRangeException(nameof(shape)),
 	};
 
@@ -263,8 +228,13 @@ public static class PerCallCancellationTests
 		Assert.Equal(seen, Assert.Single(rig.Execute));
 		Assert.NotEmpty(rig.Read);
 		Assert.All(rig.Read, t => Assert.Equal(seen, t));
-		Assert.All(rig.Handler, t => Assert.Equal(seen, t));
-		if (terminal is QueryTerminal.ReadHandler or QueryTerminal.ReadResult) Assert.NotEmpty(rig.Handler);
+
+		if (terminal == QueryTerminal.Stream)
+		{
+			// A stream gives every step a token linked to the call's and the command's, never one of them as it is.
+			Assert.True(seen.CanBeCanceled);
+			return;
+		}
 
 		switch (setup)
 		{

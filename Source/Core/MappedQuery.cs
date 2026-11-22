@@ -430,6 +430,7 @@ readonly struct MappedQueryCore<T>(
 		}, Behavior, linked, token));
 	}
 
+
 	public ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken)
 	{
 		CancellationToken token = Combine(cancellationToken, out CancellationTokenSource? linked);
@@ -859,6 +860,29 @@ readonly struct MappedQueryCore<T>(
 	}
 
 	/// <summary>
+	/// Reads the rows one at a time, lazily, stopping the read when the consumer goes <paramref name="stallTimeout"/> without a pull.
+	/// </summary>
+	/// <param name="stallTimeout">The longest the consumer may go without pulling the next row, or <see cref="Timeout.InfiniteTimeSpan"/>.</param>
+	/// <param name="cancellationToken">The caller's token.</param>
+	/// <returns>The rows.</returns>
+	public IAsyncEnumerable<T> Stream(
+		TimeSpan stallTimeout,
+		CancellationToken cancellationToken)
+	{
+		_ = Command;
+		if (stallTimeout != Timeout.InfiniteTimeSpan && stallTimeout <= TimeSpan.Zero)
+		{
+			throw new ArgumentOutOfRangeException(
+				nameof(stallTimeout),
+				stallTimeout,
+				"The stall timeout must be a positive span, or Timeout.InfiniteTimeSpan.");
+		}
+
+		return new StallStream<T>(this, stallTimeout, cancellationToken);
+	}
+
+
+	/// <summary>
 	/// Yields the elements of a chunk stream one by one.
 	/// </summary>
 	/// <remarks>
@@ -889,13 +913,11 @@ readonly struct MappedQueryCore<T>(
 	#endregion
 }
 
-/// <summary>A deferred, type-locked query over any <see cref="IExecuteReader"/>. Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.</summary>
+/// <summary>A deferred, type-locked query over any <see cref="IExecuteReader"/>. Terminals are methods here.</summary>
 /// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 public readonly record struct MappedQuery<T>
-	: IMappedQuerySync<T>, IMappedTerminals<T>
+	: IMappedQuery<T>
 {
-	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
-
 	readonly MappedQueryCore<T> _core;
 	internal MappedQuery(MappedQueryCore<T> core) => _core = core;
 
@@ -1013,77 +1035,145 @@ public readonly record struct MappedQuery<T>
 	internal MappedQuery<T> WithCommand(IExecuteReader command)
 		=> new(_core.WithCommand(command));
 
-	void IMappedQuerySync<T>.Read(Action<IEnumerable<T>> handler)
-		=> Read(handler);
-
-	TResult IMappedQuerySync<T>.Read<TResult>(
-		Func<IEnumerable<T>, TResult> handler)
-		=> Read(handler);
-
-	T IMappedTerminals<T>.First() => First();
-
-	T IMappedTerminals<T>.Single() => Single();
-
-	T? IMappedTerminals<T>.FirstOrDefault() => FirstOrDefault();
-
-	T? IMappedTerminals<T>.SingleOrDefault() => SingleOrDefault();
-
-	internal void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
-	internal TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler) => _core.Read(handler);
-	/// <inheritdoc />
-	public ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken) => _core.ReadAsync(handler, cancellationToken);
-	/// <inheritdoc />
-	public ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken) => _core.ReadAsync(handler, cancellationToken);
-
 	internal List<T> ToList() => _core.ToList();
-	/// <inheritdoc cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)" path="/*[not(self::remarks)]"/>
+	/// <summary>
+	/// Asynchronously reads every mapped row into a new <see cref="List{T}"/>.
+	/// </summary>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces a list of all the rows, in the order the database returned them.</returns>
 	/// <remarks>
-	/// <inheritdoc cref="MappedQueryExtensions.ToListAsync{T}(IMappedQuery{T}, CancellationToken)" path="/remarks/node()"/>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.ToList{T}(MappedQuery{T})"/>
+	/// <seealso cref="MappedQuery{T}.ToArrayAsync(CancellationToken)"/>
 	public ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken = default) => _core.ToListAsync(cancellationToken);
 	internal T[] ToArray() => _core.ToArray();
-	/// <inheritdoc cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)" path="/*[not(self::remarks)]"/>
+	/// <summary>
+	/// Asynchronously reads every mapped row into a new array.
+	/// </summary>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces an array of all the rows, in the order the database returned them.</returns>
 	/// <remarks>
-	/// <inheritdoc cref="MappedQueryExtensions.ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)" path="/remarks/node()"/>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
+	/// <para>
+	/// A result with rows is a new array, exactly as long as the number of rows, and nothing else refers to it: keep it, change it or hand it on.
+	/// <see cref="MappedQuery{T}.ToImmutableArrayAsync(CancellationToken)"/> wraps such an array without copying it on .NET 8 and later (the netstandard builds copy it once).
+	/// An empty result is the shared empty array, which has nothing to change.
+	/// </para>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.ToArray{T}(MappedQuery{T})"/>
+	/// <seealso cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>
 	public ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken = default) => _core.ToArrayAsync(cancellationToken);
 	internal T? FirstOrDefault() => _core.FirstOrDefault();
-	/// <inheritdoc cref="MappedQueryExtensions.FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <summary>
+	/// Asynchronously reads the first mapped row.
+	/// </summary>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces the first row, or <see langword="default"/> if the query returns no rows.</returns>
+	/// <remarks>
+	/// <para>
+	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.FirstOrDefault{T}(MappedQuery{T})"/>
+	/// <seealso cref="MappedQuery{T}.SingleOrDefaultAsync(CancellationToken)"/>
 	public ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken = default) => _core.FirstOrDefaultAsync(cancellationToken);
 	internal T? SingleOrDefault() => _core.SingleOrDefault();
-	/// <inheritdoc cref="MappedQueryExtensions.SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <summary>
+	/// Asynchronously reads the only mapped row.
+	/// </summary>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces the single row, or <see langword="default"/> if the query returns no rows.</returns>
+	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
+	/// <remarks>
+	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.SingleOrDefault{T}(MappedQuery{T})"/>
+	/// <seealso cref="MappedQuery{T}.FirstOrDefaultAsync(CancellationToken)"/>
 	public ValueTask<T?> SingleOrDefaultAsync(CancellationToken cancellationToken = default) => _core.SingleOrDefaultAsync(cancellationToken);
 	internal T First()
 		=> _core.First();
-	/// <inheritdoc cref="MappedQueryExtensions.FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <summary>
+	/// Asynchronously reads the first mapped row; throws if the query returns no rows.
+	/// </summary>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces the first row.</returns>
+	/// <exception cref="InvalidOperationException">The query returns no rows.</exception>
+	/// <remarks>
+	/// <para>
+	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
+	/// </para>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
+	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.First{T}(MappedQuery{T})"/>
+	/// <seealso cref="MappedQuery{T}.FirstOrDefaultAsync(CancellationToken)"/>
+	/// <seealso cref="MappedQuery{T}.SingleAsync(CancellationToken)"/>
 	public ValueTask<T> FirstAsync(
 		CancellationToken cancellationToken = default)
 		=> _core.FirstAsync(cancellationToken);
 	internal T Single()
 		=> _core.Single();
-	/// <inheritdoc cref="MappedQueryExtensions.SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <summary>
+	/// Asynchronously reads the only mapped row; throws if the query returns no rows or more than one.
+	/// </summary>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces the single row.</returns>
+	/// <exception cref="InvalidOperationException">The query returns no rows, or more than one row.</exception>
+	/// <remarks>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
+	/// <para>
+	/// The provider is not asked for a single row, because it could then hide the second one.
+	/// </para>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
+	/// <para>
+	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
+	/// </para>
+	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.Single{T}(MappedQuery{T})"/>
+	/// <seealso cref="MappedQuery{T}.SingleOrDefaultAsync(CancellationToken)"/>
+	/// <seealso cref="MappedQuery{T}.FirstAsync(CancellationToken)"/>
 	public ValueTask<T> SingleAsync(
 		CancellationToken cancellationToken = default)
 		=> _core.SingleAsync(cancellationToken);
 	internal ImmutableArray<T> ToImmutableArray() => _core.ToImmutableArray();
-	/// <inheritdoc cref="MappedQueryExtensions.ToImmutableArrayAsync{T}(IMappedQuery{T}, CancellationToken)" path="/*[not(self::remarks)]"/>
+	/// <summary>
+	/// Asynchronously reads every mapped row into a new <see cref="ImmutableArray{T}"/>.
+	/// </summary>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces an immutable array of all the rows, in the order the database returned them.</returns>
 	/// <remarks>
-	/// <inheritdoc cref="MappedQueryExtensions.ToImmutableArrayAsync{T}(IMappedQuery{T}, CancellationToken)" path="/remarks/node()"/>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.ToImmutableArray{T}(MappedQuery{T})"/>
+	/// <seealso cref="MappedQuery{T}.ToArrayAsync(CancellationToken)"/>
 	public ValueTask<ImmutableArray<T>> ToImmutableArrayAsync(CancellationToken cancellationToken = default) => _core.ToImmutableArrayAsync(cancellationToken);
 	internal Dictionary<TKey, T> ToDictionary<TKey>(Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer = null) where TKey : notnull => _core.ToDictionary(keySelector, comparer);
 	/// <inheritdoc cref="ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(Func<T, TKey> keySelector, CancellationToken cancellationToken = default) where TKey : notnull
 		=> ToDictionaryAsync<TKey>(keySelector, null, cancellationToken);
 
-	/// <inheritdoc cref="MappedQueryExtensions.ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::remarks)]"/>
+	/// <summary>
+	/// Asynchronously reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>, keyed by <paramref name="keySelector"/>.
+	/// </summary>
+	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
+	/// <param name="keySelector">Produces the key for each mapped row.</param>
+	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces a dictionary of all the rows.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
 	/// <remarks>
-	/// <inheritdoc cref="MappedQueryExtensions.ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)" path="/remarks/node()"/>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
+	/// <para>
+	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a <see langword="null"/> key) throws only after the whole read.
+	/// </para>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.ToDictionary{T, TKey}(MappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/>
+	/// <seealso cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>
 	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer, CancellationToken cancellationToken = default) where TKey : notnull => _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
 	internal Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
 		Func<T, TKey> keySelector,
@@ -1099,11 +1189,29 @@ public readonly record struct MappedQuery<T>
 		where TKey : notnull
 		=> ToDictionaryAsync<TKey, TValue>(keySelector, valueSelector, null, cancellationToken);
 
-	/// <inheritdoc cref="MappedQueryExtensions.ToDictionaryAsync{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::remarks)]"/>
+	/// <summary>
+	/// Asynchronously reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>,
+	/// keyed by <paramref name="keySelector"/>, with the value
+	/// <paramref name="valueSelector"/> returns for the row.
+	/// </summary>
+	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
+	/// <typeparam name="TValue">The type of the dictionary value.</typeparam>
+	/// <param name="keySelector">Produces the key for each mapped row.</param>
+	/// <param name="valueSelector">Produces the value for each mapped row.</param>
+	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces a dictionary of all the rows.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="keySelector"/> or <paramref name="valueSelector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
 	/// <remarks>
-	/// <inheritdoc cref="MappedQueryExtensions.ToDictionaryAsync{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)" path="/remarks/node()"/>
+	/// <para>
+	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a <see langword="null"/> key) throws, and the selectors run, only after the whole read.
+	/// A duplicate key throws, as it does for <see cref="MappedQuery{T}.ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>.
+	/// </para>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.ToDictionary{T, TKey, TValue}(MappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey})"/>
+	/// <seealso cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>
 	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
 		Func<T, TKey> keySelector,
 		Func<T, TValue> valueSelector,
@@ -1117,11 +1225,18 @@ public readonly record struct MappedQuery<T>
 	public ValueTask<HashSet<T>> ToHashSetAsync(CancellationToken cancellationToken = default)
 		=> ToHashSetAsync(null, cancellationToken);
 
-	/// <inheritdoc cref="MappedQueryExtensions.ToHashSetAsync{T}(IMappedQuery{T}, IEqualityComparer{T}, CancellationToken)" path="/*[not(self::remarks)]"/>
+	/// <summary>
+	/// Asynchronously reads every mapped row into a new <see cref="HashSet{T}"/>.
+	/// </summary>
+	/// <param name="comparer">The comparer for the rows, or <see langword="null"/> to use the default comparer.</param>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='token']/*" />
+	/// <returns>A task that produces a set of the distinct rows.</returns>
 	/// <remarks>
-	/// <inheritdoc cref="MappedQueryExtensions.ToHashSetAsync{T}(IMappedQuery{T}, IEqualityComparer{T}, CancellationToken)" path="/remarks/node()"/>
+	/// <include file="Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>
+	/// <seealso cref="Synchronous.SyncMappedViewExtensions.ToHashSet{T}(MappedQuery{T}, IEqualityComparer{T})"/>
+	/// <seealso cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>
 	public ValueTask<HashSet<T>> ToHashSetAsync(IEqualityComparer<T>? comparer, CancellationToken cancellationToken = default) => _core.ToHashSetAsync(comparer, cancellationToken);
 
 	#region Buffer terminals
@@ -1244,6 +1359,32 @@ public readonly record struct MappedQuery<T>
 		=> _core.ToAsyncBufferStream(cancellationToken);
 
 	/// <summary>
+	/// Reads the rows one at a time off the open reader, lazily, for a caller that expects to stop early.
+	/// </summary>
+	/// <remarks>
+	/// While you pull rows, this holds the reader and the connection open.
+	/// Buffered reads (<c>ToListAsync</c>, <c>ToArrayAsync</c>, <c>ToAsyncBufferStream</c>) are preferred and very good:
+	/// they free the connection before you see a row.
+	/// Use <c>Stream</c> only to stop early, for example the first 10 rows, or one row and then stop.
+	/// If you go <paramref name="stallTimeout"/> without pulling the next row, the read stops, the command is cancelled,
+	/// the connection this library opened is closed, and your next pull throws <see cref="TimeoutException"/>.
+	/// Dispose the enumeration (<c>await foreach</c> does).
+	/// </remarks>
+	/// <param name="stallTimeout">
+	/// The longest you may go without pulling the next row. Required; there is no default.
+	/// <see cref="Timeout.InfiniteTimeSpan"/> (or a span over 24 days) accepts an unbounded hold.
+	/// It does not limit the whole call: use a token from <c>CancellationTokenSource.CancelAfter</c> for that.
+	/// </param>
+	/// <param name="cancellationToken">Cancels the read; the enumeration then throws <see cref="OperationCanceledException"/>.</param>
+	/// <returns>The rows, in the order the reader returns them. The enumeration can be taken once.</returns>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="stallTimeout"/> is zero or negative and not <see cref="Timeout.InfiniteTimeSpan"/>.</exception>
+	/// <exception cref="InvalidOperationException">The query is a default value, or a second enumeration is taken.</exception>
+	public IAsyncEnumerable<T> Stream(
+		TimeSpan stallTimeout,
+		CancellationToken cancellationToken = default)
+		=> _core.Stream(stallTimeout, cancellationToken);
+
+	/// <summary>
 	/// Reads the query in a rolling stream of pooled arrays,
 	/// once, and yields the elements one by one.
 	/// </summary>
@@ -1298,10 +1439,8 @@ public readonly record struct MappedQuery<T>
 /// <summary>A <see cref="MappedQuery{T}"/> with a pending skip; can still be limited with <see cref="Take(int)"/>.</summary>
 /// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 public readonly record struct MappedQueryWithSkip<T>
-	: IMappedQuerySync<T>, IMappedTerminals<T>
+	: IMappedQuery<T>
 {
-	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
-
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithSkip(MappedQueryCore<T> core) => _core = core;
 
@@ -1325,28 +1464,6 @@ public readonly record struct MappedQueryWithSkip<T>
 	internal MappedQueryWithSkip<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
 
-	void IMappedQuerySync<T>.Read(Action<IEnumerable<T>> handler)
-		=> Read(handler);
-
-	TResult IMappedQuerySync<T>.Read<TResult>(
-		Func<IEnumerable<T>, TResult> handler)
-		=> Read(handler);
-
-	T IMappedTerminals<T>.First() => First();
-
-	T IMappedTerminals<T>.Single() => Single();
-
-	T? IMappedTerminals<T>.FirstOrDefault() => FirstOrDefault();
-
-	T? IMappedTerminals<T>.SingleOrDefault() => SingleOrDefault();
-
-	internal void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
-	internal TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler) => _core.Read(handler);
-	/// <inheritdoc />
-	public ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken) => _core.ReadAsync(handler, cancellationToken);
-	/// <inheritdoc />
-	public ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken) => _core.ReadAsync(handler, cancellationToken);
-
 	internal List<T> ToList() => _core.ToList();
 	/// <inheritdoc cref="MappedQuery{T}.ToListAsync"/>
 	public ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken = default) => _core.ToListAsync(cancellationToken);
@@ -1354,20 +1471,20 @@ public readonly record struct MappedQueryWithSkip<T>
 	/// <inheritdoc cref="MappedQuery{T}.ToArrayAsync"/>
 	public ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken = default) => _core.ToArrayAsync(cancellationToken);
 	internal T? FirstOrDefault() => _core.FirstOrDefault();
-	/// <inheritdoc cref="MappedQueryExtensions.FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.FirstOrDefaultAsync(CancellationToken)"/>
 	public ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken = default) => _core.FirstOrDefaultAsync(cancellationToken);
 	internal T? SingleOrDefault() => _core.SingleOrDefault();
-	/// <inheritdoc cref="MappedQueryExtensions.SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.SingleOrDefaultAsync(CancellationToken)"/>
 	public ValueTask<T?> SingleOrDefaultAsync(CancellationToken cancellationToken = default) => _core.SingleOrDefaultAsync(cancellationToken);
 	internal T First()
 		=> _core.First();
-	/// <inheritdoc cref="MappedQueryExtensions.FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.FirstAsync(CancellationToken)"/>
 	public ValueTask<T> FirstAsync(
 		CancellationToken cancellationToken = default)
 		=> _core.FirstAsync(cancellationToken);
 	internal T Single()
 		=> _core.Single();
-	/// <inheritdoc cref="MappedQueryExtensions.SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.SingleAsync(CancellationToken)"/>
 	public ValueTask<T> SingleAsync(
 		CancellationToken cancellationToken = default)
 		=> _core.SingleAsync(cancellationToken);
@@ -1424,6 +1541,12 @@ public readonly record struct MappedQueryWithSkip<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToAsyncBufferStream(cancellationToken);
 
+	/// <inheritdoc cref="MappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>
+	public IAsyncEnumerable<T> Stream(
+		TimeSpan stallTimeout,
+		CancellationToken cancellationToken = default)
+		=> _core.Stream(stallTimeout, cancellationToken);
+
 	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
 		CancellationToken cancellationToken = default)
@@ -1435,10 +1558,8 @@ public readonly record struct MappedQueryWithSkip<T>
 /// <summary>A fully-configured <see cref="MappedQuery{T}"/> with a take (and any preceding skip); terminal-only.</summary>
 /// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 public readonly record struct MappedQueryWithTake<T>
-	: IMappedQuerySync<T>, IMappedTerminals<T>
+	: IMappedQuery<T>
 {
-	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
-
 	readonly MappedQueryCore<T> _core;
 	internal MappedQueryWithTake(MappedQueryCore<T> core) => _core = core;
 
@@ -1459,28 +1580,6 @@ public readonly record struct MappedQueryWithTake<T>
 	internal MappedQueryWithTake<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
 
-	void IMappedQuerySync<T>.Read(Action<IEnumerable<T>> handler)
-		=> Read(handler);
-
-	TResult IMappedQuerySync<T>.Read<TResult>(
-		Func<IEnumerable<T>, TResult> handler)
-		=> Read(handler);
-
-	T IMappedTerminals<T>.First() => First();
-
-	T IMappedTerminals<T>.Single() => Single();
-
-	T? IMappedTerminals<T>.FirstOrDefault() => FirstOrDefault();
-
-	T? IMappedTerminals<T>.SingleOrDefault() => SingleOrDefault();
-
-	internal void Read(Action<IEnumerable<T>> handler) => _core.Read(handler);
-	internal TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler) => _core.Read(handler);
-	/// <inheritdoc />
-	public ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken) => _core.ReadAsync(handler, cancellationToken);
-	/// <inheritdoc />
-	public ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken) => _core.ReadAsync(handler, cancellationToken);
-
 	internal List<T> ToList() => _core.ToList();
 	/// <inheritdoc cref="MappedQuery{T}.ToListAsync"/>
 	public ValueTask<List<T>> ToListAsync(CancellationToken cancellationToken = default) => _core.ToListAsync(cancellationToken);
@@ -1488,20 +1587,20 @@ public readonly record struct MappedQueryWithTake<T>
 	/// <inheritdoc cref="MappedQuery{T}.ToArrayAsync"/>
 	public ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken = default) => _core.ToArrayAsync(cancellationToken);
 	internal T? FirstOrDefault() => _core.FirstOrDefault();
-	/// <inheritdoc cref="MappedQueryExtensions.FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.FirstOrDefaultAsync(CancellationToken)"/>
 	public ValueTask<T?> FirstOrDefaultAsync(CancellationToken cancellationToken = default) => _core.FirstOrDefaultAsync(cancellationToken);
 	internal T? SingleOrDefault() => _core.SingleOrDefault();
-	/// <inheritdoc cref="MappedQueryExtensions.SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.SingleOrDefaultAsync(CancellationToken)"/>
 	public ValueTask<T?> SingleOrDefaultAsync(CancellationToken cancellationToken = default) => _core.SingleOrDefaultAsync(cancellationToken);
 	internal T First()
 		=> _core.First();
-	/// <inheritdoc cref="MappedQueryExtensions.FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.FirstAsync(CancellationToken)"/>
 	public ValueTask<T> FirstAsync(
 		CancellationToken cancellationToken = default)
 		=> _core.FirstAsync(cancellationToken);
 	internal T Single()
 		=> _core.Single();
-	/// <inheritdoc cref="MappedQueryExtensions.SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
+	/// <inheritdoc cref="MappedQuery{T}.SingleAsync(CancellationToken)"/>
 	public ValueTask<T> SingleAsync(
 		CancellationToken cancellationToken = default)
 		=> _core.SingleAsync(cancellationToken);
@@ -1557,6 +1656,12 @@ public readonly record struct MappedQueryWithTake<T>
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
 		CancellationToken cancellationToken = default)
 		=> _core.ToAsyncBufferStream(cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>
+	public IAsyncEnumerable<T> Stream(
+		TimeSpan stallTimeout,
+		CancellationToken cancellationToken = default)
+		=> _core.Stream(stallTimeout, cancellationToken);
 
 	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(

@@ -181,63 +181,82 @@ public static class MappedQueryTests
 
 	// ---- cancellation tokens: the call's and the command's are used together (the real steps are covered in PerCallCancellationTests) ----
 
+	// A stream reads one row ahead of its consumer on its own side, so the read is still running
+	// while the consumer holds the first row, but only when there are rows left to read.
+	// The reader is given a token linked to the call's, so what is asserted is that a cancel reaches it.
+	static FakeExecuteReader FiveRows()
+		=> new(
+			Columns,
+			["Ada", "Lovelace", 36],
+			["Ada", "Lovelace", 36],
+			["Ada", "Lovelace", 36],
+			["Ada", "Lovelace", 36],
+			["Ada", "Lovelace", 36]);
+
 	[Fact]
-	public static async Task ReadAsync_FallsBackToCommandToken_WhenCallTokenNotCancelable()
+	public static async Task Stream_FallsBackToCommandToken_WhenCallTokenNotCancelable()
 	{
 		using var commandCts = new CancellationTokenSource();
-		var cmd = new FakeExecuteReader(Columns, ["Ada", "Lovelace", 36]) { CancellationToken = commandCts.Token };
+		FakeExecuteReader cmd = FiveRows();
+		cmd.CancellationToken = commandCts.Token;
 
-		CancellationToken observed = default;
-		await cmd.Map<Person>().ReadAsync((_, token) => { observed = token; return default; }, CancellationToken.None);
-
-		Assert.Equal(commandCts.Token, observed);
-		Assert.Equal(observed, Assert.Single(cmd.ReaderTokens)); // the command is handed the same token the handler sees
-	}
-
-	[Fact]
-	public static async Task ReadAsync_UsesTheCallToken_WhenTheCommandHasNone()
-	{
-		using var callCts = new CancellationTokenSource();
-		var cmd = new FakeExecuteReader(Columns, ["Ada", "Lovelace", 36]);
-
-		CancellationToken observed = default;
-		await cmd.Map<Person>().ReadAsync((_, token) => { observed = token; return default; }, callCts.Token);
-
-		Assert.Equal(callCts.Token, observed);
-		Assert.Equal(observed, Assert.Single(cmd.ReaderTokens));
-	}
-
-	[Fact]
-	public static async Task ReadAsync_WithBothTokens_HandlerAndCommandGetOneTokenThatEitherCancels()
-	{
-		using var commandCts = new CancellationTokenSource();
-		using var callCts = new CancellationTokenSource();
-		var cmd = new FakeExecuteReader(Columns, ["Ada", "Lovelace", 36]) { CancellationToken = commandCts.Token };
-
-		CancellationToken observed = default;
-		bool canceledByCall = false, canceledByCommand = false;
-		await cmd.Map<Person>().ReadAsync((_, token) =>
+		await foreach (Person _ in cmd.Map<Person>().Stream(Timeout.InfiniteTimeSpan, CancellationToken.None))
 		{
-			observed = token;
-			callCts.Cancel();
-			canceledByCall = token.IsCancellationRequested;
-			return default;
-		}, callCts.Token);
+			CancellationToken reader = Assert.Single(cmd.ReaderTokens);
+			Assert.False(reader.IsCancellationRequested);
+			commandCts.Cancel();
+			Assert.True(reader.IsCancellationRequested);
+			break;
+		}
+	}
 
-		Assert.Equal(observed, Assert.Single(cmd.ReaderTokens));
-		Assert.NotEqual(callCts.Token, observed); // two different tokens that can be canceled: a linked one
-		Assert.NotEqual(commandCts.Token, observed);
+	[Fact]
+	public static async Task Stream_UsesTheCallToken_WhenTheCommandHasNone()
+	{
+		using var callCts = new CancellationTokenSource();
+		FakeExecuteReader cmd = FiveRows();
+
+		await foreach (Person _ in cmd.Map<Person>().Stream(Timeout.InfiniteTimeSpan, callCts.Token))
+		{
+			CancellationToken reader = Assert.Single(cmd.ReaderTokens);
+			Assert.False(reader.IsCancellationRequested);
+			callCts.Cancel();
+			Assert.True(reader.IsCancellationRequested);
+			break;
+		}
+	}
+
+	[Fact]
+	public static async Task Stream_WithBothTokens_TheReaderGetsOneTokenThatEitherCancels()
+	{
+		using var commandCts = new CancellationTokenSource();
+		using var callCts = new CancellationTokenSource();
+		FakeExecuteReader cmd = FiveRows();
+		cmd.CancellationToken = commandCts.Token;
+
+		bool canceledByCall = false, canceledByCommand = false;
+		await foreach (Person _ in cmd.Map<Person>().Stream(Timeout.InfiniteTimeSpan, callCts.Token))
+		{
+			CancellationToken observed = Assert.Single(cmd.ReaderTokens);
+			Assert.NotEqual(callCts.Token, observed); // two different tokens that can be canceled: a linked one
+			Assert.NotEqual(commandCts.Token, observed);
+			callCts.Cancel();
+			canceledByCall = observed.IsCancellationRequested;
+			break;
+		}
+
 		Assert.True(canceledByCall);
 
 		using var callCts2 = new CancellationTokenSource();
 		using var commandCts2 = new CancellationTokenSource();
+		cmd = FiveRows();
 		cmd.CancellationToken = commandCts2.Token;
-		await cmd.Map<Person>().ReadAsync((_, token) =>
+		await foreach (Person _ in cmd.Map<Person>().Stream(Timeout.InfiniteTimeSpan, callCts2.Token))
 		{
 			commandCts2.Cancel();
-			canceledByCommand = token.IsCancellationRequested;
-			return default;
-		}, callCts2.Token);
+			canceledByCommand = Assert.Single(cmd.ReaderTokens).IsCancellationRequested;
+			break;
+		}
 
 		Assert.True(canceledByCommand);
 	}

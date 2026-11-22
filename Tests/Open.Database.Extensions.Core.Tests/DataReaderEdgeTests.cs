@@ -632,14 +632,15 @@ public static class DataReaderEdgeTests
 		int seen = 0;
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			async () => await query.ReadAsync(async (rows, ct) =>
+			async () =>
 			{
-				await foreach (int _ in rows.WithCancellation(ct))
+				await foreach (int _ in query.Stream(Timeout.InfiniteTimeSpan, cts.Token))
 					seen++;
-			}, cts.Token));
+			});
 
 		Assert.Equal(3, mapped);
-		Assert.Equal(3, seen);
+		// A stream reads one row ahead of its consumer: the cancel, at the third row, comes before that row is delivered.
+		Assert.True(seen < mapped);
 	}
 
 	// ---- AsEnumerable / AsAsyncEnumerable ----

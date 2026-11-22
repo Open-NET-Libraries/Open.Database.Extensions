@@ -574,17 +574,19 @@ public static class Mapping
 		return ids;
 	}
 
-	public static int StreamRows(SqliteConnection connection)
+	public static async Task<int> StreamRowsAsync(SqliteConnection connection, CancellationToken cancellationToken)
 	{
 		#region map_stream
-		// The synchronous handler form (ReadAsync takes an async sequence).
-		// Read hands you a lazy sequence
-		// that is only valid inside the handler, while the reader is open.
-		int total = connection
+		// Stream hands you the rows one at a time while the reader is open.
+		// The timeout is the longest you may go without pulling the next row.
+		int total = 0;
+		await foreach (Post post in connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.Read(static posts
-				=> posts.Sum(static post => post.Id));
+			.Stream(TimeSpan.FromSeconds(30), cancellationToken))
+		{
+			total += post.Id;
+		}
 		#endregion
 
 		return total;

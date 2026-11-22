@@ -73,7 +73,10 @@ public static class MappedQueryLaterFailureLiveTests
 
 			Assert.Throws<SqlException>(() => Ids(command).ToList());
 			Assert.Throws<SqlException>(() => Ids(command).FirstOrDefault());
-			Assert.Throws<SqlException>(() => Ids(command).Read(items => items.Count()));
+			await Assert.ThrowsAsync<SqlException>(async () =>
+			{
+				await foreach (int _ in Ids(command).Stream(Timeout.InfiniteTimeSpan, Ct)) { }
+			});
 			await Assert.ThrowsAsync<SqlException>(async () => await Ids(command).ToListAsync(Ct));
 			await Assert.ThrowsAsync<SqlException>(async () => await Ids(command).SingleOrDefaultAsync(Ct));
 

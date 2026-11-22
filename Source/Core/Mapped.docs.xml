@@ -49,8 +49,6 @@
   <members name="buffered">
     <para>
       All rows are buffered in memory before the call returns.
-      Use <see cref="Synchronous.IMappedQuerySync{T}.Read(Action{IEnumerable{T}})"/> to process
-      very large results as a stream.
     </para>
   </members>
 
@@ -111,29 +109,6 @@
       <see cref="MappedQuery{T}.SingleResult"/> was called, the later result
       sets have been read through, so a failure in one of them is thrown
       instead.
-    </para>
-  </members>
-
-  <members name="terminal-through">
-    <para>
-      Called through <see cref="IMappedQuery{T}"/>, the types of this library
-      behave exactly as their own members do, including how the later result
-      sets are read through.
-      Another implementation of <see cref="IMappedQuery{T}"/> is read through
-      its <c>Read</c> handler: it stops at the row, so it cannot read through
-      the later result sets.
-    </para>
-  </members>
-
-  <members name="terminal-through-throwing">
-    <para>
-      Called through <see cref="IMappedQuery{T}"/>, the types of this library
-      behave exactly as their own members do, including the no-rows message
-      and how the later result sets are read through.
-      Another implementation of <see cref="IMappedQuery{T}"/> is read through
-      its <c>Read</c> handler: it stops at the row, so it cannot read through
-      the later result sets, and its no-rows error is the message of LINQ,
-      which does not name the terminal.
     </para>
   </members>
 

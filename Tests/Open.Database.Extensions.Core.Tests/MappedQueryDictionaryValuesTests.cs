@@ -542,56 +542,6 @@ public static class MappedQueryDictionaryValuesTests
 				.ToDictionaryAsync(i => i, i => "v" + i, null, Ct));
 	}
 
-	// ---- through IMappedQuery<T> (the extensions, for generic code) ----
-
-	[Fact]
-	public static async Task ThroughTheInterface_TheExtensionsDoTheSame()
-	{
-		static IMappedQuery<Person> Q(int rows) => Command(rows).Map<Person>();
-
-		AssertThreeRows(Q(3).ToDictionary(p => p.Id, p => p.Name));
-		AssertThreeRows(
-			await Q(3).ToDictionaryAsync(p => p.Id, p => p.Name, null, Ct));
-		Assert.Empty(Q(0).ToDictionary(p => p.Id, p => p.Name));
-		Assert.Empty(
-			await Q(0).ToDictionaryAsync(p => p.Id, p => p.Name, null, Ct));
-
-		Assert.Throws<ArgumentException>(
-			() => Q(3).ToDictionary(_ => 1, p => p.Name));
-		await Assert.ThrowsAsync<ArgumentException>(
-			async () => await Q(3).ToDictionaryAsync(_ => 1, p => p.Name, null, Ct));
-	}
-
-	[Fact]
-	public static async Task ThroughTheInterface_ANullArgumentIsRefused()
-	{
-		IMappedQuery<Person> query = null!;
-		IMappedQuery<Person> real = Command(1).Map<Person>();
-
-		Assert.Equal(
-			"query",
-			Assert.Throws<ArgumentNullException>(
-				() => query.ToDictionary(p => p.Id, p => p.Name)).ParamName);
-		Assert.Equal(
-			"keySelector",
-			Assert.Throws<ArgumentNullException>(
-				() => real.ToDictionary<Person, int, string>(null!, p => p.Name!)).ParamName);
-		Assert.Equal(
-			"valueSelector",
-			Assert.Throws<ArgumentNullException>(
-				() => real.ToDictionary<Person, int, string>(p => p.Id, null!)).ParamName);
-		Assert.Equal(
-			"query",
-			(await Assert.ThrowsAsync<ArgumentNullException>(
-				async () => await query.ToDictionaryAsync(
-					p => p.Id, p => p.Name, null, Ct))).ParamName);
-		Assert.Equal(
-			"valueSelector",
-			(await Assert.ThrowsAsync<ArgumentNullException>(
-				async () => await real.ToDictionaryAsync<Person, int, string>(
-					p => p.Id, null!, null, Ct))).ParamName);
-	}
-
 	// ---- overload resolution (compile-only) ----
 
 	// The key-only forms, with and without a comparer, still bind to
@@ -623,13 +573,6 @@ public static class MappedQueryDictionaryValuesTests
 		values = await q.Skip(0).ToDictionaryAsync(p => p.Id, p => p.Name);
 		values = await q.Skip(0).Take(2).ToDictionaryAsync(
 			p => p.Id, p => p.Name, cancellationToken: Ct);
-		Assert.Equal(2, values.Count);
-
-		IMappedQuery<Person> boxed = q;
-		keyOnly = boxed.ToDictionary(p => p.Id);
-		keyOnly = boxed.ToDictionary(p => p.Id, null);
-		values = boxed.ToDictionary(p => p.Id, p => p.Name);
-		values = await boxed.ToDictionaryAsync(p => p.Id, p => p.Name, null, Ct);
 		Assert.Equal(2, values.Count);
 	}
 #pragma warning restore xUnit1051

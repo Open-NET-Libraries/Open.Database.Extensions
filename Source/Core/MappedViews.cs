@@ -585,7 +585,7 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 
 /// <summary>
 /// A deferred, type-locked read over a data reader the caller owns.
-/// Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.
+/// Terminals are methods here.
 /// </summary>
 /// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 /// <remarks>
@@ -607,10 +607,7 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedCommand{T}"/>
 public readonly record struct MappedReader<T>
-	: IMappedQuerySync<T>, IMappedTerminals<T>
 {
-	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
-
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedReader(MappedQueryCore<T> core)
@@ -778,7 +775,7 @@ public readonly record struct MappedReader<T>
 
 /// <summary>
 /// A deferred, type-locked query over a raw <see cref="IDbCommand"/>.
-/// Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.
+/// Terminals are methods here.
 /// </summary>
 /// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 /// <remarks>
@@ -802,10 +799,8 @@ public readonly record struct MappedReader<T>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedReader{T}"/>
 public readonly record struct MappedCommand<T>
-	: IMappedQuerySync<T>, IMappedTerminals<T>
+	: IMappedQuery<T>
 {
-	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
-
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedCommand(MappedQueryCore<T> core)
@@ -834,43 +829,6 @@ public readonly record struct MappedCommand<T>
 	/// <inheritdoc cref="MappedQuery{T}.WithConfig(ChunkConfig{T})"/>
 	internal MappedCommand<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
-
-	void IMappedQuerySync<T>.Read(Action<IEnumerable<T>> handler)
-		=> Read(handler);
-
-	TResult IMappedQuerySync<T>.Read<TResult>(
-		Func<IEnumerable<T>, TResult> handler)
-		=> Read(handler);
-
-	T IMappedTerminals<T>.First() => First();
-
-	T IMappedTerminals<T>.Single() => Single();
-
-	T? IMappedTerminals<T>.FirstOrDefault() => FirstOrDefault();
-
-	T? IMappedTerminals<T>.SingleOrDefault() => SingleOrDefault();
-
-	internal void Read(Action<IEnumerable<T>> handler)
-		=> _core.Read(handler);
-
-	internal TResult Read<TResult>(
-		Func<IEnumerable<T>, TResult> handler)
-		=> _core.Read(handler);
-
-	/// <inheritdoc />
-	public ValueTask ReadAsync(
-		Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler,
-		CancellationToken cancellationToken)
-		=> _core.ReadAsync(handler, cancellationToken);
-
-	/// <inheritdoc />
-	public ValueTask<TResult> ReadAsync<TResult>(
-		Func<
-			IAsyncEnumerable<T>,
-			CancellationToken,
-			ValueTask<TResult>> handler,
-		CancellationToken cancellationToken)
-		=> _core.ReadAsync(handler, cancellationToken);
 
 	internal List<T> ToList()
 		=> _core.ToList();
@@ -1001,6 +959,12 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToAsyncBufferStream(cancellationToken);
 
+	/// <inheritdoc cref="MappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>
+	public IAsyncEnumerable<T> Stream(
+		TimeSpan stallTimeout,
+		CancellationToken cancellationToken = default)
+		=> _core.Stream(stallTimeout, cancellationToken);
+
 	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
 		CancellationToken cancellationToken = default)
@@ -1011,7 +975,7 @@ public readonly record struct MappedCommand<T>
 
 /// <summary>
 /// A deferred, type-locked read over the rows of a <see cref="DataTable"/>.
-/// Terminals are methods here, with more as extensions on <see cref="IMappedQuery{T}"/>.
+/// Terminals are methods here.
 /// </summary>
 /// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 /// <remarks>
@@ -1029,10 +993,7 @@ public readonly record struct MappedCommand<T>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedReader{T}"/>
 public readonly record struct MappedTable<T>
-	: IMappedQuerySync<T>, IMappedTerminals<T>
 {
-	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
-
 	readonly MappedQueryCore<T> _core;
 
 	internal MappedTable(MappedQueryCore<T> core)

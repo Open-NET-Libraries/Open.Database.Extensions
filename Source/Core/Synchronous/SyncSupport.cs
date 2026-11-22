@@ -21,15 +21,6 @@ static class SyncSupport
 	internal static IExecuteCommandSync AsSync(this IExecuteCommand command)
 		=> command as IExecuteCommandSync ?? throw Missing(command, nameof(command), nameof(IExecuteCommandSync));
 
-	/// <summary>Gets the sync interface of a mapped query.</summary>
-	/// <typeparam name="T">The type of a mapped row.</typeparam>
-	/// <param name="query">The query.</param>
-	/// <returns>The query as <see cref="IMappedQuerySync{T}"/>.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
-	/// <exception cref="NotSupportedException">The query does not implement <see cref="IMappedQuerySync{T}"/>.</exception>
-	internal static IMappedQuerySync<T> AsSync<T>(this IMappedQuery<T> query)
-		=> query as IMappedQuerySync<T> ?? throw Missing(query, nameof(query), nameof(IMappedQuerySync<>) + "<T>");
-
 	static Exception Missing(object? instance, string paramName, string needed)
 		=> instance is null
 			? new ArgumentNullException(paramName)

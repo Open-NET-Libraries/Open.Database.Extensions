@@ -440,10 +440,8 @@ public static class RowMapperTests
 		var ct = TestContext.Current.CancellationToken;
 		var ids = new List<int>();
 
-		await SimpleRows(10).Map<Simple>().Skip(2).Take(3).ReadAsync(async (items, token) =>
-		{
-			await foreach (Simple s in items.WithCancellation(token)) ids.Add(s.Id);
-		}, ct);
+		await foreach (Simple s in SimpleRows(10).Map<Simple>().Skip(2).Take(3).Stream(Timeout.InfiniteTimeSpan, ct))
+			ids.Add(s.Id);
 
 		Assert.Equal([3, 4, 5], ids);
 	}

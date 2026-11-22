@@ -29,9 +29,6 @@ internal sealed class TokenRig
 	public List<CancellationToken> Execute { get; } = [];
 	public List<CancellationToken> Read { get; } = [];
 
-	/// <summary>The token each handler given to a <c>ReadAsync</c> terminal received.</summary>
-	public List<CancellationToken> Handler { get; } = [];
-
 	/// <summary>What was done to the connection and the command, in order.</summary>
 	public List<string> Log { get; } = [];
 
