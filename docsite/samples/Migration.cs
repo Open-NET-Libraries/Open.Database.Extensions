@@ -7,9 +7,8 @@ using Open.Database.Extensions.Core;
 namespace Samples;
 
 /// <summary>
-/// The calls that were removed in 11.0, and the calls to type instead.
-/// The old calls appear only as text in the migration guide (they no longer compile);
-/// each "after" region here is compiled and run by Program.cs.
+/// The 11 calls shown in the migration guide.
+/// Each region here is compiled and run by Program.cs.
 /// </summary>
 public static class Migration
 {
@@ -60,10 +59,9 @@ public static class Migration
 		newCommand.CommandText = PostsSql;
 
 		#region migration_resultsfromdatatable_after
-		// Synchronous, like the call it replaces:
 		// ToDataTable has no async form.
-		// Reading the map first keeps the old behavior of failing
-		// before the command runs for a type that cannot be mapped.
+		// Reading the map first fails before the command runs
+		// for a type that cannot be mapped.
 		RowMap<Post> map = RowMap<Post>.Default;
 		using var table = newCommand.ToDataTable();
 		List<Post> after = table

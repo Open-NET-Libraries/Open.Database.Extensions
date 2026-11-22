@@ -24,8 +24,8 @@ Allocation is deterministic, so memory does not depend on how busy the machine w
 | Provider | What it is | What it tells you |
 |---|---|---|
 | **Synthetic reader** | An in-memory ADO.NET reader that serves up to 20 typed columns (`int`, `long`, `decimal`, `double`, `bool`, `DateTime`, `Guid`, short and long strings, `byte[]`, some of them with `NULL`s), generated from the row number so every run gets the same data. No network, no disk, no server. | The library's own overhead. Differences between approaches are as large as they can be. |
-| **SQL Server LocalDB** | A database created for the run, read through `Microsoft.Data.SqlClient` 7.1.1, and removed after it. | A real provider where the database does most of the work. |
-| **SQLite file** | A file created for the run, read through `Microsoft.Data.Sqlite`, and removed after it. | A second real provider. |
+| **SQL Server LocalDB** | A database created for the run, read through `Microsoft.Data.SqlClient` 7.1.1, and deleted after it. | A real provider where the database does most of the work. |
+| **SQLite file** | A file created for the run, read through `Microsoft.Data.Sqlite`, and deleted after it. | A second real provider. |
 
 The synthetic reader can also add a wait every N rows (a buffer refill) and keep the thread pool busy, so a benchmark can model a slow link. That is how [Sync reads against async reads](sync-vs-async.md) is built.
 
