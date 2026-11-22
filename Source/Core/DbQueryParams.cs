@@ -24,8 +24,9 @@ namespace Open.Database.Extensions;
 /// An entry is claimed with one compare-and-swap on its first slot, so a value
 /// that is kept and added to twice cannot lose either: the second writer finds
 /// the slot taken and copies the entries it sees into an array of its own.
-/// Nothing a value sees is ever written again, so no lock is needed and a
-/// value can be read by any number of threads while others add to it.
+/// Nothing a value sees is ever written again, so branches never see each
+/// other's entries: a kept call that several threads add to gives each of them
+/// its own values.
 /// </para>
 /// <para>
 /// The array is sized from the definition's parameter count, so a call of that
