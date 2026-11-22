@@ -272,6 +272,14 @@ public static class MappedQueryExtensions
 			: query.Read(items => items.ToDictionary(keySelector, comparer));
 	}
 
+	/// <inheritdoc cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
+	public static ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<T, TKey>(
+		this IMappedQuery<T> query,
+		Func<T, TKey> keySelector,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> ToDictionaryAsync<T, TKey>(query, keySelector, null, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>, keyed by <paramref name="keySelector"/>.
 	/// </summary>
@@ -294,7 +302,7 @@ public static class MappedQueryExtensions
 	public static ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<T, TKey>(
 		this IMappedQuery<T> query,
 		Func<T, TKey> keySelector,
-		IEqualityComparer<TKey>? comparer = null,
+		IEqualityComparer<TKey>? comparer,
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 	{
@@ -351,6 +359,15 @@ public static class MappedQueryExtensions
 				items => items.ToDictionary(keySelector, valueSelector, comparer));
 	}
 
+	/// <inheritdoc cref="ToDictionaryAsync{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
+	public static ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<T, TKey, TValue>(
+		this IMappedQuery<T> query,
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> ToDictionaryAsync<T, TKey, TValue>(query, keySelector, valueSelector, null, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>,
 	/// keyed by <paramref name="keySelector"/>, with the value
@@ -371,10 +388,6 @@ public static class MappedQueryExtensions
 	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a <see langword="null"/> key) throws, and the selectors run, only after the whole read.
 	/// A duplicate key throws, as it does for <see cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>.
 	/// </para>
-	/// <para>
-	/// The comparer comes before the token, as it does there: pass the token by name,
-	/// <c>ToDictionaryAsync(keySelector, valueSelector, cancellationToken: ct)</c>.
-	/// </para>
 	/// </remarks>
 	/// <seealso cref="ToDictionary{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
@@ -382,7 +395,7 @@ public static class MappedQueryExtensions
 		this IMappedQuery<T> query,
 		Func<T, TKey> keySelector,
 		Func<T, TValue> valueSelector,
-		IEqualityComparer<TKey>? comparer = null,
+		IEqualityComparer<TKey>? comparer,
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 	{
@@ -434,6 +447,10 @@ public static class MappedQueryExtensions
 #endif
 	}
 
+	/// <inheritdoc cref="ToHashSetAsync{T}(IMappedQuery{T}, IEqualityComparer{T}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
+	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
+		=> ToHashSetAsync<T>(query, null, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="HashSet{T}"/>.
 	/// </summary>
@@ -447,7 +464,7 @@ public static class MappedQueryExtensions
 	/// </remarks>
 	/// <seealso cref="ToHashSet{T}(IMappedQuery{T}, IEqualityComparer{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null, CancellationToken cancellationToken = default)
+	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer, CancellationToken cancellationToken = default)
 	{
 		if (query is null) throw new ArgumentNullException(nameof(query));
 		Contract.EndContractBlock();

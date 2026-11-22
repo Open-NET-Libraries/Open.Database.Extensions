@@ -173,6 +173,14 @@ public static class DataReaderExtensions
 	public static ValueTask ForEachAsync(this DbDataReader reader, Func<IDataRecord, ValueTask> handler, CancellationToken cancellationToken)
 		=> ForEachAsync(reader, handler, true, cancellationToken);
 
+	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='handler']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
+	// The token is required here, as on the Func rung above: with a default it would tie with the flag rung for ForEachAsync(reader, handler).
+	public static ValueTask ForEachAsync(this DbDataReader reader, Action<IDataRecord> handler, CancellationToken cancellationToken)
+		=> ForEachAsync(reader, handler, true, cancellationToken);
+
 	static IEnumerable<object[]> AsEnumerableCore(IDataReader reader)
 	{
 		Debug.Assert(reader is not null);

@@ -716,10 +716,17 @@ public readonly record struct MappedReader<T>
 		where TKey : notnull
 		=> _core.ToDictionary(keySelector, comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey}"/>
+	/// <inheritdoc cref="ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
 		Func<T, TKey> keySelector,
-		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> ToDictionaryAsync<TKey>(keySelector, null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>
+	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer,
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
@@ -732,11 +739,19 @@ public readonly record struct MappedReader<T>
 		where TKey : notnull
 		=> _core.ToDictionary(keySelector, valueSelector, comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}"/>
+	/// <inheritdoc cref="ToDictionaryAsync{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
 		Func<T, TKey> keySelector,
 		Func<T, TValue> valueSelector,
-		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> ToDictionaryAsync<TKey, TValue>(keySelector, valueSelector, null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)"/>
+	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer,
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(
@@ -747,9 +762,14 @@ public readonly record struct MappedReader<T>
 		IEqualityComparer<T>? comparer = null)
 		=> _core.ToHashSet(comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToHashSetAsync"/>
+	/// <inheritdoc cref="ToHashSetAsync(IEqualityComparer{T}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<HashSet<T>> ToHashSetAsync(
-		IEqualityComparer<T>? comparer = null,
+		CancellationToken cancellationToken = default)
+		=> ToHashSetAsync(null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToHashSetAsync(IEqualityComparer{T}, CancellationToken)"/>
+	public ValueTask<HashSet<T>> ToHashSetAsync(
+		IEqualityComparer<T>? comparer,
 		CancellationToken cancellationToken = default)
 		=> _core.ToHashSetAsync(comparer, cancellationToken);
 }
@@ -907,10 +927,17 @@ public readonly record struct MappedCommand<T>
 		where TKey : notnull
 		=> _core.ToDictionary(keySelector, comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey}"/>
+	/// <inheritdoc cref="ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
 		Func<T, TKey> keySelector,
-		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> ToDictionaryAsync<TKey>(keySelector, null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>
+	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer,
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
@@ -923,11 +950,19 @@ public readonly record struct MappedCommand<T>
 		where TKey : notnull
 		=> _core.ToDictionary(keySelector, valueSelector, comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}"/>
+	/// <inheritdoc cref="ToDictionaryAsync{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
 		Func<T, TKey> keySelector,
 		Func<T, TValue> valueSelector,
-		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> ToDictionaryAsync<TKey, TValue>(keySelector, valueSelector, null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)"/>
+	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer,
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(
@@ -938,9 +973,14 @@ public readonly record struct MappedCommand<T>
 		IEqualityComparer<T>? comparer = null)
 		=> _core.ToHashSet(comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToHashSetAsync"/>
+	/// <inheritdoc cref="ToHashSetAsync(IEqualityComparer{T}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<HashSet<T>> ToHashSetAsync(
-		IEqualityComparer<T>? comparer = null,
+		CancellationToken cancellationToken = default)
+		=> ToHashSetAsync(null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToHashSetAsync(IEqualityComparer{T}, CancellationToken)"/>
+	public ValueTask<HashSet<T>> ToHashSetAsync(
+		IEqualityComparer<T>? comparer,
 		CancellationToken cancellationToken = default)
 		=> _core.ToHashSetAsync(comparer, cancellationToken);
 
@@ -1095,10 +1135,17 @@ public readonly record struct MappedTable<T>
 		where TKey : notnull
 		=> _core.ToDictionary(keySelector, comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey}"/>
+	/// <inheritdoc cref="ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
 		Func<T, TKey> keySelector,
-		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> ToDictionaryAsync<TKey>(keySelector, null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>
+	public ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<TKey>(
+		Func<T, TKey> keySelector,
+		IEqualityComparer<TKey>? comparer,
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
@@ -1111,11 +1158,19 @@ public readonly record struct MappedTable<T>
 		where TKey : notnull
 		=> _core.ToDictionary(keySelector, valueSelector, comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}"/>
+	/// <inheritdoc cref="ToDictionaryAsync{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
 		Func<T, TKey> keySelector,
 		Func<T, TValue> valueSelector,
-		IEqualityComparer<TKey>? comparer = null,
+		CancellationToken cancellationToken = default)
+		where TKey : notnull
+		=> ToDictionaryAsync<TKey, TValue>(keySelector, valueSelector, null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToDictionaryAsync{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)"/>
+	public ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<TKey, TValue>(
+		Func<T, TKey> keySelector,
+		Func<T, TValue> valueSelector,
+		IEqualityComparer<TKey>? comparer,
 		CancellationToken cancellationToken = default)
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(
@@ -1126,9 +1181,14 @@ public readonly record struct MappedTable<T>
 		IEqualityComparer<T>? comparer = null)
 		=> _core.ToHashSet(comparer);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToHashSetAsync"/>
+	/// <inheritdoc cref="ToHashSetAsync(IEqualityComparer{T}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public ValueTask<HashSet<T>> ToHashSetAsync(
-		IEqualityComparer<T>? comparer = null,
+		CancellationToken cancellationToken = default)
+		=> ToHashSetAsync(null, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.ToHashSetAsync(IEqualityComparer{T}, CancellationToken)"/>
+	public ValueTask<HashSet<T>> ToHashSetAsync(
+		IEqualityComparer<T>? comparer,
 		CancellationToken cancellationToken = default)
 		=> _core.ToHashSetAsync(comparer, cancellationToken);
 }

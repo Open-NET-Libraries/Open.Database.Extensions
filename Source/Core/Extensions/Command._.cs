@@ -247,6 +247,11 @@ public static partial class CommandExtensions
 		return transform(reader);
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync(IDbCommand, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask<IDataReader> ExecuteReaderAsync(this IDbCommand command,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(command, CommandBehavior.Default, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously executes a reader, calling <see cref="DbCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)"/>
 	/// if the <paramref name="command"/> is derived from <see cref="DbCommand"/>;
@@ -265,7 +270,7 @@ public static partial class CommandExtensions
 	/// </returns>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command']/*" />
 	public static async ValueTask<IDataReader> ExecuteReaderAsync(this IDbCommand command,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -275,6 +280,12 @@ public static partial class CommandExtensions
 			? await c.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false)
 			: command.ExecuteReader(behavior);
 	}
+
+	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Action{DbDataReader}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask ExecuteReaderAsync(this DbCommand command,
+		Action<DbDataReader> handler,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(command, handler, CommandBehavior.Default, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously executes a reader and passes it to a handler.
@@ -290,7 +301,7 @@ public static partial class CommandExtensions
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static async ValueTask ExecuteReaderAsync(this DbCommand command,
 		Action<DbDataReader> handler,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -306,6 +317,12 @@ public static partial class CommandExtensions
 		handler(reader);
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync(IDbCommand, Func{IDataReader, ValueTask}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask ExecuteReaderAsync(this IDbCommand command,
+		Func<IDataReader, ValueTask> handler,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(command, handler, CommandBehavior.Default, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously executes a reader and passes it to an asynchronous handler.
 	/// </summary>
@@ -320,7 +337,7 @@ public static partial class CommandExtensions
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static async ValueTask ExecuteReaderAsync(this IDbCommand command,
 		Func<IDataReader, ValueTask> handler,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -337,6 +354,12 @@ public static partial class CommandExtensions
 		await handler(reader).ConfigureAwait(false);
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync(DbCommand, Func{DbDataReader, ValueTask}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask ExecuteReaderAsync(this DbCommand command,
+		Func<DbDataReader, ValueTask> handler,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(command, handler, CommandBehavior.Default, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously executes a reader and passes it to an asynchronous handler.
 	/// </summary>
@@ -351,7 +374,7 @@ public static partial class CommandExtensions
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-handler']/*" />
 	public static async ValueTask ExecuteReaderAsync(this DbCommand command,
 		Func<DbDataReader, ValueTask> handler,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -366,6 +389,12 @@ public static partial class CommandExtensions
 #endif
 		await handler(reader).ConfigureAwait(false);
 	}
+
+	/// <inheritdoc cref="ExecuteReaderAsync{T}(DbCommand, Func{DbDataReader, T}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask<T> ExecuteReaderAsync<T>(this DbCommand command,
+		Func<DbDataReader, T> transform,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync<T>(command, transform, CommandBehavior.Default, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously executes a reader and returns the result of a transform function applied to it.
@@ -385,7 +414,7 @@ public static partial class CommandExtensions
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-command-transform']/*" />
 	public static async ValueTask<T> ExecuteReaderAsync<T>(this DbCommand command,
 		Func<DbDataReader, T> transform,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -401,6 +430,12 @@ public static partial class CommandExtensions
 		return transform(reader);
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync{T}(IDbCommand, Func{IDataReader, ValueTask{T}}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask<T> ExecuteReaderAsync<T>(this IDbCommand command,
+		Func<IDataReader, ValueTask<T>> transform,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync<T>(command, transform, CommandBehavior.Default, cancellationToken);
+
 	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-transform']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />
@@ -408,7 +443,7 @@ public static partial class CommandExtensions
 	/// <inheritdoc cref="ExecuteReaderAsync{T}(DbCommand, Func{DbDataReader, T}, CommandBehavior, CancellationToken)" path="/*[not(self::param)]"/>
 	public static ValueTask<T> ExecuteReaderAsync<T>(this IDbCommand command,
 		Func<IDataReader, ValueTask<T>> transform,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -426,10 +461,16 @@ public static partial class CommandExtensions
 		}
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync{T}(DbCommand, Func{DbDataReader, ValueTask{T}}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask<T> ExecuteReaderAsync<T>(this DbCommand command,
+		Func<DbDataReader, ValueTask<T>> transform,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync<T>(command, transform, CommandBehavior.Default, cancellationToken);
+
 	/// <inheritdoc cref="ExecuteReaderAsync{T}(DbCommand, Func{DbDataReader, T}, CommandBehavior, CancellationToken)"/>
 	public static async ValueTask<T> ExecuteReaderAsync<T>(this DbCommand command,
 		Func<DbDataReader, ValueTask<T>> transform,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));

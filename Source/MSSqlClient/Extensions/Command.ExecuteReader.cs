@@ -72,6 +72,12 @@ public static partial class SqlCommandExtensions
 		return transform(reader);
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync(SqlCommand, Func{SqlDataReader, ValueTask}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask ExecuteReaderAsync(this SqlCommand command,
+		Func<SqlDataReader, ValueTask> handler,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(command, handler, CommandBehavior.Default, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the handler.
 	/// The reader is disposed afterwards.
@@ -86,7 +92,7 @@ public static partial class SqlCommandExtensions
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled before or while the connection was being opened or the command executed.</exception>
 	public static async ValueTask ExecuteReaderAsync(this SqlCommand command,
 		Func<SqlDataReader, ValueTask> handler,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -102,6 +108,12 @@ public static partial class SqlCommandExtensions
 		await handler(reader).ConfigureAwait(false);
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync(SqlCommand, Action{SqlDataReader}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask ExecuteReaderAsync(this SqlCommand command,
+		Action<SqlDataReader> handler,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync(command, handler, CommandBehavior.Default, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to a synchronous handler.
 	/// The reader is disposed afterwards.
@@ -110,7 +122,7 @@ public static partial class SqlCommandExtensions
 	/// <inheritdoc cref="ExecuteReaderAsync(SqlCommand, Func{SqlDataReader, ValueTask}, CommandBehavior, CancellationToken)" path="/*[not(self::summary) and not(self::returns)]"/>
 	public static async ValueTask ExecuteReaderAsync(this SqlCommand command,
 		Action<SqlDataReader> handler,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -125,6 +137,12 @@ public static partial class SqlCommandExtensions
 #endif
 		handler(reader);
 	}
+
+	/// <inheritdoc cref="ExecuteReaderAsync{T}(SqlCommand, Func{SqlDataReader, T}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask<T> ExecuteReaderAsync<T>(this SqlCommand command,
+		Func<SqlDataReader, T> transform,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync<T>(command, transform, CommandBehavior.Default, cancellationToken);
 
 	/// <summary>
 	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the transform function, returning its result.
@@ -141,7 +159,7 @@ public static partial class SqlCommandExtensions
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled before or while the connection was being opened or the command executed.</exception>
 	public static async ValueTask<T> ExecuteReaderAsync<T>(this SqlCommand command,
 		Func<SqlDataReader, T> transform,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -157,6 +175,12 @@ public static partial class SqlCommandExtensions
 		return transform(reader);
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync{T}(SqlCommand, Func{SqlDataReader, ValueTask{T}}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public static ValueTask<T> ExecuteReaderAsync<T>(this SqlCommand command,
+		Func<SqlDataReader, ValueTask<T>> transform,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync<T>(command, transform, CommandBehavior.Default, cancellationToken);
+
 	/// <summary>
 	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to an asynchronous transform function, returning its result.
 	/// The reader is disposed afterwards.
@@ -165,7 +189,7 @@ public static partial class SqlCommandExtensions
 	/// <inheritdoc cref="ExecuteReaderAsync{T}(SqlCommand, Func{SqlDataReader, T}, CommandBehavior, CancellationToken)" path="/*[not(self::summary) and not(self::returns)]"/>
 	public static async ValueTask<T> ExecuteReaderAsync<T>(this SqlCommand command,
 		Func<SqlDataReader, ValueTask<T>> transform,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
