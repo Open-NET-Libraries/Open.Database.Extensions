@@ -42,7 +42,7 @@ namespace Open.Database.Extensions;
 /// <list type="bullet">
 /// <item><description>an interface, an abstract class or a delegate;</description></item>
 /// <item><description>a single value such as <see cref="int"/> or <see cref="string"/> (use <c>Map&lt;T&gt;()</c> on a command to read one column);</description></item>
-/// <item><description>a dictionary or a dynamic object (<c>Dictionary&lt;string, object?&gt;</c>, <see cref="System.Dynamic.ExpandoObject"/>: they have no properties to set, so use <c>Map(selector)</c>);</description></item>
+/// <item><description>a dictionary or a dynamic object (<c>Dictionary&lt;string, object?&gt;</c>, <see cref="System.Dynamic.ExpandoObject"/>: they have no properties to set, so use <c>AsDictionaryRows()</c> or <c>Map(selector)</c>);</description></item>
 /// <item><description>a type with two or more public constructors and none without parameters;</description></item>
 /// <item><description>a class with no public constructor;</description></item>
 /// <item><description>a type with a <see langword="required"/> public field (a field is never mapped, so it cannot be set), unless the constructor it is built through is marked <c>[SetsRequiredMembers]</c>;</description></item>
@@ -2557,7 +2557,7 @@ sealed class Shape
 
 		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().";
 		if (NotConcrete(type) is { } kind) return $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
-		if (IsDictionaryOrDynamic(type)) return $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).";
+		if (IsDictionaryOrDynamic(type)) return $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, use AsDictionaryRows() for the values with their column names, or use Map(selector).";
 
 		return Choose(type, name, out constructor, out setsRequiredMembers) ?? (setsRequiredMembers ? null : RequiredField(type, name));
 	}

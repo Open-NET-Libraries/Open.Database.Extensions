@@ -2,7 +2,7 @@
 <!--
   The texts the reader, record, command and result extensions share
   (DataReader.cs, DataRecord.cs, Command._.cs, Command.AddParameter.cs,
-  Retrieve.cs, Results.cs, _.cs), so each is written here once and cannot
+  Results.cs, _.cs), so each is written here once and cannot
   drift between the members that use it.
   A member pulls one in with an include of the compiler:
   <include file="Readers.docs.xml" path="docs/members[@name='behavior']/*" />.

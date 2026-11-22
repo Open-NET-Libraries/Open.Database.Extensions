@@ -12,7 +12,7 @@ public static partial class CoreExtensions
 	/// <c>AsyncReads()</c> and <c>UsePool</c> are the ones <c>Map&lt;T&gt;()</c> has, and a later result set is read through
 	/// the same way.
 	/// Each row is one new <c>object?[]</c> with a slot for each column (a database NULL is <see langword="null"/>).
-	/// The row arrays belong to the caller; only the arrays that hold the rows are pooled, and those are always cleared.
+	/// The row arrays belong to the caller; only the buffers that hold the rows are pooled, and those are cleared when they go back (their slots hold references).
 	/// The columns are read once, in order, so a provider may stream a row.
 	/// The result carries no column names: use <see cref="AsDictionaryRows(IExecuteReader)"/> when you need them.
 	/// </para>

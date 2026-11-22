@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.ObjectModel;
 
 namespace Open.Database.Extensions;
 
@@ -22,8 +23,10 @@ namespace Open.Database.Extensions;
 /// with the value <see langword="null"/>.
 /// </para>
 /// <para>
-/// The direct members allocate nothing; handing the row to an <see cref="IReadOnlyDictionary{TKey, TValue}"/>
-/// boxes it, and <see cref="Keys"/> and <see cref="Values"/> build a collection each time.
+/// Reading a value (the indexers, <see cref="TryGetValue(string, out object?)"/>, <see cref="ContainsKey(string)"/>, <see cref="Count"/>,
+/// <see cref="Keys"/> and the enumeration) allocates nothing; the first name that is not found exactly builds the
+/// ignoring-case lookup, once for the result set. <see cref="Values"/> and <see cref="ToDictionary"/> build a collection each time,
+/// and handing the row to an <see cref="IReadOnlyDictionary{TKey, TValue}"/> boxes it.
 /// A result set with no rows gives no row, so no column names: an empty result exposes none.
 /// <c>default(DictionaryRow)</c> is an empty row.
 /// It is not a model: <c>Map&lt;DictionaryRow&gt;()</c> is not supported.
@@ -64,12 +67,12 @@ public readonly struct DictionaryRow : IReadOnlyDictionary<string, object?>
 			: throw new KeyNotFoundException($"The row has no column named '{key}'.");
 
 	/// <summary>Gets the number of distinct column names.</summary>
-	/// <value>The number of distinct names.</value>
+	/// <value>The number of distinct names: fewer than <see cref="FieldCount"/> when a name repeats.</value>
 	public int Count => _index?.Distinct.Length ?? 0;
 
 	/// <summary>Gets the distinct column names, in the order of their first column.</summary>
 	/// <value>The names.</value>
-	public IEnumerable<string> Keys => _index?.Distinct ?? [];
+	public IEnumerable<string> Keys => _index?.DistinctNames ?? [];
 
 	/// <summary>Gets the values of the first column of each distinct name, in the same order as <see cref="Keys"/>.</summary>
 	/// <value>The values.</value>
@@ -87,17 +90,12 @@ public readonly struct DictionaryRow : IReadOnlyDictionary<string, object?>
 		}
 	}
 
-	/// <summary>Determines whether a column has the name.</summary>
+	/// <summary>Determines whether a column has the name: among the distinct names, exactly, else ignoring case.</summary>
 	/// <param name="key">The name, found exactly, else ignoring case.</param>
 	/// <returns><see langword="true"/> if a column has the name; otherwise, <see langword="false"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="key"/> is <see langword="null"/>.</exception>
 	public bool ContainsKey(string key)
-	{
-		if (key is null) throw new ArgumentNullException(nameof(key));
-		Contract.EndContractBlock();
-
-		return _index is not null && _index.TryGetOrdinal(key, out _);
-	}
+		=> TryGetValue(key, out _);
 
 	/// <summary>Gets the value of the first column with a name.</summary>
 	/// <param name="key">The name, found exactly, else ignoring case.</param>
@@ -206,11 +204,15 @@ internal sealed class ColumnIndex
 		}
 
 		Distinct = [.. distinct];
+		DistinctNames = new ReadOnlyCollection<string>(Distinct);
 		DistinctOrdinals = [.. ordinals];
 	}
 
 	/// <summary>Gets the distinct names (exact comparison), first column first.</summary>
 	public string[] Distinct { get; }
+
+	/// <summary>Gets the same names as a read-only collection, which is what the public <c>Keys</c> hands out: a cast cannot reach the array.</summary>
+	public ReadOnlyCollection<string> DistinctNames { get; }
 
 	/// <summary>Gets the position of the first column of each name in <see cref="Distinct"/>.</summary>
 	public int[] DistinctOrdinals { get; }

@@ -183,6 +183,19 @@ public static class RowsFormTests
 	}
 
 	[Fact]
+	public static void TheKeys_CannotBeCastBackToTheSharedArray_AndAModelIsRefused()
+	{
+		DictionaryRow row = FirstRow("select 1 as a, 2 as b");
+
+		Assert.IsNotType<string[]>(row.Keys, exactMatch: false);
+		Assert.Equal(["a", "b"], row.Keys);
+
+		// DictionaryRow is not a row model: a map of it says so, and names the way to read rows without a model.
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(static () => RowMap<DictionaryRow>.Default);
+		Assert.Contains("AsDictionaryRows()", ex.Message);
+	}
+
+	[Fact]
 	public static void DictionaryRow_AsAnInterface_Works_OnABoxedCopy()
 	{
 		DictionaryRow row = FirstRow("select 1 as a, 2 as b");

@@ -7,7 +7,7 @@ namespace Open.Database.Extensions.Core;
 /// </summary>
 /// <remarks>
 /// <see cref="IDataRecord.GetValues(object[])"/> reads each column once, in order, so a provider may stream the row
-/// (the read mode of a generated mapping applies).
+/// (the read mode of a generated mapping applies: SequentialAccess).
 /// </remarks>
 static class ObjectRow
 {
