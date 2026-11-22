@@ -59,8 +59,8 @@ internal sealed class ChunkConfig<T>(
 	/// whatever the size, and the bin's thread then pays the clear.
 	/// </para>
 	/// <para>
-	/// The two release costs meet at about 128 to 256 KB.
-	/// The default is the lower end: the rule is to hand off unless clearing in place is
+	/// The two release costs meet at about 128 KB.
+	/// The rule is to hand off unless clearing in place is
 	/// certainly cheaper, and at 128 KB of references it is a tie.
 	/// Rows that hold no references are included: a large chunk of value rows is cleared in the bin too.
 	/// </para>

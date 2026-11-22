@@ -359,7 +359,7 @@ public static class AsyncBuffers
 			.ToAsyncBuffer(cancellationToken);
 
 		// Cancels the read if it is still running, waits for the
-		// producer to stop, and returns the arrays to the pool (a large chunk of rows that hold references goes to the cleanup queue).
+		// producer to stop, and returns the arrays to the pool (a chunk of 128 KB or more of rows, value rows included, goes to the cleanup queue).
 		await buffer.DisposeAsync();
 
 		// A disposed buffer has no Items.

@@ -186,8 +186,8 @@ public static class ArrayLeaseTests
 		Assert.Equal(0, pool.DirtyReturns);
 	}
 
-	// The default threshold, 128 KB, on both sides: the rule counts bytes, so an int row is a quarter
-	// of a reference row's weight and its chunk is handed over at four times the rows.
+	// The default threshold, 128 KB, on both sides: the rule counts bytes, so an int row is half a 64-bit reference
+	// row's weight and its chunk is handed over at twice the rows (32,768 against 16,384).
 	[Theory]
 	[InlineData(32_767, 0)]
 	[InlineData(32_768, 1)]
