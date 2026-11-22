@@ -85,7 +85,7 @@ public static class DbQueryBranchingTests
 	[Fact]
 	public static async Task AStreamOverACall_ReadsItsRows()
 	{
-		using var c = new Tracked();
+		await using var c = new Tracked();
 		var rows = new List<Echo>();
 
 		await foreach (Echo row in M.Using(c).AddParam("a", 1).AddParam("b", 2).AddParam("c", 3)
@@ -205,7 +205,7 @@ public static class DbQueryBranchingTests
 	public static void AnArrayThatIsFull_GrowsWithoutChangingTheCallsThatSeePartOfIt()
 	{
 		// A procedure declares no names, so the first array holds four values.
-		DbQuery procedure = DbQuery.Procedure("Echo");
+		var procedure = DbQuery.Procedure("Echo");
 		using var c = new SqliteConnection();
 
 		DbQueryCall Chain(int count)
@@ -243,7 +243,7 @@ public static class DbQueryBranchingTests
 		Assert.Equal(4, DbQuery.Text("select 1").ParamCapacity);
 
 		// A procedure declares none: it keeps the most a call has bound, so the next call is sized to fit.
-		DbQuery procedure = DbQuery.Procedure("Echo");
+		var procedure = DbQuery.Procedure("Echo");
 		Assert.Equal(4, procedure.ParamCapacity);
 		procedure.NoteParams(7);
 		Assert.Equal(7, procedure.ParamCapacity);
@@ -251,7 +251,7 @@ public static class DbQueryBranchingTests
 		Assert.Equal(7, procedure.ParamCapacity);
 
 		// A text that declares names is sized by them, whatever a call has bound.
-		DbQuery declared = DbQuery.Text("select @only");
+		var declared = DbQuery.Text("select @only");
 		declared.NoteParams(9);
 		Assert.Equal(1, declared.ParamCapacity);
 	}
@@ -271,7 +271,7 @@ public static class DbQueryBranchingTests
 		{
 			DbQueryCall held = Q.Using(Source).AddParam("a", 1);
 			using var gate = new Barrier(Threads);
-			Thread[] threads = new Thread[Threads];
+			var threads = new Thread[Threads];
 			bool[] inPlace = new bool[Threads];
 			for (int t = 0; t < Threads; t++)
 			{
@@ -319,7 +319,7 @@ public static class DbQueryBranchingTests
 		{
 			UnboundCall<Echo> held = M.AddParam("a", 1);
 			using var gate = new Barrier(Threads);
-			Thread[] threads = new Thread[Threads];
+			var threads = new Thread[Threads];
 			for (int t = 0; t < Threads; t++)
 			{
 				int mine = t;
@@ -358,7 +358,7 @@ public static class DbQueryBranchingTests
 		{
 			DbQueryCall held = Q.Using(Source).AddParams(new { a = 1 });
 			using var gate = new Barrier(Threads);
-			Thread[] threads = new Thread[Threads];
+			var threads = new Thread[Threads];
 			for (int t = 0; t < Threads; t++)
 			{
 				int mine = t;
@@ -392,7 +392,7 @@ public static class DbQueryBranchingTests
 		DbQueryCall full = Q.Using(Source).AddParam("a", 1).AddParam("b", 2).AddParam("c", 3);
 		var failures = new System.Collections.Concurrent.ConcurrentQueue<string>();
 		using var gate = new Barrier(Threads);
-		Thread[] threads = new Thread[Threads];
+		var threads = new Thread[Threads];
 		for (int t = 0; t < Threads; t++)
 		{
 			threads[t] = new Thread(() =>

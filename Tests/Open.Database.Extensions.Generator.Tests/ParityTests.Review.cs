@@ -1,6 +1,6 @@
+using Open.Database.Extensions.Generator.Models;
 using System.Data;
 using System.Data.Common;
-using Open.Database.Extensions.Generator.Models;
 
 namespace Open.Database.Extensions.Generator.Tests;
 
@@ -18,10 +18,10 @@ public partial class ParityTests
 			[Col.Of<long>("Id"), Col.Of<string>("Title"), Col.Of<long>("Qty"), Col.Of<int>("State"), Col.Of<string>("Tag"), Col.Of<string>("Note")],
 			[1L, "one", 2L, 1, "t", "n"],
 			[2L, null, null, null, null, null]);
-		List<PlainRecord> runtime = q.Map(RowMap<PlainRecord>.Default).ToList();
+		var runtime = q.Map(RowMap<PlainRecord>.Default).ToList();
 
-		Counts start = Counts.Now();
-		List<PlainRecord> generated = q.Map<PlainRecord>().ToList();
+		var start = Counts.Now();
+		var generated = q.Map<PlainRecord>().ToList();
 		Counts c = Counts.Now().Since(start);
 
 		Parity.SameRows(runtime, generated);
@@ -33,10 +33,10 @@ public partial class ParityTests
 	public void Order_without_a_name_reads_at_constant_ordinals()
 	{
 		var q = new TableQuery([Col.Of<int>("ID"), Col.Of<string>("title")], [1, "one"], [2, null]);
-		List<OrderOnlyPost> runtime = q.Map(RowMap<OrderOnlyPost>.Default).ToList();
+		var runtime = q.Map(RowMap<OrderOnlyPost>.Default).ToList();
 
-		Counts start = Counts.Now();
-		List<OrderOnlyPost> generated = q.Map<OrderOnlyPost>().ToList();
+		var start = Counts.Now();
+		var generated = q.Map<OrderOnlyPost>().ToList();
 		Counts c = Counts.Now().Since(start);
 
 		Parity.SameRows(runtime, generated);
@@ -48,10 +48,10 @@ public partial class ParityTests
 	public void Declaration_order_other_than_Order_still_reads_at_constant_ordinals()
 	{
 		var q = new TableQuery([Col.Of<int>("post_id"), Col.Of<string>("title")], [1, "one"], [2, null]);
-		List<ReorderedPost> runtime = q.Map(RowMap<ReorderedPost>.Default).ToList();
+		var runtime = q.Map(RowMap<ReorderedPost>.Default).ToList();
 
-		Counts start = Counts.Now();
-		List<ReorderedPost> generated = q.Map<ReorderedPost>().ToList();
+		var start = Counts.Now();
+		var generated = q.Map<ReorderedPost>().ToList();
 		Counts c = Counts.Now().Since(start);
 
 		Parity.SameRows(runtime, generated);
@@ -64,10 +64,10 @@ public partial class ParityTests
 	{
 		// "id" and "Id" both match Id: the exact name takes it, the other column feeds nothing.
 		var q = new TableQuery([Col.Of<int>("id"), Col.Of<int>("Id"), Col.Of<string>("Title")], [1, 2, "t"]);
-		List<PlainPost> runtime = q.Map(RowMap<PlainPost>.Default).ToList();
+		var runtime = q.Map(RowMap<PlainPost>.Default).ToList();
 
-		Counts start = Counts.Now();
-		List<PlainPost> generated = q.Map<PlainPost>().ToList();
+		var start = Counts.Now();
+		var generated = q.Map<PlainPost>().ToList();
 		Counts c = Counts.Now().Since(start);
 
 		Parity.SameRows(runtime, generated);
@@ -82,10 +82,10 @@ public partial class ParityTests
 			[Col.Of<int>("post_id"), Col.Of<string>("title"), Col.Of<string>("note"), Col.Of<decimal>("price")],
 			[1, "one", "n", 2m],
 			[2, null, null, null]);
-		List<DecoratedInit> runtime = q.Map(RowMap<DecoratedInit>.Default).ToList();
+		var runtime = q.Map(RowMap<DecoratedInit>.Default).ToList();
 
-		Counts start = Counts.Now();
-		List<DecoratedInit> generated = q.Map<DecoratedInit>().ToList();
+		var start = Counts.Now();
+		var generated = q.Map<DecoratedInit>().ToList();
 		Counts c = Counts.Now().Since(start);
 
 		Parity.SameRows(runtime, generated);
@@ -96,10 +96,10 @@ public partial class ParityTests
 	public void Keyword_named_members_are_served()
 	{
 		var q = new TableQuery([Col.Of<int>("event"), Col.Of<string>("class")], [1, "a"], [2, null]);
-		List<KeywordPost> runtime = q.Map(RowMap<KeywordPost>.Default).ToList();
+		var runtime = q.Map(RowMap<KeywordPost>.Default).ToList();
 
-		Counts start = Counts.Now();
-		List<KeywordPost> generated = q.Map<KeywordPost>().ToList();
+		var start = Counts.Now();
+		var generated = q.Map<KeywordPost>().ToList();
 		Counts c = Counts.Now().Since(start);
 
 		Parity.SameRows(runtime, generated);
@@ -121,10 +121,10 @@ public partial class ParityTests
 		List<PlainInit> runtime;
 		using (DbDataReader reader = q.OpenReader()) runtime = reader.Map(RowMap<PlainInit>.Default).ToList();
 
-		Counts start = Counts.Now();
+		var start = Counts.Now();
 		List<PlainInit> generated;
 		using (DbDataReader reader = q.OpenReader()) generated = reader.Map<PlainInit>().ToList();
-		List<PlainInit> query = q.Map<PlainInit>().ToList();
+		var query = q.Map<PlainInit>().ToList();
 		Counts c = Counts.Now().Since(start);
 
 		Parity.SameRows(runtime, generated);
@@ -140,11 +140,11 @@ public partial class ParityTests
 			["n", true, 5, "t"],
 			[null, false, 6, null])
 		{ Sequential = true };
-		List<PlainPost> runtime = q.Map(RowMap<PlainPost>.Default).ToList();
+		var runtime = q.Map(RowMap<PlainPost>.Default).ToList();
 
-		Counts start = Counts.Now();
-		List<PlainPost> generated = q.Map<PlainPost>().ToList();
-		List<ReorderedPost> reordered = new TableQuery([Col.Of<int>("post_id"), Col.Of<string>("title")], [1, "one"]) { Sequential = true }
+		var start = Counts.Now();
+		var generated = q.Map<PlainPost>().ToList();
+		var reordered = new TableQuery([Col.Of<int>("post_id"), Col.Of<string>("title")], [1, "one"]) { Sequential = true }
 			.Map<ReorderedPost>().ToList();
 		Counts c = Counts.Now().Since(start);
 
@@ -177,7 +177,7 @@ public partial class ParityTests
 			runtimeSecond = view.ToList();
 		}
 
-		Counts start = Counts.Now();
+		var start = Counts.Now();
 		List<PlainPost> first, second;
 		using (DataTableReader reader = Sets().CreateDataReader())
 		{
@@ -237,7 +237,7 @@ public partial class ParityTests
 	{
 		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title")], [1, "one"], [2, null]);
 
-		Counts start = Counts.Now();
+		var start = Counts.Now();
 		SameOutcome(
 			() => q.Map(RowMap<TwoConstructorsPost>.Default).ToList(),
 			() => q.Map<TwoConstructorsPost>().ToList());
@@ -257,7 +257,7 @@ public partial class ParityTests
 	{
 		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title")], [1, "one"]);
 
-		Counts start = Counts.Now();
+		var start = Counts.Now();
 		SameThrow(
 			() => q.Map(RowMap<DuplicateOrderPost>.Default).ToList(),
 			() => q.Map<DuplicateOrderPost>().ToList());
@@ -307,7 +307,7 @@ public partial class ParityTests
 	{
 		TableQuery w1 = CatalogQuery(1), w3 = CatalogQuery(3), w5 = CatalogQuery(5), w10 = CatalogQuery(10), w20 = CatalogQuery(20);
 
-		Counts start = Counts.Now();
+		var start = Counts.Now();
 		Parity.SameRows(w1.Map(RowMap<GenRow1>.Default).ToList(), w1.Map<GenRow1>().ToList());
 		Parity.SameRows(w1.Map(RowMap<GenRowD1>.Default).ToList(), w1.Map<GenRowD1>().ToList());
 		Parity.SameRows(w3.Map(RowMap<GenRow3>.Default).ToList(), w3.Map<GenRow3>().ToList());

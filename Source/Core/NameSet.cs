@@ -79,7 +79,7 @@ sealed class NameSet
 			unchecked
 			{
 				int h = 17;
-				foreach (char c in Bare(obj)) h = (h * 31) + char.ToUpperInvariant(c);
+				foreach (char c in Bare(obj)) h = h * 31 + char.ToUpperInvariant(c);
 				return h;
 			}
 		}

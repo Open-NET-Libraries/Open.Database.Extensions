@@ -83,8 +83,8 @@ public static class DbQueryBindingTests
 			References.Value,
 			new CSharpCompilationOptions(
 				OutputKind.DynamicallyLinkedLibrary,
-				nullableContextOptions: NullableContextOptions.Enable,
-				specificDiagnosticOptions: Suppressed));
+				specificDiagnosticOptions: Suppressed,
+				nullableContextOptions: NullableContextOptions.Enable));
 		return (compilation, tree);
 	}
 

@@ -64,7 +64,7 @@ sealed class DictionaryRowSource : IRowSource<DictionaryRow>
 
 	static Func<IDataRecord, DictionaryRow> Create(IDataRecord record)
 	{
-		ColumnIndex index = ColumnIndex.Create(record);
+		var index = ColumnIndex.Create(record);
 		return row => new DictionaryRow(ObjectRow.Read(row), index);
 	}
 }

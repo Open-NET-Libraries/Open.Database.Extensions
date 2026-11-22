@@ -192,7 +192,7 @@ public static class ConnectionScopeTests
 		var connection = new ScopeConnection();
 		connection.SetState(state);
 
-		using (var scope = connection.EnsureOpenScope())
+		await using (var scope = connection.EnsureOpenScope())
 			Assert.Equal(state, scope.PriorState);
 
 		await using (await connection.EnsureOpenScopeAsync(Ct)) { }
@@ -527,6 +527,7 @@ public static class ConnectionScopeTests
 		var connection = new ScopeConnection();
 
 		await using (await connection.EnsureOpenScopeAsync(Ct)) { }
+
 		await using (await connection.EnsureOpenScopeAsync(Ct)) { }
 
 		Assert.Equal(

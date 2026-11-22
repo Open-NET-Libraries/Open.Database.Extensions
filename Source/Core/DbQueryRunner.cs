@@ -186,7 +186,7 @@ static class DbQueryRunner
 			if (supplied is null or DbConnection)
 				return supplied as DbConnection;
 
-			if (source is not IDbConnectionFactory && source is IDbConnectionPool pool)
+			if (source is not IDbConnectionFactory and IDbConnectionPool pool)
 				pool.Give(supplied);
 			else
 				supplied.Dispose();
@@ -452,7 +452,7 @@ static class DbQueryRunner
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		using Lease lease = Lease.Open(source);
+		using var lease = Lease.Open(source);
 		NameSet? names = call.NeedsNames
 			? Resolve(definition, source, lease.Connection, call)
 			: null;

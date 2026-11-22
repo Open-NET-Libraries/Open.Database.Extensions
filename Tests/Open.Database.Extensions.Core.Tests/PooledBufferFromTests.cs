@@ -35,7 +35,7 @@ public static class PooledBufferFromTests
 	[Fact]
 	public static async Task From_GivesTheRowsInOrder_AtOnce()
 	{
-		using PooledBuffer<int> buffer = PooledBuffer<int>.From([5, 6, 7, 8, 9]);
+		await using var buffer = PooledBuffer<int>.From([5, 6, 7, 8, 9]);
 
 		Task<PooledArray<int>> items = buffer.Items;
 		Assert.True(items.IsCompletedSuccessfully);
@@ -59,7 +59,7 @@ public static class PooledBufferFromTests
 	public static async Task From_AnyCount_GivesEveryRow(int count)
 	{
 		int[] source = [.. Enumerable.Range(100, count)];
-		using PooledBuffer<int> buffer = PooledBuffer<int>.From(source);
+		await using var buffer = PooledBuffer<int>.From(source);
 		PooledArray<int> rows = await buffer.Items;
 
 		Assert.Equal(count, rows.Count);
@@ -72,7 +72,7 @@ public static class PooledBufferFromTests
 	public static async Task From_CopiesTheRows_TheSpanIsNotKept()
 	{
 		int[] source = [1, 2, 3];
-		using PooledBuffer<int> buffer = PooledBuffer<int>.From(source);
+		await using var buffer = PooledBuffer<int>.From(source);
 		source[0] = 99;
 
 		int[] copied = (await buffer.Items).ToArray();
@@ -84,7 +84,7 @@ public static class PooledBufferFromTests
 	public static async Task From_RentsOneArray_AndDisposeReturnsIt()
 	{
 		RecordingPool<int> pool = new();
-		PooledBuffer<int> buffer = PooledBuffer<int>.From([1, 2, 3, 4, 5], pool, clearOnReturn: false);
+		var buffer = PooledBuffer<int>.From([1, 2, 3, 4, 5], pool, clearOnReturn: false);
 		_ = await buffer.Items;
 
 		// Five rows are one first chunk of eight.
@@ -101,7 +101,7 @@ public static class PooledBufferFromTests
 	public static async Task From_WithClearOnReturn_ClearsTheRowsWhenTheArrayGoesBack()
 	{
 		RecordingPool<string> pool = new();
-		PooledBuffer<string> buffer = PooledBuffer<string>.From(["a", "b", "c"], pool, clearOnReturn: true);
+		var buffer = PooledBuffer<string>.From(["a", "b", "c"], pool, clearOnReturn: true);
 		_ = await buffer.Items;
 
 		buffer.Dispose();
@@ -113,7 +113,7 @@ public static class PooledBufferFromTests
 	[Fact]
 	public static async Task From_ADisposedBuffer_RefusesItsView()
 	{
-		PooledBuffer<int> buffer = PooledBuffer<int>.From([1, 2, 3]);
+		var buffer = PooledBuffer<int>.From([1, 2, 3]);
 		PooledArray<int> rows = await buffer.Items;
 
 		buffer.Dispose();
@@ -132,7 +132,7 @@ public static class PooledBufferFromTests
 	public static async Task From_NoRows_RentsNothing_AndGivesTheSharedEmptyView()
 	{
 		RecordingPool<int> pool = new();
-		using PooledBuffer<int> buffer = PooledBuffer<int>.From([], pool, clearOnReturn: true);
+		await using var buffer = PooledBuffer<int>.From([], pool, clearOnReturn: true);
 
 		PooledArray<int> rows = await buffer.Items;
 
@@ -162,7 +162,7 @@ public static class PooledBufferFromTests
 	[Fact]
 	public static async Task Empty_StillWorks_AfterTheBufferThatGaveItIsDisposed()
 	{
-		PooledBuffer<int> buffer = PooledBuffer<int>.From([]);
+		var buffer = PooledBuffer<int>.From([]);
 		PooledArray<int> rows = await buffer.Items;
 
 		buffer.Dispose();
@@ -175,7 +175,7 @@ public static class PooledBufferFromTests
 	[Fact]
 	public static async Task AReadThatFindsNoRows_CompletesWithTheSharedEmptyView_AndRentsNothing()
 	{
-		using SqliteConnection c = new("Data Source=:memory:");
+		await using SqliteConnection c = new("Data Source=:memory:");
 		await c.OpenAsync(Ct);
 		RecordingPool<int> pool = new();
 
@@ -194,7 +194,7 @@ public static class PooledBufferFromTests
 	[Fact]
 	public static async Task AZeroRowRead_AfterTheBufferIsDisposed_StillGivesTheEmptyView_NotAThrow()
 	{
-		using SqliteConnection c = new("Data Source=:memory:");
+		await using SqliteConnection c = new("Data Source=:memory:");
 		await c.OpenAsync(Ct);
 
 		PooledBuffer<int> buffer = DbQuery.Text("select 1 where 0").Map<int>().Using(c).ToAsyncBuffer(Ct);
@@ -210,7 +210,7 @@ public static class PooledBufferFromTests
 	[Fact]
 	public static async Task AReadThatFindsRows_StillCompletesWithAnOrdinaryView()
 	{
-		using SqliteConnection c = new("Data Source=:memory:");
+		await using SqliteConnection c = new("Data Source=:memory:");
 		await c.OpenAsync(Ct);
 
 		await using PooledBuffer<int> buffer = DbQuery.Text("select 1 union all select 2")

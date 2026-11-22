@@ -137,7 +137,7 @@ static class DbQueryBinding
 		if (typeof(T) == typeof(object))
 		{
 			object source = value!;
-			RuntimeParamSource members
+			var members
 				= RuntimeParamSource.Of(source.GetType());
 			for (int i = 0; i < members.Names.Length; i++)
 			{

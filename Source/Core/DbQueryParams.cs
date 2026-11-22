@@ -162,7 +162,7 @@ readonly struct ParamList
 		if (_items is object?[] items)
 		{
 			key = items[index * 2]!;
-			value = items[(index * 2) + 1]!;
+			value = items[index * 2 + 1]!;
 			return;
 		}
 
@@ -344,13 +344,13 @@ readonly struct ParamList
 			for (int i = 0; i < Count; i++)
 			{
 				Get(i, out object key, out object value);
-				h = (h * 31) + (key switch
+				h = h * 31 + key switch
 				{
 					string s => s.GetHashCode(),
 					ParameterNames.DerivedExpression d => d.Expression.GetHashCode(),
 					_ => 0,
-				});
-				h = (h * 31) + (value is MemberValues m ? m.ValueHash() : value.GetHashCode());
+				};
+				h = h * 31 + (value is MemberValues m ? m.ValueHash() : value.GetHashCode());
 			}
 
 			return h;

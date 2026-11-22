@@ -210,7 +210,7 @@ public readonly struct DbQueryUsing
 	{
 		unchecked
 		{
-			return ((_definition?.GetHashCode() ?? 0) * 31)
+			return (_definition?.GetHashCode() ?? 0) * 31
 				+ (_source?.GetHashCode() ?? 0);
 		}
 	}

@@ -262,10 +262,10 @@ readonly struct MappedQueryCore<T>(
 		unchecked
 		{
 			int h = _command?.GetHashCode() ?? _call.GetHashCode();
-			h = (h * 31) + (_source?.GetHashCode() ?? 0);
-			h = (h * 31) + _skip;
-			h = (h * 31) + _take;
-			return (h * 31)
+			h = h * 31 + (_source?.GetHashCode() ?? 0);
+			h = h * 31 + _skip;
+			h = h * 31 + _take;
+			return h * 31
 				+ (_singleResult ? 2 : 0)
 				+ (_asyncReads ? 1 : 0)
 				+ RuntimeHelpers.GetHashCode(Config); // Reference equality, null for a default value.
@@ -488,7 +488,6 @@ readonly struct MappedQueryCore<T>(
 			return false;
 		}, Behavior, linked, token));
 	}
-
 
 	public ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken)
 	{
@@ -939,7 +938,6 @@ readonly struct MappedQueryCore<T>(
 		EnsureCommand();
 		return new StallStream<T>(this, stallTimeout, cancellationToken);
 	}
-
 
 	/// <summary>
 	/// Yields the elements of a chunk stream one by one.

@@ -18,20 +18,24 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 	// Every target runs the calls at its language version: C# 7.3 (net472), 9 (net8.0), 12 (net10.0) and 13 (net11.0).
 	// A bare default must bind the rung that takes the token, a bare null the rung that takes the comparer,
 	// with no help from [OverloadResolutionPriority] (which only C# 13 reads).
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "The calls are compiled only so their IL shows which overload binds; they never run.")]
+#pragma warning disable IDE0079 // Remove unnecessary suppression
+	[System.Diagnostics.CodeAnalysis.SuppressMessage(
+		"Reliability", "CA2012:Use ValueTasks correctly",
+		Justification = "The calls are compiled only so their IL shows which overload binds; they never run.")]
+#pragma warning restore IDE0079 // Remove unnecessary suppression
 	public static class PositionalTokenBindingTests
 	{
 		static readonly CancellationToken Token = new CancellationToken();
 		static readonly Func<int, int> Key = i => i;
-		static readonly Func<int, string> Value = i => "";
+		static readonly Func<int, string> Value = _ => "";
 		static readonly IEqualityComparer<int> IntComparer = EqualityComparer<int>.Default;
-		static readonly Action<DbDataReader> DbHandler = r => { };
-		static readonly Func<DbDataReader, ValueTask> DbAsyncHandler = r => default;
-		static readonly Func<DbDataReader, int> DbTransform = r => 1;
-		static readonly Func<DbDataReader, ValueTask<int>> DbAsyncTransform = r => default;
-		static readonly Func<IDataReader, ValueTask> DataAsyncHandler = r => default;
-		static readonly Func<IDataReader, ValueTask<int>> DataAsyncTransform = r => default;
-		static readonly Action<IDataRecord> Record = r => { };
+		static readonly Action<DbDataReader> DbHandler = _ => { };
+		static readonly Func<DbDataReader, ValueTask> DbAsyncHandler = _ => default;
+		static readonly Func<DbDataReader, int> DbTransform = _ => 1;
+		static readonly Func<DbDataReader, ValueTask<int>> DbAsyncTransform = _ => default;
+		static readonly Func<IDataReader, ValueTask> DataAsyncHandler = _ => default;
+		static readonly Func<IDataReader, ValueTask<int>> DataAsyncTransform = _ => default;
+		static readonly Action<IDataRecord> Record = _ => { };
 
 		static string Name(Type type)
 		{
@@ -227,6 +231,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		[Fact]
 		public static void ExecuteReaderAsync_OnADbCommand_BindsEachRung()
 		{
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 			BehaviorLadder<DbCommand>(
 				Ext + "(DbCommand,Action<DbDataReader>,CancellationToken)", Ext + "(DbCommand,Action<DbDataReader>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DbHandler), c => c.ExecuteReaderAsync(DbHandler, Token), c => c.ExecuteReaderAsync(DbHandler, default),
@@ -243,11 +248,13 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				Ext + "(DbCommand,Func<DbDataReader,ValueTask<Int32>>,CancellationToken)", Ext + "(DbCommand,Func<DbDataReader,ValueTask<Int32>>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DbAsyncTransform), c => c.ExecuteReaderAsync(DbAsyncTransform, Token), c => c.ExecuteReaderAsync(DbAsyncTransform, default),
 				c => c.ExecuteReaderAsync(DbAsyncTransform, CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(DbAsyncTransform, CommandBehavior.SequentialAccess, Token));
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
 
 		[Fact]
 		public static void ExecuteReaderAsync_OnAnIDbCommand_BindsEachRung()
 		{
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 			BehaviorLadder<IDbCommand>(
 				Ext + "(IDbCommand,CancellationToken)", Ext + "(IDbCommand,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(), c => c.ExecuteReaderAsync(Token), c => c.ExecuteReaderAsync(default),
@@ -260,6 +267,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 				Ext + "(IDbCommand,Func<IDataReader,ValueTask<Int32>>,CancellationToken)", Ext + "(IDbCommand,Func<IDataReader,ValueTask<Int32>>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DataAsyncTransform), c => c.ExecuteReaderAsync(DataAsyncTransform, Token), c => c.ExecuteReaderAsync(DataAsyncTransform, default),
 				c => c.ExecuteReaderAsync(DataAsyncTransform, CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(DataAsyncTransform, CommandBehavior.SequentialAccess, Token));
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 		}
 
 		// ---- ForEachAsync on a DbDataReader: (handler, token) next to the flag rung ----
@@ -270,10 +278,12 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			const string Token1 = "DataReaderExtensions.ForEachAsync(DbDataReader,Action<IDataRecord>,CancellationToken)";
 			const string Flag = "DataReaderExtensions.ForEachAsync(DbDataReader,Action<IDataRecord>,Boolean,CancellationToken)";
 
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 			Binds<DbDataReader>(Flag, "ForEachAsync", r => r.ForEachAsync(Record));
 			Binds<DbDataReader>(Token1, "ForEachAsync", r => r.ForEachAsync(Record, Token));
 			Binds<DbDataReader>(Flag, "ForEachAsync", r => r.ForEachAsync(Record, false));
 			Binds<DbDataReader>(Flag, "ForEachAsync", r => r.ForEachAsync(Record, true, Token));
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
 			// A bare default in the second slot now binds the token rung (the flag rung is the one that takes a bool):
 			// it reads with ReadAsync, as the call without the flag does, where default(bool) used to turn that off.

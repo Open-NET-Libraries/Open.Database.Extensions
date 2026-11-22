@@ -412,5 +412,4 @@ public static partial class CommandExtensions
 				yield return transform(reader);
 		}
 	}
-
 }

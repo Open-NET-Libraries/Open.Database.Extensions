@@ -56,7 +56,6 @@ public static class CommandExtensionsTests
 		Assert.False(probe.Behaviors.Single().HasFlag(CommandBehavior.CloseConnection));
 	}
 
-
 	// The asynchronous reader helpers decide the same way: a closed connection is opened and closed again by the call,
 	// an open one is left alone.
 	[Fact]
@@ -116,7 +115,7 @@ public static class CommandExtensionsTests
 	#region DbCommand (async)
 
 	static FakeDbCommand NewDbCommand(ConnectionProbe probe, params int[] ids)
-		=> new(probe.Db!, () => FakeReader.CreateDb(["id"], ids.Select(i => new object?[] { i }).ToArray()));
+		=> new(probe.Db, () => FakeReader.CreateDb(["id"], ids.Select(i => new object?[] { i }).ToArray()));
 
 	[Fact]
 	public static async Task ExecuteReaderAsync_ClosedConnection_RequestsCloseConnectionAndKeepsCallerBehavior()

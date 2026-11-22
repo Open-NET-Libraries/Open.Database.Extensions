@@ -214,23 +214,13 @@ public static class DataReaderExtensions
 		} while (reader.Read());
 	}
 
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
-	/// <para>
-	/// <see cref="DBNull"/> values are retained.
-	/// </para>
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
+	/// <inheritdoc cref="AsEnumerable(IDataReader, IEnumerable{int}, ArrayPool{object}?)"/>
 	internal static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: AsEnumerableCore(reader);
 
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
+	/// <inheritdoc cref="AsEnumerable(IDataReader, IEnumerable{int}, ArrayPool{object}?)"/>
 	internal static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
@@ -318,6 +308,7 @@ public static class DataReaderExtensions
 			: AsEnumerableInternalCore(reader, ordinals, readStarted, arrayPool);
 	}
 
+	///<summary>Internal extension for getting an object array of records.</summary>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
@@ -1060,5 +1051,4 @@ public static class DataReaderExtensions
 			// Does not use .ReadAsync();
 			: IterateWhileAsyncInternal(reader, predicate, cancellationToken);
 	}
-
 }

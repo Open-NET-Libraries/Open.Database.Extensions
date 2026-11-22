@@ -45,7 +45,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 
 			public override bool Equals(object obj) => obj is AuthorViews other && Equals(other);
 
-			public override int GetHashCode() => (AuthorId * 31) + Views;
+			public override int GetHashCode() => AuthorId * 31 + Views;
 		}
 
 		sealed class Post
@@ -85,7 +85,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		public static void AddParam_WithAStringValue_BindsTheNamedStringOverload_OnEveryReceiver()
 		{
 			const string name = "author";
-			string s = "ann";
+			const string s = "ann";
 
 			Assert.Equal("String,String", Bound((Func<DbQueryUsing, object>)(u => u.AddParam("author", "ann")), "AddParam"));
 			Assert.Equal("String,String", Bound((Func<DbQueryUsing, object>)(u => u.AddParam(name, s)), "AddParam"));
@@ -109,8 +109,8 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		[Fact]
 		public static void AddParam_WithOneArgument_BindsTheDerivingOverload()
 		{
-			string author = "ann";
-			int limit = 5;
+			const string author = "ann";
+			const int limit = 5;
 
 			Assert.Equal("<T>T,String", Bound((Func<DbQueryUsing, object>)(u => u.AddParam(author)), "AddParam"));
 			Assert.Equal("<T>T,String", Bound((Func<DbQueryUsing, object>)(u => u.AddParam(limit)), "AddParam"));

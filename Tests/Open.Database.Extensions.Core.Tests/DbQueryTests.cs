@@ -1,5 +1,5 @@
-using System.Data.Common;
 using Microsoft.Data.Sqlite;
+using System.Data.Common;
 
 namespace Open.Database.Extensions.Tests;
 
@@ -138,9 +138,9 @@ public static class DbQueryTests
 	public static async Task AdHoc_NamesComeFromTheVariables()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int authorId = 7;
-		int views = 50;
+		await using Tracked c = db.Connect();
+		const int authorId = 7;
+		const int views = 50;
 
 		List<Post> posts = await Posts.Using(c)
 			.AddParam(authorId)
@@ -165,7 +165,7 @@ public static class DbQueryTests
 	public static async Task AdHoc_AChainOfMembersIsNamedForTheLast()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		var filter = new Filter { AuthorId = 8, Views = 0 };
 
 		List<Post> posts = await DbQuery
@@ -183,7 +183,7 @@ public static class DbQueryTests
 	{
 		using var db = new Db();
 		using Tracked c = db.Connect();
-		int n = 3;
+		const int n = 3;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(
 			() => Posts.Using(c).AddParam(n + 1));
@@ -195,8 +195,8 @@ public static class DbQueryTests
 	public static async Task Named_StringAndGenericOverloads()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		string author = "7";
+		await using Tracked c = db.Connect();
+		const string author = "7";
 
 		List<Post> posts = await DbQuery
 			.Text("select Id, AuthorId, Title from Posts where AuthorId = @a and Title = @t and Views >= @v").Using(c)
@@ -213,9 +213,9 @@ public static class DbQueryTests
 	public static async Task Typed_AddParams_SendsTheMembersByName()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int authorId = 7;
-		int views = 50;
+		await using Tracked c = db.Connect();
+		const int authorId = 7;
+		const int views = 50;
 
 		List<Post> posts = await PostsTyped.Using(c)
 			.AddParams(new(AuthorId: authorId, Views: views))
@@ -232,9 +232,9 @@ public static class DbQueryTests
 	public static async Task TheTwoForms_ReturnTheSameRows()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int authorId = 7;
-		int views = 10;
+		await using Tracked c = db.Connect();
+		const int authorId = 7;
+		const int views = 10;
 
 		List<Post> adHoc = await Posts.Using(c)
 			.AddParam(authorId)
@@ -254,7 +254,7 @@ public static class DbQueryTests
 	public static async Task AQueryWithNoValues_MapsDirectlyOnUsing()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		List<int> ids = await DbQuery
 			.Text("select Id from Posts order by Id").Using(c)
@@ -268,7 +268,7 @@ public static class DbQueryTests
 	public static async Task ANullIsSentAsADatabaseNull()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		int? none = null;
 
 		List<int> ids = await DbQuery
@@ -291,9 +291,9 @@ public static class DbQueryTests
 	public static async Task AdHoc_AVariableFindsItsParameter_IgnoringUnderscores()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int authorId = 7;
-		int views = 50;
+		await using Tracked c = db.Connect();
+		const int authorId = 7;
+		const int views = 50;
 
 		List<Post> posts = await DbQuery
 			.Text("select Id, AuthorId, Title from Posts where AuthorId = @author_id and Views >= @views order by Id").Using(c)
@@ -310,8 +310,8 @@ public static class DbQueryTests
 	public static async Task AdHoc_AVariableFindsItsParameter_WithoutAPrefix()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int author = 7;
+		await using Tracked c = db.Connect();
+		const int author = 7;
 
 		List<Post> posts = await DbQuery
 			.Text("select Id, AuthorId, Title from Posts where AuthorId = @p_author and Views >= 50 order by Id").Using(c)
@@ -329,9 +329,9 @@ public static class DbQueryTests
 	public static async Task AdHoc_TheCaseOfTheVariableDoesNotMatter_OnAProviderThatIsCaseSensitive()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int authorid = 7;
-		int VIEWS = 50;
+		await using Tracked c = db.Connect();
+		const int authorid = 7;
+		const int VIEWS = 50;
 
 		List<Post> posts = await DbQuery
 			.Text(PostsTypedSql).Using(c)
@@ -348,7 +348,7 @@ public static class DbQueryTests
 	public static async Task Typed_TheMembersFindTheirParameters_AndAMemberTheTextLacksIsNotSent()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		DbQuery<WithExtra> query = DbQuery
 			.Text("select Id, AuthorId, Title from Posts where AuthorId = @author_id and Views >= @views order by Id")
 			.Params<WithExtra>();
@@ -372,8 +372,8 @@ public static class DbQueryTests
 	public static async Task AnArgumentThatMatchesNothing_SaysWhatTheTextDeclares()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int unknown = 1;
+		await using Tracked c = db.Connect();
+		const int unknown = 1;
 
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			async () => await Posts.Using(c).AddParam(unknown).Map<Post>()
@@ -388,9 +388,9 @@ public static class DbQueryTests
 	public static async Task TwoArgumentsThatResolveToOneParameter_AreRefused()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int authorId = 7;
-		int author_id = 8;
+		await using Tracked c = db.Connect();
+		const int authorId = 7;
+		const int author_id = 8;
 
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			async () => await DbQuery
@@ -407,8 +407,8 @@ public static class DbQueryTests
 	public static async Task ATextWithNoMarker_SendsEachArgumentAsWritten()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int number = 5;
+		await using Tracked c = db.Connect();
+		const int number = 5;
 
 		await DbQuery.Text("select 1").Using(c).AddParam(number).Map<int>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -424,7 +424,7 @@ public static class DbQueryTests
 	public static async Task AWrittenName_WinsOverAMember_AddedBeforeIt()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		List<Post> posts = await DbQuery.Text(PostsTypedSql).Using(c)
 			.AddParam("Views", 90)
@@ -440,7 +440,7 @@ public static class DbQueryTests
 	public static async Task AWrittenName_WinsOverAMember_AddedAfterIt()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		List<Post> posts = await DbQuery.Text(PostsTypedSql).Using(c)
 			.AddParams(new AuthorViews(7, 1))
@@ -456,8 +456,8 @@ public static class DbQueryTests
 	public static async Task ADerivedName_WinsOverAMember_InEitherOrder()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int views = 90;
+		await using Tracked c = db.Connect();
+		const int views = 90;
 
 		List<Post> after = await PostsTyped.Using(c)
 			.AddParams(new(7, 1))
@@ -478,7 +478,7 @@ public static class DbQueryTests
 	public static async Task TwoMembersOfOneName_Collide()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
 			async () => await PostsTyped.Using(c)
@@ -496,8 +496,8 @@ public static class DbQueryTests
 	public static async Task AHeldCall_Branches_AndIsNeverChanged()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int authorId = 7;
+		await using Tracked c = db.Connect();
+		const int authorId = 7;
 
 		DbQueryCall held = Posts.Using(c).AddParam(authorId);
 		DbQueryCall low = held.AddParam("views", 0);
@@ -521,7 +521,7 @@ public static class DbQueryTests
 	[Fact]
 	public static void TheDefinition_NeverChanges_SetTimeoutReturnsANewOne()
 	{
-		DbQuery a = DbQuery.Text("select 1");
+		var a = DbQuery.Text("select 1");
 		DbQuery b = a.SetTimeout(5);
 
 		Assert.NotSame(a, b);
@@ -554,7 +554,7 @@ public static class DbQueryTests
 	public static async Task Values_Accumulate_InTheOrderAdded()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		await DbQuery
 			.Text("select @a, @b, @c").Using(c)
@@ -575,7 +575,7 @@ public static class DbQueryTests
 	public static async Task TheTimeoutAndTheTextReachTheCommand()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		await DbQuery.Text("select 1").SetTimeout(7).Using(c).Map<int>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -590,8 +590,8 @@ public static class DbQueryTests
 	public static async Task AQueryWithoutATimeout_KeepsTheProvidersDefault()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		using SqliteCommand fresh = c.CreateCommand();
+		await using Tracked c = db.Connect();
+		await using SqliteCommand fresh = c.CreateCommand();
 
 		await DbQuery.Text("select 1").Using(c).Map<int>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -603,9 +603,9 @@ public static class DbQueryTests
 	public static async Task ATransactionRunsTheCommandInIt()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		await c.OpenAsync(TestContext.Current.CancellationToken);
-		using DbTransaction tx = await c.BeginTransactionAsync(TestContext.Current.CancellationToken);
+		await using DbTransaction tx = await c.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
 		await DbQuery.Text("select 1").Using(tx).Map<int>()
 			.ToListAsync(TestContext.Current.CancellationToken);
@@ -622,7 +622,7 @@ public static class DbQueryTests
 	public static async Task ACancelledToken_ThrowsBeforeTheConnectionIsTouched()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		using var cts = new CancellationTokenSource();
 		cts.Cancel();
 
@@ -637,7 +637,7 @@ public static class DbQueryTests
 	public static async Task AGivenToken_GovernsTheCall_AndTheConnectionIsLeftAsFound()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		using var cts = new CancellationTokenSource();
 
 		List<int> ids = await DbQuery.Text("select Id from Posts order by Id").Using(c)
@@ -656,7 +656,7 @@ public static class DbQueryTests
 	public static async Task EveryTerminal_ReadsThroughTheLaterSets_SoALaterFailureIsThrown()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		MappedQuery<int> query = DbQuery.Text(LaterFailure).Using(c).Map<int>();
 
 		await Assert.ThrowsAsync<SqliteException>(
@@ -668,7 +668,7 @@ public static class DbQueryTests
 	public static async Task SingleResult_StopsAfterTheFirstSet()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		List<int> ids = await DbQuery.Text(LaterFailure).Using(c)
 			.Map<int>()
@@ -682,7 +682,7 @@ public static class DbQueryTests
 	public static async Task AfterAFailure_TheConnectionIsClosedAgain()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		await Assert.ThrowsAsync<SqliteException>(
 			async () => await DbQuery.Text(LaterFailure).Using(c).Map<int>()
@@ -699,7 +699,7 @@ public static class DbQueryTests
 	public static async Task AClosedConnection_IsOpenedLate_AndClosedAgain_NeverDisposed()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		DbQueryCall call = Posts.Using(c).AddParam("authorId", 7).AddParam("views", 0);
 
 		// Building the call touches nothing.
@@ -722,7 +722,7 @@ public static class DbQueryTests
 	public static async Task AnOpenConnection_StaysOpen_AndIsNotOpenedAgain()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		await c.OpenAsync(TestContext.Current.CancellationToken);
 
 		await Posts.Using(c).AddParam("authorId", 7).AddParam("views", 0)
@@ -839,7 +839,7 @@ public static class DbQueryTests
 	public static async Task TheAsyncReaderMembers_RunOnTheSamePath()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		IExecuteReader reader = Posts.Using(c).AddParam("authorId", 7).AddParam("views", 0);
 
 		int count = await reader.ExecuteReaderAsync(async r =>
@@ -849,7 +849,7 @@ public static class DbQueryTests
 			return n;
 		});
 		bool ran = false;
-		await reader.ExecuteReaderAsync(r =>
+		await reader.ExecuteReaderAsync(_ =>
 		{
 			ran = true;
 			return ValueTask.CompletedTask;
@@ -891,7 +891,7 @@ public static class DbQueryTests
 	{
 		using var db = new Db();
 		var factory = new Factory(db);
-		int authorId = 7;
+		const int authorId = 7;
 
 		DbQueryCall a = Posts.Using(factory).AddParam(authorId).AddParam("views", 3);
 		DbQueryCall b = Posts.Using(factory).AddParam(authorId).AddParam("views", 3);
@@ -954,7 +954,7 @@ public static class DbQueryTests
 	public static void TheSeam_ASelectorKeysOnItsDelegate()
 	{
 		using var db = new Db();
-		DbQuery query = DbQuery.Text("select 1");
+		var query = DbQuery.Text("select 1");
 		using Tracked c = db.Connect();
 
 		Assert.Equal(query.Using(c).Map(Selectors.First), query.Using(c).Map(Selectors.First));

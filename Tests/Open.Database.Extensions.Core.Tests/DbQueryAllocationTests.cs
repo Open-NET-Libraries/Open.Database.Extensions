@@ -1,5 +1,5 @@
-using System.Data.Common;
 using Open.Database.Extensions.Benchmarks;
+using System.Data.Common;
 
 namespace Open.Database.Extensions.Tests;
 
@@ -69,10 +69,10 @@ public static class DbQueryAllocationTests
 	// The names come from the variables.
 	static ValueTask<List<Row>> AdHoc(DbConnection c, int k)
 	{
-		int p0 = VA;
-		long p1 = VB;
-		string p2 = VC;
-		int p3 = VD;
+		const int p0 = VA;
+		const long p1 = VB;
+		const string p2 = VC;
+		const int p3 = VD;
 		if (k == 1)
 			return Q1.Using(c).AddParam(p0).Map<Row>().ToListAsync();
 		if (k == 2)
@@ -93,7 +93,7 @@ public static class DbQueryAllocationTests
 
 	static async ValueTask<List<Row>> HandWritten(DbConnection connection, int k)
 	{
-		using DbCommand command = connection.CreateCommand();
+		await using DbCommand command = connection.CreateCommand();
 		command.CommandText = SqlFor(k);
 		command.CommandType = CommandType.Text;
 		Add(command, "p0", DbType.Int32, VA);
@@ -123,6 +123,7 @@ public static class DbQueryAllocationTests
 			}
 
 			while (reader.NextResult()) { }
+
 			return list;
 		}
 		finally
@@ -244,8 +245,8 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		int p0 = VA;
-		long p1 = VB;
+		const int p0 = VA;
+		const long p1 = VB;
 		long classic = Bytes(() => Q2.Using(c).AddParam(p0).AddParam(p1).Map<Row>().ToListAsync());
 		long after = Bytes(() => M2.Using(c).AddParam(p0).AddParam(p1).ToListAsync());
 		long before = Bytes(() => M2.AddParam(p0).AddParam(p1).Using(c).ToListAsync());
@@ -281,7 +282,7 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		string s = VC;
+		const string s = VC;
 
 		long using0 = BytesPerCall(() => Sink(M2.Using(c)));
 		long after1 = BytesPerCall(() => Sink(M1.Using(c).AddParam("p0", s)));
@@ -298,9 +299,9 @@ public static class DbQueryAllocationTests
 
 		// Binding the source allocates nothing: the view holds the call as it is.
 		Near(0, using0);
-		Near(24 + (16 * 1), after1);
-		Near(24 + (16 * 5), after5);
-		Near(24 + (16 * 10), after10);
+		Near(24 + 16 * 1, after1);
+		Near(24 + 16 * 5, after5);
+		Near(24 + 16 * 10, after10);
 
 		// The same array whichever order the values and the source are given in, and giving the source copies nothing.
 		Near(after1, before1);
@@ -318,8 +319,8 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		int i = VA;
-		long l = VB;
+		const int i = VA;
+		const long l = VB;
 
 		long oneInt = BytesPerCall(() => Sink(M1.Using(c).AddParam("p0", i)));
 		long intAndLong = BytesPerCall(() => Sink(M2.Using(c).AddParam("p0", i).AddParam("p1", l)));
@@ -359,10 +360,10 @@ public static class DbQueryAllocationTests
 	public static void DerivedNames_CostNoMoreThanNamedOnes(int k)
 	{
 		using DbConnection c = NewConnection();
-		int p0 = VA;
-		long p1 = VB;
-		string p2 = VC;
-		int p3 = VD;
+		const int p0 = VA;
+		const long p1 = VB;
+		const string p2 = VC;
+		const int p3 = VD;
 		DbQuery q = k switch { 1 => Q1, 2 => Q2, _ => Q4 };
 
 		long derived = Bytes(() => k switch

@@ -62,7 +62,7 @@ public static class DbQueryNamesTests
 	public static void TheSameNameSpelledTwoWays_IsRefused_WhateverWayItIsAdded()
 	{
 		using var c = new Tracked();
-		int a = 1;
+		const int a = 1;
 
 		Assert.Throws<InvalidOperationException>(() => M.Using(c).AddParam("a", 1).AddParam("@a", 2).FirstOrDefault());
 		Assert.Throws<InvalidOperationException>(() => M.Using(c).AddParam("@A", 1).AddParam("a", 2).FirstOrDefault());

@@ -339,12 +339,12 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	public bool Equals(DbQuery? other)
 		=> other is not null
 		&& (ReferenceEquals(this, other)
-			|| (Timeout == other.Timeout
+			|| Timeout == other.Timeout
 				&& Kind == other.Kind
 				&& string.Equals(
 					CommandText,
 					other.CommandText,
-					StringComparison.Ordinal)));
+					StringComparison.Ordinal));
 
 	/// <inheritdoc />
 	public override bool Equals(object? obj)
@@ -356,8 +356,8 @@ public sealed class DbQuery : IEquatable<DbQuery>
 		unchecked
 		{
 			int h = StringComparer.Ordinal.GetHashCode(CommandText);
-			h = (h * 31) + (int)Kind;
-			return (h * 31) + Timeout;
+			h = h * 31 + (int)Kind;
+			return h * 31 + Timeout;
 		}
 	}
 }

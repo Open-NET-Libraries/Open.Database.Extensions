@@ -364,5 +364,4 @@ public static class AllocationQuickWinTests
 		Assert.All(a64.Take(40), p => Assert.Null(p)); // The last is cleared where it was written...
 		Assert.Same(marker, a64[63]); // ...and only there.
 	}
-
 }

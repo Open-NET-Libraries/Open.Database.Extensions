@@ -84,7 +84,6 @@ public readonly struct DbQueryCall
 			SourceCore,
 			Params.AddDerived(Definition, CheckedExpression(expression), value));
 
-
 	/// <summary>
 	/// Maps each row to a <typeparamref name="T"/> by column name (a single value such as
 	/// <see cref="int"/> is read from the first column), and returns the mapped query.
@@ -213,8 +212,8 @@ public readonly struct DbQueryCall
 		unchecked
 		{
 			int h = _definition?.GetHashCode() ?? 0;
-			h = (h * 31) + (_source?.GetHashCode() ?? 0);
-			return (h * 31) + Params.EntriesHash();
+			h = h * 31 + (_source?.GetHashCode() ?? 0);
+			return h * 31 + Params.EntriesHash();
 		}
 	}
 

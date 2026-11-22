@@ -95,7 +95,7 @@ internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 		cancellationToken.ThrowIfCancellationRequested();
 		_caller.ThrowIfCancellationRequested();
 
-		Channel<T> channel = Channel.CreateBounded<T>(
+		var channel = Channel.CreateBounded<T>(
 			new BoundedChannelOptions(1)
 			{
 				SingleReader = true,

@@ -40,5 +40,4 @@ public static class DataReaderExtensionsTests
 
 		Assert.Equal(7, sum);
 	}
-
 }

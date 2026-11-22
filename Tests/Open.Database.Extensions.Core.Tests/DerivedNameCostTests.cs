@@ -187,8 +187,8 @@ public static class DerivedNameCostTests
 	{
 		var rig = new Rig(CommandType.Text);
 		string sql = BuiltSql(count);
-		int p0 = 42, p2 = 7, p3 = 9;
-		long p1 = 1234567890123L;
+		const int p0 = 42, p2 = 7, p3 = 9;
+		const long p1 = 1234567890123L;
 
 		void Derived()
 		{
@@ -316,13 +316,13 @@ public static class DerivedNameCostTests
 
 	// The compiler marks its assemblies NoStringInterning, so that a literal is an interned object is checked here, not assumed.
 	const string ConstSql = "select * from orders where order_id = @order_id";
-	static readonly string StaticLiteralSql = "select * from orders where order_id = @order_id and x = @x";
+	const string StaticLiteralSql = "select * from orders where order_id = @order_id and x = @x";
 	static readonly string StaticBuiltSql = new("select * from orders where order_id = @order_id and y = @y".AsSpan());
 
 	[Fact]
 	public static void ALiteralAConstAndAStaticFieldOfOne_AreInternedObjects_AtRunTime()
 	{
-		string literal = "select * from orders where order_id = @order_id and z = @z";
+		const string literal = "select * from orders where order_id = @order_id and z = @z";
 		Assert.Same(literal, string.IsInterned(literal));
 		Assert.Same(ConstSql, string.IsInterned(ConstSql));
 		Assert.Same(StaticLiteralSql, string.IsInterned(StaticLiteralSql));

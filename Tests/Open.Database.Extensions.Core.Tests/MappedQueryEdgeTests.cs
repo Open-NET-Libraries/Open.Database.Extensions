@@ -116,6 +116,4 @@ public static class MappedQueryEdgeTests
 		Assert.Equal("5e", plain.Map(r => $"{r[0]}{r[1]}").Skip(4).SingleOrDefault());
 		Assert.Throws<InvalidOperationException>(() => plain.Map(r => $"{r[0]}{r[1]}").Skip(1).SingleOrDefault());
 	}
-
-
 }
