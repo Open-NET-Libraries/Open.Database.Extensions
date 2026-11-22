@@ -20,7 +20,7 @@ namespace Open.Database.Extensions.Core;
 /// clears the same slots), otherwise the used part is cleared with a span
 /// and the array is returned without the flag.
 /// Whether that happens where the release happens or in the recycle bin is
-/// decided per chunk, by its size (<see cref="DeferFromRows"/>).
+/// decided per chunk, by the bytes it holds (<see cref="DeferFromBytes"/>).
 /// </para>
 /// </remarks>
 /// <typeparam name="T">The type of each row.</typeparam>
@@ -32,43 +32,42 @@ namespace Open.Database.Extensions.Core;
 /// </param>
 /// <param name="sizes">The chunk sizes of the collectors, buffers and streams.</param>
 /// <param name="bin">The recycle bin that clears deferred chunks.</param>
-/// <param name="deferFromRows">
-/// The chunk size from which a chunk is cleared in the recycle bin (see
-/// <see cref="DeferFromRows"/>).
+/// <param name="deferFromBytes">
+/// The bytes of rows (rows written times the size of a row) from which a chunk is
+/// cleared in the recycle bin (see <see cref="DeferFromBytes"/>).
 /// </param>
 internal sealed class ChunkConfig<T>(
 	ArrayPool<T> pool,
 	bool? clearOnReturn,
 	ChunkSizes sizes,
 	RecycleBin bin,
-	int deferFromRows)
+	int deferFromBytes)
 {
 	/// <summary>
-	/// The chunk size (rows written) from which the rows of a chunk that holds
-	/// references are cleared in the recycle bin instead of where the chunk is
-	/// released. Chunks of rows with no references are always cleared where
-	/// they are released.
+	/// The bytes of rows (rows written times the size of a row: a reference is 8)
+	/// from which the rows of a chunk are cleared in the recycle bin instead of
+	/// where the chunk is released, for every kind of row.
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// Measured (BenchmarkDotNet, in process, .NET 10).
-	/// Clearing the rows where the chunk is released adds 3 to 5 ns up to 256
-	/// rows, and about 100 / 425 / 850 ns at 1,024 / 4,096 / 8,192 class rows;
-	/// for <c>int</c> rows it is about 200 ns even at 4,096 and 8,192.
+	/// Measured (the recycle bin proof, paced so the bin never fills, .NET 10).
+	/// Clearing where the chunk is released costs the releasing thread about 8 to
+	/// 20 ns per KB (<c>int</c> rows: 154 ns at 16 KB, 526 ns at 64 KB, 1.8 microseconds at 256 KB;
+	/// rows of 80 bytes without references: 21 microseconds at 1.3 MB, 123 at 5.2 MB;
+	/// references: 508 ns at 32 KB, 2.0 microseconds at 128 KB, 9.9 at 512 KB).
+	/// Handing a chunk to the bin costs the releasing thread a flat 0.8 to 3 microseconds
+	/// whatever the size, and the bin's thread then pays the clear: the total CPU is higher
+	/// than clearing in place for a small chunk and equal or lower from about 256 KB.
 	/// </para>
 	/// <para>
-	/// Handing a chunk to the bin costs the releasing thread about 130 to 150
-	/// ns whatever the size (the queue write and the wake-up), and the array is
-	/// not back in the pool until the loop gets to it: a tight loop that rents
-	/// again right after posting misses the pool, so the whole cycle (fill,
-	/// read, release) was slower through the bin in every measured row (19.5
-	/// against 32.0 microseconds for a 10,000 row buffer of
-	/// <c>int</c> rows).
-	/// The bin pays only for a large clear of rows that hold references, where
-	/// it takes more than a post off the consumer's thread: from 4,096 rows.
+	/// The two release costs meet at about 128 to 256 KB.
+	/// The default is the lower end: the rule is to hand off unless clearing in place is
+	/// certainly cheaper, and at 128 KB of references it is a tie.
+	/// Rows that hold no references are included, which the earlier rule (4,096 rows, references
+	/// only) was not: a large chunk of value rows is cleared in the bin too.
 	/// </para>
 	/// </remarks>
-	public const int DefaultDeferFromRows = 4_096;
+	public const int DefaultDeferFromBytes = 131_072;
 
 	/// <summary>Gets the pool the arrays come from and go back to.</summary>
 	public ArrayPool<T> Pool { get; } = pool;
@@ -95,7 +94,7 @@ internal sealed class ChunkConfig<T>(
 	/// Gets the number of rows from which a chunk is cleared in the recycle
 	/// bin; a smaller one is cleared where it is released.
 	/// </summary>
-	public int DeferFromRows { get; } = deferFromRows;
+	public int DeferFromBytes { get; } = deferFromBytes;
 
 	/// <summary>
 	/// Rents an array of at least <paramref name="size"/> slots.
@@ -129,25 +128,23 @@ internal sealed class ChunkConfig<T>(
 	public ArrayLease<T> Seal(T[] array, int used)
 		=> new(array, used, this, ModeFor(used));
 
-	/// <summary>Whether a row of <typeparamref name="T"/> is, or contains, a reference.</summary>
-	static readonly bool HoldsReferences = PoolClearing.HoldsReferences<T>();
+	/// <summary>The size of a row in the array (a reference is a pointer).</summary>
+	static readonly int RowBytes = Unsafe.SizeOf<T>();
 
 	/// <summary>Chooses what happens to the rows of a chunk on release.</summary>
 	/// <remarks>
 	/// <see cref="ClearMode.None"/>: only when nothing is to be cleared (no
 	/// clearing asked and no references to keep alive, see the constructor), or
 	/// no rows were written.
-	/// <see cref="ClearMode.Deferred"/>: only a large chunk of rows that hold
-	/// references (see <see cref="DefaultDeferFromRows"/>); everything else that
-	/// clears does it right away.
-	/// (On netstandard2.0 every type counts as holding references, so a large
-	/// chunk of value rows is deferred there too: still correct.)
+	/// <see cref="ClearMode.Deferred"/>: a chunk of (rows written times the size of a
+	/// row) <see cref="DefaultDeferFromBytes"/> or more, of any kind of row; everything
+	/// else that clears does it right away.
 	/// </remarks>
 	/// <include file="Internals.docs.xml" path="docs/members[@name='used']/*" />
 	ClearMode ModeFor(int used)
 		=> !ClearOnReturn || used == 0
 			? ClearMode.None
-			: HoldsReferences && used >= DeferFromRows
+			: (long)used * RowBytes >= DeferFromBytes
 				? ClearMode.Deferred
 				: ClearMode.Immediate;
 
