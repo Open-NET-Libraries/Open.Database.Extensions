@@ -1,6 +1,5 @@
 namespace Open.Database.Extensions.Core;
 
-
 /// <summary>
 /// Where the producer hands its chunks.
 /// </summary>

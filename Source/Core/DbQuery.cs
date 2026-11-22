@@ -62,23 +62,64 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// It holds the real name of each member in member order
 	/// (<see langword="null"/>: the command does not take it).
-	/// Up to four are kept, newest first (a definition used with more values
-	/// types, or on more sets of names, drops the oldest), so values types
-	/// used in turn cost nothing once matched.
+	/// Up to four are kept, newest first: values types used in turn cost nothing
+	/// once matched, and a definition used with more values types, or on more
+	/// sets of names, matches the oldest again when it returns.
 	/// </remarks>
-	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved)
+	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved, NameSet.Entry?[] entries)
 	{
 		public Type Type { get; } = type;
 
 		public NameSet Names { get; } = names;
 
 		public string?[] Resolved { get; } = resolved;
+
+		/// <summary>Gets the place of each real name in <see cref="Names"/>, in member order.</summary>
+		public NameSet.Entry?[] Entries { get; } = entries;
 	}
 
 	internal MemberMatch[]? Matches
 	{
 		get => Volatile.Read(ref field);
 		set => Volatile.Write(ref field, value);
+	}
+
+	/// <summary>
+	/// The most parameters a call of this definition has bound, for a
+	/// definition whose text declares no names (a procedure, or a text whose
+	/// parameters are positional).
+	/// </summary>
+	int _seenParams;
+
+	/// <summary>
+	/// Gets how many parameters a call of this definition holds, which sizes the
+	/// array a call keeps them in.
+	/// </summary>
+	/// <remarks>
+	/// The number of <c>@name</c> markers of a text; for a definition that declares
+	/// none, the most a call of it has bound, or four.
+	/// </remarks>
+	internal int ParamCapacity
+	{
+		get
+		{
+			int declared = TextNames?.Names.Length ?? 0;
+			if (declared > 0) return declared;
+
+			int seen = Volatile.Read(ref _seenParams);
+			return seen > 0 ? seen : 4;
+		}
+	}
+
+	/// <summary>
+	/// Remembers how many parameters a call bound, so the next call sizes its
+	/// array to fit.
+	/// </summary>
+	/// <param name="count">The number of parameters the call bound.</param>
+	internal void NoteParams(int count)
+	{
+		if (count > Volatile.Read(ref _seenParams))
+			Volatile.Write(ref _seenParams, count);
 	}
 
 	internal string CommandText { get; }
@@ -212,6 +253,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// The values are then given in one call, which the compiler checks:
 	/// <c>.Using(db).AddParams(new(AuthorId: authorId, Day: day))</c>.
+	/// A class object that already exists (for example a deserialized request) is added with <c>AddParams</c> on the untyped definition, which allocates no more.
 	/// </remarks>
 	/// <typeparam name="TParams">The type of the values.</typeparam>
 	/// <returns>The typed definition.</returns>
@@ -297,12 +339,12 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	public bool Equals(DbQuery? other)
 		=> other is not null
 		&& (ReferenceEquals(this, other)
-			|| (Timeout == other.Timeout
+			|| Timeout == other.Timeout
 				&& Kind == other.Kind
 				&& string.Equals(
 					CommandText,
 					other.CommandText,
-					StringComparison.Ordinal)));
+					StringComparison.Ordinal));
 
 	/// <inheritdoc />
 	public override bool Equals(object? obj)
@@ -314,8 +356,8 @@ public sealed class DbQuery : IEquatable<DbQuery>
 		unchecked
 		{
 			int h = StringComparer.Ordinal.GetHashCode(CommandText);
-			h = (h * 31) + (int)Kind;
-			return (h * 31) + Timeout;
+			h = h * 31 + (int)Kind;
+			return h * 31 + Timeout;
 		}
 	}
 }

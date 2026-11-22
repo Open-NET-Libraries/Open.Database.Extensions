@@ -37,7 +37,7 @@ So the opt-in trades a blocked thread for a possible wait on the pool. It costs 
 
 - **Question:** what does the read path cost, with and without a buffer refill and a busy thread pool?
 - **Setup:** the synthetic reader, 20 typed columns, 1,000 rows per call, `Map<T>()`. A refill is a wait every 100 rows (20 µs, a busy wait) and, for the async read, an incomplete task completed from another thread. A busy pool keeps 8 work items queued on the thread pool. Four runs, one per condition.
-- **Settings:** BenchmarkDotNet 0.15.8, in-process, 5 warm-up and 12 measured iterations, one launch, one run per case. The time is the connection held open. See [How we measure](how-we-measure.md). These runs used the opt-in under its rc.5 name, `EnableAsyncRead(true)`.
+- **Settings:** BenchmarkDotNet 0.15.8, in-process, 5 warm-up and 12 measured iterations, one launch, one run per case. The time is the connection held open. See [How we measure](how-we-measure.md). These runs used the opt-in under the name `EnableAsyncRead(true)`.
 - **Build, date, machine:** build `ea5f096`, 2026-11-14; AMD Ryzen 9 7900, .NET 11.0.0, Windows 10.
 - **Data:** [sync-async.csv](../../perf-data/sync-async.csv) ([source and conditions](../../perf-data/sync-async.source.txt)).
 - **Reproduce:** `dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*SyntheticBenchmarks.V1_Sync" "*SyntheticBenchmarks.V1_Async" "*SyntheticBenchmarks.V1_AsyncRead"`, with `ODX_SYN_WIDTHS=20`, `ODX_SYN_ROWS=1000` and `ODX_SYN_BUFFER_ROWS`, `ODX_SYN_REFILL_US`, `ODX_SYN_PRESSURE` set per condition (the [generator README](https://github.com/Open-NET-Libraries/Open.Database.Extensions/tree/master/docsite/tools/perf) lists them).

@@ -144,8 +144,8 @@ namespace Open.Database.Extensions.Core;
 /// </remarks>
 /// <typeparam name="T">The type of each row.</typeparam>
 /// <param name="query">The query to read.</param>
-/// <param name="config">Rents, seals and releases the pooled chunks.</param>
 /// <param name="target">Receives each filled chunk, and the end of the read.</param>
+/// <param name="config">Rents, seals and releases the pooled chunks.</param>
 /// <param name="caller">The caller's cancellation token.</param>
 internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,

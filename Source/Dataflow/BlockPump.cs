@@ -14,7 +14,10 @@ internal static class BlockPump
 	/// </summary>
 	/// <param name="feed">Where the rows come from.</param>
 	/// <param name="target">Where the rows are sent.</param>
-	/// <param name="end">What happens to the target when the pass ends.</param>
+	/// <param name="complete">
+	/// <see langword="true"/> to complete the target when the pass ends,
+	/// or to fault it with the exception that ended the pass.
+	/// </param>
 	/// <param name="checkOpen">
 	/// <see langword="true"/> to stop before the feed starts when the
 	/// target is already finished, so no command is run for it.
@@ -24,7 +27,7 @@ internal static class BlockPump
 	internal static async ValueTask<long> Run<T, TFeed>(
 		TFeed feed,
 		ITargetBlock<T> target,
-		BlockEnd end,
+		bool complete,
 		bool checkOpen,
 		CancellationToken cancellationToken)
 		where TFeed : struct, IFeed<T>
@@ -52,7 +55,7 @@ internal static class BlockPump
 		}
 		finally
 		{
-			if (end == BlockEnd.Complete)
+			if (complete)
 			{
 				if (error is null) target.Complete();
 				else target.Fault(error);

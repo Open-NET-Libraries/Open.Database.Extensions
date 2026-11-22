@@ -141,7 +141,8 @@ public static partial class CoreExtensions
 /// satisfied.
 /// </remarks>
 /// <typeparam name="T">The type each row is mapped to.</typeparam>
-/// <param name="command">The command the rows are read from.</param>
+/// <param name="command">The command the rows are read from, or <see langword="null"/> when the query holds a call.</param>
+/// <param name="call">The query, when it was made from a <see cref="DbQuery"/> definition: held as it is, not boxed, and then <paramref name="command"/> is <see langword="null"/>.</param>
 /// <param name="source">Reads and maps one row.</param>
 /// <param name="skip">The number of rows to skip before the first mapped row.</param>
 /// <param name="take">The maximum number of rows to map, or -1 for no limit.</param>
@@ -149,7 +150,8 @@ public static partial class CoreExtensions
 /// <param name="asyncReads"><see langword="true"/> to read the rows of an asynchronous terminal with <c>ReadAsync</c>; otherwise, <see langword="false"/>, which reads them with <c>Read</c>.</param>
 /// <param name="config">The pool, the clear rule, the chunk sizes and the bin the pooling terminals use.</param>
 readonly struct MappedQueryCore<T>(
-	IExecuteReader command,
+	IExecuteReader? command,
+	DbQueryCall call,
 	IRowSource<T> source,
 	int skip,
 	int take,
@@ -185,12 +187,50 @@ readonly struct MappedQueryCore<T>(
 	readonly IExecuteReader? _command = command;
 
 	/// <summary>
-	/// Gets the command the query reads from.
+	/// The query made from a <see cref="DbQuery"/> definition, or a default value when the query reads from the command.
+	/// </summary>
+	readonly DbQueryCall _call = call;
+
+	/// <summary>
+	/// Gets the command the query reads from: its own command, or the call of a <see cref="DbQuery"/> definition (boxed here).
 	/// </summary>
 	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
 	public IExecuteReader Command
-		=> _command ?? throw new InvalidOperationException(
-			"This query was not created by Map<T>(); a default value cannot be used.");
+		=> _command ?? (_call.IsBound
+			? _call
+			: throw Default());
+
+	/// <summary>
+	/// Throws when this is a default value, which has no command.
+	/// </summary>
+	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
+	public void EnsureCommand()
+	{
+		if (_command is null && !_call.IsBound) throw Default();
+	}
+
+	static InvalidOperationException Default()
+		=> new("This query was not created by Map<T>(); a default value cannot be used.");
+
+	// Returns the query it was given, after refusing a default value, which has no command.
+	MappedQueryCore<T> Checked(MappedQueryCore<T> next)
+	{
+		EnsureCommand();
+		return next;
+	}
+
+	/// <summary>
+	/// Gets the query as a call when it was made from a <see cref="DbQuery"/> definition.
+	/// </summary>
+	/// <param name="call">The call.</param>
+	/// <returns><see langword="true"/> if the query was made from a definition; otherwise, <see langword="false"/>.</returns>
+	/// <exception cref="InvalidOperationException">A default value was not created by <c>Map</c>.</exception>
+	public bool TryGetCall(out DbQueryCall call)
+	{
+		EnsureCommand();
+		call = _call;
+		return _call.IsBound;
+	}
 
 	/// <summary>
 	/// Determines whether another query is the same query: the same command and
@@ -206,6 +246,7 @@ readonly struct MappedQueryCore<T>(
 	/// <returns><see langword="true"/> if <paramref name="other"/> is the same query; otherwise, <see langword="false"/>.</returns>
 	public bool Equals(MappedQueryCore<T> other)
 		=> Equals(_command, other._command)
+		&& _call.Equals(other._call)
 		&& Equals(_source, other._source)
 		&& _skip == other._skip
 		&& _take == other._take
@@ -220,11 +261,11 @@ readonly struct MappedQueryCore<T>(
 	{
 		unchecked
 		{
-			int h = _command?.GetHashCode() ?? 0;
-			h = (h * 31) + (_source?.GetHashCode() ?? 0);
-			h = (h * 31) + _skip;
-			h = (h * 31) + _take;
-			return (h * 31)
+			int h = _command?.GetHashCode() ?? _call.GetHashCode();
+			h = h * 31 + (_source?.GetHashCode() ?? 0);
+			h = h * 31 + _skip;
+			h = h * 31 + _take;
+			return h * 31
 				+ (_singleResult ? 2 : 0)
 				+ (_asyncReads ? 1 : 0)
 				+ RuntimeHelpers.GetHashCode(Config); // Reference equality, null for a default value.
@@ -242,9 +283,9 @@ readonly struct MappedQueryCore<T>(
 		? (_source is SelectorSource<T> ? CommandBehavior.SingleResult : GeneratedMapping)
 		: (_source is SelectorSource<T> ? CommandBehavior.Default : CommandBehavior.SequentialAccess);
 
-	public MappedQueryCore<T> WithSingleResult() => new(Command, _source, _skip, _take, true, _asyncReads, Config);
+	public MappedQueryCore<T> WithSingleResult() => Checked(new(_command, _call, _source, _skip, _take, true, _asyncReads, Config));
 
-	public MappedQueryCore<T> WithAsyncReads() => new(Command, _source, _skip, _take, _singleResult, true, Config);
+	public MappedQueryCore<T> WithAsyncReads() => Checked(new(_command, _call, _source, _skip, _take, _singleResult, true, Config));
 
 	/// <summary>
 	/// Gets the configuration the query was given.
@@ -263,7 +304,7 @@ readonly struct MappedQueryCore<T>(
 
 		// A default value has no command: say so the way the whole family does,
 		// before anything reads its (null) configuration.
-		_ = Command;
+		EnsureCommand();
 
 		// The pool is the caller's; the sizes and the bin stay what the query had.
 		return WithConfig(new ChunkConfig<T>(
@@ -281,22 +322,27 @@ readonly struct MappedQueryCore<T>(
 	/// <param name="config">The configuration to use.</param>
 	/// <returns>A copy of the query that uses <paramref name="config"/>.</returns>
 	public MappedQueryCore<T> WithConfig(ChunkConfig<T> config)
-		=> new(Command, _source, _skip, _take, _singleResult, _asyncReads, config);
+		=> Checked(new(_command, _call, _source, _skip, _take, _singleResult, _asyncReads, config));
 
 	/// <summary>Returns the same query over another command.</summary>
 	public MappedQueryCore<T> WithCommand(IExecuteReader command)
-		=> new(command, _source, _skip, _take, _singleResult, _asyncReads, Config);
+		=> new(command, default, _source, _skip, _take, _singleResult, _asyncReads, Config);
+
+	/// <summary>Returns the same query over another call.</summary>
+	public MappedQueryCore<T> WithCall(DbQueryCall call)
+		=> new(null, call, _source, _skip, _take, _singleResult, _asyncReads, Config);
 
 	public MappedQueryCore<T> WithSkip(int count)
 		=> count >= 0
-			? new(
-				Command,
+			? Checked(new(
+				_command,
+				_call,
 				_source,
 				_skip + count,
 				_take,
 				_singleResult,
 				_asyncReads,
-				Config)
+				Config))
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	/// <summary>
@@ -312,14 +358,15 @@ readonly struct MappedQueryCore<T>(
 	/// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
 	public MappedQueryCore<T> WithTake(int count)
 		=> count >= 0
-			? new(
-				Command,
+			? Checked(new(
+				_command,
+				_call,
 				_source,
 				_skip,
 				count,
 				_singleResult,
 				_asyncReads,
-				Config)
+				Config))
 			: throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
 
 	/// <summary>
@@ -338,7 +385,7 @@ readonly struct MappedQueryCore<T>(
 	/// <param name="linked">The linked source to dispose when the call ends, or <see langword="null"/> when none was needed.</param>
 	/// <returns>The token that governs the call.</returns>
 	CancellationToken Combine(CancellationToken cancellationToken, out CancellationTokenSource? linked)
-		=> CancellationTokens.Combine(Command.CancellationToken, cancellationToken, out linked);
+		=> CancellationTokens.Combine(_call.IsBound ? default : Command.CancellationToken, cancellationToken, out linked);
 
 	/// <summary>
 	/// Executes the command asynchronously and passes the reader to
@@ -359,13 +406,13 @@ readonly struct MappedQueryCore<T>(
 	/// <returns>A task that produces the result of the transform.</returns>
 	ValueTask<TResult> ExecuteAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource? linked, CancellationToken token)
 		=> linked is null
-			? Command.ExecuteReaderAsync(state, transform, behavior, token)
-			: ExecuteLinkedAsync(Command, state, transform, behavior, linked, token);
+			? ExecuteReaderAsync(state, transform, behavior, token)
+			: ExecuteLinkedAsync(this, state, transform, behavior, linked, token);
 
-	static async ValueTask<TResult> ExecuteLinkedAsync<TState, TResult>(IExecuteReader command, TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource linked, CancellationToken token)
+	static async ValueTask<TResult> ExecuteLinkedAsync<TState, TResult>(MappedQueryCore<T> self, TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationTokenSource linked, CancellationToken token)
 	{
 		using (linked)
-			return await command.ExecuteReaderAsync(state, transform, behavior, token).ConfigureAwait(false);
+			return await self.ExecuteReaderAsync(state, transform, behavior, token).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -386,8 +433,8 @@ readonly struct MappedQueryCore<T>(
 	/// <returns>The result of the transform.</returns>
 	TResult Run<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior)
 		=> _singleResult
-			? Command.AsSync().ExecuteReader(state, transform, behavior)
-			: Command.AsSync().ExecuteReader((state, transform), static (reader, s) =>
+			? ExecuteReader(state, transform, behavior)
+			: ExecuteReader((state, transform), static (reader, s) =>
 			{
 				TResult result = s.transform(reader, s.state);
 				RowReader.ReadThrough(reader);
@@ -404,20 +451,32 @@ readonly struct MappedQueryCore<T>(
 				return result;
 			}, behavior, linked, token);
 
+	/// <summary>Runs the reader function on the call, held as it is, or on the command.</summary>
+	TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior)
+		=> _call.IsBound
+			? _call.Run(state, transform, behavior)
+			: Command.AsSync().ExecuteReader(state, transform, behavior);
+
+	/// <summary>Runs the asynchronous reader function on the call, held as it is, or on the command.</summary>
+	ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken token)
+		=> _call.IsBound
+			? _call.RunAsync(state, transform, behavior, token)
+			: Command.ExecuteReaderAsync(state, transform, behavior, token);
+
 	// The terminals pass their inputs to the command as state and use static lambdas, so running a
 	// query allocates no closures or delegates of its own.
 
 	#region Handler (streaming) terminals
 
 	public void Read(Action<IEnumerable<T>> handler)
-		=> Command.AsSync().ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s) =>
+		=> ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s) =>
 		{
 			s.handler(RowReader.Stream(s._source, reader, s._skip, s._take, !s._singleResult));
 			return false;
 		}, Behavior);
 
 	public TResult Read<TResult>(Func<IEnumerable<T>, TResult> handler)
-		=> Command.AsSync().ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s)
+		=> ExecuteReader((handler, _source, _skip, _take, _singleResult), static (reader, s)
 			=> s.handler(RowReader.Stream(s._source, reader, s._skip, s._take, !s._singleResult)), Behavior);
 
 	public ValueTask ReadAsync(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler, CancellationToken cancellationToken)
@@ -429,7 +488,6 @@ readonly struct MappedQueryCore<T>(
 			return false;
 		}, Behavior, linked, token));
 	}
-
 
 	public ValueTask<TResult> ReadAsync<TResult>(Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler, CancellationToken cancellationToken)
 	{
@@ -837,21 +895,21 @@ readonly struct MappedQueryCore<T>(
 	public PooledBuffer<T> ToAsyncBuffer(
 		CancellationToken cancellationToken)
 	{
-		_ = Command;
+		EnsureCommand();
 		return new(this, Config, cancellationToken);
 	}
 
 	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
 		CancellationToken cancellationToken)
 	{
-		_ = Command;
+		EnsureCommand();
 		return new ChunkStream<T>(this, Config, cancellationToken);
 	}
 
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
 		CancellationToken cancellationToken)
 	{
-		_ = Command;
+		EnsureCommand();
 		// The stream carries the caller's token; the token Flatten takes is
 		// the enumeration's own (WithCancellation), so none is passed here.
 		return Flatten(
@@ -877,10 +935,9 @@ readonly struct MappedQueryCore<T>(
 				"The stall timeout must be a positive span, or Timeout.InfiniteTimeSpan.");
 		}
 
-		_ = Command;
+		EnsureCommand();
 		return new StallStream<T>(this, stallTimeout, cancellationToken);
 	}
-
 
 	/// <summary>
 	/// Yields the elements of a chunk stream one by one.
@@ -1034,6 +1091,14 @@ public readonly record struct MappedQuery<T>
 	/// <summary>Returns the same query, with every option kept, over another command.</summary>
 	internal MappedQuery<T> WithCommand(IExecuteReader command)
 		=> new(_core.WithCommand(command));
+
+	/// <summary>Gets the query as a call when it was made from a <see cref="DbQuery"/> definition.</summary>
+	internal bool TryGetCall(out DbQueryCall call)
+		=> _core.TryGetCall(out call);
+
+	/// <summary>Returns the same query over another call.</summary>
+	internal MappedQuery<T> WithCall(DbQueryCall call)
+		=> new(_core.WithCall(call));
 
 	internal List<T> ToList() => _core.ToList();
 	/// <summary>

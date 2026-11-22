@@ -45,7 +45,7 @@ public static class ToTargetBlockStreamingTests
 		BufferBlock<ChannelRow> block = NewBlock();
 
 		await View(view, tally)
-			.ToTargetBlockHoldingConnection(block, Long, BlockEnd.Complete, Ct);
+			.ToTargetBlockHoldingConnection(block, Long, complete: true, Ct);
 
 		(List<int> rows, Exception? error) = await Collect(block);
 		Assert.Null(error);
@@ -118,7 +118,7 @@ public static class ToTargetBlockStreamingTests
 
 		await Assert.ThrowsAsync<TimeoutException>(
 			async () => await Read(tally)
-				.ToTargetBlockHoldingConnection(block, Short, BlockEnd.Complete, Ct)
+				.ToTargetBlockHoldingConnection(block, Short, complete: true, Ct)
 				.AsTask()
 				.Within());
 
@@ -260,7 +260,7 @@ public static class ToTargetBlockStreamingTests
 
 		Assert.Throws<OperationCanceledException>(
 			() => Drop(Read(tally).ToTargetBlockHoldingConnection(
-				block, Long, BlockEnd.Complete, cts.Token)));
+				block, Long, complete: true, cts.Token)));
 		Assert.Throws<OperationCanceledException>(
 			() => Drop(source.ToTargetBlockHoldingConnection(
 				block, Long, cts.Token)));
@@ -283,7 +283,7 @@ public static class ToTargetBlockStreamingTests
 			() => Drop(Read(tally).ToTargetBlockHoldingConnection(
 				block,
 				TimeSpan.FromMilliseconds(milliseconds),
-				BlockEnd.Complete,
+				complete: true,
 				Ct)));
 		Assert.False(block.Completion.IsCompleted);
 		Assert.Empty(tally.Connections);
@@ -299,9 +299,6 @@ public static class ToTargetBlockStreamingTests
 			() => Drop(none.ToTargetBlockHoldingConnection(NewBlock(), Long, Ct)));
 		Assert.Throws<ArgumentNullException>(
 			() => Drop(query.ToTargetBlockHoldingConnection(null!, Long, Ct)));
-		Assert.Throws<ArgumentOutOfRangeException>(
-			() => Drop(query.ToTargetBlockHoldingConnection(
-				NewBlock(), Long, (BlockEnd)9, Ct)));
 		Assert.Throws<InvalidOperationException>(
 			() => Drop(((IMappedQuery<ChannelRow>)default(MappedQuery<ChannelRow>))
 				.ToTargetBlockHoldingConnection(NewBlock(), Long, Ct)));
@@ -336,7 +333,7 @@ public static class ToTargetBlockStreamingTests
 		BufferBlock<ChannelRow> block = NewBounded(1);
 
 		Task<long> task = source
-			.ToTargetBlockHoldingConnection(block, Long, BlockEnd.Complete, Ct)
+			.ToTargetBlockHoldingConnection(block, Long, complete: true, Ct)
 			.AsTask();
 		await ChannelWait.Until(
 			() => stream.Pulled >= 2,

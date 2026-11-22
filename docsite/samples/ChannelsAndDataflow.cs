@@ -50,7 +50,7 @@ public static class ChannelsAndDataflow
 			.Map<Post>()
 			.ToChannel(
 				channel,
-				ChannelEnd.Complete,
+				complete: true,
 				cancellationToken);
 
 		await foreach (Post post in channel.Reader.ReadAllAsync(cancellationToken))
@@ -77,7 +77,7 @@ public static class ChannelsAndDataflow
 			.ToChannelHoldingConnection(
 				channel,
 				TimeSpan.FromSeconds(30),
-				ChannelEnd.Complete,
+				complete: true,
 				cancellationToken)
 			.AsTask();
 
@@ -224,7 +224,7 @@ public static class ChannelsAndDataflow
 		long written = await connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToTargetBlock(stage, BlockEnd.Complete, cancellationToken);
+			.ToTargetBlock(stage, complete: true, cancellationToken);
 
 		await sink.Completion;
 		#endregion
@@ -234,7 +234,7 @@ public static class ChannelsAndDataflow
 		await connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToTargetBlock(block, BlockEnd.Complete, cancellationToken);
+			.ToTargetBlock(block, complete: true, cancellationToken);
 
 		while (await block.OutputAvailableAsync(cancellationToken))
 			received.Add(await block.ReceiveAsync(cancellationToken));

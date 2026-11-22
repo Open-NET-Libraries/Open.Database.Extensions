@@ -39,7 +39,7 @@ public static class MapPairRemovalBindingTests
 		return found;
 	}
 
-	static readonly RowMap<Item> Declared = new(new("Id", "id"));
+	static readonly RowMap<Item> Declared = new([new("Id", "id")]);
 
 	[Fact]
 	public static void Null_Default_AndCollectionExpressions_BindTheMapOverload_OnEveryReceiver()
@@ -75,8 +75,8 @@ public static class MapPairRemovalBindingTests
 		Assert.Equal(map, Bound((IDbCommand r) => r.Map(Declared)));
 		Assert.Equal(map, Bound((DataTable r) => r.Map(Declared)));
 
-		Assert.Equal(map, Bound((IExecuteReader r) => r.Map(new RowMap<Item>(new("Id", "a")))));
-		Assert.Equal(map, Bound((IDataReader r) => r.Map(new RowMap<Item>(new("Id", "a")))));
+		Assert.Equal(map, Bound((IExecuteReader r) => r.Map(new RowMap<Item>([new("Id", "a")]))));
+		Assert.Equal(map, Bound((IDataReader r) => r.Map(new RowMap<Item>([new("Id", "a")]))));
 		Assert.Equal(map, Bound((IDbCommand r) => r.Map(new RowMap<Item>([new("Id", "a")]))));
 		Assert.Equal(map, Bound((DataTable r) => r.Map(new RowMap<Item>(new("Id", "a"), new("Id", "b")))));
 	}

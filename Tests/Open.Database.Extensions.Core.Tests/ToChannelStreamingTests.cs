@@ -44,7 +44,7 @@ public static class ToChannelStreamingTests
 		Channel<ChannelRow> channel = Unbounded();
 
 		await View(view, tally)
-			.ToChannelHoldingConnection(channel.Writer, Long, ChannelEnd.Complete, Ct);
+			.ToChannelHoldingConnection(channel.Writer, Long, complete: true, Ct);
 
 		(List<int> rows, Exception? error) = await ChannelWait.Collect(channel.Reader);
 		Assert.Null(error);
@@ -126,7 +126,7 @@ public static class ToChannelStreamingTests
 
 		await Assert.ThrowsAsync<TimeoutException>(
 			async () => await Read(tally)
-				.ToChannelHoldingConnection(channel, Short, ChannelEnd.Complete, Ct)
+				.ToChannelHoldingConnection(channel, Short, complete: true, Ct)
 				.AsTask()
 				.Within());
 
@@ -271,7 +271,7 @@ public static class ToChannelStreamingTests
 
 		Assert.Throws<OperationCanceledException>(
 			() => Drop(Read(tally).ToChannelHoldingConnection(
-				Unbounded(), Long, ChannelEnd.Complete, cts.Token)));
+				Unbounded(), Long, complete: true, cts.Token)));
 		Assert.Empty(tally.Connections);
 
 		// No stream was made either: the guard comes first.
@@ -296,7 +296,7 @@ public static class ToChannelStreamingTests
 			() => Drop(Read(tally).ToChannelHoldingConnection(
 				channel,
 				TimeSpan.FromMilliseconds(milliseconds),
-				ChannelEnd.Complete,
+				complete: true,
 				Ct)));
 		Assert.False(channel.Reader.Completion.IsCompleted);
 		Assert.Empty(tally.Connections);
@@ -314,8 +314,6 @@ public static class ToChannelStreamingTests
 			() => Drop(query.ToChannelHoldingConnection((Channel<ChannelRow>)null!, Long, Ct)));
 		Assert.Throws<ArgumentNullException>(
 			() => Drop(query.ToChannelHoldingConnection((ChannelWriter<ChannelRow>)null!, Long, Ct)));
-		Assert.Throws<ArgumentOutOfRangeException>(
-			() => Drop(query.ToChannelHoldingConnection(Unbounded(), Long, (ChannelEnd)9, Ct)));
 		Assert.Throws<InvalidOperationException>(
 			() => Drop(((IMappedQuery<ChannelRow>)default(MappedQuery<ChannelRow>))
 				.ToChannelHoldingConnection(Unbounded(), Long, Ct)));
@@ -369,7 +367,7 @@ public static class ToChannelStreamingTests
 		Channel<ChannelRow> channel = Bounded(1);
 
 		Task<long> task = source
-			.ToChannelHoldingConnection(channel, Long, ChannelEnd.Complete, Ct)
+			.ToChannelHoldingConnection(channel, Long, complete: true, Ct)
 			.AsTask();
 		await ChannelWait.Until(
 			() => stream.Pulled >= 2,

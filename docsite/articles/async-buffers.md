@@ -281,7 +281,7 @@ To shape a stream's rows, use `System.Linq.Async` over `ToBufferedAsyncStream`, 
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
 
-To put the rows into a channel, see [Channels and Dataflow](channels-and-dataflow.md).
+To read a query while a consumer works, use the buffer streams: the connection is released as soon as the last row is read. See [Channels and Dataflow](channels-and-dataflow.md).
 
 ## Sources
 

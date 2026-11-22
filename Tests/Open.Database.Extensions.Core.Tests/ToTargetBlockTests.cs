@@ -43,7 +43,7 @@ public static class ToTargetBlockTests
 		BufferBlock<ChannelRow> block = NewBlock();
 
 		long count = await View(view, tally)
-			.ToTargetBlock(block, BlockEnd.Complete, Ct);
+			.ToTargetBlock(block, complete: true, Ct);
 
 		Assert.Equal(8, count);
 		Assert.True(IsClosed(block));
@@ -58,7 +58,7 @@ public static class ToTargetBlockTests
 		DbTally tally = Tally(30);
 		BufferBlock<ChannelRow> block = NewBlock();
 
-		await Read(tally).ToTargetBlock(block, BlockEnd.Complete, Ct);
+		await Read(tally).ToTargetBlock(block, complete: true, Ct);
 
 		Assert.Equal(ConnectionState.Closed, tally.Connections[0].State);
 		Assert.True(IsClosed(block));
@@ -155,7 +155,7 @@ public static class ToTargetBlockTests
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			async () => await Read(tally)
-				.ToTargetBlock(block, BlockEnd.Complete, cts.Token));
+				.ToTargetBlock(block, complete: true, cts.Token));
 
 		(_, Exception? error) = await Collect(block);
 		Assert.IsType<OperationCanceledException>(error, exactMatch: false);
@@ -182,7 +182,7 @@ public static class ToTargetBlockTests
 
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			async () => await Read(tally)
-				.ToTargetBlock(block, BlockEnd.Complete, Ct));
+				.ToTargetBlock(block, complete: true, Ct));
 
 		(_, Exception? error) = await Collect(block);
 		Assert.IsType<InvalidOperationException>(error);
@@ -199,12 +199,11 @@ public static class ToTargetBlockTests
 		using CancellationTokenSource cts = new();
 		cts.Cancel();
 		FakeSource source = new(Rows(3));
-		BlockEnd end = complete ? BlockEnd.Complete : BlockEnd.KeepOpen;
 
 		Assert.Throws<OperationCanceledException>(
-			() => Drop(Read(tally).ToTargetBlock(block, end, cts.Token)));
+			() => Drop(Read(tally).ToTargetBlock(block, complete, cts.Token)));
 		Assert.Throws<OperationCanceledException>(
-			() => Drop(source.ToTargetBlock(block, end, cts.Token)));
+			() => Drop(source.ToTargetBlock(block, complete, cts.Token)));
 
 		Assert.False(block.Completion.IsCompleted);
 		Assert.Empty(tally.Connections);
@@ -223,8 +222,6 @@ public static class ToTargetBlockTests
 			() => Drop(none.ToTargetBlock(block, Ct)));
 		Assert.Throws<ArgumentNullException>(
 			() => Drop(query.ToTargetBlock(null!, Ct)));
-		Assert.Throws<ArgumentOutOfRangeException>(
-			() => Drop(query.ToTargetBlock(block, (BlockEnd)7, Ct)));
 		Assert.Throws<InvalidOperationException>(
 			() => Drop(((IMappedQuery<ChannelRow>)default(MappedQuery<ChannelRow>))
 				.ToTargetBlock(block, Ct)));
@@ -237,7 +234,7 @@ public static class ToTargetBlockTests
 		FakeSource source = new(Rows(10));
 		BufferBlock<ChannelRow> block = NewBlock();
 
-		Assert.Equal(10, await source.ToTargetBlock(block, BlockEnd.Complete, Ct));
+		Assert.Equal(10, await source.ToTargetBlock(block, complete: true, Ct));
 
 		(List<int> rows, _) = await Collect(block);
 		Assert.Equal(ChannelWait.Ids(10), rows);
@@ -303,11 +300,11 @@ public static class ToTargetBlockTests
 					.ToTargetBlockHoldingConnection(
 						block,
 						TimeSpan.FromSeconds(30),
-						BlockEnd.Complete,
+						complete: true,
 						Ct)
 					.AsTask()
 				: Read(tally)
-					.ToTargetBlock(block, BlockEnd.Complete, Ct)
+					.ToTargetBlock(block, complete: true, Ct)
 					.AsTask();
 		}
 		finally

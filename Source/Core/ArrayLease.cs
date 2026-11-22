@@ -76,7 +76,7 @@ internal readonly struct ArrayLease<T>(
 	/// <remarks>
 	/// A full recycle bin does not lose the array: it is cleared and returned
 	/// right here, as an immediate release is.
-	/// A pool whose <c>Return</c> throws throws from an immediate or a plain
+	/// A pool whose <c>Return</c> throws, throws from an immediate or a plain
 	/// release, and from a deferred one that the bin refused.
 	/// </remarks>
 	public void Release()

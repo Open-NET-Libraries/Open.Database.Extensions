@@ -196,7 +196,7 @@ public sealed class SyntheticRecorder
 		var copy = new long[n];
 		Array.Copy(ring, copy, n);
 		Array.Sort(copy);
-		return n % 2 == 1 ? copy[n / 2] : (copy[(n / 2) - 1] + copy[n / 2]) / 2d;
+		return n % 2 == 1 ? copy[n / 2] : (copy[n / 2 - 1] + copy[n / 2]) / 2d;
 	}
 }
 
@@ -236,18 +236,18 @@ public static class SyntheticCatalog
 		C("Id", static i => i + 1),                                                                   //  1 int (the scalar case)
 		C("Created", static i => Start.AddSeconds(i * 37L)),                                           //  2 DateTime
 		C("Title", static i => "Title " + i),                                                          //  3 short string
-		C("Price", static i => 10m + (i * 0.25m)),                                                     //  4 decimal
+		C("Price", static i => 10m + i * 0.25m),                                                     //  4 decimal
 		C("Qty", static i => i * 7, nullEvery: 5, nullOffset: 2),                                     //  5 int?  (20% NULL)
 		C("IsActive", static i => i % 3 != 0),                                                         //  6 bool
 		C("Key", static i => new Guid(i, (short)(i >> 3), 7, 1, 2, 3, 4, 5, 6, 7, (byte)i)),            //  7 Guid
-		C("Score", static i => (i * 1.5) + 0.125),                                                     //  8 double
-		C("Note", static i => "note " + (i % 97), nullEvery: 4, nullOffset: 1),                       //  9 short string? (25% NULL)
+		C("Score", static i => i * 1.5 + 0.125),                                                     //  8 double
+		C("Note", static i => "note " + i % 97, nullEvery: 4, nullOffset: 1),                       //  9 short string? (25% NULL)
 		C("Blob", static i => Blob(i)),                                                                // 10 byte[]
 		C("Big", static i => ((long)i << 24) ^ 0x5DEECE66DL),                                          // 11 long
 		C("Body", static i => LongText(i)),                                                            // 12 long string
 		C("Amount", static i => i * 1.125m, nullEvery: 3, nullOffset: 0),                              // 13 decimal? (33% NULL)
 		C("Stamp", static i => Start.AddMinutes(i), nullEvery: 4, nullOffset: 3),                      // 14 DateTime? (25% NULL)
-		C("Tag", static i => "t" + (i % 7)),                                                           // 15 short string
+		C("Tag", static i => "t" + i % 7),                                                           // 15 short string
 		C("Ratio", static i => i / 8.0),                                                               // 16 double
 		C("Flag", static i => i % 2 == 0, nullEvery: 2, nullOffset: 1),                                // 17 bool? (50% NULL)
 		C("Link", static i => new Guid(7, (short)i, (short)(i >> 8), 9, 8, 7, 6, 5, 4, 3, (byte)(i >> 4)), nullEvery: 5, nullOffset: 4), // 18 Guid? (20% NULL)
@@ -274,7 +274,7 @@ public static class SyntheticCatalog
 	static byte[] Blob(int i)
 	{
 		var b = new byte[16];
-		for (int j = 0; j < b.Length; j++) b[j] = unchecked((byte)((i * 31) + j));
+		for (int j = 0; j < b.Length; j++) b[j] = unchecked((byte)(i * 31 + j));
 		return b;
 	}
 

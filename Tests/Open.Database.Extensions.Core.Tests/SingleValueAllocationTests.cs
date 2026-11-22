@@ -134,7 +134,7 @@ public static class SingleValueAllocationTests
 		PlainReaderCommand cmd = Rows(typeof(int), rows, i => i);
 
 		NoMoreThanByHand(
-			() => cmd.ToListAsync<int>(Ct).AsTask().GetAwaiter().GetResult(),
+			() => cmd.Map<int>().ToListAsync(Ct).AsTask().GetAwaiter().GetResult(),
 			() => cmd
 				.Map(static r => r.GetInt32(0))
 				.ToListAsync(Ct)

@@ -252,7 +252,7 @@ What is different:
 
 ## Async and cancellation
 
-Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is used together with it, and either one cancels the call. The same holds for `ExecuteNonQueryAsync`, `ExecuteScalarAsync` and `ExecuteReaderAsync`. Await a `ValueTask` once, as usual; to pass it to `Task.WhenAll`, call `.AsTask()` first.
+Dapper's `QueryAsync<T>` returns a `Task<IEnumerable<T>>`, and a cancellation token travels in a `CommandDefinition`. The extensions' terminals have `Async` twins that take a `CancellationToken` and return a `ValueTask`, for example `ToArrayAsync(cancellationToken)`; a token set on the command with `UseCancellationToken(token)` is combined with it, and either one cancels the call. The same holds for `ExecuteNonQueryAsync`, `ExecuteScalarAsync` and `ExecuteReaderAsync`. Await a `ValueTask` once, as usual; to pass it to `Task.WhenAll`, call `.AsTask()` first.
 
 ## Where Dapper does more
 
@@ -279,7 +279,7 @@ The blocking terminals in the right column (`ToList()`, `First()`, `ExecuteNonQu
 | `Query<int>` over one column | `Map<int>().ToList()`: the first column, converted like a property (a `long` into `int` is range-checked); a NULL gives 0, so declare `int?` to tell it from 0. |
 | `ExecuteScalar<T>` | `ExecuteScalar<T>()`; it converts the value to `T` as `Map<T>()` does |
 | `Execute` | `ExecuteNonQuery()` |
-| `QueryAsync<T>` | `ToListAsync<T>(cancellationToken)` (or `Map<T>().ToListAsync()`), which returns a `ValueTask` (async terminals need a factory of a `DbConnection` type) |
+| `QueryAsync<T>` | `Map<T>().ToListAsync(cancellationToken)`, which returns a `ValueTask` (async terminals need a factory of a `DbConnection` type) |
 | `Execute("usp_x", ..., commandType: CommandType.StoredProcedure)` | `StoredProcedure("usp_x")`, then `AddParam(...)` and `ExecuteNonQuery()` (see [Return values and output parameters](expressive-commands.md#return-values-and-output-parameters)) |
 | A transaction passed to each call | Start from the transaction: `transaction.Command(sql)` |
 

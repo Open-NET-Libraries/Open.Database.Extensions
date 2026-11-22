@@ -352,7 +352,7 @@ public static class StallStreamTests
 	{
 		DbTally tally = Tally(5);
 		IStallSignal signal = Assert.IsType<IStallSignal>(Query(tally).Stream(Long, Ct), exactMatch: false);
-		IAsyncEnumerable<Row> stream = (IAsyncEnumerable<Row>)signal;
+		var stream = (IAsyncEnumerable<Row>)signal;
 
 		Assert.Equal(5, (await Collect(stream)).Count);
 		Assert.False(signal.Expired.IsCancellationRequested);

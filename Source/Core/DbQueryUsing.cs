@@ -45,6 +45,68 @@ public readonly struct DbQueryUsing
 	public object Source => SourceOrThrow;
 
 	/// <summary>
+	/// Maps each row to a <typeparamref name="T"/> by column name (a single value such as
+	/// <see cref="int"/> is read from the first column), and returns the mapped query.
+	/// </summary>
+	/// <remarks>
+	/// The same as <see cref="CoreExtensions.Map{T}(IExecuteReader)"/>, written the same way, without boxing this value:
+	/// the query holds the call as it is.
+	/// </remarks>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>()
+		=> FirstColumn<T>.Instance is { } firstColumn
+		? new(Views.QueryCore(ToCall(), firstColumn))
+		: new(Views.QueryCore(ToCall(), RowMap<T>.Default));
+
+	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped query.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="map">The map. A <see langword="null"/> map reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload).</param>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>(RowMap<T>? map)
+		=> map is null
+		? Map<T>()
+		: new(Views.QueryCore(ToCall(), map));
+
+	/// <summary>Maps each row with a selector, and returns the mapped query.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="selector">Called for each row, from any thread and by overlapping calls, so it must be safe for concurrent use.</param>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<T> Map<T>(Func<IDataRecord, T> selector)
+	{
+		if (selector is null) throw new ArgumentNullException(nameof(selector));
+		Contract.EndContractBlock();
+
+		return new(Views.QueryCore(ToCall(), new SelectorSource<T>(selector)));
+	}
+
+	/// <summary>Reads each row without a model, as an array of its values.</summary>
+	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>.</remarks>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<object?[]> AsObjectArrays()
+		=> new(Views.QueryCore(ToCall(), ObjectArraySource.Instance));
+
+	/// <summary>Reads each row without a model, as a <see cref="DictionaryRow"/>.</summary>
+	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>.</remarks>
+	/// <returns>The mapped query, to be read with a terminal.</returns>
+	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	public MappedQuery<DictionaryRow> AsDictionaryRows()
+		=> new(Views.QueryCore(ToCall(), DictionaryRowSource.Instance));
+
+	/// <summary>Gets the query as a call with no values.</summary>
+	internal DbQueryCall ToCall()
+		=> new(Definition, SourceOrThrow, default);
+
+	/// <summary>Gets the query as a call holding the values.</summary>
+	internal DbQueryCall WithParams(ParamList values)
+		=> new(Definition, SourceOrThrow, values);
+
+	/// <summary>
 	/// Adds the public properties and fields of <paramref name="values"/>
 	/// as parameters, each under its own name.
 	/// </summary>
@@ -56,12 +118,16 @@ public readonly struct DbQueryUsing
 	/// <remarks>
 	/// Declare the type with <see cref="DbQuery.Params{TParams}"/>
 	/// to have it checked at compile time.
+	/// For the lightest call, use a typed <see cref="DbQuery.Params{TParams}"/> definition with a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
 	/// </remarks>
 	public DbQueryCall AddParams<T>(T values)
 		where T : notnull
-		=> DbQueryCall.NewRoot(Definition, SourceOrThrow, null, values);
+		=> new DbQueryCall(Definition, SourceOrThrow, default).AddParams(values);
 
 	/// <summary>Adds an input parameter named as you write it.</summary>
+	/// <remarks>
+	/// For the lightest call, declare the values with <see cref="DbQuery.Params{TParams}"/> and a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
+	/// </remarks>
 	/// <typeparam name="T">The type of the value.</typeparam>
 	/// <param name="name">The name of the parameter.</param>
 	/// <param name="value">
@@ -78,11 +144,8 @@ public readonly struct DbQueryUsing
 	/// <paramref name="name"/> is empty or white space.
 	/// </exception>
 	public DbQueryCall AddParam<T>(string name, T value)
-		=> DbQueryCall.NewRoot(
-			Definition,
-			SourceOrThrow,
-			DbQueryCall.CheckedName(name),
-			value);
+		=> new DbQueryCall(Definition, SourceOrThrow, default)
+			.AddParam(name, value);
 
 	/// <summary>Adds an input parameter with a string value.</summary>
 	/// <remarks>
@@ -92,11 +155,8 @@ public readonly struct DbQueryUsing
 	/// </remarks>
 	/// <inheritdoc cref="AddParam{T}(string, T)"/>
 	public DbQueryCall AddParam(string name, string? value)
-		=> DbQueryCall.NewRoot(
-			Definition,
-			SourceOrThrow,
-			DbQueryCall.CheckedName(name),
-			value);
+		=> new DbQueryCall(Definition, SourceOrThrow, default)
+			.AddParam(name, value);
 
 	/// <summary>
 	/// Adds an input parameter named for the argument:
@@ -119,11 +179,8 @@ public readonly struct DbQueryUsing
 	public DbQueryCall AddParam<T>(
 		T value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> DbQueryCall.NewDerivedRoot(
-			Definition,
-			SourceOrThrow,
-			DbQueryCall.CheckedExpression(expression),
-			value);
+		=> new DbQueryCall(Definition, SourceOrThrow, default)
+			.AddParam(value, expression);
 
 	/// <inheritdoc />
 	public bool Equals(DbQueryUsing other)
@@ -153,7 +210,7 @@ public readonly struct DbQueryUsing
 	{
 		unchecked
 		{
-			return ((_definition?.GetHashCode() ?? 0) * 31)
+			return (_definition?.GetHashCode() ?? 0) * 31
 				+ (_source?.GetHashCode() ?? 0);
 		}
 	}
@@ -169,7 +226,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.Run(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			state,
 			transform,
 			behavior);
@@ -182,7 +239,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			state,
 			transform,
 			behavior,
@@ -195,7 +252,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			state,
 			transform,
 			behavior,
@@ -207,7 +264,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.Run(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			handler,
 			behavior);
 
@@ -217,7 +274,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.Run(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			transform,
 			behavior);
 
@@ -227,7 +284,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			handler,
 			behavior);
 
@@ -237,7 +294,7 @@ public readonly struct DbQueryUsing
 		=> DbQueryRunner.RunAsync(
 			Definition,
 			SourceOrThrow,
-			null,
+			default,
 			transform,
 			behavior);
 }
@@ -272,9 +329,8 @@ public readonly struct DbQueryUsing<TParams>
 	/// A new query holding the values; this one is not changed.
 	/// </returns>
 	public DbQueryCall AddParams(TParams values)
-		=> DbQueryCall.NewRoot(
+		=> new DbQueryCall(
 			_definition ?? throw DbQueryRunner.Unbound(),
 			_source ?? throw DbQueryRunner.Unbound(),
-			null,
-			values);
+			default).AddParams(values);
 }

@@ -589,17 +589,17 @@ public static class MappedQueryFirstSingleTests
 	[Fact]
 	public static async Task TheCommandShortcuts_AreMapThenTheTerminal()
 	{
-		Assert.Equal(1, await Command(2).FirstAsync<int>(Ct));
-		Assert.Equal(1, await Command(1).SingleAsync<int>(Ct));
-		Assert.Equal(1, (await Command(2).FirstAsync<Person>(Ct)).Id);
-		Assert.Equal("n1", (await Command(1).SingleAsync<Person>(Ct)).Name);
+		Assert.Equal(1, await Command(2).Map<int>().FirstAsync(Ct));
+		Assert.Equal(1, await Command(1).Map<int>().SingleAsync(Ct));
+		Assert.Equal(1, (await Command(2).Map<Person>().FirstAsync(Ct)).Id);
+		Assert.Equal("n1", (await Command(1).Map<Person>().SingleAsync(Ct)).Name);
 
 		await Assert.ThrowsAsync<InvalidOperationException>(
-			async () => await Command(0).FirstAsync<int>(Ct));
+			async () => await Command(0).Map<int>().FirstAsync(Ct));
 		await Assert.ThrowsAsync<InvalidOperationException>(
-			async () => await Command(0).SingleAsync<int>(Ct));
+			async () => await Command(0).Map<int>().SingleAsync(Ct));
 		await Assert.ThrowsAsync<InvalidOperationException>(
-			async () => await Command(2).SingleAsync<int>(Ct));
+			async () => await Command(2).Map<int>().SingleAsync(Ct));
 	}
 #pragma warning restore xUnit1051
 }

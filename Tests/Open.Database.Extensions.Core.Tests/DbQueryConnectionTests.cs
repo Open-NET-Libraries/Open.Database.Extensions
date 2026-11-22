@@ -341,7 +341,7 @@ public static class DbQueryConnectionTests
 	{
 		var tally = new DbTally();
 		TrackedConnection connection = tally.NewOpenConnection();
-		DbQuery definition = DbQuery.Text(ValuesSql);
+		var definition = DbQuery.Text(ValuesSql);
 		DbQueryCall call = definition
 			.Params<Values>().Using(connection)
 			.AddParams(new(7, "x"));

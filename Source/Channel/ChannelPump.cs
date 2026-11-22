@@ -14,7 +14,10 @@ internal static class ChannelPump
 	/// </summary>
 	/// <param name="feed">Where the rows come from.</param>
 	/// <param name="writer">Where the rows are written.</param>
-	/// <param name="end">What happens to the writer when the pass ends.</param>
+	/// <param name="complete">
+	/// <see langword="true"/> to complete the writer when the pass ends,
+	/// with the exception that ended it if there was one.
+	/// </param>
 	/// <param name="waitFirst">
 	/// <see langword="true"/> to wait for room before the feed starts,
 	/// so a full target never gets a command run or a connection opened for it.
@@ -24,7 +27,7 @@ internal static class ChannelPump
 	internal static async ValueTask<long> Run<T, TFeed>(
 		TFeed feed,
 		ChannelWriter<T> writer,
-		ChannelEnd end,
+		bool complete,
 		bool waitFirst,
 		CancellationToken cancellationToken)
 		where TFeed : struct, IFeed<T>
@@ -56,7 +59,7 @@ internal static class ChannelPump
 		}
 		finally
 		{
-			if (end == ChannelEnd.Complete)
+			if (complete)
 				writer.TryComplete(error);
 		}
 	}

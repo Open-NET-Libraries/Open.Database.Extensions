@@ -97,6 +97,7 @@ public static class ConnectionSourceScopeTests
 		var connection = new ConnectionScopeTests.ScopeConnection();
 		IDbConnectionFactory factory = new CountingFactory(connection);
 
+		// The synchronous scope: plain using is what this test checks (Dispose, not DisposeAsync).
 		using (ConnectionScope<IDbConnection> scope = factory.EnsureOpenScope())
 			Assert.Same(connection, scope.Connection);
 
@@ -243,6 +244,7 @@ public static class ConnectionSourceScopeTests
 		var counting = new CountingPool(connection);
 		IDbConnectionPool pool = counting;
 
+		// The synchronous scope: plain using is what this test checks (Dispose, not DisposeAsync).
 		using (ConnectionScope<IDbConnection> scope = pool.EnsureOpenScope())
 			Assert.Same(connection, scope.Connection);
 
@@ -370,7 +372,7 @@ public static class ConnectionSourceScopeTests
 		{
 			await Assert.ThrowsAsync<InvalidOperationException>(
 				async () => await pool.OpenAsync(
-					(c, _) =>
+					(__, _) =>
 					{
 						ran = true;
 						return default;
@@ -380,7 +382,7 @@ public static class ConnectionSourceScopeTests
 		else
 		{
 			Assert.Throws<InvalidOperationException>(
-				() => pool.Open((c, _) => ran = true));
+				() => pool.Open((__, _) => ran = true));
 		}
 
 		Assert.False(ran);
@@ -416,7 +418,7 @@ public static class ConnectionSourceScopeTests
 
 		factory.Open(c => Assert.Equal(ConnectionState.Open, c.State));
 		connection.SetState(ConnectionState.Closed);
-		await factory.OpenAsync(c => default, Ct);
+		await factory.OpenAsync(_ => default, Ct);
 
 		Assert.Equal(["open", "dispose", "openAsync", "disposeAsync"], connection.Log);
 	}
@@ -427,9 +429,9 @@ public static class ConnectionSourceScopeTests
 		var connection = Failing();
 
 		Assert.Throws<InvalidOperationException>(
-			() => new CountingFactory(connection).Open(c => { }));
+			() => new CountingFactory(connection).Open(_ => { }));
 		await Assert.ThrowsAsync<InvalidOperationException>(
-			async () => await new CountingFactory(connection).OpenAsync(c => default, Ct));
+			async () => await new CountingFactory(connection).OpenAsync(_ => default, Ct));
 
 		Assert.Equal(["open", "dispose", "openAsync", "disposeAsync"], connection.Log);
 	}
@@ -442,7 +444,7 @@ public static class ConnectionSourceScopeTests
 
 		create.Open(c => Assert.Equal(ConnectionState.Open, c.State));
 		connection.SetState(ConnectionState.Closed);
-		await create.OpenAsync(c => default, Ct);
+		await create.OpenAsync(_ => default, Ct);
 
 		Assert.Equal(["open", "dispose", "openAsync", "disposeAsync"], connection.Log);
 	}
@@ -454,9 +456,9 @@ public static class ConnectionSourceScopeTests
 		var pool = new CountingPool(connection);
 
 		pool.Using(c => Assert.Equal(ConnectionState.Closed, c.State));
-		await pool.UsingAsync(c => default);
+		await pool.UsingAsync(_ => default);
 		Assert.Throws<NotSupportedException>(
-			() => pool.Using(c => throw new NotSupportedException()));
+			() => pool.Using(_ => throw new NotSupportedException()));
 
 		// Not opened, so nothing to close; given back each time, also when the action throws.
 		Assert.Equal(3, pool.Takes);

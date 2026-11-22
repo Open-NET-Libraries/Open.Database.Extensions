@@ -93,8 +93,8 @@ public static partial class DataflowExtensions
 			.Run<T, ChunkFeed<T>>(
 				new(chunks),
 				block,
-				BlockEnd.Complete,
-				false,
+				complete: true,
+				checkOpen: false,
 				cancellationToken)
 			.AsTask()
 			.ContinueWith(
@@ -124,7 +124,7 @@ public static partial class DataflowExtensions
 	/// </para>
 	/// <para>
 	/// The block stays open, so several passes can share one.
-	/// Pass <see cref="BlockEnd.Complete"/> to complete it when the pass ends.
+	/// Pass <c>complete: true</c> to complete it when the pass ends.
 	/// </para>
 	/// <para>
 	/// The query is read at full speed and the connection is closed when
@@ -151,47 +151,49 @@ public static partial class DataflowExtensions
 		=> ToTargetBlock(
 			source,
 			target,
-			BlockEnd.KeepOpen,
+			false,
 			cancellationToken);
 
 	/// <summary>
 	/// Reads the query and sends each row to a block you own,
-	/// then ends the block as <paramref name="end"/> says.
+	/// completing the block when the pass ends if <paramref name="complete"/> is
+	/// <see langword="true"/>.
 	/// </summary>
 	/// <remarks>
-	/// With <see cref="BlockEnd.KeepOpen"/> it is
+	/// With <c>complete: false</c> it is
 	/// <see cref="ToTargetBlock{T}(IMappedQuery{T}, ITargetBlock{T}, CancellationToken)"/>.
-	/// With <see cref="BlockEnd.Complete"/> the block is completed when the
+	/// With <c>complete: true</c> the block is completed when the
 	/// pass ends, or faulted with the exception that ended it, a cancel included.
 	/// </remarks>
 	/// <typeparam name="T">The type of each row.</typeparam>
 	/// <param name="source">The mapped query to read.</param>
 	/// <param name="target">The block to send to.</param>
-	/// <param name="end">What happens to the block when the pass ends.</param>
+	/// <param name="complete">
+	/// <see langword="true"/> to complete the block when the pass ends,
+	/// or to fault it with the exception that ended the pass, a cancel included.
+	/// </param>
 	/// <param name="cancellationToken">Cancels the pass.</param>
 	/// <returns>The number of rows the block accepted.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="end"/> is not a defined value.</exception>
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> is already canceled.</exception>
 	public static ValueTask<long> ToTargetBlock<T>(
 		this IMappedQuery<T> source,
 		ITargetBlock<T> target,
-		BlockEnd end,
+		bool complete,
 		CancellationToken cancellationToken = default)
 	{
 		// Not async: every guard throws at the call, before the
 		// target is touched and before a stream is made.
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		if (target is null) throw new ArgumentNullException(nameof(target));
-		CheckEnd(end);
 		Contract.EndContractBlock();
 
 		cancellationToken.ThrowIfCancellationRequested();
 		return BlockPump.Run<T, ChunkFeed<T>>(
 			new(source.ToAsyncBufferStream(cancellationToken)),
 			target,
-			end,
-			true,
+			complete,
+			checkOpen: true,
 			cancellationToken);
 	}
 
@@ -232,19 +234,20 @@ public static partial class DataflowExtensions
 			source,
 			target,
 			stallTimeout,
-			BlockEnd.KeepOpen,
+			false,
 			cancellationToken);
 
 	/// <summary>
 	/// Reads the query one row at a time and sends each row to a block
-	/// you own, then ends the block as <paramref name="end"/> says.
+	/// you own, completing the block when the pass ends if
+	/// <paramref name="complete"/> is <see langword="true"/>.
 	/// </summary>
 	/// <remarks>
 	/// Pulls <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>:
 	/// while the block is full, the reader and the connection stay open.
 	/// See that member for when to use it and what <paramref name="stallTimeout"/> does.
-	/// <see cref="BlockEnd"/> works as for
-	/// <see cref="ToTargetBlock{T}(IMappedQuery{T}, ITargetBlock{T}, BlockEnd, CancellationToken)"/>.
+	/// <paramref name="complete"/> works as for
+	/// <see cref="ToTargetBlock{T}(IMappedQuery{T}, ITargetBlock{T}, bool, CancellationToken)"/>.
 	/// </remarks>
 	/// <typeparam name="T">The type of each row.</typeparam>
 	/// <param name="source">The mapped query to read.</param>
@@ -253,46 +256,37 @@ public static partial class DataflowExtensions
 	/// The longest the block may take no row while the reader is held.
 	/// Required; passed to <c>Stream</c>.
 	/// </param>
-	/// <param name="end">What happens to the block when the pass ends.</param>
+	/// <param name="complete">
+	/// <see langword="true"/> to complete the block when the pass ends,
+	/// or to fault it with the exception that ended the pass, a cancel included.
+	/// </param>
 	/// <param name="cancellationToken">Cancels the pass.</param>
 	/// <returns>The number of rows the block accepted.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="end"/> is not a defined value, or <paramref name="stallTimeout"/> is zero or negative and not <see cref="Timeout.InfiniteTimeSpan"/>.</exception>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="stallTimeout"/> is zero or negative and not <see cref="Timeout.InfiniteTimeSpan"/>.</exception>
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> is already canceled.</exception>
 	/// <exception cref="TimeoutException">The block took no row for <paramref name="stallTimeout"/>.</exception>
 	public static ValueTask<long> ToTargetBlockHoldingConnection<T>(
 		this IMappedQuery<T> source,
 		ITargetBlock<T> target,
 		TimeSpan stallTimeout,
-		BlockEnd end,
+		bool complete,
 		CancellationToken cancellationToken = default)
 	{
 		// Not async: the guards throw at the call, before the target is
 		// touched. Stream checks the timeout and refuses a default struct.
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		if (target is null) throw new ArgumentNullException(nameof(target));
-		CheckEnd(end);
 		Contract.EndContractBlock();
 
 		cancellationToken.ThrowIfCancellationRequested();
 		return BlockPump.Run<T, RowFeed<T>>(
 			new(source.Stream(stallTimeout, cancellationToken)),
 			target,
-			end,
-			true,
+			complete,
+			checkOpen: true,
 			cancellationToken);
 	}
 
 	#endregion
-
-	static void CheckEnd(BlockEnd end)
-	{
-		if (end is not (BlockEnd.KeepOpen or BlockEnd.Complete))
-		{
-			throw new ArgumentOutOfRangeException(
-				nameof(end),
-				end,
-				"Not a defined value.");
-		}
-	}
 }

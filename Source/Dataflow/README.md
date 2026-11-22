@@ -17,11 +17,11 @@ public record Post(int Id, string Title);
 // connectionFactory is a DbConnectionFactory<TConnection>, created once per application (see the Core package page, which also names the provider to install).
 var block = new BufferBlock<Post>();
 
-// BlockEnd.Complete completes the block after the last row, or faults it if reading fails.
+// complete: true completes the block after the last row, or faults it if reading fails.
 long count = await connectionFactory
     .Command("select * from posts order by id")
     .Map<Post>()
-    .ToTargetBlock(block, BlockEnd.Complete);
+    .ToTargetBlock(block, complete: true);
 
 // The block completes once every row has been received.
 var received = new List<Post>();
@@ -37,7 +37,6 @@ Each row is sent with `SendAsync`, so a bounded block that is full makes the pas
 |---|---|---|
 | [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/) | The foundation, expressive commands and `Map<T>()`. Provider-agnostic: start here. | netstandard2.0, netstandard2.1, net10.0, net11.0 |
 | [Open.Database.Extensions.MSSqlClient](https://www.nuget.org/packages/Open.Database.Extensions.MSSqlClient/) | `SqlConnectionFactory` and stored procedures on `Microsoft.Data.SqlClient`. | net472, net10.0, net11.0 |
-| [Open.Database.Extensions.SqlClient](https://www.nuget.org/packages/Open.Database.Extensions.SqlClient/) | The same API on the older `System.Data.SqlClient`. Deprecated: use MSSqlClient. | netstandard2.0, netstandard2.1, net10.0, net11.0 |
 | [Open.Database.Extensions.Channel](https://www.nuget.org/packages/Open.Database.Extensions.Channel/) | Rows into `System.Threading.Channels`. | netstandard2.0, netstandard2.1, net10.0, net11.0 |
 | **Open.Database.Extensions.Dataflow** (this package) | Rows into TPL Dataflow blocks. | netstandard2.0, netstandard2.1, net10.0, net11.0 |
 

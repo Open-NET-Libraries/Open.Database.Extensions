@@ -55,7 +55,7 @@ So on the measured runs the synchronous read costs less CPU, about 42% less memo
 
 ## AsyncReads(): why it exists
 
-The runs on this page were taken with the rc.5 name `EnableAsyncRead(true)`; it is the same read as `AsyncReads()`.
+The runs on this page were taken under the name `EnableAsyncRead(true)`, the same read as `AsyncReads()`.
 
 The default is the right read for most calls. A few callers cannot spend a thread on waiting for the network, and `AsyncReads()` is for them. It is per call: nothing else in the application changes.
 
@@ -109,6 +109,6 @@ The [side-by-side sample](#the-default-stated-plainly) at the top of this page i
 
 ## Sources
 
-Every number on this page is on a benchmark page, with its chart, its table, and how it was made: [Sync reads against async reads](benchmarks/sync-vs-async.md) (the model) and [Slow links and large values](benchmarks/slow-links-and-large-values.md) (SQL Server over a simulated link). Those runs used the opt-in under its rc.5 name, `EnableAsyncRead(true)`; it is the same read as `AsyncReads()`. For the summary of what changed in rc.6, see [What's new in 11](whats-new-11.md).
+Every number on this page is on a benchmark page, with its chart, its table, and how it was made: [Sync reads against async reads](benchmarks/sync-vs-async.md) (the model) and [Slow links and large values](benchmarks/slow-links-and-large-values.md) (SQL Server over a simulated link).
 
 Two claims here are not measurements. Which reader behavior each map uses (`Map<T>()`: `SequentialAccess`; `Map(Func)`: `Default`, and each adds `SingleResult` after `.SingleResult()`) comes from the library source. That an async terminal calls `Read` and not `ReadAsync` by default, and the reverse after `AsyncReads()`, is pinned by `AsyncReadsTests` in the Core tests.

@@ -30,10 +30,39 @@ static class ParameterNames
 	}
 
 	/// <summary>The facts of a derivable expression, worked out once.</summary>
-	internal sealed class DerivedExpression(string lastMember, ImmutableArray<string> candidates)
+	internal sealed class DerivedExpression(string expression, string lastMember, ImmutableArray<string> candidates)
 	{
+		/// <summary>The text of the argument the facts were worked out from.</summary>
+		public string Expression { get; } = expression;
+
 		internal string LastMember { get; } = lastMember;
 		internal ImmutableArray<string> Candidates { get; } = candidates;
+
+		/// <summary>The name an expression resolved to in a set of names.</summary>
+		/// <param name="names">The set of names.</param>
+		/// <param name="real">The real name.</param>
+		/// <param name="entry">The real name's place in <paramref name="names"/>.</param>
+		internal sealed class Resolution(NameSet names, string real, NameSet.Entry? entry)
+		{
+			public NameSet Names { get; } = names;
+
+			public string Real { get; } = real;
+
+			public NameSet.Entry? Entry { get; } = entry;
+		}
+
+		/// <summary>
+		/// Gets or sets the last resolution of this expression, so a repeat in the same set of names reads one field and takes no lock.
+		/// </summary>
+		/// <remarks>
+		/// Every call site that writes the same text shares the expression, and its calls usually run against one set of names.
+		/// A thread that loses a race only makes one more resolution.
+		/// </remarks>
+		public Resolution? Last
+		{
+			get => Volatile.Read(ref field);
+			set => Volatile.Write(ref field, value);
+		}
 
 		/// <summary>
 		/// The last real name this expression resolved to in a SQL text, so a
@@ -77,7 +106,7 @@ static class ParameterNames
 	{
 		if (expression is null) return null;
 		if (Described.TryGetValue(expression, out DerivedExpression? known)) return known;
-		return IsDerivable(expression) ? Described.GetValue(expression, static e => new DerivedExpression(LastMember(e), Candidates(e))) : null;
+		return IsDerivable(expression) ? Described.GetValue(expression, static e => new DerivedExpression(e, LastMember(e), Candidates(e))) : null;
 	}
 
 	/// <summary>Determines whether the expression is a chain of plain member accesses a name can be derived from. Allocates nothing.</summary>
@@ -271,18 +300,7 @@ static class ParameterNames
 	/// <c>author</c> finds <c>@p_author</c> and <c>@pAuthor</c>, but <c>ages</c> never finds <c>@pages</c>. The four tiers run inside each candidate's turn.
 	/// </summary>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
-	/// <param name="parameterNames">The procedure's real parameter names, as the provider reports them (a leading <c>@</c> is allowed).</param>
-	/// <param name="expression">The text of the argument as the caller wrote it (<c>post.Author.Id</c>), which the message of an ambiguity quotes.</param>
-	/// <param name="procedure">The procedure's name, for the message of an ambiguity.</param>
-	/// <returns>The real name as the provider reported it, or <see langword="null"/> when no candidate matches any parameter.</returns>
-	/// <exception cref="InvalidOperationException">One candidate matches more than one parameter at the same tier. The message says what the caller wrote, the candidate, the tier and what the procedure declares.</exception>
-	internal static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames, string expression, string procedure)
-		// Every candidate in every tier compares against the same bare names: remove the @ once, here.
-		=> MatchBare(candidates, parameterNames, BareNames(parameterNames), expression, procedure);
-
-	/// <summary>Finds the real parameter that a derived name stands for, as <see cref="Match"/> does, with the names without their <c>@</c> already made (a <see cref="NameSet"/> makes them once).</summary>
-	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
-	/// <param name="parameterNames">The real names as the provider reports them.</param>
+	/// <param name="parameterNames">The real names as the provider reports them (a leading <c>@</c> is allowed).</param>
 	/// <param name="bareNames">The same names without a leading <c>@</c>.</param>
 	/// <param name="expression">The text of the argument, for the message of an ambiguity.</param>
 	/// <param name="procedure">The procedure's name, for the message of an ambiguity.</param>

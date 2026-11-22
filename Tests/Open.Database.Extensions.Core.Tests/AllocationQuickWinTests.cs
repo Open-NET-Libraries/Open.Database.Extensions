@@ -8,7 +8,7 @@ namespace Open.Database.Extensions.Tests;
 
 /// <summary>
 /// Three small allocation fixes in the library's internals, each proved by a measurement and each with its contract pinned:
-/// <c>ToDictionary</c> presizes its dictionary, <c>ParameterNames.Match</c> removes the <c>@</c> of the real names once, and a pooled row array is cleared
+/// <c>ToDictionary</c> presizes its dictionary, <c>ParameterNames.BareNames</c> removes the <c>@</c> of the real names once, and a pooled row array is cleared
 /// only where it was written. Each measurement compares the call with the cheapest hand-written
 /// equivalent measured in the same run, so the budget follows the runtime and the configuration instead of a number copied from one machine.
 /// </summary>
@@ -248,15 +248,20 @@ public static class AllocationQuickWinTests
 		Assert.Throws<ArgumentNullException>(() => record.ToDictionary((IEnumerable<(string Name, int Ordinal)>)null!));
 	}
 
-	// ---- ParameterNames.Match: the @ of the real names is removed once per call, not once per name, candidate and tier ----
+	// ---- ParameterNames.MatchBare: the @ of the real names is removed once per call, not once per name, candidate and tier ----
 
-	static readonly Func<ImmutableArray<string>, ImmutableArray<string>, string, string, string?> MatchWithContext = typeof(DataRecordExtensions).Assembly
-		.GetType("Open.Database.Extensions.ParameterNames", throwOnError: true)!
-		.GetMethod("Match", BindingFlags.Static | BindingFlags.NonPublic)!
-		.CreateDelegate<Func<ImmutableArray<string>, ImmutableArray<string>, string, string, string?>>();
+	static readonly Type ParameterNamesType = typeof(DataRecordExtensions).Assembly.GetType("Open.Database.Extensions.ParameterNames", throwOnError: true)!;
+
+	static readonly Func<ImmutableArray<string>, ImmutableArray<string>> BareNames = ParameterNamesType
+		.GetMethod("BareNames", BindingFlags.Static | BindingFlags.NonPublic)!
+		.CreateDelegate<Func<ImmutableArray<string>, ImmutableArray<string>>>();
+
+	static readonly Func<ImmutableArray<string>, ImmutableArray<string>, ImmutableArray<string>, string, string, string?> MatchBare = ParameterNamesType
+		.GetMethod("MatchBare", BindingFlags.Static | BindingFlags.NonPublic)!
+		.CreateDelegate<Func<ImmutableArray<string>, ImmutableArray<string>, ImmutableArray<string>, string, string, string?>>();
 
 	// The expression and the procedure only feed the message of an ambiguity; they cost nothing when there is none.
-	static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames) => MatchWithContext(candidates, parameterNames, "argument", "dbo.procedure");
+	static string? Match(ImmutableArray<string> candidates, ImmutableArray<string> parameterNames) => MatchBare(candidates, parameterNames, BareNames(parameterNames), "argument", "dbo.procedure");
 
 	static readonly ImmutableArray<string> RealNames =
 	[
@@ -364,5 +369,4 @@ public static class AllocationQuickWinTests
 		Assert.All(a64.Take(40), p => Assert.Null(p)); // The last is cleared where it was written...
 		Assert.Same(marker, a64[63]); // ...and only there.
 	}
-
 }

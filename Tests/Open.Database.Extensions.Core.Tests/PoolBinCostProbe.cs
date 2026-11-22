@@ -138,7 +138,7 @@ public sealed class PoolBinCostProbe(ITestOutputHelper output)
 #else
 		const string Arm = "AFTER (references clear on the bin)";
 #endif
-		using var connection = new SqliteConnection("Data Source=:memory:");
+		await using var connection = new SqliteConnection("Data Source=:memory:");
 		connection.Open();
 
 		// Off the xunit synchronization context, so only the library's own

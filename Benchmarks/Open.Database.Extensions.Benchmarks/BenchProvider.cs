@@ -40,7 +40,7 @@ public sealed class BenchTable
 		{
 			id[i] = i + 1; title[i] = "Post number " + i; body[i] = "Lorem ipsum dolor sit amet " + i; created[i] = start.AddMinutes(i);
 			price[i] = 10m + i; published[i] = i % 2 == 0; views[i] = i * 3; score[i] = i * 1.5; key[i] = new Guid(i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
-			rank[i] = (short)(i % 100); big[i] = (long)i << 20; tag[i] = "t" + (i % 7);
+			rank[i] = (short)(i % 100); big[i] = (long)i << 20; tag[i] = "t" + i % 7;
 			bodyNull[i] = i % 3 == 0; viewsNull[i] = i % 4 == 0; tagNull[i] = i % 2 == 0;
 		}
 

@@ -15,6 +15,7 @@ namespace Open.Database.Extensions.Tests;
 // Core's copies are tested with fakes; SqlConnection and SqlTransaction are concrete, so a fake cannot stand in for these. The tests that need no server (a SqlCommand and its parameters never touch a connection) run everywhere.
 // The tests that need one run on SQL Server LocalDB in tempdb (LocalDbFixture) and are reported as skipped when LocalDB is missing, so the suite stays green on a machine or build agent without it.
 [ExcludeFromCodeCoverage]
+[Collection("LocalDB DDL")]
 public static class SqlServerPackageTests
 {
 	[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors", Justification = "Test Only")]
@@ -192,15 +193,8 @@ public static class SqlServerPackageTests
 	}
 
 	[Fact]
-	public static void AddParameterType_OnAnIDbCommandThatIsNotASqlCommand_ThrowsInvalidCast()
-	{
-		IDbCommand command = Substitute.For<IDbCommand>();
-
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Throws<InvalidCastException>(() => SqlCmd.AddParameterType(command, "@x", SqlDbType.Int));
-#pragma warning restore CS0618
-		Assert.Throws<ArgumentNullException>(() => SqlCmd.AddParameterType(null!, "@x", SqlDbType.Int));
-	}
+	public static void AddParameterType_ANullCommand_Throws()
+		=> Assert.Throws<ArgumentNullException>(() => SqlCmd.AddParameterType(null!, "@x", SqlDbType.Int));
 
 	[Fact]
 	public static void AddParameter_AssignsTheValueAsGiven_SoANullStaysNullAndADatabaseNullStaysOne()

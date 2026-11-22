@@ -64,29 +64,29 @@ public static class DataRecordExtensionsTests
 	}
 
 	[Fact]
-	public static void GetMatchingOrdinals_IsCaseInsensitive_OrderDependsOnSort()
+	public static void MatchingOrdinals_IsCaseInsensitive_OrderDependsOnSort()
 	{
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
 		// sort:false -> requested order
 		Assert.Equal(
 			[("Name", 1), ("Id", 0)],
-			record.GetMatchingOrdinals(["name", "ID"], sort: false));
+			record.MatchingOrdinals(["name", "ID"], sort: false).ToArray());
 
 		// sort:true -> record order
 		Assert.Equal(
 			[("Id", 0), ("Name", 1)],
-			record.GetMatchingOrdinals(["name", "ID"], sort: true));
+			record.MatchingOrdinals(["name", "ID"], sort: true).ToArray());
 	}
 
 	[Fact]
-	public static void GetMatchingOrdinals_IgnoresColumnsNotPresent()
+	public static void MatchingOrdinals_IgnoresColumnsNotPresent()
 	{
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
 		Assert.Equal(
 			[("Id", 0)],
-			record.GetMatchingOrdinals(["Id", "Nope"]));
+			record.MatchingOrdinals(["Id", "Nope"]).ToArray());
 	}
 
 	[Fact]

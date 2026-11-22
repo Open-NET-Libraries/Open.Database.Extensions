@@ -1,7 +1,7 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Open.Database.Extensions.Generator;
 
@@ -102,7 +102,7 @@ static class ModelReader
 				if (declared.NotMapped || declared.Invalid) return null; // [NotMapped] on a member a constructor parameter sets, or a declaration that is not valid: a type error at run time.
 
 				// A required property the constructor also sets would have to be set again in an object initializer; the runtime sets it once. Not described here.
-				bool required = property is not null && property.IsRequired && !setsRequired;
+				bool required = property?.IsRequired == true && !setsRequired;
 				if (required) return null;
 
 				string? fallback = Fallback(parameter);
@@ -119,9 +119,9 @@ static class ModelReader
 		{
 			if (p.SetMethod is not { DeclaredAccessibility: Accessibility.Public } setter || !seen.Add(p.Name)) continue;
 
-			Decoration declared = Decoration.Of(p);
+			var declared = Decoration.Of(p);
 			bool required = p.IsRequired && !setsRequired;
-			if (declared.Invalid || (declared.NotMapped && (declared.HasColumnAttribute || required))) return null; // A type error at run time.
+			if (declared.Invalid || declared.NotMapped && (declared.HasColumnAttribute || required)) return null; // A type error at run time.
 
 			SlotSpec? slot = Slot(p.Name, null, -1, p.Type, IsNonNullableReference(p), setter.IsInitOnly || required, required, declared, null);
 			if (slot is null) return null;
@@ -157,10 +157,10 @@ static class ModelReader
 			string name = FullName(i.OriginalDefinition);
 			if (name is "System.Collections.IDictionary" or "System.Dynamic.IDynamicMetaObjectProvider"
 				or "System.Collections.Generic.IDictionary`2" or "System.Collections.Generic.IReadOnlyDictionary`2")
-            {
-                return false;
-            }
-        }
+			{
+				return false;
+			}
+		}
 
 		return true;
 	}
@@ -169,18 +169,18 @@ static class ModelReader
 	static bool IsScalar(ITypeSymbol t)
 	{
 		if (t.TypeKind == TypeKind.Enum) return true;
-        return t.SpecialType switch
-        {
-            SpecialType.System_Boolean or SpecialType.System_Char or SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Single or SpecialType.System_Double or SpecialType.System_IntPtr or SpecialType.System_UIntPtr or SpecialType.System_String or SpecialType.System_Decimal or SpecialType.System_DateTime => true,
-            _ => FullName(t) is "System.DateTimeOffset" or "System.TimeSpan" or "System.Guid" or "System.DateOnly" or "System.TimeOnly",
-        };
-    }
+		return t.SpecialType switch
+		{
+			SpecialType.System_Boolean or SpecialType.System_Char or SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Single or SpecialType.System_Double or SpecialType.System_IntPtr or SpecialType.System_UIntPtr or SpecialType.System_String or SpecialType.System_Decimal or SpecialType.System_DateTime => true,
+			_ => FullName(t) is "System.DateTimeOffset" or "System.TimeSpan" or "System.Guid" or "System.DateOnly" or "System.TimeOnly",
+		};
+	}
 
 	static bool ContainsTypeParameter(ITypeSymbol t) => t switch
 	{
 		ITypeParameterSymbol => true,
 		IArrayTypeSymbol a => ContainsTypeParameter(a.ElementType),
-		INamedTypeSymbol n => n.TypeArguments.Any(ContainsTypeParameter) || (n.ContainingType is { } c && ContainsTypeParameter(c)),
+		INamedTypeSymbol n => n.TypeArguments.Any(ContainsTypeParameter) || n.ContainingType is { } c && ContainsTypeParameter(c),
 		_ => false,
 	};
 
@@ -269,7 +269,7 @@ static class ModelReader
 		string targetFq = target.ToDisplayString(Fq);
 		bool targetIsGuid = target.SpecialType == SpecialType.None && FullName(target) == "System.Guid";
 		SpecialType targetSpecial = targetIsGuid ? SpecialType.None : target.SpecialType;
-		bool targetHasGetter = targetIsGuid || (targetSpecial != SpecialType.None && Getters.Any(g => g.Type == targetSpecial));
+		bool targetHasGetter = targetIsGuid || targetSpecial != SpecialType.None && Getters.Any(g => g.Type == targetSpecial);
 		SpecialType t = target is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } u } ? u.SpecialType : targetSpecial;
 		bool isEnum = target.TypeKind == TypeKind.Enum;
 
@@ -301,7 +301,7 @@ static class ModelReader
 
 			var c = new ReadCase(column, expression, false);
 			// The read Full mode takes: the column's own type, or for an enum the column of its underlying type.
-			if (expression == read || (isEnum && source == t)) exact.Add(c);
+			if (expression == read || isEnum && source == t) exact.Add(c);
 			else others.Add(c);
 		}
 
@@ -410,7 +410,7 @@ static class ModelReader
 		string name = t.MetadataName;
 		for (INamedTypeSymbol? c = t.ContainingType; c is not null; c = c.ContainingType) name = c.MetadataName + "+" + name;
 		INamespaceSymbol? ns = t.ContainingNamespace;
-		return ns is null || ns.IsGlobalNamespace ? name : ns.ToDisplayString() + "." + name;
+		return ns?.IsGlobalNamespace != false ? name : $"{ns.ToDisplayString()}.{name}";
 	}
 
 	// RowMap's Decoration: read as data, by full name.

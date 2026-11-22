@@ -648,7 +648,6 @@ public static class DataReaderEdgeTests
 	[Theory]
 	[InlineData("pool")]
 	[InlineData("ordinals and pool")]
-	[InlineData("first ordinal and others")]
 	public static async Task AsAsyncEnumerable_Variants_YieldTheRowsAsked_AndOnlyThePooledOnesUseThePool(string variant)
 	{
 		var pool = new SizedPool();
@@ -661,7 +660,7 @@ public static class DataReaderEdgeTests
 			"pool" => reader.AsAsyncEnumerable(pool, token),
 			"ordinals" => reader.AsAsyncEnumerable(ordinals, token),
 			"ordinals and pool" => reader.AsAsyncEnumerable(ordinals, pool, token),
-			_ => reader.AsAsyncEnumerable(token, 2, 0),
+			_ => throw new ArgumentOutOfRangeException(nameof(variant)),
 		};
 		List<object[]> rows = await Collect(sequence);
 

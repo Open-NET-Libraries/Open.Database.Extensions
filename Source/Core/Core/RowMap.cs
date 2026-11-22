@@ -531,7 +531,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		{
 			if (p.GetIndexParameters().Length != 0 || p.GetSetMethod() is not { } setter || !seen.Add(p.Name)) continue;
 
-			Decoration declared = Decoration.Of(p);
+			var declared = Decoration.Of(p);
 			if (declared.NotMapped || declared.Invalid is not null) error ??= DeclarationError(p, declared, null);
 
 			list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p), NullAnnotations.IsNonNullableReference(p), declared.Column, declared.Order, declared.NotMapped));
@@ -1597,7 +1597,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		{
 			Slot slot = _slots[s];
 			// A pair that names a declared member overrides the declaration: only what the map says is looked for.
-			if ((!slot.Required && (slot.ColumnName is null || _named[s])) || Array.IndexOf(feeds, slot) >= 0) continue;
+			if (!slot.Required && (slot.ColumnName is null || _named[s]) || Array.IndexOf(feeds, slot) >= 0) continue;
 
 			string column = _columns[s]!; // A required slot is never mapped to null (the pairs are validated), and a declared one is not either.
 			throw new ValueMappingException(
@@ -2557,7 +2557,7 @@ sealed class Shape
 		setsRequiredMembers = false;
 		string name = TypeName(type);
 
-		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().";
+		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. On a command use Map<T>(), which reads the first column; else ExecuteScalar<T>().";
 		if (NotConcrete(type) is { } kind) return $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
 		if (IsDictionaryOrDynamic(type)) return $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, use AsDictionaryRows() for the values with their column names, or use Map(selector).";
 

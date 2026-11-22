@@ -141,7 +141,7 @@ public class DataflowBenchmarks
 	public async Task<long> Dataflow_ODE()
 	{
 		var block = new BufferBlock<Post>();
-		await _conn.Command(Sql).Map<Post>().ToTargetBlock(block, BlockEnd.Complete);
+		await _conn.Command(Sql).Map<Post>().ToTargetBlock(block, complete: true);
 
 		long n = 0;
 		while (await block.OutputAvailableAsync())

@@ -110,7 +110,7 @@ A name you write is sent exactly as written: the library never adds or removes a
 For a stored procedure the name is settled when the command runs. The provider reports the procedure's real parameter names (SQL Server does), and each argument is matched to one of them:
 
 1. Exactly, else ignoring case, else ignoring case and underscores: `TitleContains` finds `@title_contains`.
-2. Else with one common parameter prefix removed from the real name (`p_`, `in_`, `i_`, `prm_`, `par_`, `v_`, or a lone `p` before a capital letter): `Author` finds `@p_author` and `@pAuthor`. A field prefix on the argument (`m_author`, `s_author`, `_author`) is also tried without it.
+2. Else with one common parameter prefix dropped from the real name (`p_`, `in_`, `i_`, `prm_`, `par_`, `v_`, or a lone `p` before a capital letter): `Author` finds `@p_author` and `@pAuthor`. A field prefix on the argument (`m_author`, `s_author`, `_author`) is also tried without it.
 3. A chain tries its longer endings first, each through all of those steps before the next: `order.Customer.Id` tries `orderCustomerId`, `CustomerId`, then `Id`, so `@customer_id` and `@p_customer_id` are chosen over a bare `@id`.
 
 For example `AddParam(search.Author)` sends `@p_author` when the procedure declares that, `@Author` or `@author` when it declares one of those, and throws when it declares none of them. The prefix step (rule 2) can bind a parameter whose name only starts like a prefix: `Stock` finds `@in_stock`, `Value` finds `@par_value` and `Progress` finds `@in_progress`. When that is not the parameter you mean, name it yourself: `AddParam("stock", stock)`.
@@ -138,7 +138,7 @@ A procedure that changes can show its old names for up to five minutes. Two case
 - a member of an `AddParams` object that the second read still does not find is skipped, so a parameter added to the procedure after that read is not sent until the names expire;
 - a less specific match is kept while a more specific new parameter exists (`@id` for `order.Customer.Id` although `@customer_id` now exists);
 - an ambiguity, or two arguments that resolve to the same parameter, is reported from the remembered names;
-- when the second read finds nothing (the procedure is no longer visible to the login, or it now declares no parameters), the argument is sent as written, and the old names are dropped.
+- when the second read finds nothing (the procedure is not visible to the login, or it now declares no parameters), the argument is sent as written, and the old names are dropped.
 
 A read that finds nothing (an unreadable procedure, one that does not exist, or one that declares no parameters) is remembered too, but for 15 seconds only, so a procedure that cannot be read costs one lookup in 15 seconds, not one in every run, and a procedure that appears or changes is picked up soon. Until then its derived names are sent as written.
 
@@ -177,26 +177,25 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 | `ExecuteReturn<T>()` | The value of the return-value parameter: [see above](#return-values-and-output-parameters) |
 | `Execute(command => ...)` | Whatever your function returns, given the raw command with its text, parameters and timeout applied: use it for a call the other terminals do not wrap |
 | `ExecuteReader(reader => ...)` | Whatever your function returns, given the live reader |
-| `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
-| `ToListAsync<T>()`, `ToArrayAsync<T>()`, `ToImmutableArrayAsync<T>()`, `FirstAsync<T>()`, `FirstOrDefaultAsync<T>()`, `SingleAsync<T>()`, `SingleOrDefaultAsync<T>()`, `ToHashSetAsync<T>()` | `Map<T>()` then that async terminal (for a synchronous read write `Map<T>().ToList()`); a single value such as `int` reads the first column: [One value per row](mapping.md#one-value-per-row) |
+| `Map<T>()` then a terminal | Mapped objects, or one value per row such as `int` read from the first column: see [Mapping rows to objects](mapping.md) and [One value per row](mapping.md#one-value-per-row) |
 | `Map<T>()` then `ToChannelReader()` or `AsSourceBlock()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
 The blocking terminals (`ExecuteNonQuery()`, `ExecuteScalar`, `ExecuteReturn`, `Execute`, `ExecuteReader` and the `Map<T>()` terminals such as `ToList()`) are in the `Open.Database.Extensions.Synchronous` namespace: add `using Open.Database.Extensions.Synchronous;` to call them. The `Async` terminals need no extra `using`.
 
-The terminals that take the type read one column as easily as a model; the token goes last:
+`Map<T>()` reads one column as easily as a model; the token goes last:
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#single_value_async)]
 
 `ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout. The default is 60 seconds. On SQL Server the lookup of a stored procedure's parameter names uses the same timeout. A failed lookup throws the provider's own exception (a `SqlException` stays a `SqlException`, so a retry policy still sees it), with the procedure's name in `Exception.Data["Procedure"]`.
 
-`UseCancellationToken(token)` sets a token for the command. A token passed to an async terminal such as `ToListAsync(token)` is used together with it, and either one cancels the call. The `Async` terminals of the command itself (`ExecuteNonQueryAsync`, `ExecuteScalarAsync`, `ExecuteReaderAsync`, `ExecuteReturnAsync`) take a `CancellationToken` too, and it is used together with this one. The call then stops with `OperationCanceledException`, except that a provider may report a cancellation that arrives while the command is executing as its own exception (SQL Server's `SqlException`, "Operation cancelled by user"); the library does not translate it. The token covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows.
+`UseCancellationToken(token)` sets a token for the command. A token passed to an async terminal such as `ToListAsync(token)` is combined with it, and either one cancels the call. The `Async` terminals of the command itself (`ExecuteNonQueryAsync`, `ExecuteScalarAsync`, `ExecuteReaderAsync`, `ExecuteReturnAsync`) take a `CancellationToken` too, and it is combined with this one. The call then stops with `OperationCanceledException`, except that a provider may report a cancellation that arrives while the command is executing as its own exception (SQL Server's `SqlException`, "Operation cancelled by user"); the library does not translate it. The token covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows.
 
 ### Which scalar form
 
 - **`ExecuteScalar<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). A `NULL` or no rows gives `default(T)`.
 - **`ExecuteScalar(value => ...)`** to convert in your own way. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
 - **`ExecuteScalar()`** for the raw value: `DBNull.Value` for a `NULL`, `null` for no rows.
-- **`ToListAsync<T>()`** (or `Map<T>().ToList()`, `ToArrayAsync<T>()`, ...) for many rows of one column: it converts like a property, as `ExecuteScalar<T>()` does. See [One value per row](mapping.md#one-value-per-row).
+- **`Map<T>()` then `ToListAsync(token)`** (or `ToList()`, `ToArrayAsync(token)`, ...) for many rows of one column: it converts like a property, as `ExecuteScalar<T>()` does. See [One value per row](mapping.md#one-value-per-row).
 
 `ExecuteScalar<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. To tell a `NULL` from 0, ask for the nullable type: `int?` or `long?`.
 

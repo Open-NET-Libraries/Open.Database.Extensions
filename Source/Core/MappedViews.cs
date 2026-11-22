@@ -274,8 +274,32 @@ static class Views
 		IExecuteReader command,
 		IRowSource<T> source)
 		=> command is SingleResultReader single
-			? NewCore(single.Command, source, true, AsyncReads(single.Command))
-			: NewCore(command, source, false, AsyncReads(command));
+			? FromCommand(single.Command, source, true)
+			: FromCommand(command, source, false);
+
+	/// <summary>
+	/// Makes the query core of a call made from a <see cref="DbQuery"/> definition, which the query holds as it is.
+	/// </summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="call">The call.</param>
+	/// <param name="source">Reads and maps one row.</param>
+	/// <returns>The new query core.</returns>
+	internal static MappedQueryCore<T> QueryCore<T>(
+		DbQueryCall call,
+		IRowSource<T> source)
+		=> NewCore(null, call, source, false, false);
+
+	// A call made from a definition is held as it is, even when it reaches here as an IExecuteReader.
+	static MappedQueryCore<T> FromCommand<T>(
+		IExecuteReader command,
+		IRowSource<T> source,
+		bool singleResult)
+		=> command switch
+		{
+			DbQueryCall call => NewCore(null, call, source, singleResult, false),
+			DbQueryUsing bound => NewCore(null, bound.ToCall(), source, singleResult, false),
+			_ => NewCore(command, default, source, singleResult, AsyncReads(command)),
+		};
 
 	/// <summary>
 	/// Gets the command's own choice, made by <c>cmd.AsyncReads()</c> before
@@ -289,19 +313,19 @@ static class Views
 	internal static MappedQueryCore<T> ReaderCore<T>(
 		IDataReader reader,
 		IRowSource<T> source)
-		=> NewCore(new ReaderExecutor(reader), source, true, false);
+		=> NewCore(new ReaderExecutor(reader), default, source, true, false);
 
 	internal static MappedQueryCore<T> CommandCore<T>(
 		IDbCommand command,
 		IRowSource<T> source)
 		=> command is SingleResultDbCommand single
-			? NewCore(new CommandExecutor(single.Command), source, true, false)
-			: NewCore(new CommandExecutor(command), source, false, false);
+			? NewCore(new CommandExecutor(single.Command), default, source, true, false)
+			: NewCore(new CommandExecutor(command), default, source, false, false);
 
 	internal static MappedQueryCore<T> TableCore<T>(
 		DataTable table,
 		IRowSource<T> source)
-		=> NewCore(new TableExecutor(table), source, true, false);
+		=> NewCore(new TableExecutor(table), default, source, true, false);
 
 	/// <summary>
 	/// Makes a query core: the one door every query is made through.
@@ -314,17 +338,20 @@ static class Views
 	/// </remarks>
 	/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 	/// <param name="command">The command the rows are read from.</param>
+	/// <param name="call">The call, when the query is made from a <see cref="DbQuery"/> definition; then <paramref name="command"/> is <see langword="null"/>.</param>
 	/// <param name="source">Reads and maps one row.</param>
 	/// <param name="singleResult"><see langword="true"/> to stop after the first result set and not read through the later ones; otherwise, <see langword="false"/>.</param>
 	/// <param name="asyncReads"><see langword="true"/> to read the rows of an asynchronous terminal with <c>ReadAsync</c>; otherwise, <see langword="false"/>.</param>
 	/// <returns>The new query core, with the default configuration for <typeparamref name="T"/>.</returns>
 	static MappedQueryCore<T> NewCore<T>(
-		IExecuteReader command,
+		IExecuteReader? command,
+		DbQueryCall call,
 		IRowSource<T> source,
 		bool singleResult,
 		bool asyncReads)
 		=> new(
 			command,
+			call,
 			source,
 			0,
 			-1,

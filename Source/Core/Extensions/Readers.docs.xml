@@ -201,15 +201,6 @@
     </param>
   </members>
 
-  <members name="n-others">
-    <param name="n">
-      The first ordinal to include in the request to the reader for each record.
-    </param>
-    <param name="others">
-      The remaining ordinals to request from the reader for each record.
-    </param>
-  </members>
-
   <members name="c-others">
     <param name="c">
       The first column name to include in the request to the reader for each record.

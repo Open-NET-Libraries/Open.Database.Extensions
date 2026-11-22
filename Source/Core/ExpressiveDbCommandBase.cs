@@ -230,5 +230,4 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 					.ConfigureAwait(false)))
 			.ConfigureAwait(false);
 	}
-
 }

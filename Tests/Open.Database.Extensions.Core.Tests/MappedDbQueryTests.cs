@@ -1,5 +1,5 @@
-using System.Data.Common;
 using Microsoft.Data.Sqlite;
+using System.Data.Common;
 
 namespace Open.Database.Extensions.Tests;
 
@@ -190,7 +190,7 @@ public static class MappedDbQueryTests
 	public static async Task Using_ADbConnection_ReadsTheRows_OpenedLateAndClosedAgain()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		List<Post> posts = await DbQuery.Text(AllPostsSql).Map<Post>().Using(c).ToListAsync(Ct);
 
@@ -229,9 +229,9 @@ public static class MappedDbQueryTests
 	public static async Task Using_ATransaction_ReadsInsideIt_AndLeavesTheConnectionOpen()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		await c.OpenAsync(Ct);
-		using DbTransaction transaction = await c.BeginTransactionAsync(Ct);
+		await using DbTransaction transaction = await c.BeginTransactionAsync(Ct);
 
 		// A row only this transaction can see (and the provider refuses a command that is not enlisted in a pending
 		// transaction), so a read that sees it ran inside the transaction.
@@ -284,7 +284,7 @@ public static class MappedDbQueryTests
 	public static async Task SingleResult_OnTheDefinition_StopsAfterTheFirstSet()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		MappedDbQuery<int> definition = DbQuery.Text(LaterFailure).Map<int>();
 
 		await Assert.ThrowsAsync<SqliteException>(async () => await definition.Using(c).ToListAsync(Ct));
@@ -309,7 +309,7 @@ public static class MappedDbQueryTests
 	public static async Task UsePool_OnTheDefinition_RentsFromThePool_AndEveryArrayGoesBackCleared()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		var pool = new CountingPool<Post>
 		{
 			RoundUp = true,
@@ -337,7 +337,7 @@ public static class MappedDbQueryTests
 	public static async Task ParamsBeforeUsing_GiveTheRowsOfTheClassicChain()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		List<Post> classic = await Posts.Using(c).AddParam("authorId", 7).AddParam("views", 50).Map<Post>().ToListAsync(Ct);
 		List<Post> mapFirst = await PostsMapped.AddParam("authorId", 7).AddParam("views", 50).Using(c).ToListAsync(Ct);
@@ -381,11 +381,11 @@ public static class MappedDbQueryTests
 	public static async Task ParamsBeforeUsing_NamedFromTheVariables_GiveTheRows()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		// The same command either way: one named like the SQL text, one derived from the variable.
-		int authorId = 7;
-		int views = 50;
+		const int authorId = 7;
+		const int views = 50;
 		List<Post> derived = await PostsMapped.AddParam(authorId).AddParam(views).Using(c).ToListAsync(Ct);
 
 		Assert.Equal(SevenFromFifty, Ids(derived));
@@ -395,7 +395,7 @@ public static class MappedDbQueryTests
 	public static async Task ParamsBeforeUsing_AStringValue_AndAnObjectOfParams()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		MappedDbQuery<Post> byTitle = DbQuery.Text("select Id, AuthorId, Title from Posts where Title = @title").Map<Post>();
 
 		List<Post> fromString = await byTitle.AddParam("title", "b").Using(c).ToListAsync(Ct);
@@ -413,9 +413,9 @@ public static class MappedDbQueryTests
 	public static async Task ParamsAfterUsing_GiveTheRowsOfBothOtherOrders()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
-		int authorId = 7;
-		int views = 50;
+		await using Tracked c = db.Connect();
+		const int authorId = 7;
+		const int views = 50;
 
 		List<Post> before = await PostsMapped.AddParam("authorId", 7).AddParam("views", 50).Using(c).ToListAsync(Ct);
 		List<Post> named = await PostsMapped.Using(c).AddParam("authorId", 7).AddParam("views", 50).ToListAsync(Ct);
@@ -432,7 +432,7 @@ public static class MappedDbQueryTests
 	public static async Task ParamsAfterUsing_AStringValue_AndAMixOfBothOrders()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		MappedDbQuery<Post> byTitle = DbQuery.Text("select Id, AuthorId, Title from Posts where Title = @title").Map<Post>();
 
 		List<Post> fromString = await byTitle.Using(c).AddParam("title", "b").ToListAsync(Ct);
@@ -448,7 +448,7 @@ public static class MappedDbQueryTests
 	public static async Task ParamsAfterUsing_KeepTheOptions_AndLeaveTheViewItCameFromUnchanged()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		MappedDbQuery<int> definition = DbQuery.Text("select @a; select abs(-9223372036854775808)").Map<int>();
 
 		// SingleResult on the definition survives the added parameter: the failing second set is never read.
@@ -460,8 +460,9 @@ public static class MappedDbQueryTests
 
 		Assert.Equal([5], single);
 		Assert.NotEqual(view, withParam);
-		Assert.IsType<DbQueryUsing>(view.Command);
-		Assert.IsType<DbQueryCall>(withParam.Command, exactMatch: false);
+		Assert.IsType<DbQueryCall>(view.Command);
+		Assert.IsType<DbQueryCall>(withParam.Command);
+		Assert.NotEqual((DbQueryCall)view.Command, (DbQueryCall)withParam.Command);
 	}
 
 	[Fact]
@@ -473,7 +474,7 @@ public static class MappedDbQueryTests
 
 		const string expected
 			= "AddParam after Map applies only to a query made from a DbQuery definition; for a command, call AddParam before Map.";
-		int a = 1;
+		const int a = 1;
 
 		Assert.Equal(expected, Assert.Throws<InvalidOperationException>(() => classic.AddParam("a", 1)).Message);
 		Assert.Equal(expected, Assert.Throws<InvalidOperationException>(() => classic.AddParam("a", "text")).Message);
@@ -485,7 +486,7 @@ public static class MappedDbQueryTests
 	public static async Task AnUnboundCall_IsNotChangedByWhatIsAddedToIt()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		UnboundCall<Post> authorOnly = PostsMapped.AddParam("authorId", 7);
 		UnboundCall<Post> fifty = authorOnly.AddParam("views", 50);
@@ -502,7 +503,7 @@ public static class MappedDbQueryTests
 	public static async Task AnUnboundCall_GivenEachKindOfSource()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		var factory = new Factory(db);
 		var pool = new Pool(db);
 		UnboundCall<Post> call = PostsMapped.AddParam("authorId", 7).AddParam("views", 50);
@@ -513,7 +514,7 @@ public static class MappedDbQueryTests
 
 		// A connection with a pending transaction is read only through that transaction.
 		await c.OpenAsync(Ct);
-		using DbTransaction transaction = await c.BeginTransactionAsync(Ct);
+		await using DbTransaction transaction = await c.BeginTransactionAsync(Ct);
 		List<Post> fromTransaction = await call.Using(transaction).ToListAsync(Ct);
 
 		Assert.Equal(SevenFromFifty, Ids(fromConnection));
@@ -547,7 +548,7 @@ public static class MappedDbQueryTests
 	public static async Task TypedParams_BeforeAndAfterUsing_GiveTheRowsOfTheClassicChain()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		var values = new AuthorViews(7, 50);
 
 		List<Post> classic = await PostsTyped.Using(c).AddParams(values).Map<Post>().ToListAsync(Ct);
@@ -563,7 +564,7 @@ public static class MappedDbQueryTests
 	public static async Task TypedDefinition_CarriesItsOptions()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 		MappedDbQuery<AuthorViews, int> definition = DbQuery.Text(LaterFailure).Params<AuthorViews>().Map<int>();
 
 		await Assert.ThrowsAsync<SqliteException>(
@@ -581,7 +582,7 @@ public static class MappedDbQueryTests
 		UnboundCall<AuthorViews, Post> typedNone = default;
 		MappedDbQueryUsing<AuthorViews, Post> usingNone = default;
 
-		int authorId = 7;
+		const int authorId = 7;
 
 		// Every member of a default struct says so: none is left to a null reference.
 		Assert.Throws<InvalidOperationException>(() => none.AddParam("authorId", 7));
@@ -605,7 +606,7 @@ public static class MappedDbQueryTests
 	public static async Task TheDefinition_IsUnchanged_ByTheCallsMadeFromIt()
 	{
 		using var db = new Db();
-		using Tracked c = db.Connect();
+		await using Tracked c = db.Connect();
 
 		await PostsMapped.AddParam("authorId", 7).AddParam("views", 90).Using(c).ToListAsync(Ct);
 		List<Post> other = await PostsMapped.AddParam("authorId", 8).AddParam("views", 0).Using(c).ToListAsync(Ct);
@@ -621,7 +622,7 @@ public static class MappedDbQueryTests
 		int[][] results = await Task.WhenAll(
 			Enumerable.Range(0, 16).Select(async i =>
 			{
-				using Tracked c = db.Connect();
+				await using Tracked c = db.Connect();
 				int authorId = i % 2 == 0 ? 7 : 8;
 				return Ids(await PostsMapped.AddParam("authorId", authorId).AddParam("views", 0).Using(c).ToListAsync(Ct));
 			}));

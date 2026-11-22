@@ -14,12 +14,12 @@ public static class CaseInsensitiveMappingTests
 	[InlineData("id")]
 	[InlineData("ID")]
 	[InlineData("Id")]
-	public static void GetMatchingOrdinals_MatchesRequestedName_RegardlessOfCase(string requested)
+	public static void MatchingOrdinals_MatchesRequestedName_RegardlessOfCase(string requested)
 	{
 		IDataReader reader = FakeReader.Create(["Id", "Name"], [1, "a"]);
 		Assert.True(reader.Read());
 
-		(string Name, int Ordinal)[] match = reader.GetMatchingOrdinals([requested]);
+		(string Name, int Ordinal)[] match = reader.MatchingOrdinals([requested]).ToArray();
 
 		Assert.Equal([("Id", 0)], match);
 	}

@@ -12,7 +12,7 @@ Both packages take a mapped query (`Map<T>()`), so rows are mapped the same way 
 
 ## Streaming from a mapped query
 
-The buffer streams are in the core package. To put the rows into a channel, see [Channels](#channels).
+To read a mapped query while a consumer works, use the buffer streams (`ToBufferedAsyncStream` and `ToAsyncBufferStream`) in the core package: the connection is released as soon as the last row is read.
 
 A stream earns its place when a producer and its consumer run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows at database speed on a background task, in chunks, and is finished with the connection as soon as the last row is read. The consumer does the slow work (a web call, a file write, a transform) while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`.
 
@@ -40,7 +40,7 @@ If there is one consumer, only a few rows, and nothing else to overlap, you do n
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#stream_buffer)]
 
-To read rows one at a time and stop early, see [`Stream`](mapping.md#streaming-holds-the-connection): it holds the connection while you pull rows, so it is not the way to do slow work per row.
+To read rows one at a time and stop early, see [`Stream`](mapping.md#terminals): it holds the connection while you pull rows, so it is not the way to do slow work per row.
 
 ### What it costs
 
@@ -60,7 +60,7 @@ The query is read at full speed into pooled chunks, and the connection is closed
 
 ### A channel you own
 
-`ToChannel(channel)` and `ToChannel(writer)` only write. They leave the channel open, so passes can share it, and the returned task is the done signal: it completes with the number of rows written, and a failure or a cancel comes back through it. `ChannelEnd.Complete` completes the channel when the pass ends, with the exception that ended it if there was one.
+`ToChannel(channel)` and `ToChannel(writer)` only write. They leave the channel open, so passes can share it, and the returned task is the done signal: it completes with the number of rows written, and a failure or a cancel comes back through it. `complete: true` completes the channel when the pass ends, with the exception that ended it if there was one.
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_channel_owned)]
 
@@ -78,7 +78,7 @@ When the channel is full, the write waits for room, before the command runs and 
 
 The Dataflow package exists to feed whatever pipeline you build, and to start it as fast as the query can be read. It reads a mapped query at full speed into pooled chunks and sends each row to a block, so the blocks, their task schedulers and their priorities stay yours.
 
-`ToTargetBlock` sends the rows to a block you own and leaves it open, so passes can share it. The returned task is the done signal: it completes with the number of rows the block accepted, and a failure or a cancel comes back through it. `BlockEnd.Complete` completes the block when the pass ends, or faults it with the exception that ended it, a cancel included (a faulted block drops the rows it holds that were not received yet).
+`ToTargetBlock` sends the rows to a block you own and leaves it open, so passes can share it. The returned task is the done signal: it completes with the number of rows the block accepted, and a failure or a cancel comes back through it. `complete: true` completes the block when the pass ends, or faults it with the exception that ended it, a cancel included (a faulted block drops the rows it holds that were not received yet).
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_target_block)]
 
