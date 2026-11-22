@@ -12,20 +12,6 @@
 public interface IExecuteCommand
 {
 	/// <summary>
-	/// Creates a command and passes it to <paramref name="action"/>.
-	/// </summary>
-	/// <param name="action">The action that operates on the command.</param>
-	void Execute(Action<IDbCommand> action);
-
-	/// <summary>
-	/// Creates a command and passes it to <paramref name="transform"/>, returning its result.
-	/// </summary>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="transform">The function that operates on the command.</param>
-	/// <returns>The value returned by <paramref name="transform"/>.</returns>
-	T Execute<T>(Func<IDbCommand, T> transform);
-
-	/// <summary>
 	/// Asynchronously creates a command and passes it to <paramref name="handler"/>.
 	/// </summary>
 	/// <param name="handler">The asynchronous function that operates on the command.</param>
@@ -55,18 +41,6 @@ public interface IExecuteCommand
 public interface IExecuteCommand<out TCommand> : IExecuteCommand
 	where TCommand : IDbCommand
 {
-	/// <summary>
-	/// Creates a command of type <typeparamref name="TCommand"/> and passes it to <paramref name="action"/>.
-	/// </summary>
-	/// <inheritdoc cref="IExecuteCommand.Execute(Action{IDbCommand})"/>
-	void Execute(Action<TCommand> action);
-
-	/// <summary>
-	/// Creates a command of type <typeparamref name="TCommand"/> and passes it to <paramref name="transform"/>, returning its result.
-	/// </summary>
-	/// <inheritdoc cref="IExecuteCommand.Execute{T}(Func{IDbCommand, T})"/>
-	T Execute<T>(Func<TCommand, T> transform);
-
 	/// <summary>
 	/// Asynchronously creates a command of type <typeparamref name="TCommand"/> and passes it to <paramref name="handler"/>.
 	/// </summary>

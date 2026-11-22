@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Open.Database.Extensions;
+using Open.Database.Extensions.Synchronous;
 using Samples;
 
 // Runs every sample against a shared in-memory SQLite database and checks what the documentation says about it.

@@ -119,7 +119,7 @@ internal static class RowReader
 /// Reads the rows into a <see cref="List{T}"/>.
 /// </summary>
 /// <remarks>
-/// The two hottest terminals (this one and <see cref="ToArray{T}"/>) keep their own loops:
+/// The two hottest terminals (this one and <see cref="Synchronous.SyncMappedQueryExtensions.ToArray{T}"/>) keep their own loops:
 /// with a tiny per-row projection the extra sink indirection of <c>Fill</c> is measurable (benchmarked),
 /// so the list and the array are written out directly.
 /// </remarks>
@@ -178,7 +178,7 @@ internal static class RowReader
 /// Reads the rows into an array.
 /// </summary>
 /// <remarks>
-/// Like <see cref="ToList{T}"/>, it keeps its own loop rather than using <c>Fill</c>.
+/// Like <see cref="Synchronous.SyncMappedQueryExtensions.ToList{T}"/>, it keeps its own loop rather than using <c>Fill</c>.
 /// </remarks>
 /// <typeparam name="T">The type of a mapped row.</typeparam>
 /// <param name="source">The mapping of the rows.</param>

@@ -1,3 +1,5 @@
+using Open.Database.Extensions.Synchronous;
+
 using System.Diagnostics;
 
 namespace Open.Database.Extensions;
@@ -364,7 +366,7 @@ static class Views
 /// The core only uses the two state forms of <c>ExecuteReader</c>; the rest
 /// are derived from them.
 /// </remarks>
-abstract class ViewExecutor : IExecuteReader
+abstract class ViewExecutor : IExecuteReaderSync
 {
 	public CancellationToken CancellationToken => default;
 
@@ -605,7 +607,7 @@ sealed class TableExecutor(DataTable table) : ViewExecutor
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedCommand{T}"/>
 public readonly record struct MappedReader<T>
-	: IMappedQuery<T>, IMappedTerminals<T>
+	: IMappedQuerySync<T>, IMappedTerminals<T>
 {
 	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
 
@@ -800,7 +802,7 @@ public readonly record struct MappedReader<T>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedReader{T}"/>
 public readonly record struct MappedCommand<T>
-	: IMappedQuery<T>, IMappedTerminals<T>
+	: IMappedQuerySync<T>, IMappedTerminals<T>
 {
 	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
 
@@ -833,12 +835,25 @@ public readonly record struct MappedCommand<T>
 	internal MappedCommand<T> WithConfig(ChunkConfig<T> config)
 		=> new(_core.WithConfig(config));
 
-	/// <inheritdoc />
-	public void Read(Action<IEnumerable<T>> handler)
+	void IMappedQuerySync<T>.Read(Action<IEnumerable<T>> handler)
+		=> Read(handler);
+
+	TResult IMappedQuerySync<T>.Read<TResult>(
+		Func<IEnumerable<T>, TResult> handler)
+		=> Read(handler);
+
+	T IMappedTerminals<T>.First() => First();
+
+	T IMappedTerminals<T>.Single() => Single();
+
+	T? IMappedTerminals<T>.FirstOrDefault() => FirstOrDefault();
+
+	T? IMappedTerminals<T>.SingleOrDefault() => SingleOrDefault();
+
+	internal void Read(Action<IEnumerable<T>> handler)
 		=> _core.Read(handler);
 
-	/// <inheritdoc />
-	public TResult Read<TResult>(
+	internal TResult Read<TResult>(
 		Func<IEnumerable<T>, TResult> handler)
 		=> _core.Read(handler);
 
@@ -857,8 +872,7 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken)
 		=> _core.ReadAsync(handler, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToList"/>
-	public List<T> ToList()
+	internal List<T> ToList()
 		=> _core.ToList();
 
 	/// <inheritdoc cref="MappedQuery{T}.ToListAsync"/>
@@ -866,8 +880,7 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToListAsync(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToArray"/>
-	public T[] ToArray()
+	internal T[] ToArray()
 		=> _core.ToArray();
 
 	/// <inheritdoc cref="MappedQuery{T}.ToArrayAsync"/>
@@ -875,8 +888,7 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToArrayAsync(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.FirstOrDefault"/>
-	public T? FirstOrDefault()
+	internal T? FirstOrDefault()
 		=> _core.FirstOrDefault();
 
 	/// <inheritdoc cref="MappedQuery{T}.FirstOrDefaultAsync"/>
@@ -884,8 +896,7 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.FirstOrDefaultAsync(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.SingleOrDefault"/>
-	public T? SingleOrDefault()
+	internal T? SingleOrDefault()
 		=> _core.SingleOrDefault();
 
 	/// <inheritdoc cref="MappedQuery{T}.SingleOrDefaultAsync"/>
@@ -893,8 +904,7 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.SingleOrDefaultAsync(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.First"/>
-	public T First()
+	internal T First()
 		=> _core.First();
 
 	/// <inheritdoc cref="MappedQuery{T}.FirstAsync"/>
@@ -902,8 +912,7 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.FirstAsync(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.Single"/>
-	public T Single()
+	internal T Single()
 		=> _core.Single();
 
 	/// <inheritdoc cref="MappedQuery{T}.SingleAsync"/>
@@ -911,8 +920,7 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.SingleAsync(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToImmutableArray"/>
-	public ImmutableArray<T> ToImmutableArray()
+	internal ImmutableArray<T> ToImmutableArray()
 		=> _core.ToImmutableArray();
 
 	/// <inheritdoc cref="MappedQuery{T}.ToImmutableArrayAsync"/>
@@ -920,8 +928,7 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.ToImmutableArrayAsync(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToDictionary{TKey}"/>
-	public Dictionary<TKey, T> ToDictionary<TKey>(
+	internal Dictionary<TKey, T> ToDictionary<TKey>(
 		Func<T, TKey> keySelector,
 		IEqualityComparer<TKey>? comparer = null)
 		where TKey : notnull
@@ -942,8 +949,7 @@ public readonly record struct MappedCommand<T>
 		where TKey : notnull
 		=> _core.ToDictionaryAsync(keySelector, comparer, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToDictionary{TKey, TValue}"/>
-	public Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+	internal Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
 		Func<T, TKey> keySelector,
 		Func<T, TValue> valueSelector,
 		IEqualityComparer<TKey>? comparer = null)
@@ -968,8 +974,7 @@ public readonly record struct MappedCommand<T>
 		=> _core.ToDictionaryAsync(
 			keySelector, valueSelector, comparer, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToHashSet"/>
-	public HashSet<T> ToHashSet(
+	internal HashSet<T> ToHashSet(
 		IEqualityComparer<T>? comparer = null)
 		=> _core.ToHashSet(comparer);
 
@@ -1024,7 +1029,7 @@ public readonly record struct MappedCommand<T>
 /// <seealso cref="MappedQuery{T}"/>
 /// <seealso cref="MappedReader{T}"/>
 public readonly record struct MappedTable<T>
-	: IMappedQuery<T>, IMappedTerminals<T>
+	: IMappedQuerySync<T>, IMappedTerminals<T>
 {
 	MappedQueryCore<T> IMappedTerminals<T>.Core => _core;
 

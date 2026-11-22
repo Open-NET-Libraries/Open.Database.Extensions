@@ -41,7 +41,7 @@ public static class MappedQueryExtensions
 	/// cancellation token.
 	/// </summary>
 	/// <inheritdoc
-	/// cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"
+	/// cref="Synchronous.IMappedQuerySync{T}.Read(Action{IEnumerable{T}})"
 	/// path="/remarks"/>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-items']/*" />
@@ -66,7 +66,7 @@ public static class MappedQueryExtensions
 	/// cancellation token.
 	/// </summary>
 	/// <inheritdoc
-	/// cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"
+	/// cref="Synchronous.IMappedQuerySync{T}.Read(Action{IEnumerable{T}})"
 	/// path="/remarks"/>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-result']/*" />
@@ -85,29 +85,6 @@ public static class MappedQueryExtensions
 	}
 
 	/// <summary>
-	/// Reads every mapped row into a new <see cref="List{T}"/>.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <returns>A list of all the rows, in the order the database returned them. The list is empty if there are no rows.</returns>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
-	/// </remarks>
-	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
-	public static List<T> ToList<T>(this IMappedQuery<T> query)
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		Contract.EndContractBlock();
-
-		// Our own query collects with its own pool and clear rule; a query that is
-		// not ours has none, so it is collected without pooling.
-		return query is IMappedTerminals<T> terminals
-			? terminals.Core.ToList()
-			: query.Read(items => items.ToList());
-	}
-
-	/// <summary>
 	/// Asynchronously reads every mapped row into a new <see cref="List{T}"/>.
 	/// </summary>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
@@ -117,7 +94,7 @@ public static class MappedQueryExtensions
 	/// <remarks>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToList{T}(IMappedQuery{T})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.ToList{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<List<T>> ToListAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
@@ -129,27 +106,6 @@ public static class MappedQueryExtensions
 			: query.ReadAsync(
 				(items, token) => CollectListAsync(items, token),
 				cancellationToken);
-	}
-
-	/// <summary>
-	/// Reads every mapped row into a new array.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <returns>An array of all the rows, in the order the database returned them. The array is empty if there are no rows.</returns>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
-	/// </remarks>
-	/// <seealso cref="ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// <seealso cref="ToList{T}(IMappedQuery{T})"/>
-	public static T[] ToArray<T>(this IMappedQuery<T> query)
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		Contract.EndContractBlock();
-
-		return query is IMappedTerminals<T> terminals
-			? terminals.Core.ToArray()
-			: query.Read(items => items.ToArray());
 	}
 
 	/// <summary>
@@ -167,7 +123,7 @@ public static class MappedQueryExtensions
 	/// An empty result is the shared empty array, which has nothing to change.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.ToArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T[]> ToArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
@@ -179,27 +135,6 @@ public static class MappedQueryExtensions
 			: query.ReadAsync(
 				async (items, token) => (await CollectListAsync(items, token).ConfigureAwait(false)).ToArray(),
 				cancellationToken);
-	}
-
-	/// <summary>
-	/// Reads every mapped row into a new <see cref="ImmutableArray{T}"/>.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <returns>An immutable array of all the rows, in the order the database returned them.</returns>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
-	/// </remarks>
-	/// <seealso cref="ToImmutableArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// <seealso cref="ToArray{T}(IMappedQuery{T})"/>
-	public static ImmutableArray<T> ToImmutableArray<T>(this IMappedQuery<T> query)
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		Contract.EndContractBlock();
-
-		return query is IMappedTerminals<T> terminals
-			? terminals.Core.ToImmutableArray()
-			: query.Read(items => items.ToImmutableArray());
 	}
 
 	internal static async ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IAsyncEnumerable<T> query, CancellationToken cancellationToken)
@@ -227,7 +162,7 @@ public static class MappedQueryExtensions
 	/// <remarks>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToImmutableArray{T}(IMappedQuery{T})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.ToImmutableArray{T}(IMappedQuery{T})"/>
 	/// <seealso cref="ToArrayAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<ImmutableArray<T>> ToImmutableArrayAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
@@ -239,37 +174,6 @@ public static class MappedQueryExtensions
 			: query.ReadAsync(
 				async (items, token) => await items.ToImmutableArrayAsync(token).ConfigureAwait(false),
 				cancellationToken);
-	}
-
-	/// <summary>
-	/// Reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>, keyed by <paramref name="keySelector"/>.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
-	/// <param name="keySelector">Produces the key for each mapped row.</param>
-	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
-	/// <returns>A dictionary of all the rows. It is empty if there are no rows.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="query"/> or <paramref name="keySelector"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
-	/// <para>
-	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a <see langword="null"/> key) throws only after the whole read.
-	/// </para>
-	/// </remarks>
-	/// <seealso cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>
-	/// <seealso cref="ToList{T}(IMappedQuery{T})"/>
-	public static Dictionary<TKey, T> ToDictionary<T, TKey>(
-		this IMappedQuery<T> query, Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer = null)
-		where TKey : notnull
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
-		Contract.EndContractBlock();
-
-		return query is IMappedTerminals<T> terminals
-			? terminals.Core.ToDictionary(keySelector, comparer)
-			: query.Read(items => items.ToDictionary(keySelector, comparer));
 	}
 
 	/// <inheritdoc cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
@@ -297,7 +201,7 @@ public static class MappedQueryExtensions
 	/// The built-in queries read every row first and add them after the last one, so a duplicate key (or a <see langword="null"/> key) throws only after the whole read.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<Dictionary<TKey, T>> ToDictionaryAsync<T, TKey>(
 		this IMappedQuery<T> query,
@@ -314,49 +218,6 @@ public static class MappedQueryExtensions
 			: query.ReadAsync(
 				(items, token) => CollectDictionaryAsync(items, keySelector, comparer, token),
 				cancellationToken);
-	}
-
-	/// <summary>
-	/// Reads every mapped row into a new <see cref="Dictionary{TKey, TValue}"/>,
-	/// keyed by <paramref name="keySelector"/>, with the value
-	/// <paramref name="valueSelector"/> returns for the row.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <typeparam name="TKey">The type of the dictionary key.</typeparam>
-	/// <typeparam name="TValue">The type of the dictionary value.</typeparam>
-	/// <param name="keySelector">Produces the key for each mapped row.</param>
-	/// <param name="valueSelector">Produces the value for each mapped row.</param>
-	/// <param name="comparer">The comparer for the keys, or <see langword="null"/> to use the default comparer.</param>
-	/// <returns>A dictionary of all the rows. It is empty if there are no rows.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="query"/>, <paramref name="keySelector"/> or <paramref name="valueSelector"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
-	/// <remarks>
-	/// <para>
-	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a <see langword="null"/> key) throws, and the selectors run, only after the whole read.
-	/// A duplicate key throws, as it does for <see cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/> and for LINQ's <c>ToDictionary</c>.
-	/// </para>
-	/// <para>
-	/// The selectors run while the reader is open, so keep them quick and do not touch the connection from inside them.
-	/// </para>
-	/// </remarks>
-	/// <seealso cref="ToDictionaryAsync{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)"/>
-	/// <seealso cref="ToDictionary{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey})"/>
-	public static Dictionary<TKey, TValue> ToDictionary<T, TKey, TValue>(
-		this IMappedQuery<T> query,
-		Func<T, TKey> keySelector,
-		Func<T, TValue> valueSelector,
-		IEqualityComparer<TKey>? comparer = null)
-		where TKey : notnull
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		if (keySelector is null) throw new ArgumentNullException(nameof(keySelector));
-		if (valueSelector is null) throw new ArgumentNullException(nameof(valueSelector));
-		Contract.EndContractBlock();
-
-		return query is IMappedTerminals<T> terminals
-			? terminals.Core.ToDictionary(keySelector, valueSelector, comparer)
-			: query.Read(
-				items => items.ToDictionary(keySelector, valueSelector, comparer));
 	}
 
 	/// <inheritdoc cref="ToDictionaryAsync{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
@@ -389,7 +250,7 @@ public static class MappedQueryExtensions
 	/// A duplicate key throws, as it does for <see cref="ToDictionaryAsync{T, TKey}(IMappedQuery{T}, Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/>.
 	/// </para>
 	/// </remarks>
-	/// <seealso cref="ToDictionary{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.ToDictionary{T, TKey, TValue}(IMappedQuery{T}, Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<Dictionary<TKey, TValue>> ToDictionaryAsync<T, TKey, TValue>(
 		this IMappedQuery<T> query,
@@ -411,42 +272,6 @@ public static class MappedQueryExtensions
 				cancellationToken);
 	}
 
-	/// <summary>
-	/// Reads every mapped row into a new <see cref="HashSet{T}"/>.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <param name="comparer">The comparer for the rows, or <see langword="null"/> to use the default comparer.</param>
-	/// <returns>A set of the distinct rows. Rows that compare equal to an earlier row are dropped.</returns>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
-	/// </remarks>
-	/// <seealso cref="ToHashSetAsync{T}(IMappedQuery{T}, IEqualityComparer{T}, CancellationToken)"/>
-	/// <seealso cref="ToList{T}(IMappedQuery{T})"/>
-	public static HashSet<T> ToHashSet<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer = null)
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		Contract.EndContractBlock();
-
-		if (query is IMappedTerminals<T> terminals)
-			return terminals.Core.ToHashSet(comparer);
-
-#if NETSTANDARD2_0
-		var result = new HashSet<T>(comparer);
-		return query.Read(items =>
-		{
-			foreach (var item in items)
-			{
-				result.Add(item);
-			}
-
-			return result;
-		});
-#else
-		return query.Read(items => items.ToHashSet(comparer));
-#endif
-	}
-
 	/// <inheritdoc cref="ToHashSetAsync{T}(IMappedQuery{T}, IEqualityComparer{T}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 		=> ToHashSetAsync<T>(query, null, cancellationToken);
@@ -462,7 +287,7 @@ public static class MappedQueryExtensions
 	/// <remarks>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='buffered']/*" />
 	/// </remarks>
-	/// <seealso cref="ToHashSet{T}(IMappedQuery{T}, IEqualityComparer{T})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.ToHashSet{T}(IMappedQuery{T}, IEqualityComparer{T})"/>
 	/// <seealso cref="ToListAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(this IMappedQuery<T> query, IEqualityComparer<T>? comparer, CancellationToken cancellationToken = default)
 	{
@@ -474,33 +299,6 @@ public static class MappedQueryExtensions
 			: query.ReadAsync(
 				(items, token) => CollectHashSetAsync(items, comparer, token),
 				cancellationToken);
-	}
-
-	/// <summary>
-	/// Reads the first mapped row.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <returns>The first row, or <see langword="default"/> if the query returns no rows.</returns>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
-	/// <remarks>
-	/// <para>
-	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
-	/// </para>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through']/*" />
-	/// </remarks>
-	/// <seealso cref="FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
-	public static T? FirstOrDefault<T>(this IMappedQuery<T> query)
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		Contract.EndContractBlock();
-
-		if (query is IMappedTerminals<T> terminals)
-		{
-			return terminals.FirstOrDefault();
-		}
-
-		return query.Read(items => items.FirstOrDefault());
 	}
 
 	/// <summary>
@@ -516,7 +314,7 @@ public static class MappedQueryExtensions
 	/// </para>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through']/*" />
 	/// </remarks>
-	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.FirstOrDefault{T}(IMappedQuery{T})"/>
 	/// <seealso cref="SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T?> FirstOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
@@ -534,31 +332,6 @@ public static class MappedQueryExtensions
 	}
 
 	/// <summary>
-	/// Reads the only mapped row.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <returns>The single row, or <see langword="default"/> if the query returns no rows.</returns>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
-	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through']/*" />
-	/// </remarks>
-	/// <seealso cref="SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
-	public static T? SingleOrDefault<T>(this IMappedQuery<T> query)
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		Contract.EndContractBlock();
-
-		if (query is IMappedTerminals<T> terminals)
-		{
-			return terminals.SingleOrDefault();
-		}
-
-		return query.Read(items => items.SingleOrDefault());
-	}
-
-	/// <summary>
 	/// Asynchronously reads the only mapped row.
 	/// </summary>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
@@ -569,7 +342,7 @@ public static class MappedQueryExtensions
 	/// <remarks>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through']/*" />
 	/// </remarks>
-	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.SingleOrDefault{T}(IMappedQuery{T})"/>
 	/// <seealso cref="FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T?> SingleOrDefaultAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
 	{
@@ -584,37 +357,6 @@ public static class MappedQueryExtensions
 		return query.ReadAsync(
 			(items, token) => SingleOrDefaultOfAsync(items, token),
 			cancellationToken);
-	}
-
-	/// <summary>
-	/// Reads the first mapped row; throws if the query returns no rows.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <returns>The first row.</returns>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
-	/// <exception cref="InvalidOperationException">The query returns no rows.</exception>
-	/// <remarks>
-	/// <para>
-	/// Rows after the first are not mapped. Add an <c>ORDER BY</c> to the SQL when "first" must be deterministic.
-	/// </para>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through-throwing']/*" />
-	/// </remarks>
-	/// <seealso cref="FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// <seealso cref="FirstOrDefault{T}(IMappedQuery{T})"/>
-	/// <seealso cref="Single{T}(IMappedQuery{T})"/>
-	public static T First<T>(this IMappedQuery<T> query)
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		Contract.EndContractBlock();
-
-		if (query is IMappedTerminals<T> terminals)
-		{
-			return terminals.First();
-		}
-
-		return query.Read(items => items.First());
 	}
 
 	/// <summary>
@@ -633,7 +375,7 @@ public static class MappedQueryExtensions
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through-throwing']/*" />
 	/// </remarks>
-	/// <seealso cref="First{T}(IMappedQuery{T})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.First{T}(IMappedQuery{T})"/>
 	/// <seealso cref="FirstOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T> FirstAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)
@@ -649,40 +391,6 @@ public static class MappedQueryExtensions
 		return query.ReadAsync(
 			(items, token) => FirstOfAsync(items, token),
 			cancellationToken);
-	}
-
-	/// <summary>
-	/// Reads the only mapped row; throws if the query returns no rows or more than one.
-	/// </summary>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <returns>The single row.</returns>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
-	/// <exception cref="InvalidOperationException">The query returns no rows, or more than one row.</exception>
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
-	/// <para>
-	/// The provider is not asked for a single row, because it could then hide the second one.
-	/// </para>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
-	/// <para>
-	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
-	/// </para>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through-throwing']/*" />
-	/// </remarks>
-	/// <seealso cref="SingleAsync{T}(IMappedQuery{T}, CancellationToken)"/>
-	/// <seealso cref="SingleOrDefault{T}(IMappedQuery{T})"/>
-	/// <seealso cref="First{T}(IMappedQuery{T})"/>
-	public static T Single<T>(this IMappedQuery<T> query)
-	{
-		if (query is null) throw new ArgumentNullException(nameof(query));
-		Contract.EndContractBlock();
-
-		if (query is IMappedTerminals<T> terminals)
-		{
-			return terminals.Single();
-		}
-
-		return query.Read(items => items.Single());
 	}
 
 	/// <summary>
@@ -704,7 +412,7 @@ public static class MappedQueryExtensions
 	/// </para>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='terminal-through-throwing']/*" />
 	/// </remarks>
-	/// <seealso cref="Single{T}(IMappedQuery{T})"/>
+	/// <seealso cref="Synchronous.SyncMappedQueryExtensions.Single{T}(IMappedQuery{T})"/>
 	/// <seealso cref="SingleOrDefaultAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	/// <seealso cref="FirstAsync{T}(IMappedQuery{T}, CancellationToken)"/>
 	public static ValueTask<T> SingleAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken = default)

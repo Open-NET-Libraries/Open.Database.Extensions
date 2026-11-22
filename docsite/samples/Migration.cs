@@ -1,6 +1,7 @@
 using System.Data;
 using Microsoft.Data.Sqlite;
 using Open.Database.Extensions;
+using Open.Database.Extensions.Synchronous;
 using Open.Database.Extensions.Core;
 
 namespace Samples;

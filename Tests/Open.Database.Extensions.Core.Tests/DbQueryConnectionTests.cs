@@ -17,7 +17,7 @@ public static class DbQueryConnectionTests
 {
 	static readonly DbQuery Query = DbQuery.Text("select 1");
 
-	static async Task Run(IExecuteReader source, bool async)
+	static async Task Run(IExecuteReaderSync source, bool async)
 	{
 		if (async)
 		{
@@ -31,7 +31,7 @@ public static class DbQueryConnectionTests
 	}
 
 	static async Task Run(DbQueryUsing source, bool async)
-		=> await Run((IExecuteReader)source, async);
+		=> await Run((IExecuteReaderSync)source, async);
 
 	static (DbTally Tally, TrackedConnection Connection, TrackedTransaction Transaction) Transaction()
 	{
@@ -201,7 +201,7 @@ public static class DbQueryConnectionTests
 		var tally = new DbTally();
 		TrackedConnection connection = Broken(tally);
 
-		((IExecuteReader)connection.Command("select 1"))
+		((IExecuteReaderSync)connection.Command("select 1"))
 			.ExecuteReader(static r => r.FieldCount);
 
 		ClosedAgain(connection);
@@ -215,7 +215,7 @@ public static class DbQueryConnectionTests
 		var tally = new DbTally();
 		TrackedConnection connection = Broken(tally);
 
-		await ((IExecuteReader)connection.Command("select 1"))
+		await ((IExecuteReaderSync)connection.Command("select 1"))
 			.ExecuteReaderAsync(static r => new ValueTask<int>(r.FieldCount));
 
 		ClosedAgain(connection);

@@ -3,7 +3,9 @@ extern alias mssql;
 using Microsoft.Data.SqlClient;
 using Expressive = mssql::Open.Database.Extensions.ExpressiveSqlCommand;
 using SqlCmd = mssql::Open.Database.Extensions.SqlCommandExtensions;
+using SyncSqlCmd = mssql::Open.Database.Extensions.Synchronous.SyncSqlCommandExtensions;
 using SqlTx = mssql::Open.Database.Extensions.SqlTransactionExtensions;
+using SyncSqlTx = mssql::Open.Database.Extensions.Synchronous.SyncSqlTransactionExtensions;
 
 namespace Open.Database.Extensions.Tests;
 
@@ -242,10 +244,10 @@ public static class SqlServerPackageTests
 		switch (overload)
 		{
 			case Overload.Sync:
-				SqlCmd.ExecuteReader(command, (Action<SqlDataReader>)(r => result = work(r)));
+				SyncSqlCmd.ExecuteReader(command, (Action<SqlDataReader>)(r => result = work(r)));
 				break;
 			case Overload.SyncValue:
-				result = SqlCmd.ExecuteReader(command, work);
+				result = SyncSqlCmd.ExecuteReader(command, work);
 				break;
 			case Overload.Async:
 				await SqlCmd.ExecuteReaderAsync(command, (Action<SqlDataReader>)(r => result = work(r)));
@@ -363,8 +365,8 @@ public static class SqlServerPackageTests
 		using var command = new SqlCommand("select 1");
 		bool called = false;
 
-		Assert.Throws(NoConnectionSync, () => SqlCmd.ExecuteReader(command, (Action<SqlDataReader>)(_ => called = true)));
-		Assert.Throws(NoConnectionSync, () => SqlCmd.ExecuteReader(command, _ =>
+		Assert.Throws(NoConnectionSync, () => SyncSqlCmd.ExecuteReader(command, (Action<SqlDataReader>)(_ => called = true)));
+		Assert.Throws(NoConnectionSync, () => SyncSqlCmd.ExecuteReader(command, _ =>
 		{
 			called = true;
 			return 1;
@@ -517,7 +519,7 @@ public static class SqlServerPackageTests
 		Func<SqlTransaction, (bool Commit, int Value)> action,
 		CancellationToken cancellationToken)
 		=> flavor == Flavor.Sync
-			? SqlTx.ExecuteTransactionConditional(connection, action, IsolationLevel.Unspecified, cancellationToken)
+			? SyncSqlTx.ExecuteTransactionConditional(connection, action, IsolationLevel.Unspecified, cancellationToken)
 			: await SqlTx.ExecuteTransactionConditionalAsync(connection, (t, _) => new ValueTask<(bool Commit, int Value)>(action(t)), IsolationLevel.Unspecified, cancellationToken);
 
 	[Theory]

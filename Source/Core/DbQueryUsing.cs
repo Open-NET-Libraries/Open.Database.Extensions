@@ -1,3 +1,5 @@
+using Open.Database.Extensions.Synchronous;
+
 using System.Diagnostics;
 
 namespace Open.Database.Extensions;
@@ -15,7 +17,7 @@ namespace Open.Database.Extensions;
 /// extensions on <see cref="IExecuteReader"/> apply to it.
 /// </remarks>
 public readonly struct DbQueryUsing
-	: IExecuteReaderAsync, IEquatable<DbQueryUsing>
+	: IExecuteReaderAsync, IExecuteReaderSync, IEquatable<DbQueryUsing>
 {
 	readonly DbQuery? _definition;
 	readonly object? _source;
@@ -160,7 +162,7 @@ public readonly struct DbQueryUsing
 
 	bool IExecuteReaderAsync.UseAsyncRead => false;
 
-	TResult IExecuteReader.ExecuteReader<TState, TResult>(
+	TResult IExecuteReaderSync.ExecuteReader<TState, TResult>(
 		TState state,
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior)
@@ -199,7 +201,7 @@ public readonly struct DbQueryUsing
 			behavior,
 			default);
 
-	void IExecuteReader.ExecuteReader(
+	void IExecuteReaderSync.ExecuteReader(
 		Action<IDataReader> handler,
 		CommandBehavior behavior)
 		=> DbQueryRunner.Run(
@@ -209,7 +211,7 @@ public readonly struct DbQueryUsing
 			handler,
 			behavior);
 
-	T IExecuteReader.ExecuteReader<T>(
+	T IExecuteReaderSync.ExecuteReader<T>(
 		Func<IDataReader, T> transform,
 		CommandBehavior behavior)
 		=> DbQueryRunner.Run(

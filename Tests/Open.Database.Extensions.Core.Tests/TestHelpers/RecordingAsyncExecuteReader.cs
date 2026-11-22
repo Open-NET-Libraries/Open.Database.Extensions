@@ -16,7 +16,7 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 internal sealed class RecordingAsyncExecuteReader(
 	IReadOnlyList<string> columns,
-	params object?[][] rows) : IExecuteReaderAsync
+	params object?[][] rows) : IExecuteReaderAsync, IExecuteReaderSync
 {
 	public CancellationToken CancellationToken { get; set; }
 

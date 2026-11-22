@@ -60,7 +60,7 @@ public static class ToChannelMappedCompletionTests
 	}
 
 	// An IExecuteReaderAsync that counts nothing and can be told to fail instead of producing a reader.
-	sealed class ScriptedCommand(object?[][] rows, Exception? failure, bool useAsyncRead) : IExecuteReaderAsync
+	sealed class ScriptedCommand(object?[][] rows, Exception? failure, bool useAsyncRead) : IExecuteReaderAsync, IExecuteReaderSync
 	{
 		public bool UseAsyncRead => useAsyncRead;
 		public CancellationToken CancellationToken => default;

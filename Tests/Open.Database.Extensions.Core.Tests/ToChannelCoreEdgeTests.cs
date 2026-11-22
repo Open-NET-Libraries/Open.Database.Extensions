@@ -23,7 +23,7 @@ public static class ToChannelCoreEdgeTests
 	}
 
 	// An IExecuteReaderAsync that can be told to fail; it counts executions and hands out a three-row reader.
-	sealed class ScriptedCommand(Exception? failure) : IExecuteReaderAsync
+	sealed class ScriptedCommand(Exception? failure) : IExecuteReaderAsync, IExecuteReaderSync
 	{
 		public int Executions;
 		public bool UseAsyncRead => false;

@@ -271,7 +271,7 @@ public static class MappedViewParityTests
 			=> new(0);
 
 		static void All<TQuery>(TQuery q, Action<TQuery> more)
-			where TQuery : IMappedQuery<int>
+			where TQuery : IMappedQuerySync<int>
 		{
 			Throws(() => q.Read(_ => { }));
 			Throws(() => q.Read(items => items.Count()));

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Open.Database.Extensions.Synchronous;
 using Open.Database.Extensions.Generator.Models;
 
 namespace Open.Database.Extensions.Benchmarks.Generated;

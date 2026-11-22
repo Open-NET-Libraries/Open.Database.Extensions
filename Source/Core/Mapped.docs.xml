@@ -49,7 +49,7 @@
   <members name="buffered">
     <para>
       All rows are buffered in memory before the call returns.
-      Use <see cref="IMappedQuery{T}.Read(Action{IEnumerable{T}})"/> to process
+      Use <see cref="Synchronous.IMappedQuerySync{T}.Read(Action{IEnumerable{T}})"/> to process
       very large results as a stream.
     </para>
   </members>

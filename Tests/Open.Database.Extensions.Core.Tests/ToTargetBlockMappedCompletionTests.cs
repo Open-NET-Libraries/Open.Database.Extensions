@@ -268,7 +268,7 @@ public static class ToTargetBlockMappedCompletionTests
 	}
 
 	// An IExecuteReader whose readers come from a factory (which may throw) and which logs when the reader was released.
-	sealed class ScriptedCommand(Func<IDataReader> open, Action<string>? log, CancellationToken token = default) : IExecuteReader
+	sealed class ScriptedCommand(Func<IDataReader> open, Action<string>? log, CancellationToken token = default) : IExecuteReaderSync
 	{
 		public CancellationToken CancellationToken => token;
 

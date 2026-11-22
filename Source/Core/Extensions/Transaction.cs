@@ -4,58 +4,6 @@
 public static partial class TransactionExtensions
 {
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
-	/// </summary>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
-	/// <param name="conditionalAction">
-	/// The handler to execute while the transaction is pending.
-	/// Returning a <c>Commit</c> value of <see langword="true"/> signals to commit the transaction.
-	/// </param>
-	/// <returns>
-	/// The value returned by <paramref name="conditionalAction"/>.
-	/// Its <c>Commit</c> value is <see langword="true"/> if the transaction was committed.
-	/// </returns>
-	/// <remarks>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="conditionalAction"/> is <see langword="null"/>.</exception>
-	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
-		this DbConnection connection,
-		Func<DbTransaction, (bool Commit, T Value)> conditionalAction,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-	{
-		if (connection is null) throw new ArgumentNullException(nameof(connection));
-		if (conditionalAction is null) throw new ArgumentNullException(nameof(conditionalAction));
-		Contract.EndContractBlock();
-
-		cancellationToken.ThrowIfCancellationRequested();
-
-		// Remember the prior state so a connection that is opened here is closed again here.
-		ConnectionState priorState = connection.EnsureOpen();
-		try
-		{
-			cancellationToken.ThrowIfCancellationRequested();
-
-			// Disposing the transaction (at the end of this block, before the connection is closed)
-			// is what rolls back anything that was not committed.
-			using DbTransaction transaction = connection.BeginTransaction(isolationLevel);
-			(bool Commit, T Value) result = conditionalAction(transaction);
-			cancellationToken.ThrowIfCancellationRequested();
-
-			if (result.Commit) transaction.Commit();
-			return result;
-		}
-		finally
-		{
-			RestoreConnection(connection, priorState);
-		}
-	}
-
-	/// <summary>
 	/// Asynchronously begins a transaction on the connection and invokes the action.
 	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
 	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
@@ -121,87 +69,6 @@ public static partial class TransactionExtensions
 		{
 			await RestoreConnectionAsync(connection, priorState).ConfigureAwait(false);
 		}
-	}
-
-	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, returns <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
-	/// </summary>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
-	/// <param name="conditionalAction">
-	/// The handler to execute while the transaction is pending.
-	/// Returning <see langword="true"/> signals to commit the transaction.
-	/// </param>
-	/// <returns><see langword="true"/> if the transaction was committed; otherwise, <see langword="false"/>.</returns>
-	/// <remarks>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="conditionalAction"/> is <see langword="null"/>.</exception>
-	public static bool ExecuteTransactionConditional(
-		this DbConnection connection,
-		Func<DbTransaction, bool> conditionalAction,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-	{
-		if (conditionalAction is null) throw new ArgumentNullException(nameof(conditionalAction));
-		Contract.EndContractBlock();
-
-		return connection.ExecuteTransactionConditional(
-			isolationLevel, cancellationToken,
-			t => (conditionalAction(t), true)).Commit;
-	}
-
-	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
-	/// </summary>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
-	/// <param name="action">The handler to execute while the transaction is pending.</param>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-value']/*" />
-	/// <remarks>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="action"/> is <see langword="null"/>.</exception>
-	public static T ExecuteTransaction<T>(
-		this DbConnection connection,
-		Func<DbTransaction, T> action,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-	{
-		if (action is null) throw new ArgumentNullException(nameof(action));
-		Contract.EndContractBlock();
-
-		return connection.ExecuteTransactionConditional(
-			isolationLevel, cancellationToken,
-			t => (true, action(t))).Value;
-	}
-
-	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
-	/// </summary>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
-	/// <param name="action">The handler to execute while the transaction is pending.</param>
-	/// <remarks>
-	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="connection"/> or <paramref name="action"/> is <see langword="null"/>.</exception>
-	public static void ExecuteTransaction(
-		this DbConnection connection,
-		Action<DbTransaction> action,
-		IsolationLevel isolationLevel = IsolationLevel.Unspecified,
-		CancellationToken cancellationToken = default)
-	{
-		if (action is null) throw new ArgumentNullException(nameof(action));
-		Contract.EndContractBlock();
-
-		connection.ExecuteTransaction(
-			t => { action(t); return true; },
-			isolationLevel, cancellationToken);
 	}
 
 	/// <summary>
@@ -397,7 +264,7 @@ public static partial class TransactionExtensions
 	/// opened, so it is closed again here.
 	/// </para>
 	/// </remarks>
-	static void RestoreConnection(DbConnection connection, ConnectionState priorState)
+	internal static void RestoreConnection(DbConnection connection, ConnectionState priorState)
 	{
 		if ((priorState & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open)
 			return;
@@ -453,38 +320,6 @@ public static partial class TransactionExtensions
 	// They carry the lowest priority so that a bare `default` argument, which has always bound to IsolationLevel,
 	// keeps doing so. A real CancellationToken can only match these, so it is unaffected.
 
-	/// <inheritdoc cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
-		this DbConnection connection,
-		Func<DbTransaction, (bool Commit, T Value)> conditionalAction,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransactionConditional(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionConditional(DbConnection, Func{DbTransaction, bool}, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static bool ExecuteTransactionConditional(
-		this DbConnection connection,
-		Func<DbTransaction, bool> conditionalAction,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransactionConditional(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction{T}(DbConnection, Func{DbTransaction, T}, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static T ExecuteTransaction<T>(
-		this DbConnection connection,
-		Func<DbTransaction, T> action,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction(DbConnection, Action{DbTransaction}, IsolationLevel, CancellationToken)"/>
-	[OverloadResolutionPriority(-1)]
-	public static void ExecuteTransaction(
-		this DbConnection connection,
-		Action<DbTransaction> action,
-		CancellationToken cancellationToken)
-		=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
-
 	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, CancellationToken, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
@@ -530,38 +365,6 @@ public static partial class TransactionExtensions
 	#region Overloads
 
 	#region No optional params
-	/// <inheritdoc cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, IsolationLevel, CancellationToken)"/>
-	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
-		this DbConnection connection,
-		IsolationLevel isolationLevel,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, (bool Commit, T Value)> conditionalAction)
-		=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionConditional(DbConnection, Func{DbTransaction, bool}, IsolationLevel, CancellationToken)"/>
-	public static bool ExecuteTransactionConditional(
-		this DbConnection connection,
-		IsolationLevel isolationLevel,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, bool> conditionalAction)
-		=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction{T}(DbConnection, Func{DbTransaction, T}, IsolationLevel, CancellationToken)"/>
-	public static T ExecuteTransaction<T>(
-		this DbConnection connection,
-		IsolationLevel isolationLevel,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, T> action)
-		=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction(DbConnection, Action{DbTransaction}, IsolationLevel, CancellationToken)"/>
-	public static void ExecuteTransaction(
-		this DbConnection connection,
-		IsolationLevel isolationLevel,
-		CancellationToken cancellationToken,
-		Action<DbTransaction> action)
-		=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
-
 	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>
 	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 		this DbConnection connection,
@@ -597,38 +400,6 @@ public static partial class TransactionExtensions
 	#endregion
 
 	#region Optional Token
-	/// <inheritdoc cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, IsolationLevel, CancellationToken)"/>
-	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
-		this DbConnection connection,
-		IsolationLevel isolationLevel,
-		Func<DbTransaction, (bool Commit, T Value)> conditionalAction,
-		CancellationToken cancellationToken = default)
-		=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionConditional(DbConnection, Func{DbTransaction, bool}, IsolationLevel, CancellationToken)"/>
-	public static bool ExecuteTransactionConditional(
-		this DbConnection connection,
-		IsolationLevel isolationLevel,
-		Func<DbTransaction, bool> conditionalAction,
-		CancellationToken cancellationToken = default)
-		=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction{T}(DbConnection, Func{DbTransaction, T}, IsolationLevel, CancellationToken)"/>
-	public static T ExecuteTransaction<T>(
-		this DbConnection connection,
-		IsolationLevel isolationLevel,
-		Func<DbTransaction, T> action,
-		CancellationToken cancellationToken = default)
-		=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction(DbConnection, Action{DbTransaction}, IsolationLevel, CancellationToken)"/>
-	public static void ExecuteTransaction(
-		this DbConnection connection,
-		IsolationLevel isolationLevel,
-		Action<DbTransaction> action,
-		CancellationToken cancellationToken = default)
-		=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
-
 	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>
 	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 		this DbConnection connection,
@@ -660,65 +431,6 @@ public static partial class TransactionExtensions
 		Func<DbTransaction, ValueTask> action,
 		CancellationToken cancellationToken = default)
 		=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
-	#endregion
-
-	#region Unspecified Isolation Level
-	/// <inheritdoc cref="ExecuteTransactionConditional{T}(DbConnection, Func{DbTransaction, ValueTuple{bool, T}}, IsolationLevel, CancellationToken)"/>
-	public static (bool Commit, T Value) ExecuteTransactionConditional<T>(
-		this DbConnection connection,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, (bool Commit, T Value)> conditionalAction)
-		=> connection.ExecuteTransactionConditional(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionConditional(DbConnection, Func{DbTransaction, bool}, IsolationLevel, CancellationToken)"/>
-	public static bool ExecuteTransactionConditional(
-		this DbConnection connection,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, bool> conditionalAction)
-		=> connection.ExecuteTransactionConditional(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction{T}(DbConnection, Func{DbTransaction, T}, IsolationLevel, CancellationToken)"/>
-	public static T ExecuteTransaction<T>(
-		this DbConnection connection,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, T> action)
-		=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransaction(DbConnection, Action{DbTransaction}, IsolationLevel, CancellationToken)"/>
-	public static void ExecuteTransaction(
-		this DbConnection connection,
-		CancellationToken cancellationToken,
-		Action<DbTransaction> action)
-		=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
-		this DbConnection connection,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, ValueTask<(bool Commit, T Value)>> conditionalAction)
-		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionConditionalAsync(DbConnection, Func{DbTransaction, ValueTask{bool}}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask<bool> ExecuteTransactionConditionalAsync(
-		this DbConnection connection,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, ValueTask<bool>> conditionalAction)
-		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionAsync{T}(DbConnection, Func{DbTransaction, ValueTask{T}}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask<T> ExecuteTransactionAsync<T>(
-		this DbConnection connection,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, ValueTask<T>> action)
-		=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
-
-	/// <inheritdoc cref="ExecuteTransactionAsync(DbConnection, Func{DbTransaction, ValueTask}, IsolationLevel, CancellationToken)"/>
-	public static ValueTask ExecuteTransactionAsync(
-		this DbConnection connection,
-		CancellationToken cancellationToken,
-		Func<DbTransaction, ValueTask> action)
-		=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
-
 	#endregion
 
 	#endregion

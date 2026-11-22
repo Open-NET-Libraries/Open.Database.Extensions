@@ -231,7 +231,7 @@ public static partial class ToChannelPipelineTests
 		}
 	}
 
-	sealed class ScriptedCommand(Func<DbDataReader> factory, bool useAsyncRead, CancellationToken token) : IExecuteReaderAsync
+	sealed class ScriptedCommand(Func<DbDataReader> factory, bool useAsyncRead, CancellationToken token) : IExecuteReaderAsync, IExecuteReaderSync
 	{
 		public bool UseAsyncRead => useAsyncRead;
 		public CancellationToken CancellationToken => token;

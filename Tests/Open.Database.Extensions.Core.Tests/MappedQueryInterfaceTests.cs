@@ -83,7 +83,7 @@ public static class MappedQueryInterfaceTests
 	// A user's IMappedQuery<T>, here a wrapper around ours: it has no
 	// configuration of its own, so it is collected without pooling, and the pool
 	// of the query it wraps is not touched.
-	sealed class Foreign(IMappedQuery<int> inner) : IMappedQuery<int>
+	sealed class Foreign(IMappedQuerySync<int> inner) : IMappedQuerySync<int>
 	{
 		public void Read(Action<IEnumerable<int>> handler)
 			=> inner.Read(handler);

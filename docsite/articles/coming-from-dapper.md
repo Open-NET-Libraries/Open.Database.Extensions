@@ -269,6 +269,8 @@ With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for t
 
 ## Which method becomes which terminal
 
+The blocking terminals in the right column (`ToList()`, `First()`, `ExecuteNonQuery()` and the like) need `using Open.Database.Extensions.Synchronous;`. The async ones do not.
+
 | Dapper | Open.Database.Extensions, after `Command(sql)` and `AddParam(...)` |
 |---|---|
 | `Query<T>` | `Map<T>().ToList()` (or `ToArray()`) |

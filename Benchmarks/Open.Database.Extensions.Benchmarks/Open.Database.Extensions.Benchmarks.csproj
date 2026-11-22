@@ -19,6 +19,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Using Include="Open.Database.Extensions.Synchronous" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
 		<PackageReference Include="Dapper" Version="2.1.89" />
 		<PackageReference Include="Dapper.AOT" Version="1.1.0" />
