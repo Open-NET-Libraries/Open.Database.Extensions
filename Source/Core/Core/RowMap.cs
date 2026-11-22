@@ -1201,7 +1201,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		}
 	}
 
-	#region Array rows (the buffered Retrieve/QueryResult route)
+	#region Array rows (the route generated mappers and the Channel and Dataflow pipelines use)
 
 	/// <summary>The layout of the <c>object[]</c> rows most recently used.</summary>
 	/// <remarks>

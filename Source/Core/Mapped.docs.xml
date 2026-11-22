@@ -200,13 +200,6 @@
     </param>
   </members>
 
-  <members name="returns-queue">
-    <returns>
-      The <see cref="QueryResultQueue{T}"/> that contains all the results and
-      the column mappings.
-    </returns>
-  </members>
-
   <members name="null-command">
     <exception cref="System.ArgumentNullException">
       <paramref name="command"/> is <see langword="null"/>.

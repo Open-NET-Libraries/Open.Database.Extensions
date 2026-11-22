@@ -29,7 +29,6 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="AsObjectArrays(IExecuteReader)"/>
-	/// <param name="command">The command to read from; the caller owns it.</param>
 	public static MappedCommand<object?[]> AsObjectArrays(this IDbCommand command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
@@ -82,7 +81,6 @@ public static partial class CoreExtensions
 	}
 
 	/// <inheritdoc cref="AsDictionaryRows(IExecuteReader)"/>
-	/// <param name="command">The command to read from; the caller owns it.</param>
 	public static MappedCommand<DictionaryRow> AsDictionaryRows(this IDbCommand command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
