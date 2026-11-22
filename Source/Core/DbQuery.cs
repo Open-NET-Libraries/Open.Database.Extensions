@@ -151,6 +151,42 @@ public sealed class DbQuery : IEquatable<DbQuery>
 		=> new(CommandText, Kind, seconds, TextNames);
 
 	/// <summary>
+	/// Maps each row to a <typeparamref name="T"/> by column name (a single value such as
+	/// <see cref="int"/> is read from the first column), and returns the mapped definition.
+	/// </summary>
+	/// <remarks>
+	/// The result is immutable and has no connection yet, so it can be held in a static field;
+	/// give it a source with <c>Using</c> and read it with a terminal.
+	/// The map is <see cref="RowMap{T}.Default"/>, shared, so its compiled reader is built once.
+	/// </remarks>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <returns>The mapped definition.</returns>
+	public MappedDbQuery<T> Map<T>()
+		=> FirstColumn<T>.Instance is { } firstColumn
+		? new(this, firstColumn)
+		: new(this, RowMap<T>.Default);
+
+	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped definition.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does.</param>
+	/// <returns>The mapped definition. It keeps <paramref name="map"/>, so its compiled reader is shared by every call.</returns>
+	public MappedDbQuery<T> Map<T>(RowMap<T>? map)
+		=> map is null ? Map<T>() : new(this, map);
+
+	/// <summary>Maps each row with a selector, and returns the mapped definition.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="selector">Called for each row.</param>
+	/// <returns>The mapped definition.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
+	public MappedDbQuery<T> Map<T>(Func<IDataRecord, T> selector)
+	{
+		if (selector is null) throw new ArgumentNullException(nameof(selector));
+		Contract.EndContractBlock();
+
+		return new(this, new SelectorSource<T>(selector));
+	}
+
+	/// <summary>
 	/// Declares the type of the values: a <see langword="struct"/>
 	/// (a <see langword="readonly"/> <see langword="record"/>
 	/// <see langword="struct"/> is the intended shape)
@@ -280,6 +316,28 @@ public sealed class DbQuery<TParams>
 	readonly DbQuery _definition;
 
 	internal DbQuery(DbQuery definition) => _definition = definition;
+
+	/// <summary>Maps each row to a <typeparamref name="T"/> by column name, and returns the mapped definition.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <returns>The mapped definition, whose parameters are the struct.</returns>
+	public MappedDbQuery<TParams, T> Map<T>()
+		=> new(_definition.Map<T>());
+
+	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped definition.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does.</param>
+	/// <returns>The mapped definition, whose parameters are the struct.</returns>
+	public MappedDbQuery<TParams, T> Map<T>(RowMap<T>? map)
+		=> new(_definition.Map(map));
+
+	/// <summary>Maps each row with a selector, and returns the mapped definition.</summary>
+	/// <typeparam name="T">The type each row is mapped to.</typeparam>
+	/// <param name="selector">Called for each row.</param>
+	/// <returns>The mapped definition, whose parameters are the struct.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
+	public MappedDbQuery<TParams, T> Map<T>(Func<IDataRecord, T> selector)
+		// DbQuery.Map throws ArgumentNullException for a null selector.
+		=> new(_definition.Map(selector));
 
 	/// <inheritdoc cref="DbQuery.Using(DbConnection)"/>
 	public DbQueryUsing<TParams> Using(DbConnection connection)
