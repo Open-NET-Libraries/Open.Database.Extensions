@@ -98,23 +98,6 @@ public static class CommandExtensionsTests
 	}
 
 	[Fact]
-	public static void FirstOrdinalResults_ReadsFirstColumn_ConvertsDBNullToNull_AndRequestsSequentialSingleResult()
-	{
-		var probe = new ConnectionProbe(ConnectionState.Closed)
-		{
-			ReaderFactory = () => FakeReader.Create(["id"], [1], [null], [3]),
-		};
-
-		var results = probe.Command.FirstOrdinalResults().ToList();
-
-		Assert.Equal([1, null, 3], results);
-		Assert.Equal(
-			CommandBehavior.SequentialAccess | CommandBehavior.SingleResult | CommandBehavior.CloseConnection,
-			probe.Behaviors.Single());
-		Assert.Contains("DisposeReader", probe.Log);
-	}
-
-	[Fact]
 	public static async Task ExecuteReaderAsync_NonDbCommand_FallsBackToSynchronousPath()
 	{
 		ConnectionProbe probe = ProbeWithRows(ConnectionState.Closed, 1);

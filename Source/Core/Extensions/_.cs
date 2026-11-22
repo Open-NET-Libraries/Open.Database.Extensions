@@ -225,25 +225,4 @@ public static partial class CoreExtensions
 		}
 	}
 
-	/// <summary>
-	/// Dequeues and yields each item of a queue until it is empty.
-	/// </summary>
-	/// <remarks>
-	/// It is not thread safe, but queueing and dequeuing items in between items is supported.
-	/// </remarks>
-	/// <typeparam name="T">The type of the items in the queue.</typeparam>
-	/// <param name="source">The queue to dequeue from.</param>
-	/// <returns>An enumerable of the items contained within the queue.</returns>
-	internal static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
-	{
-		Debug.Assert(source is not null);
-
-#if NETSTANDARD2_0
-		while (source.Count != 0)
-			yield return source.Dequeue();
-#else
-		while (source.TryDequeue(out T? a))
-			yield return a;
-#endif
-	}
 }

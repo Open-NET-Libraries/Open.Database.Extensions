@@ -78,14 +78,14 @@ public class SyncBenchmarks
 	public List<int> Column_Dapper() => _conn.Query<int>(Sql).AsList();
 
 	[BenchmarkCategory("Column"), Benchmark]
-	public List<int> Column_ODE() => _conn.Command(Sql).FirstOrdinalResults<int>().ToList();
+	public List<int> Column_ODE() => _conn.Command(Sql).Map<int>().ToList();
 
-	// Rows without a model class: Dapper's dynamic rows versus ODE's object[] rows.
+	// Rows without a model class: Dapper's dynamic rows versus ODE's object[] rows (AsObjectArrays).
 	[BenchmarkCategory("Untyped"), Benchmark(Baseline = true)]
 	public int Untyped_Dapper() => _conn.Query(Sql).AsList().Count;
 
 	[BenchmarkCategory("Untyped"), Benchmark]
-	public int Untyped_ODE() => _conn.Command(Sql).Retrieve().Result.Count;
+	public int Untyped_ODE() => _conn.Command(Sql).AsObjectArrays().ToList().Count;
 
 	[BenchmarkCategory("Dictionary"), Benchmark(Baseline = true)]
 	public Dictionary<int, Post> Dictionary_Dapper() => _conn.Query<Post>(Sql).ToDictionary(p => p.Id);

@@ -135,22 +135,36 @@ public static class Migration
 		return ids.Count;
 	}
 
-	public static async Task<(string After, string AfterAsync)> MappedDictionaries(SqliteConnection connection)
+	public static async Task<string> MappedDictionaries(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
 	{
 		#region migration_mappeddictionaries_after
-		// The first line is synchronous, like the call it replaces;
-		// the second is its async form.
-		IEnumerable<Dictionary<string, object?>> after = connection
+		// One DictionaryRow for each row, with the names of the result set shared by all of them;
+		// ToDictionary() is a copy that the caller owns.
+		List<DictionaryRow> rows = await connection
 			.Command(IdsSql)
-			.Retrieve()
-			.DequeueAsMappedDictionaries();
-		IEnumerable<Dictionary<string, object?>> afterAsync = (await connection
-			.Command(IdsSql)
-			.RetrieveAsync())
-			.DequeueAsMappedDictionaries();
+			.AsDictionaryRows()
+			.ToListAsync(cancellationToken);
+		IEnumerable<Dictionary<string, object?>> after = rows.Select(static row => row.ToDictionary());
 		#endregion
 
-		return (Key(after), Key(afterAsync));
+		return Key(after);
+	}
+
+	public static async Task<string> ObjectArrays(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
+	{
+		#region migration_objectarrays_after
+		// A value for each column, in order; a database NULL is null.
+		List<object?[]> rows = await connection
+			.Command(PostsSql)
+			.AsObjectArrays()
+			.ToListAsync(cancellationToken);
+		#endregion
+
+		return string.Join(";", rows.Select(static row => string.Join(",", row)));
 	}
 
 	public static async Task<string> DequeueAs(

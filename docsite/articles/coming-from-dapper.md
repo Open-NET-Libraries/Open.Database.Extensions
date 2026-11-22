@@ -274,7 +274,7 @@ With the extensions, use `Map(selector)` or `ExecuteReader(reader => ...)` for t
 | `Query<T>` | `Map<T>().ToList()` (or `ToArray()`) |
 | `QueryFirstOrDefault<T>`, `QuerySingleOrDefault<T>` | `Map<T>().FirstOrDefault()`, `Map<T>().SingleOrDefault()` |
 | `QueryFirst<T>`, `QuerySingle<T>` | `Map<T>().First()`, `Map<T>().Single()` |
-| `Query<int>` over one column | `Map<int>().ToList()`: the first column, converted like a property (a `long` into `int` is range-checked); a NULL gives 0, so declare `int?` to tell it from 0. `FirstOrdinalResults<T>()` returns the provider's own type instead (`long` for an integer on SQLite) |
+| `Query<int>` over one column | `Map<int>().ToList()`: the first column, converted like a property (a `long` into `int` is range-checked); a NULL gives 0, so declare `int?` to tell it from 0. |
 | `ExecuteScalar<T>` | `ExecuteScalar<T>()`; it converts the value to `T` as `Map<T>()` does |
 | `Execute` | `ExecuteNonQuery()` |
 | `QueryAsync<T>` | `ToListAsync<T>(cancellationToken)` (or `Map<T>().ToListAsync()`), which returns a `ValueTask` (async terminals need a factory of a `DbConnection` type) |

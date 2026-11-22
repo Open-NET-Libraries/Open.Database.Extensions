@@ -15,19 +15,6 @@ public static class DataRecordExtensionsTests
 	static readonly string[] Columns = ["Id", "Name", "Value"];
 
 	[Fact]
-	public static void GetValues_ReturnsAllValues_RetainingDBNull()
-	{
-		IDataRecord record = PositionedRecord(Columns, [1, DBNull.Value, "v"]);
-
-		object[] values = record.GetValues();
-
-		Assert.Equal(3, values.Length);
-		Assert.Equal(1, values[0]);
-		Assert.Equal(DBNull.Value, values[1]); // GetValues does NOT convert DBNull
-		Assert.Equal("v", values[2]);
-	}
-
-	[Fact]
 	public static void ColumnNames_And_GetNames_ReturnColumnsInOrder()
 	{
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
@@ -116,40 +103,6 @@ public static class DataRecordExtensionsTests
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
 		Assert.Equal(new object[] { "v", 1 }, record.EnumerateValuesFromOrdinals([2, 0]));
-	}
-
-	[Fact]
-	public static void GetValuesFromOrdinals_List_ReturnsSelectedArray()
-	{
-		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
-
-		object[] values = record.GetValuesFromOrdinals([2, 0]);
-
-		Assert.Equal(["v", 1], values);
-	}
-
-	[Fact]
-	public static void GetValuesFromOrdinals_ArrayBindsToIReadOnlyList()
-	{
-		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
-
-		// Arrays implement IReadOnlyList<int>, so a plain array still binds the widened overload
-		// (including on the netstandard2.0 shim).
-		int[] ordinals = [2, 0];
-		Assert.Equal(["v", 1], record.GetValuesFromOrdinals(ordinals));
-	}
-
-	[Fact]
-	public static void GetValuesFromOrdinals_Span_FillsTarget()
-	{
-		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
-
-		Span<object> target = new object[2];
-		ReadOnlySpan<int> ordinals = [1, 2];
-		record.GetValuesFromOrdinals(ordinals, target);
-
-		Assert.Equal("n", target[0]);
-		Assert.Equal("v", target[1]);
 	}
 
 	[Fact]

@@ -214,7 +214,6 @@ public static class DataReaderExtensions
 		} while (reader.Read());
 	}
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::exception) and not(self::remarks)]"/>
 	/// <remarks>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
@@ -224,16 +223,15 @@ public static class DataReaderExtensions
 	/// </remarks>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
+	internal static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: AsEnumerableCore(reader);
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool)
+	internal static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: arrayPool is null
@@ -320,68 +318,14 @@ public static class DataReaderExtensions
 			: AsEnumerableInternalCore(reader, ordinals, readStarted, arrayPool);
 	}
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::exception) and not(self::remarks)]"/>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
-	/// <para>
-	/// <see cref="DBNull"/> values are retained.
-	/// </para>
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="reader"/> or <paramref name="ordinals"/> is <see langword="null"/>.
-	/// </exception>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals)
-		=> AsEnumerableInternal(reader, ordinals, false);
-
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::remarks)]"/>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
-	/// <para>
-	/// <see cref="DBNull"/> values are retained.
-	/// </para>
-	/// </remarks>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, int n, params IEnumerable<int> others)
-		=> AsEnumerableInternal(reader, others.Prepend(n), false);
-
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='ordinals-limited']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
-	/// <inheritdoc cref="AsEnumerable(IDataReader, ArrayPool{object?}, int, IEnumerable{int})" path="/*[not(self::param) and not(self::exception)]"/>
 	/// <exception cref="ArgumentNullException">
 	/// <paramref name="reader"/> or <paramref name="ordinals"/> is <see langword="null"/>.
 	/// </exception>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool)
+	internal static IEnumerable<object[]> AsEnumerable(this IDataReader reader, IEnumerable<int> ordinals, ArrayPool<object>? arrayPool)
 		=> AsEnumerableInternal(reader, ordinals, false, arrayPool);
-
-	/// <summary>
-	/// Enumerates the remaining records of the current result set of a data reader as arrays of values;
-	/// the reader's connection is held while each row is processed.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
-	/// <para>
-	/// <see cref="DBNull"/> values are retained.
-	/// </para>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='row-pool']/*" />
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='n-others']/*" />
-	/// <returns>
-	/// An enumerable of arrays, one for each record, holding its values.
-	/// </returns>
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="reader"/> or <paramref name="others"/> is <see langword="null"/>.
-	/// </exception>
-	public static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool, int n, params IEnumerable<int> others)
-		=> AsEnumerable(reader, others.Prepend(n), arrayPool);
 
 	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken)" path="/*[not(self::param) and not(self::remarks) and not(self::exception)]"/>
 	/// <remarks>
@@ -1117,152 +1061,4 @@ public static class DataReaderExtensions
 			: IterateWhileAsyncInternal(reader, predicate, cancellationToken);
 	}
 
-	/// <summary>
-	/// Reads the first column of every remaining record of the current result set.
-	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
-	/// </para>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
-	/// <returns>An enumerable of the values of the first column.</returns>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
-	public static IEnumerable<object?> FirstOrdinalResults(this IDataReader reader)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		Contract.EndContractBlock();
-
-		// Buffer the first-column values so the reader/connection can be released before the
-		// (deferred) DBNull conversion runs during enumeration.
-		var results = new Queue<object>();
-		while (reader.Read())
-			results.Enqueue(reader.GetValue(0));
-		return results.DequeueEach().DBNullToNull();
-	}
-
-	/// <summary>
-	/// Reads the first column of every remaining record of the current result set as type <typeparamref name="T0"/>.
-	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// If the reader is a <see cref="DbDataReader"/>, a database null
-	/// becomes <see langword="default"/> for <typeparamref name="T0"/>;
-	/// otherwise <see cref="DBNull"/> values are converted to
-	/// <see langword="null"/> and then cast to <typeparamref name="T0"/>.
-	/// </para>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
-	/// </remarks>
-	/// <typeparam name="T0">The expected type of the first column.</typeparam>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
-	/// <returns>An enumerable of the values of the first column, cast to <typeparamref name="T0"/>.</returns>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
-	public static IEnumerable<T0> FirstOrdinalResults<T0>(this IDataReader reader)
-		=> reader is DbDataReader dbr
-		? dbr.FirstOrdinalResults<T0>()
-		: reader.FirstOrdinalResults().Cast<T0>();
-
-	/// <summary>
-	/// Reads the first column of every remaining record of the current result set as type <typeparamref name="T0"/>.
-	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// A database null becomes <see langword="default"/> for <typeparamref name="T0"/>.
-	/// </para>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
-	/// </remarks>
-	/// <typeparam name="T0">The expected type of the first column.</typeparam>
-	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
-	/// <returns>An enumerable of the values of the first column, as <typeparamref name="T0"/>.</returns>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
-	public static IEnumerable<T0> FirstOrdinalResults<T0>(this DbDataReader reader)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		Contract.EndContractBlock();
-
-		var results = new Queue<T0>();
-		while (reader.Read())
-			results.Enqueue(ColumnReader.Get<T0>(reader, 0));
-
-		return results.DequeueEach();
-	}
-
-	/// <summary>
-	/// Asynchronously reads the first column of every remaining record of the current result set.
-	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
-	/// </para>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
-	/// </remarks>
-	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
-	/// <returns>
-	/// A task that represents the asynchronous operation.
-	/// Its result is an enumerable of the values of the first column.
-	/// </returns>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
-	public static async ValueTask<IEnumerable<object?>> FirstOrdinalResultsAsync(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		Contract.EndContractBlock();
-
-		var results = new Queue<object>();
-		await reader.ForEachAsync(r => results.Enqueue(r.GetValue(0)), useReadAsync, cancellationToken).ConfigureAwait(false);
-		return results.DequeueEach().DBNullToNull();
-	}
-
-	/// <summary>
-	/// Asynchronously reads the first column of every remaining record of the current result set as type <typeparamref name="T0"/>.
-	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// A database null becomes <see langword="default"/> for <typeparamref name="T0"/>.
-	/// </para>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='buffered-once']/*" />
-	/// </remarks>
-	/// <typeparam name="T0">The expected type of the first column.</typeparam>
-	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
-	/// <returns>
-	/// A task that represents the asynchronous operation.
-	/// Its result is an enumerable of the values of the first column, as <typeparamref name="T0"/>.
-	/// </returns>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
-	public static async ValueTask<IEnumerable<T0>> FirstOrdinalResultsAsync<T0>(this DbDataReader reader, bool useReadAsync = true, CancellationToken cancellationToken = default)
-	{
-		if (reader is null) throw new ArgumentNullException(nameof(reader));
-		Contract.EndContractBlock();
-
-		var results = new Queue<T0>();
-		if (useReadAsync)
-		{
-			while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-			{
-				// Genuinely asynchronous column reads (matters for large values under SequentialAccess).
-				results.Enqueue(
-					await reader.IsDBNullAsync(0, cancellationToken).ConfigureAwait(false)
-					? default!
-					: await reader.GetFieldValueAsync<T0>(0, cancellationToken).ConfigureAwait(false));
-			}
-		}
-		else if (cancellationToken.CanBeCanceled)
-		{
-			while (!cancellationToken.IsCancellationRequested && reader.Read())
-				results.Enqueue(ColumnReader.Get<T0>(reader, 0));
-
-			cancellationToken.ThrowIfCancellationRequested();
-		}
-		else
-		{
-			while (reader.Read())
-				results.Enqueue(ColumnReader.Get<T0>(reader, 0));
-		}
-
-		return results.DequeueEach();
-	}
 }

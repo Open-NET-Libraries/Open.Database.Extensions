@@ -42,41 +42,7 @@ public static class ExecuteReaderEdgeTests
 		Assert.True(behavior.HasFlag(CommandBehavior.SequentialAccess));
 	}
 
-	[Fact]
-	public static void FirstOrdinalResults_ReadsEveryRowBeforeItReturns_AndTurnsNullsIntoNull()
-	{
-		TypedReader? reader = null;
-		var command = new FakeExecuteReader(() => reader = TypedReader.Create([("Id", typeof(int))], [1], [null], [3]));
-
-		IEnumerable<object?> values = command.FirstOrdinalResults();
-
-		Assert.Equal(3, reader!.RowsRead); // the reader is already disposed when the caller enumerates
-		Assert.Equal([1, null, 3], values.ToArray());
-		Assert.Equal([1, null, 3], command.FirstOrdinalResults<int?>().ToArray());
-		CommandBehavior behavior = command.Behaviors[0];
-		Assert.True(behavior.HasFlag(CommandBehavior.SequentialAccess));
-		Assert.True(behavior.HasFlag(CommandBehavior.SingleResult));
-	}
-
 	// ---- argument guards ----
-
-	[Theory]
-	[InlineData("Retrieve columnNames", "columnNames")]
-	public static void ANullArgument_IsRefusedBeforeTheCommandRuns(string call, string parameter)
-	{
-		FakeExecuteReader command = Command(1, out _);
-
-		ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() =>
-		{
-			switch (call)
-			{
-				case "Retrieve columnNames": command.Retrieve((IEnumerable<string>)null!); break;
-			}
-		});
-
-		Assert.Equal(parameter, ex.ParamName);
-		Assert.Equal(0, command.ExecuteCount);
-	}
 
 	// ---- the asynchronous forms, over a real command on a tracking connection ----
 

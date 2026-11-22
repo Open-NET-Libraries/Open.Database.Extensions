@@ -23,29 +23,6 @@ public static class DataRecordEdgeTests
 	}
 
 	[Fact]
-	public static void GetValues_WithAPool_RentsOneArrayAsLongAsTheRecord_AndKeepsNulls()
-	{
-		var pool = new SizedPool();
-		TypedReader reader = Reader([1, null, "n1"]);
-		Assert.True(reader.Read());
-
-		object[] values = reader.GetValues(pool);
-
-		Assert.Equal([3], pool.Requests);
-		Assert.Equal([1, DBNull.Value, "n1"], values);
-	}
-
-	[Fact]
-	public static void GetValues_ANullPool_IsRefusedByName()
-	{
-		TypedReader reader = Reader(TwoRows);
-
-		ArgumentNullException ex = Assert.Throws<ArgumentNullException>(() => reader.GetValues((ArrayPool<object>)null!));
-
-		Assert.Equal("arrayPool", ex.ParamName);
-	}
-
-	[Fact]
 	public static void EnumerateValuesFromOrdinals_YieldsTheFirstOrdinalThenTheOthers_AndKeepsNulls()
 	{
 		TypedReader reader = Reader([1, null, "n1"]);

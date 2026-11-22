@@ -40,11 +40,6 @@ public static class CommandExecuteFailureTests
 		["ToDataTables"] = c => c.ToDataTables(),
 		["ExecuteReader(handler)"] = c => { c.ExecuteReader(_ => { }); return null; },
 		["ExecuteReader(transform)"] = c => c.ExecuteReader(r => r.FieldCount),
-		["FirstOrdinalResults"] = c => c.FirstOrdinalResults(),
-		["FirstOrdinalResults<T>"] = c => c.FirstOrdinalResults<int>(),
-		["Retrieve()"] = c => c.Retrieve(),
-		["Retrieve(ordinals)"] = c => c.Retrieve([0, 1]),
-		["Retrieve(names)"] = c => c.Retrieve(["id", "name"]),
 	};
 
 	static readonly Dictionary<string, Func<DbCommand, CancellationToken, Task>> AsyncCalls = new()
@@ -55,9 +50,6 @@ public static class CommandExecuteFailureTests
 		["ExecuteReaderAsync<T>(Func<ValueTask<T>>)"] = (c, t) => c.ExecuteReaderAsync(r => new ValueTask<int>(r.FieldCount), CommandBehavior.Default, t).AsTask(),
 		["ExecuteReaderAsync(IDbCommand, Func<ValueTask>)"] = (c, t) => ((IDbCommand)c).ExecuteReaderAsync(_ => default, CommandBehavior.Default, t).AsTask(),
 		["ExecuteReaderAsync<T>(IDbCommand, Func<ValueTask<T>>)"] = (c, t) => ((IDbCommand)c).ExecuteReaderAsync(r => new ValueTask<int>(r.FieldCount), CommandBehavior.Default, t).AsTask(),
-		["FirstOrdinalResultsAsync"] = (c, t) => c.FirstOrdinalResultsAsync(CommandBehavior.Default, true, t).AsTask(),
-		["FirstOrdinalResultsAsync<T>"] = (c, t) => c.FirstOrdinalResultsAsync<int>(CommandBehavior.Default, true, t).AsTask(),
-		["RetrieveAsync"] = (c, t) => c.RetrieveAsync(true, t).AsTask(),
 	};
 
 	public static TheoryData<string> SyncNames() => [.. SyncCalls.Keys];
@@ -65,9 +57,9 @@ public static class CommandExecuteFailureTests
 	public static TheoryData<string> AsyncNames() => [.. AsyncCalls.Keys];
 
 	// One name per overload shape, for the variants that reach the same helper branch as the full lists above.
-	public static TheoryData<string> RepresentativeSyncNames() => ["ExecuteReader(handler)", "Retrieve()"];
+	public static TheoryData<string> RepresentativeSyncNames() => ["ExecuteReader(handler)", "ExecuteReader(transform)"];
 
-	public static TheoryData<string> RepresentativeAsyncNames() => ["ExecuteReaderAsync(Action)", "RetrieveAsync"];
+	public static TheoryData<string> RepresentativeAsyncNames() => ["ExecuteReaderAsync(Action)", "ExecuteReaderAsync<T>(Func<T>)"];
 
 	static (DbTally Tally, TrackedConnection Connection, DbCommand Command) Closed(Exception failure)
 	{

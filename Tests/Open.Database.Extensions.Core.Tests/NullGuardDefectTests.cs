@@ -13,54 +13,6 @@ public static class NullGuardDefectTests
 	static readonly IEnumerable<int> Ordinals = [0];
 	static readonly IEnumerable<string> Names = ["id"];
 
-	static readonly Dictionary<string, Action> RetrieveOnNullReader = new()
-	{
-		["Retrieve()"] = () => ((IDataReader)null!).Retrieve(),
-		["Retrieve(ordinals)"] = () => ((IDataReader)null!).Retrieve(Ordinals),
-		["Retrieve(n, others)"] = () => ((IDataReader)null!).Retrieve(0, 1),
-		["Retrieve(names)"] = () => ((IDataReader)null!).Retrieve(Names),
-		["Retrieve(c, others)"] = () => ((IDataReader)null!).Retrieve("id", "name"),
-	};
-
-	static readonly Dictionary<string, Func<Task>> RetrieveAsyncOnNullReader = new()
-	{
-		["RetrieveAsync()"] = () => ((DbDataReader)null!).RetrieveAsync(true, CancellationToken.None).AsTask(),
-		["RetrieveAsync(token)"] = () => ((DbDataReader)null!).RetrieveAsync(CancellationToken.None).AsTask(),
-		["RetrieveAsync(ordinals)"] = () => ((DbDataReader)null!).RetrieveAsync(Ordinals, true, CancellationToken.None).AsTask(),
-		["RetrieveAsync(ordinals, token)"] = () => ((DbDataReader)null!).RetrieveAsync(Ordinals, CancellationToken.None).AsTask(),
-		["RetrieveAsync(n, others)"] = () => ((DbDataReader)null!).RetrieveAsync(0, 1).AsTask(),
-		["RetrieveAsync(token, n, others)"] = () => ((DbDataReader)null!).RetrieveAsync(CancellationToken.None, 0, 1).AsTask(),
-		["RetrieveAsync(names)"] = () => ((DbDataReader)null!).RetrieveAsync(Names, false, true, CancellationToken.None).AsTask(),
-		["RetrieveAsync(names, normalize, token)"] = () => ((DbDataReader)null!).RetrieveAsync(Names, false, CancellationToken.None).AsTask(),
-		["RetrieveAsync(names, token)"] = () => ((DbDataReader)null!).RetrieveAsync(Names, CancellationToken.None).AsTask(),
-		["RetrieveAsync(c, others)"] = () => ((DbDataReader)null!).RetrieveAsync("id", "name").AsTask(),
-		["RetrieveAsync(token, c, others)"] = () => ((DbDataReader)null!).RetrieveAsync(CancellationToken.None, "id", "name").AsTask(),
-	};
-
-	public static TheoryData<string> RetrieveNames() => [.. RetrieveOnNullReader.Keys];
-
-	public static TheoryData<string> RetrieveAsyncNames() => [.. RetrieveAsyncOnNullReader.Keys];
-
-	// Defects 3 and 4: the argument that is wrong is called "reader"; it was reported as "record" or as a NullReferenceException.
-	[Theory]
-	[MemberData(nameof(RetrieveNames))]
-	public static void Retrieve_NullReader_NamesTheReader(string call)
-	{
-		var ex = Assert.Throws<ArgumentNullException>(RetrieveOnNullReader[call]);
-
-		// These have no guard of their own: GetNames guards the reader and names it "record".
-		Assert.Equal(call is "Retrieve()" or "Retrieve(ordinals)" or "Retrieve(n, others)" ? "record" : "reader", ex.ParamName);
-	}
-
-	[Theory]
-	[MemberData(nameof(RetrieveAsyncNames))]
-	public static async Task RetrieveAsync_NullReader_NamesTheReader(string call)
-	{
-		var ex = await Assert.ThrowsAsync<ArgumentNullException>(RetrieveAsyncOnNullReader[call]);
-
-		Assert.Equal("reader", ex.ParamName);
-	}
-
 	// Defect 7: a null remainder means no more ordinals. It used to be a NullReferenceException while enumerated, after the first value.
 	[Fact]
 	public static void EnumerateValuesFromOrdinals_NullRemainder_YieldsOnlyTheFirstValue()
