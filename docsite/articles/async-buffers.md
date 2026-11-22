@@ -239,7 +239,7 @@ This pool counts what it hands out and what comes back, and the samples use it t
 
 - What is cleared is the rows that were written, never the rest of a longer array. When every slot of an array was written, the pool is asked to clear it (`Return(array, clearArray: true)`); otherwise only the written slots are cleared and the array goes back without the flag.
 - For a buffer, the clear takes effect when the buffer, or its `PooledArray<T>` view, is disposed. For a stream, as each chunk goes back: at the next step, or when the enumeration ends or is disposed. For a collector, when the call ends, after the result is built.
-- A chunk is cleared where it is released, which costs about as much as handing it over for rows with no references and for chunks under 4,096 rows. A chunk of 4,096 rows or more of rows that hold references is cleared on one background loop instead, off the read path, and the loop also returns the array to the pool: neither the read nor the consumer waits for either.
+- A chunk under 128 KB of rows is cleared where it is released, which costs about as much as handing it over. A chunk of 128 KB or more of rows, value rows included, is cleared on one background loop instead, off the read path, and the loop also returns the array to the pool: neither the read nor the consumer waits for either.
 - If 10,240 clears are ever waiting (a stalled custom pool, or an extreme burst), the next chunk is cleared and returned by the code that releases it, as a small one is. A dirty array never reaches a pool, and none is left behind with its rows.
 - A custom pool's `Return` that blocks stalls the loop shared by every pool; the chunks that then pile up are cleared and returned by the code that releases them.
 

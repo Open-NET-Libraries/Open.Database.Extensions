@@ -269,7 +269,7 @@ readonly struct MappedQueryCore<T>(
 			clearOnReturn,
 			Config.Sizes,
 			Config.Bin,
-			Config.DeferFromBytes));
+			Config.DeferFromClearedBytes));
 	}
 
 	/// <summary>
@@ -1159,9 +1159,9 @@ public readonly record struct MappedQuery<T>
 	/// <para>
 	/// Here the clearing happens when the buffer, or the
 	/// <see cref="PooledArray{T}"/> view of it, is disposed (the buffer
-	/// keeps its arrays until then). A large array of rows that hold
-	/// references is handed to an internal background queue, so the read and
-	/// the consumer do not wait for it; anything else is cleared where it is
+	/// keeps its arrays until then). An array of 128 KB or more of rows
+	/// (value rows included) is handed to an internal background queue, so the read and
+	/// the consumer do not wait for it; a smaller one is cleared where it is
 	/// released. If the queue is full (10,240 waiting), or cannot take the
 	/// work, the array is cleared where it is released too, so a dirty array
 	/// never reaches the pool.
@@ -1220,9 +1220,9 @@ public readonly record struct MappedQuery<T>
 	/// <para>
 	/// Here the clearing happens as each chunk goes back, once the consumer
 	/// is done with it (at the next <see cref="IAsyncEnumerator{T}.MoveNextAsync"/>, or when the
-	/// enumeration ends or is disposed). A large chunk of rows that hold
-	/// references is handed to an internal background queue, so the read and
-	/// the consumer do not wait for it; anything else is cleared where it is
+	/// enumeration ends or is disposed). A chunk of 128 KB or more of rows
+	/// (value rows included) is handed to an internal background queue, so the read and
+	/// the consumer do not wait for it; a smaller one is cleared where it is
 	/// released. If the queue is full (10,240 waiting), or cannot take the
 	/// work, the chunk is cleared where it is released too, so a dirty array
 	/// never reaches the pool.
@@ -1269,9 +1269,9 @@ public readonly record struct MappedQuery<T>
 	/// <para>
 	/// Here the clearing happens as each chunk goes back, once the consumer
 	/// is done with its elements (the chunk is released at the next chunk
-	/// step, or when the enumeration ends or is disposed). A large chunk of
-	/// rows that hold references is handed to an internal background queue, so
-	/// the read and the consumer do not wait for it; anything else is cleared
+	/// step, or when the enumeration ends or is disposed). A chunk of 128 KB
+	/// or more of rows (value rows included) is handed to an internal background queue, so
+	/// the read and the consumer do not wait for it; a smaller one is cleared
 	/// where it is released. If the queue is full (10,240 waiting), or cannot
 	/// take the work, the chunk is cleared where it is released too, so a
 	/// dirty array never reaches the pool.

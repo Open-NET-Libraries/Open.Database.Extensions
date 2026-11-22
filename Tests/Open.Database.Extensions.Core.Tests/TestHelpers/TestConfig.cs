@@ -17,12 +17,12 @@ internal static class TestConfig
 		ArrayPool<T> pool,
 		bool? clearOnReturn,
 		RecycleBin? bin = null,
-		int deferFromBytes = ChunkConfig<T>.DefaultDeferFromBytes,
+		int deferFromClearedBytes = ChunkConfig<T>.DefaultDeferFromClearedBytes,
 		ChunkSizes? sizes = null)
 		=> new(
 			pool,
 			clearOnReturn,
 			sizes ?? ChunkSizes.Default,
 			bin ?? RecycleBin.Default,
-			deferFromBytes);
+			deferFromClearedBytes);
 }

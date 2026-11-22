@@ -7,9 +7,9 @@ using static Open.Database.Extensions.Tests.ChannelWait;
 namespace Open.Database.Extensions.Tests;
 
 // The rows of a chunk are cleared as it goes back to the pool, off the
-// read path: a chunk of ChunkConfig.DeferFromBytes bytes or more through the
+// read path: a chunk of ChunkConfig.DeferFromClearedBytes bytes or more through the
 // recycle bin, a smaller one where it is released. These tests give every
-// query its own configuration, with deferFromBytes of 1 so that every chunk
+// query its own configuration, with deferFromClearedBytes of 1 so that every chunk
 // goes through a bin: one the test owns where it counts, refuses or breaks
 // posts, otherwise the process-wide default bin. Nothing global is changed,
 // so they can run beside everything else.
@@ -23,13 +23,13 @@ public static class ClearOnReturnTests
 		=> ["buffer", "stream", "buffered"];
 
 	// The query, renting from the pool, clearing as asked, and sending every
-	// chunk to the bin (deferFromBytes 1).
+	// chunk to the bin (deferFromClearedBytes 1).
 	static MappedCommand<T> Pooled<T>(
 		MappedCommand<T> view,
 		ArrayPool<T> pool,
 		bool? clearOnReturn,
 		RecycleBin? bin = null)
-		=> view.WithConfig(TestConfig.Of(pool, clearOnReturn, bin, deferFromBytes: 1));
+		=> view.WithConfig(TestConfig.Of(pool, clearOnReturn, bin, deferFromClearedBytes: 1));
 
 	// ---- rigs ---------------------------------------------------------------
 

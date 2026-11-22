@@ -92,15 +92,6 @@ internal static class PoolClearing
 	public static bool Resolve<T>(bool? clear, bool all)
 		=> (clear ?? all) || Holds<T>.References;
 
-	/// <summary>Determines whether a row of <typeparamref name="T"/> is, or contains, a reference.</summary>
-	/// <include file="Internals.docs.xml" path="docs/members[@name='row']/*" />
-	/// <returns>
-	/// <see langword="true"/> if it is, or contains, a reference; otherwise,
-	/// <see langword="false"/>.
-	/// </returns>
-	public static bool HoldsReferences<T>()
-		=> Holds<T>.References;
-
 	/// <summary>
 	/// The floor: whether a row type is, or contains, a reference.
 	/// </summary>

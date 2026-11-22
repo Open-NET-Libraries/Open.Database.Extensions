@@ -8,8 +8,10 @@ namespace Open.Database.Extensions.Core;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Clearing applies to rows that hold references, and to <c>UsePool</c> or
-/// the app-wide switch asking for it.
+/// Rows that hold references are always cleared; other rows are cleared when <c>UsePool</c> or
+/// the app-wide switch asks for it.
+/// A chunk of 128 KB or more of rows (value rows included) is cleared here, where a smaller one is
+/// cleared where it is released.
 /// The bin is internal only: nothing outside <see cref="ArrayLease{T}"/> can
 /// feed it, and the only work it ever runs is ours and bounded (clear the
 /// rows of one array, then give it back).

@@ -55,7 +55,7 @@ namespace Open.Database.Extensions.Core;
 /// <para>
 /// A pool whose <c>Return</c> throws surfaces at the release (the next step,
 /// or the dispose) and replaces what the consumer was already about to see;
-/// with clearing on, a large chunk of rows that hold references goes through
+/// with clearing on, a chunk of 128 KB or more of rows (value rows included) goes through
 /// the background queue, where one that throws is swallowed instead.
 /// Every other chunk is still released; an array the pool refused to take is
 /// left to the garbage collector.

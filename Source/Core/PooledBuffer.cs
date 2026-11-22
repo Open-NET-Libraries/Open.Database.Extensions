@@ -35,7 +35,7 @@ namespace Open.Database.Extensions;
 /// <see cref="Dispose"/> when the read had already finished;
 /// from <see cref="Dispose"/> while the read is still running it
 /// ends in the producer's task, which nobody observes.
-/// With clearing on, a large array of rows that hold references is cleared
+/// With clearing on, an array of 128 KB or more of rows (value rows included) is cleared
 /// and returned by an internal background queue, where a return that throws
 /// is swallowed and costs only that array.
 /// When the queue is full the array is cleared and returned by the caller
@@ -46,8 +46,8 @@ namespace Open.Database.Extensions;
 /// the arrays go back to the pool, and that happens when the buffer, or the
 /// <see cref="PooledArray{T}"/> view of it, is disposed (not when the read
 /// completes).
-/// A small array, and any array of rows with no references, is cleared where
-/// it is released; a large array of rows that hold references is cleared off
+/// An array of less than 128 KB of rows is cleared where
+/// it is released; an array of 128 KB or more of rows (value rows included) is cleared off
 /// the caller's path, on an internal background queue.
 /// (If that queue is ever full, it is cleared where it is released.)
 /// </para>
@@ -258,7 +258,7 @@ public sealed class PooledBuffer<T>
 	/// </remarks>
 	/// <returns>
 	/// A task that completes when the producer has stopped and the arrays
-	/// are returned (a large chunk of rows that hold references goes to the
+	/// are returned (a chunk of 128 KB or more of rows goes to the
 	/// cleanup queue).
 	/// </returns>
 	public async ValueTask DisposeAsync()
