@@ -99,7 +99,7 @@ With no service layer there is no pass-through code to mock. What is left to tes
 
 [!code-csharp[](../samples/NoServiceLayerTests.cs#nsl_test_commands)]
 
-**The controller, end to end**, with `WebApplicationFactory` from `Microsoft.AspNetCore.Mvc.Testing`, and **one lifetime guard**: every array the request rented came back to the pool. If the test project cannot see the app's `Program` class, add `public partial class Program;` to the app.
+**The controller, end to end**, with `WebApplicationFactory` from `Microsoft.AspNetCore.Mvc.Testing`, and **one lifetime guard**: every array the request rented came back to the pool.
 
 [!code-csharp[](../samples/NoServiceLayerTests.cs#nsl_test_endpoint)]
 

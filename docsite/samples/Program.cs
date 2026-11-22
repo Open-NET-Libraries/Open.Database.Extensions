@@ -669,6 +669,3 @@ static async Task<bool> ThrowsAsync<TException>(Func<Task> action) where TExcept
 		return true;
 	}
 }
-
-// Public, so that a WebApplicationFactory<Program> can name it (the "No service layer" tests).
-public partial class Program;

@@ -88,8 +88,11 @@ public sealed class PostsEndpointTests(WebApplicationFactory<Program> app)
 public sealed class DatabaseFixture
 {
 	// Created once per collection: (re)creates and fills the tables.
-	public DatabaseFixture() => Db.Seed();
+	public DatabaseFixture()
+	{
+		Db.Seed();
+		ConnectionFactory = Db.Factory;
+	}
 
-	public IDbConnectionFactory<SqliteConnection> ConnectionFactory
-		=> Db.Factory;
+	public IDbConnectionFactory<SqliteConnection> ConnectionFactory { get; }
 }
