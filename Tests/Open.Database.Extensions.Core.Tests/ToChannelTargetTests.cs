@@ -41,7 +41,7 @@ public static class ToChannelTargetTests
 		Channel<ChannelRow> channel = Unbounded();
 
 		long count = await View(view, tally)
-			.ToChannel(channel, ChannelEnd.Complete, Ct);
+			.ToChannel(channel, complete: true, Ct);
 
 		Assert.Equal(8, count);
 		Assert.False(channel.Writer.TryWrite(new(0)));
@@ -56,7 +56,7 @@ public static class ToChannelTargetTests
 		DbTally tally = Tally(6);
 		Channel<ChannelRow> channel = Unbounded();
 
-		await Read(tally).ToChannel(channel.Writer, ChannelEnd.Complete, Ct);
+		await Read(tally).ToChannel(channel.Writer, complete: true, Ct);
 
 		Assert.False(channel.Writer.TryWrite(new(0)));
 		Assert.Equal(6, channel.Reader.Count);
@@ -68,7 +68,7 @@ public static class ToChannelTargetTests
 		DbTally tally = Tally(30);
 		Channel<ChannelRow> channel = Unbounded();
 
-		await Read(tally).ToChannel(channel, ChannelEnd.Complete, Ct);
+		await Read(tally).ToChannel(channel, complete: true, Ct);
 
 		Assert.Equal(ConnectionState.Closed, tally.Connections[0].State);
 		Assert.False(channel.Writer.TryWrite(new(0)));
@@ -191,7 +191,7 @@ public static class ToChannelTargetTests
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			async () => await Read(tally)
-				.ToChannel(channel, ChannelEnd.Complete, cts.Token));
+				.ToChannel(channel, complete: true, cts.Token));
 
 		(List<int> _, Exception? error) = await ChannelWait.Collect(channel.Reader);
 		Assert.NotNull(error);
@@ -222,7 +222,7 @@ public static class ToChannelTargetTests
 
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			async () => await Read(tally)
-				.ToChannel(channel, ChannelEnd.Complete, Ct));
+				.ToChannel(channel, complete: true, Ct));
 
 		(List<int> rows, Exception? error) = await ChannelWait.Collect(channel.Reader);
 		Assert.NotNull(error);
@@ -244,7 +244,7 @@ public static class ToChannelTargetTests
 		Assert.Throws<OperationCanceledException>(
 			() => Drop(query.ToChannel(
 				channel,
-				complete ? ChannelEnd.Complete : ChannelEnd.KeepOpen,
+				complete,
 				cts.Token)));
 
 		Assert.False(channel.Reader.Completion.IsCompleted);
@@ -254,7 +254,7 @@ public static class ToChannelTargetTests
 		FakeSource source = new(Rows(3));
 		Assert.Throws<OperationCanceledException>(
 			() => Drop(source.ToChannel(
-				channel, ChannelEnd.Complete, cts.Token)));
+				channel, complete: true, cts.Token)));
 		Assert.Equal(0, source.ChunkStreams);
 	}
 
@@ -272,8 +272,6 @@ public static class ToChannelTargetTests
 			() => Drop(query.ToChannel((Channel<ChannelRow>)null!, Ct)));
 		Assert.Throws<ArgumentNullException>(
 			() => Drop(query.ToChannel((ChannelWriter<ChannelRow>)null!, Ct)));
-		Assert.Throws<ArgumentOutOfRangeException>(
-			() => Drop(query.ToChannel(channel, (ChannelEnd)7, Ct)));
 		Assert.Throws<InvalidOperationException>(
 			() => Drop(((IMappedQuery<ChannelRow>)default(MappedQuery<ChannelRow>))
 				.ToChannel(channel, Ct)));
@@ -286,7 +284,7 @@ public static class ToChannelTargetTests
 		FakeSource source = new(Rows(10));
 		Channel<ChannelRow> channel = Unbounded();
 
-		Assert.Equal(10, await source.ToChannel(channel, ChannelEnd.Complete, Ct));
+		Assert.Equal(10, await source.ToChannel(channel, complete: true, Ct));
 
 		(List<int> rows, Exception? _) = await ChannelWait.Collect(channel.Reader);
 		Assert.Equal(ChannelWait.Ids(10), rows);
@@ -351,10 +349,10 @@ public static class ToChannelTargetTests
 		{
 			task = start == "streamingFullFirst"
 				? Read(tally)
-					.ToChannelHoldingConnection(channel, Long, ChannelEnd.Complete, Ct)
+					.ToChannelHoldingConnection(channel, Long, complete: true, Ct)
 					.AsTask()
 				: Read(tally)
-					.ToChannel(channel, ChannelEnd.Complete, Ct)
+					.ToChannel(channel, complete: true, Ct)
 					.AsTask();
 		}
 		finally

@@ -176,7 +176,9 @@ Check(ownedWritten == 5 && viaOwned.Select(p => p.Id).SequenceEqual([1, 2, 3, 4,
 (long heldWritten, List<Post> viaHeld) = await ChannelsAndDataflow.ToChannelHoldingConnectionSample(factory, CancellationToken.None);
 Check(heldWritten == 5 && viaHeld.Select(p => p.Id).SequenceEqual([1, 2, 3, 4, 5]), "ToChannelHoldingConnection delivers every row in order");
 (long delivered, List<Post> viaBlock) = await ChannelsAndDataflow.ToTargetBlockSample(factory, CancellationToken.None);
-Check(delivered == 5 && viaBlock.Count == 5, "ToTargetBlockAsync delivers every row");
+Check(delivered == 5 && viaBlock.Count == 5, "ToTargetBlock delivers every row");
+List<Post> viaSource = await ChannelsAndDataflow.AsSourceBlockSample(factory, CancellationToken.None);
+Check(viaSource.Select(p => p.Id).SequenceEqual([1, 2, 3, 4, 5]), "AsSourceBlock delivers every row in order");
 
 // Streaming from a mapped query: the query is the producer, and the
 // consumers do the slow work while it is still being read.

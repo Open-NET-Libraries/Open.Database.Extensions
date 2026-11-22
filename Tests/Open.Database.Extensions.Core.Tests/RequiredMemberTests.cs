@@ -302,40 +302,6 @@ public static class RequiredMemberTests
 		return items;
 	}
 
-	[Fact]
-	public static async Task Dataflow_MapsARequiredType_AndReportsAMissingColumn()
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		object?[][] rows = [[1, "one"], [2, "two"], [3, "three"]];
-		string message = Missing("RequiredPost", "Title", "String", "Title");
-
-		var sync = new BufferBlock<RequiredPost>();
-		Assert.Equal(3, TypedReader.Create(IdTitle, rows).ToTargetBlock(sync, true));
-		Assert.Equal([1, 2, 3], (await Received(sync, ct)).Select(p => p.Id));
-
-		var async = new BufferBlock<RequiredPost>();
-		Assert.Equal(3, await TypedReader.Create(IdTitle, rows).ToTargetBlockAsync(async, true, ct).AsTask().WaitAsync(Timeout, ct));
-		Assert.Equal([1, 2, 3], (await Received(async, ct)).Select(p => p.Id));
-
-		Assert.Equal([1, 2, 3], (await Received(TypedReader.Create(IdTitle, rows).AsSourceBlock<RequiredPost>(), ct)).Select(p => p.Id));
-		Assert.Equal([1, 2, 3], (await Received(TypedReader.Create(IdTitle, rows).AsSourceBlockAsync<RequiredPost>(cancellationToken: ct), ct)).Select(p => p.Id));
-
-		var failing = new BufferBlock<RequiredPost>();
-		ValueMappingException ex = Assert.Throws<ValueMappingException>(() => TypedReader.Create(IdOnly, [1], [2]).ToTargetBlock(failing, true));
-		Assert.Equal(message, ex.Message);
-		ex = await Assert.ThrowsAsync<ValueMappingException>(() => TypedReader.Create(IdOnly, [1], [2]).ToTargetBlockAsync(new BufferBlock<RequiredPost>(), true, ct).AsTask().WaitAsync(Timeout, ct));
-		Assert.Equal(message, ex.Message);
-
-		Assert.Equal(message, Assert.Throws<ValueMappingException>(() => TypedReader.Create(IdOnly, [1], [2]).AsSourceBlock<RequiredPost>()).Message);
-		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await TypedReader.Create(IdOnly, [1], [2]).AsSourceBlockAsync<RequiredPost>(cancellationToken: ct).Completion)).Message);
-
-		// The pipelines bind the columns of the reader before its first row, so they report the missing column even when no row follows (pinned, as for the buffered routes).
-		Assert.Equal(message, Assert.Throws<ValueMappingException>(() => TypedReader.Create(IdOnly).ToTargetBlock(new BufferBlock<RequiredPost>(), true)).Message);
-
-		// With every column present, no rows is a target that gets nothing.
-		Assert.Equal(0, TypedReader.Create(IdTitle).ToTargetBlock(new BufferBlock<RequiredPost>(), true));
-	}
-
 	// ---- T16: [SetsRequiredMembers] on the chosen constructor: nothing is enforced, the properties are ordinary ----
 
 	[Theory]

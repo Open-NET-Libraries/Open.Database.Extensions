@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Description>Useful set of utilities and abstractions for simplifying modern data-access operations with Dataflow and ensuring DI compatibility.</Description>
+		<Description>Rows from a mapped query into a TPL Dataflow block.  Includes Open.Database.Extensions.Core.</Description>
 		<PackageTags>ado;ado extensions;dataflow;data;database</PackageTags>
 	</PropertyGroup>
 

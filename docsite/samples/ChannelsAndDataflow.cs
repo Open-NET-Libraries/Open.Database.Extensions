@@ -50,7 +50,7 @@ public static class ChannelsAndDataflow
 			.Map<Post>()
 			.ToChannel(
 				channel,
-				ChannelEnd.Complete,
+				complete: true,
 				cancellationToken);
 
 		await foreach (Post post in channel.Reader.ReadAllAsync(cancellationToken))
@@ -77,7 +77,7 @@ public static class ChannelsAndDataflow
 			.ToChannelHoldingConnection(
 				channel,
 				TimeSpan.FromSeconds(30),
-				ChannelEnd.Complete,
+				complete: true,
 				cancellationToken)
 			.AsTask();
 
@@ -200,28 +200,71 @@ public static class ChannelsAndDataflow
 		return lines;
 	}
 
-	public static async Task<(long Count, List<Post> Received)> ToTargetBlockSample(
+	public static async Task<(long Written, List<Post> Received)> ToTargetBlockSample(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
 		CancellationToken cancellationToken)
 	{
-		#region to_target_block
-		var block = new BufferBlock<Post>();
-
-		// complete: true completes the block after every row
-		// has been delivered (or faults it if reading fails).
-		long count = await connectionFactory
-			.Command("select * from posts order by id")
-			.ToTargetBlockAsync<Post>(
-				block,
-				complete: true,
-				cancellationToken: cancellationToken);
-
-		// The block completes once every row has been delivered and received.
 		var received = new List<Post>();
-		while (await block.OutputAvailableAsync(cancellationToken))
-			received.Add(await block.ReceiveAsync(cancellationToken));
+
+		#region to_target_block
+		// The block is yours: its scheduler and its priorities are
+		// whatever you chose. The pass only sends to it.
+		var stage = new TransformBlock<Post, string>(
+			static post => $"#{post.Id} {post.Title}",
+			new ExecutionDataflowBlockOptions { BoundedCapacity = 100 });
+
+		var sink = new ActionBlock<string>(
+			_ => { },
+			new ExecutionDataflowBlockOptions { BoundedCapacity = 100 });
+
+		stage.LinkTo(
+			sink,
+			new DataflowLinkOptions { PropagateCompletion = true });
+
+		long written = await connectionFactory
+			.Command("select * from posts order by id")
+			.Map<Post>()
+			.ToTargetBlock(stage, complete: true, cancellationToken);
+
+		await sink.Completion;
 		#endregion
 
-		return (count, received);
+		// The same rows, for the check below.
+		BufferBlock<Post> block = new();
+		await connectionFactory
+			.Command("select * from posts order by id")
+			.Map<Post>()
+			.ToTargetBlock(block, complete: true, cancellationToken);
+
+		while (await block.OutputAvailableAsync(cancellationToken))
+			received.Add(await block.ReceiveAsync(cancellationToken));
+
+		return (written, received);
+	}
+
+	public static async Task<List<Post>> AsSourceBlockSample(
+		IDbConnectionFactory<SqliteConnection> connectionFactory,
+		CancellationToken cancellationToken)
+	{
+		var received = new List<Post>();
+
+		#region as_source_block
+		// Returns right away: the rows are read in the background
+		// and the block is completed when they are all sent.
+		IReceivableSourceBlock<Post> source = connectionFactory
+			.Command("select * from posts order by id")
+			.Map<Post>()
+			.AsSourceBlock(
+				new DataflowBlockOptions { BoundedCapacity = 100 },
+				cancellationToken);
+
+		while (await source.OutputAvailableAsync(cancellationToken))
+		{
+			while (source.TryReceive(out Post? post))
+				received.Add(post);
+		}
+		#endregion
+
+		return received;
 	}
 }

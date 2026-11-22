@@ -27,11 +27,6 @@ public enum TokenTerminal
 	ReaderFuncValueTaskTToken,
 }
 
-/// <summary>
-/// The Dataflow overloads on an <c>IExecuteReader</c> source.
-/// </summary>
-public enum DataflowShape { Plain, Pool, Transform, Mapped, MappedMap }
-
 // Every kept async terminal takes a CancellationToken, last.
 // It is used together with the command's own token: either cancels,
 // one live token is used as it is,
@@ -52,8 +47,6 @@ public static class TokenTerminalTests
 
 	public static TheoryData<TokenTerminal> Terminals
 		=> [.. Enum.GetValues<TokenTerminal>()];
-	public static TheoryData<DataflowShape> Dataflows
-		=> [.. Enum.GetValues<DataflowShape>()];
 
 	// ---- the command terminals ----
 
@@ -356,98 +349,6 @@ public static class TokenTerminalTests
 	static readonly Func<IDataRecord, TokenItem> ToItem = static r
 		=> new TokenItem { Id = r.GetInt32(0) };
 
-	// ---- Dataflow ----
-
-	static Task<long> CallDataflow(
-		DataflowShape shape,
-		RecordingAsyncExecuteReader c,
-		CancellationToken token)
-		=> shape switch
-	{
-		DataflowShape.Plain => c
-			.ToTargetBlockAsync(new BufferBlock<object[]>(), true, token)
-			.AsTask(),
-		DataflowShape.Pool => c
-			.ToTargetBlockAsync(
-				new BufferBlock<object[]>(),
-				true,
-				ArrayPool<object>.Shared,
-				token)
-			.AsTask(),
-		DataflowShape.Transform => c
-			.ToTargetBlockAsync(
-				new BufferBlock<TokenItem>(),
-				true,
-				ToItem,
-				token)
-			.AsTask(),
-		DataflowShape.Mapped => c
-			.ToTargetBlockAsync(new BufferBlock<TokenItem>(), true, token)
-			.AsTask(),
-		DataflowShape.MappedMap => c
-			.ToTargetBlockAsync(
-				new BufferBlock<TokenItem>(),
-				true,
-				(RowMap<TokenItem>?)null,
-				token)
-			.AsTask(),
-		_ => throw new ArgumentOutOfRangeException(nameof(shape)),
-	};
-
-	[Theory]
-	[MemberData(nameof(Dataflows))]
-	public static async Task Dataflow_Cancellation(DataflowShape shape)
-	{
-		using var cts = new CancellationTokenSource();
-		cts.Cancel();
-
-		RecordingAsyncExecuteReader c = Rows();
-		await Cancels(CallDataflow(shape, c, cts.Token));
-		Assert.True(Assert.Single(c.ReaderTokens).IsCancellationRequested);
-
-		c = Rows();
-		c.CancellationToken = cts.Token;
-		await Cancels(CallDataflow(shape, c, default));
-
-		foreach (bool cancelCall in new[] { true, false })
-		{
-			using var commandSource = new CancellationTokenSource();
-			using var callSource = new CancellationTokenSource();
-			c = Rows();
-			c.CancellationToken = commandSource.Token;
-			c.Stall = true;
-			Task<long> task = CallDataflow(shape, c, callSource.Token);
-			await c.Entered.Task.WaitAsync(Patience);
-			CancellationToken seen = Assert.Single(c.ReaderTokens);
-			Assert.True(seen.CanBeCanceled);
-			Assert.NotEqual(callSource.Token, seen);
-			Assert.NotEqual(commandSource.Token, seen);
-			(cancelCall ? callSource : commandSource).Cancel();
-			await Cancels(task);
-			Assert.Throws<ObjectDisposedException>(() => seen.WaitHandle);
-		}
-
-		c = Rows();
-		Assert.Equal(
-			3, await CallDataflow(shape, c, default).WaitAsync(Patience));
-		Assert.False(Assert.Single(c.ReaderTokens).CanBeCanceled);
-	}
-
-	[Fact]
-	public static async Task AsSourceBlockAsync_PassesTheCallToken_OnToTheRead()
-	{
-		using var cts = new CancellationTokenSource();
-		RecordingAsyncExecuteReader c = Rows();
-		c.Stall = true;
-		IReceivableSourceBlock<object[]> block = c.AsSourceBlockAsync(
-			null, cts.Token);
-		await c.Entered.Task.WaitAsync(Patience);
-		Assert.Equal(cts.Token, Assert.Single(c.ReaderTokens));
-		cts.Cancel();
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			() => block.Completion.WaitAsync(Patience));
-	}
-
 	// ---- allocation: a call with no token, or one token,
 	// or the same token twice, costs what the call with no token costs ----
 
@@ -659,17 +560,6 @@ public static class TokenTerminalTests
 				ct));
 
 		// the extensions: the token after the optional parameters
-		var block = new BufferBlock<object[]>();
-		await cmd.ToTargetBlockAsync(block, false);
-		await cmd.ToTargetBlockAsync(block, false, ct);
-		Assert.NotNull(cmd.AsSourceBlockAsync());
-		Assert.NotNull(cmd.AsSourceBlockAsync(null, ct));
-		Assert.NotNull(
-			cmd.AsSourceBlockAsync(ArrayPool<object>.Shared, null, ct));
-		Assert.NotNull(cmd.AsSourceBlockAsync(static _ => 1, null, ct));
-		Assert.NotNull(cmd.AsSourceBlockAsync<int>(null, ct));
-		Assert.NotNull(
-			cmd.AsSourceBlockAsync((RowMap<TokenItem>?)null, null, ct));
 	}
 }
 #pragma warning restore xUnit1051
