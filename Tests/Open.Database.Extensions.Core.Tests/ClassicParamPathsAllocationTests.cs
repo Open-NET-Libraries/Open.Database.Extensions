@@ -12,12 +12,13 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class ClassicParamPathsAllocationTests
 {
+	// An interned literal: the text is scanned once, so the list is sized from it and a written name is resolved against it.
+	const string Text5 = "select @p0, @p1, @p2, @p3, @p4";
+
+#if !DEBUG
 	const string Value = "value";
 
-	// An interned literal: the text is scanned once, so the list is sized from it and a written name is resolved against it.
 	const string Text1 = "select @p0";
-
-	const string Text5 = "select @p0, @p1, @p2, @p3, @p4";
 
 	// The bytes the chain adds, measured in Release.
 	// What the chain adds for one parameter and for five, the same for every way of adding them (the list and its array).
@@ -77,6 +78,7 @@ public static class ClassicParamPathsAllocationTests
 		if (Environment.GetEnvironmentVariable("ODE_ALLOC_LOG") is { Length: > 0 } path)
 			File.AppendAllText(path, line + Environment.NewLine);
 	}
+#endif
 
 	// What the chain adds to the command: the bytes of the whole chain less those of the command with no parameters.
 	[Fact]
