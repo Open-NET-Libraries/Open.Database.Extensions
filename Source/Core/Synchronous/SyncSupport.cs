@@ -28,7 +28,7 @@ static class SyncSupport
 	/// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
 	/// <exception cref="NotSupportedException">The query does not implement <see cref="IMappedQuerySync{T}"/>.</exception>
 	internal static IMappedQuerySync<T> AsSync<T>(this IMappedQuery<T> query)
-		=> query as IMappedQuerySync<T> ?? throw Missing(query, nameof(query), nameof(IMappedQuerySync<T>) + "<T>");
+		=> query as IMappedQuerySync<T> ?? throw Missing(query, nameof(query), nameof(IMappedQuerySync<>) + "<T>");
 
 	static Exception Missing(object? instance, string paramName, string needed)
 		=> instance is null

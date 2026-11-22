@@ -19,7 +19,7 @@ internal readonly record struct Col(string Name, Type Type)
 /// An <see cref="IExecuteReader"/> over an in-memory <see cref="DataTable"/>: every execution reads a new <see cref="DataTableReader"/>,
 /// a <see cref="DbDataReader"/> that reports each column's declared type, so the typed getters and the NULL tests run as on a provider.
 /// </summary>
-internal sealed class TableQuery(Col[] columns, params object?[][] rows) : IExecuteReader
+internal sealed class TableQuery(Col[] columns, params object?[][] rows) : IExecuteReaderSync
 {
 	public static DataTable Table(Col[] columns, params object?[][] rows)
 	{

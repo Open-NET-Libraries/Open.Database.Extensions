@@ -29,14 +29,6 @@
 *REMOVED*static Open.Database.Extensions.SqlTransactionExtensions.ExecuteTransactionConditional<T>(this Microsoft.Data.SqlClient.SqlConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<Microsoft.Data.SqlClient.SqlTransaction!, (bool Commit, T Value)>! conditionalAction) -> (bool Commit, T Value)
 *REMOVED*static Open.Database.Extensions.SqlTransactionExtensions.ExecuteTransactionConditionalAsync(this Microsoft.Data.SqlClient.SqlConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<Microsoft.Data.SqlClient.SqlTransaction!, System.Threading.Tasks.ValueTask<bool>>! conditionalAction) -> System.Threading.Tasks.ValueTask<bool>
 *REMOVED*static Open.Database.Extensions.SqlTransactionExtensions.ExecuteTransactionConditionalAsync<T>(this Microsoft.Data.SqlClient.SqlConnection! connection, System.Threading.CancellationToken cancellationToken, System.Func<Microsoft.Data.SqlClient.SqlTransaction!, System.Threading.Tasks.ValueTask<(bool Commit, T Value)>>! conditionalAction) -> System.Threading.Tasks.ValueTask<(bool Commit, T Value)>
-*REMOVED*
-*REMOVED*
-*REMOVED*
-*REMOVED*
-*REMOVED*
-*REMOVED*
-*REMOVED*
-*REMOVED*
 Open.Database.Extensions.Synchronous.SyncSqlCommandExtensions
 Open.Database.Extensions.Synchronous.SyncSqlTransactionExtensions
 static Open.Database.Extensions.SqlCommandExtensions.ExecuteReaderAsync(this Microsoft.Data.SqlClient.SqlCommand! command, System.Action<Microsoft.Data.SqlClient.SqlDataReader!>! handler, System.Data.CommandBehavior behavior, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
