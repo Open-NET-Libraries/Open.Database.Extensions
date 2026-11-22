@@ -115,7 +115,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 | An interface | `'IPost' cannot be mapped: it is an interface. Map to a class or struct, or use Map(selector).` |
 | An abstract class or a delegate | The same, with `it is an abstract class` or `it is a delegate` |
 | A dictionary (`Dictionary<,>`, `IDictionary<,>`, `IReadOnlyDictionary<,>`) or a dynamic object (`ExpandoObject`) | ``'Dictionary`2' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, use AsDictionaryRows() for the values with their column names, or use Map(selector).`` |
-| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `AsSourceBlock<T>`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().` |
+| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `AsSourceBlock<T>`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>(), which reads the first column; else ExecuteScalar<T>().` |
 | No public constructor | `'Post' cannot be mapped: it has no public constructor.` |
 | Two or more public constructors, none without parameters | `'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).` |
 | A `required` public field | `'Post' cannot be mapped: its required field 'Title' cannot be set. Make it a property.` |
@@ -123,7 +123,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 
 ## One value per row
 
-On a command, `Map<int>()` reads the first column of each row as one value, and the terminals of `Map<int>()` work as for a row model: `db.Command(sql).Map<int>().ToList()`. The async terminals are also on the command itself, taking the type: `db.Command(sql).ToArrayAsync<int>(ct)` is `db.Command(sql).Map<int>().ToArrayAsync(ct)` (`ToListAsync`, `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `FirstAsync`, `FirstOrDefaultAsync`, `SingleAsync`, `SingleOrDefaultAsync`). For a row model the same terminals map by column name, so `ToListAsync<Post>(ct)` is `Map<Post>().ToListAsync(ct)`. There is no synchronous shortcut on the command: write `Map<T>().ToList()`.
+On a command, `Map<int>()` reads the first column of each row as one value, and its terminals work as for a row model: `await db.Command(sql).Map<int>().ToArrayAsync(ct)`. For a row model the same terminals map by column name, so `Map<Post>().ToListAsync(ct)` reads rows as `Post`.
 
 [!code-csharp[](../samples/Mapping.cs#map_single_value)]
 
@@ -133,11 +133,11 @@ The rules:
 - **The first column, whatever its name.** The other columns are ignored, so select only the one you need.
 - **Converted like a property of that type.** When the column type matches, or is an integer that fits (a `long` into an `int` is range-checked; a `short` widens), the value is read with the typed getter and nothing is boxed. Otherwise it is converted: a `decimal` into an `int` rounds, text into a `Guid`, an enum from its name (ignoring case) or its number, a `DateTime` into a `DateTimeOffset`. A value that cannot be converted throws `ValueMappingException`. The reader is chosen once per result set, from the type the first row reports.
 - **NULL.** Follows [the NULL rules](#null-in-a-non-nullable-column): `Map<int>().Single()` over a NULL is `0`, and `Map<int?>()` gives `null`.
-- **Read through.** As every `Map` terminal, they (and the async forms on the command) read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
+- **Read through.** As every `Map` terminal, they read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
 
 It differs from `ExecuteScalar<T>()`, which returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
-Pass the token or nothing to these `Async` forms: the token goes straight after the comparer, or first when there is no comparer (`ToHashSetAsync<int>(ct)`, `ToHashSetAsync(comparer, ct)`), as on `MappedQuery<T>`.
+Pass the token or nothing to the `Async` terminals: the token goes straight after the comparer, or first when there is no comparer (`ToHashSetAsync(ct)`, `ToHashSetAsync(comparer, ct)`).
 
 Errors in the data throw per row: a missing `required` column and an unconvertible value throw `ValueMappingException`, and a constructor that throws is wrapped (see [Values that cannot be mapped](#values-that-cannot-be-mapped)).
 

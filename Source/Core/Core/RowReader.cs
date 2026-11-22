@@ -192,10 +192,21 @@ internal static class RowReader
 		IRowSource<T> source, IDataReader reader, int skip, int take,
 		ChunkConfig<T> config, CancellationToken token = default)
 	{
-		// A bare IDataReader has no DbDataReader fast path: Stream reads it (and
-		// treats take 0 the same way as the line below), then ToArray copies.
+		// A bare IDataReader has no DbDataReader fast path: Fill reads it through Stream into the same sink.
 		if (reader is not DbDataReader db)
-			return Stream(source, reader, skip, take, false, token).ToArray();
+		{
+			// The sink is a mutable struct, so it is disposed by hand (a using variable would hand Fill a copy).
+			var sink = new ArraySink<T>(config);
+			try
+			{
+				Fill(source, reader, skip, take, ref sink, token);
+				return sink.ToArray();
+			}
+			finally
+			{
+				sink.Dispose();
+			}
+		}
 
 		if (take == 0 || !SkipRows(db, skip) || !db.Read()) return [];
 

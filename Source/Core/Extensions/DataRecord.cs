@@ -165,7 +165,6 @@ public static partial class DataRecordExtensions
 	/// <returns>An array of mappings. It is empty if <paramref name="columnNames"/> is an empty collection.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
 	/// <exception cref="IndexOutOfRangeException">One or more requested columns do not exist. The message lists all the invalid names.</exception>
-	/// <seealso cref="GetMatchingOrdinals(IDataRecord, IEnumerable{string}, bool)"/>
 	public static (string Name, int Ordinal)[] GetOrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
 		// An empty list returns before OrdinalMapping, which throws ArgumentNullException for a null record or null column names.
@@ -328,20 +327,6 @@ public static partial class DataRecordExtensions
 			}
 		}
 	}
-
-	/// <summary>
-	/// Finds the requested columns that exist in the record, matching names case-insensitively, and returns the mappings as an array.
-	/// </summary>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
-	/// <param name="columnNames">The requested column names. Names that do not exist in the record are skipped rather than reported.</param>
-	/// <param name="sort"><see langword="true"/> to return the mappings in the record's column order; <see langword="false"/> to return them in the requested order.</param>
-	/// <returns>An array of (name, ordinal) mappings, where each name is the column's actual name in the record.</returns>
-	/// <remarks>
-	/// Use <see cref="OrdinalMapping(IDataRecord, IEnumerable{string})"/> or <see cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/> instead when a missing column should be an error.
-	/// </remarks>
-	/// <exception cref="ArgumentException">A requested name is <see langword="null"/>, empty, or white space. It can be thrown when the result is enumerated rather than when this method is called.</exception>
-	public static (string Name, int Ordinal)[] GetMatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
-		=> MatchingOrdinals(record, columnNames, sort).ToArray();
 
 	/// <summary>
 	/// Lazily enumerates the provider's data type name of every column of the current result set, in ordinal order.

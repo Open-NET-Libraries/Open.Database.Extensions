@@ -177,13 +177,12 @@ Output values cannot be read back yet. You can send an output parameter (`AddPar
 | `ExecuteReturn<T>()` | The value of the return-value parameter: [see above](#return-values-and-output-parameters) |
 | `Execute(command => ...)` | Whatever your function returns, given the raw command with its text, parameters and timeout applied: use it for a call the other terminals do not wrap |
 | `ExecuteReader(reader => ...)` | Whatever your function returns, given the live reader |
-| `Map<T>()` then a terminal | Mapped objects: see [Mapping rows to objects](mapping.md) |
-| `ToListAsync<T>()`, `ToArrayAsync<T>()`, `ToImmutableArrayAsync<T>()`, `FirstAsync<T>()`, `FirstOrDefaultAsync<T>()`, `SingleAsync<T>()`, `SingleOrDefaultAsync<T>()`, `ToHashSetAsync<T>()` | `Map<T>()` then that async terminal (for a synchronous read write `Map<T>().ToList()`); a single value such as `int` reads the first column: [One value per row](mapping.md#one-value-per-row) |
+| `Map<T>()` then a terminal | Mapped objects, or one value per row such as `int` read from the first column: see [Mapping rows to objects](mapping.md) and [One value per row](mapping.md#one-value-per-row) |
 | `Map<T>()` then `ToChannelReader()`, or `ToTargetBlock<T>()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
 The blocking terminals (`ExecuteNonQuery()`, `ExecuteScalar`, `ExecuteReturn`, `Execute`, `ExecuteReader` and the `Map<T>()` terminals such as `ToList()`) are in the `Open.Database.Extensions.Synchronous` namespace: add `using Open.Database.Extensions.Synchronous;` to call them. The `Async` terminals need no extra `using`.
 
-The terminals that take the type read one column as easily as a model; the token goes last:
+`Map<T>()` reads one column as easily as a model; the token goes last:
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#single_value_async)]
 
@@ -196,7 +195,7 @@ The terminals that take the type read one column as easily as a model; the token
 - **`ExecuteScalar<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). A `NULL` or no rows gives `default(T)`.
 - **`ExecuteScalar(value => ...)`** to convert in your own way. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
 - **`ExecuteScalar()`** for the raw value: `DBNull.Value` for a `NULL`, `null` for no rows.
-- **`ToListAsync<T>()`** (or `Map<T>().ToList()`, `ToArrayAsync<T>()`, ...) for many rows of one column: it converts like a property, as `ExecuteScalar<T>()` does. See [One value per row](mapping.md#one-value-per-row).
+- **`Map<T>()` then `ToListAsync(token)`** (or `ToList()`, `ToArrayAsync(token)`, ...) for many rows of one column: it converts like a property, as `ExecuteScalar<T>()` does. See [One value per row](mapping.md#one-value-per-row).
 
 `ExecuteScalar<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. To tell a `NULL` from 0, ask for the nullable type: `int?` or `long?`.
 
