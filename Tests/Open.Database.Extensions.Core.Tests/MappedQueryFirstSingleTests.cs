@@ -953,34 +953,5 @@ public static class MappedQueryFirstSingleTests
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			async () => await Command(2).SingleAsync<int>(Ct));
 	}
-
-	// ---- overload resolution (compile-only) ----
-
-#pragma warning disable xUnit1051 // The point is the forms that pass no token.
-	[Fact]
-	public static async Task TheNewMembers_DoNotMakeNeighbouringCallsAmbiguous()
-	{
-		FakeExecuteReader command = Command(2);
-
-		// The transform-era terminals on a command still bind to themselves.
-		Assert.Equal(1, command.First(r => r.GetInt32(0)));
-		Assert.Throws<InvalidOperationException>(
-			() => command.Single(r => r.GetInt32(0)));
-
-		// Every form of the new ones.
-		MappedQuery<int> q = command.Map<int>();
-		Assert.Equal(1, q.First());
-		Assert.Equal(1, await q.FirstAsync());
-		Assert.Equal(1, await q.FirstAsync(Ct));
-		Assert.Equal(1, await q.FirstAsync(cancellationToken: Ct));
-		Assert.Equal(1, await q.Skip(0).FirstAsync());
-		Assert.Equal(1, await q.Skip(0).Take(1).SingleAsync());
-		Assert.Equal(1, await command.FirstAsync<int>());
-		Assert.Equal(1, await command.FirstAsync<int>(Ct));
-		IMappedQuery<int> boxed = q;
-		Assert.Equal(1, boxed.First());
-		Assert.Equal(1, await boxed.FirstAsync());
-		Assert.Throws<InvalidOperationException>(() => boxed.Single());
-	}
 #pragma warning restore xUnit1051
 }

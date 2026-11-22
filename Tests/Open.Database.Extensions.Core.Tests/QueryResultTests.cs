@@ -55,21 +55,6 @@ public static class QueryResultTests
 	private static readonly string[] Names = ["a"];
 
 	[Fact]
-	public static void QueryResultCollection_NullResultIsEmpty_AndEnumeratesResult()
-	{
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Empty(new QueryResultCollection<int, List<int>>(
-		#pragma warning restore CS0618
-			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, null!));
-
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		var collection = new QueryResultCollection<int>(
-		#pragma warning restore CS0618
-			ImmutableArray<int>.Empty, ImmutableArray<string>.Empty, Result);
-		Assert.Equal([1, 2, 3], collection.ToList());
-	}
-
-	[Fact]
 	public static void QueryResultQueue_EnumerableOverload_CopiesIntoAQueue()
 	{
 		var source = new List<int> { 1, 2 };
@@ -78,30 +63,6 @@ public static class QueryResultTests
 		source.Add(3);
 
 		Assert.Equal([1, 2], result.Result.ToArray());
-	}
-
-	[Fact]
-	public static void AsMappedDictionaries_MapsNamesToValues_AndConvertsDBNullToNull()
-	{
-		var result = new QueryResult<IEnumerable<object?[]>>(
-			[0, 1],
-			["Id", "Name"],
-			new[]
-			{
-				new object?[] { 1, "a" },
-				[2, DBNull.Value],
-			});
-
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		var dictionaries = result.AsMappedDictionaries().ToList();
-		#pragma warning restore CS0618
-
-		Assert.Equal(2, dictionaries.Count);
-		Assert.Equal(1, dictionaries[0]["Id"]);
-		Assert.Equal("a", dictionaries[0]["Name"]);
-		Assert.Equal(2, dictionaries[1]["Id"]);
-		Assert.True(dictionaries[1].ContainsKey("Name"));
-		Assert.Null(dictionaries[1]["Name"]);
 	}
 
 	[Fact]

@@ -19,8 +19,6 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	where TThis : ExpressiveDbCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 {
 	const string LaterSets = "Map also reads the later result sets, so a failure in one is thrown; to read only the first, as this method does, call .SingleResult() before Map (cmd.SingleResult().Map(...); .Map(...).SingleResult() still works).";
-	const string ResultsAsyncObsolete = "Use .Map<T>().ToListAsync() instead (.Map(map).ToListAsync() when you pass a RowMap; Map does not accept a null map; pass a CancellationToken to ToListAsync if you want one, it is optional and combines with the command's token). " + LaterSets + " Map returns a List<T>. Removed in 12.";
-	const string TakeAsyncObsolete = "Use .Map(selector).Take(count).ToListAsync(cancellationToken) instead. " + LaterSets + " It returns a List<T>, and Take(0) now runs the command; this method did not. Map has no CommandBehavior argument: if you passed one, use var list = new List<T>(); await cmd.IterateReaderWhileAsync(r => { list.Add(selector(r)); return list.Count < count; }, behavior). Removed in 12.";
 	const string ToListAsyncObsolete = "Use .Map(selector).ToListAsync(cancellationToken) instead. " + LaterSets + " Map has no CommandBehavior argument: if you passed one, use var list = new List<T>(); await cmd.IterateReaderAsync(r => list.Add(selector(r)), behavior). Removed in 12.";
 
 	/// <summary>
@@ -236,50 +234,6 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	}
 
 	/// <summary>
-	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/>, then <see cref="MappedQuery{T}.Take(int)"/>, then <see cref="MappedQueryWithTake{T}.ToListAsync(CancellationToken)"/>.
-	/// Asynchronously transforms each record with a function until the count is met.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Commands.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// <para>
-	/// <c>Map</c> has no <see cref="CommandBehavior"/> argument: if you passed one, run the reader yourself with
-	/// <c>IterateReaderWhileAsync(record =&gt; { list.Add(selector(record)); return list.Count &lt; count; }, behavior)</c>.
-	/// </para>
-	/// </remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="transform">The transform function to process each <see cref="IDataRecord"/>.</param>
-	/// <param name="count">The maximum number of records before complete.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <returns>
-	/// A task that represents the asynchronous operation; its result is the
-	/// list of values returned by <paramref name="transform"/>.
-	/// </returns>
-	/// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
-	[Obsolete(TakeAsyncObsolete)]
-	public ValueTask<IList<T>> TakeAsync<T>(Func<IDataRecord, T> transform, int count, CommandBehavior behavior = CommandBehavior.Default)
-	{
-		if (transform is null) throw new ArgumentNullException(nameof(transform));
-		if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot be negative.");
-		Contract.EndContractBlock();
-
-		return count == 0
-			? new ValueTask<IList<T>>(Array.Empty<T>())
-			: TakeAsyncCore();
-
-		async ValueTask<IList<T>> TakeAsyncCore()
-		{
-			var results = new List<T>();
-			await this.IterateReaderWhileAsync(record =>
-			{
-				results.Add(transform(record));
-				return results.Count < count;
-			}, behavior).ConfigureAwait(false);
-			return results;
-		}
-	}
-
-	/// <summary>
 	/// Reads the first column from every record and returns the results as a list.
 	/// <see cref="DBNull"/> values are converted to <see langword="null"/>.
 	/// </summary>
@@ -337,67 +291,6 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 		string c,
 		params IEnumerable<string> others)
 		=> RetrieveAsync(others.Prepend(c));
-
-	/// <summary>
-	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader, Func{IDataRecord, T})"/> then <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>.
-	/// Asynchronously returns all records via a transform function.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Commands.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// <para>
-	/// <c>Map</c> has no <see cref="CommandBehavior"/> argument: if you passed one, run the reader yourself with
-	/// <c>IterateReaderAsync(record =&gt; list.Add(selector(record)), behavior)</c>.
-	/// </para>
-	/// </remarks>
-	/// <typeparam name="T">The return type of the transform function.</typeparam>
-	/// <param name="transform">The function that transforms each <see cref="IDataRecord"/>.</param>
-	/// <param name="behavior">The behavior to use with the data reader.</param>
-	/// <returns>
-	/// A task that represents the asynchronous operation; its result is the
-	/// list of results.
-	/// </returns>
-	[Obsolete(ToListAsyncObsolete)]
-	public async ValueTask<List<T>> ToListAsync<T>(Func<IDataRecord, T> transform, CommandBehavior behavior = CommandBehavior.Default)
-	{
-		var results = new List<T>();
-		await this.IterateReaderAsync(record => results.Add(transform(record)), behavior).ConfigureAwait(false);
-		return results;
-	}
-
-	/// <summary>
-	/// Obsolete: use <see cref="CoreExtensions.Map{T}(IExecuteReader)"/> then <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>.
-	/// Asynchronously returns all records and iteratively attempts to map the fields to type T.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Commands.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// <para>Declare the <see cref="RowMap{T}"/> once and pass it: a map built in the call (a <c>new RowMap&lt;T&gt;(...)</c> or a collection expression in the argument) is rebuilt, and its row reader compiled, on every call.</para>
-	/// </remarks>
-	/// <typeparam name="T">The model type to map the values to (using reflection).</typeparam>
-	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	/// <returns>
-	/// A task that represents the asynchronous operation; its result is the
-	/// results.
-	/// </returns>
-	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped; thrown before the command runs.</exception>
-	/// <seealso cref="RowMap{T}"/>
-	[Obsolete(ResultsAsyncObsolete)]
-	public ValueTask<IEnumerable<T>> ResultsAsync<T>(RowMap<T>? map = null)
-	{
-		// An unmappable T fails here, before the command runs.
-		RowMap<T>.ThrowIfUnmappable();
-
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync(map, useReadAsync: UsesAsyncReads));
-	}
-
-	/// <inheritdoc cref="ResultsAsync{T}(RowMap{T}?)"/>
-	[Obsolete(ResultsAsyncObsolete)]
-	public ValueTask<IEnumerable<T>> ResultsAsync<T>()
-	{
-		// An unmappable T fails here, before the command runs.
-		RowMap<T>.ThrowIfUnmappable();
-
-		return ExecuteReaderAsync(reader => reader.ResultsBufferedAsync<T>(useReadAsync: UsesAsyncReads));
-	}
 
 	/// <summary>
 	/// Asynchronously reads all records within the first result set and returns the results.

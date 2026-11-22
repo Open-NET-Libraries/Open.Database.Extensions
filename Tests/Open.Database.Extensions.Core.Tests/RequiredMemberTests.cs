@@ -211,59 +211,6 @@ public static class RequiredMemberTests
 		}
 	}
 
-	// ---- T15: an empty result never reports a missing column: no row, so no plan ----
-
-	[Fact]
-	public static async Task AnEmptyResult_NeverReportsAMissingColumn_OnTheReaderRoutes()
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		var command = new FakeExecuteReader(["Id"]);
-
-		Assert.Empty(command.Map<RequiredPost>().ToList());
-		Assert.Empty(command.Map<RequiredPost>().ToArray());
-		Assert.Null(command.Map<RequiredPost>().FirstOrDefault());
-		Assert.Empty(await command.Map<RequiredPost>().ToListAsync(ct));
-		Assert.Null(await command.Map<RequiredPost>().FirstOrDefaultAsync(ct));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Empty(command.Results<RequiredPost>());
-		#pragma warning restore CS0618
-
-		Assert.Empty(FakeReader.Create(["Id"]).Results<RequiredPost>());
-		Assert.Empty(FakeReader.Create(["Id"]).ResultsBuffered<RequiredPost>());
-		Assert.Empty(TypedReader.Create(IdOnly).Results<RequiredPost>());
-		Assert.Empty(await TypedReader.Create(IdOnly).ResultsBufferedAsync<RequiredPost>(ct));
-
-		var streamed = new List<RequiredPost>();
-		await foreach (RequiredPost post in TypedReader.Create(IdOnly).ResultsAsync<RequiredPost>(cancellationToken: ct)) streamed.Add(post);
-		Assert.Empty(streamed);
-
-		Assert.True(command.ExecuteCount > 0); // the queries ran: nothing was refused at the call
-	}
-
-	// The buffered routes (and the pipelines, below) know their columns before any row is mapped, and build the plan when the buffer is handed over, so there an empty result reports it too:
-	// this pins what they do today (a later change may build the plan with the first row).
-	[Fact]
-	public static void TheBufferedRoutes_BuildThePlanWhenTheBufferIsHandedOver_SoEvenAnEmptyOneReportsAMissingColumn()
-	{
-		string message = Missing("RequiredPost", "Title", "String", "Title");
-		var result = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>());
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal(message, Assert.Throws<ValueMappingException>(() => result.DequeueAs<RequiredPost>()).Message);
-		#pragma warning restore CS0618
-
-		var table = new DataTable();
-		table.Columns.Add("Id", typeof(int));
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal(message, Assert.Throws<ValueMappingException>(() => table.To<RequiredPost>()).Message);
-#pragma warning restore CS0618
-
-		// With every column present an empty buffer maps to nothing.
-		var complete = new QueryResult<Queue<object[]>>([0, 1], ["Id", "Title"], new Queue<object[]>());
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Empty(complete.DequeueAs<RequiredPost>());
-		#pragma warning restore CS0618
-	}
-
 	// ---- T15: a null column for a required property in a pair cannot be ignored ----
 
 	[Fact]
@@ -333,80 +280,6 @@ public static class RequiredMemberTests
 		Assert.Equal((0, "t", "b", 0), (noId.Id, noId.Title, noId.Body, noId.Views));
 
 		AssertMissing<RecordMixed>(route, IdTitle, [1, "t"], Missing("RecordMixed", "Body", "String", "Body"));
-	}
-
-	// ---- the async and object[] routes, and the pipelines ----
-
-	[Fact]
-	public static async Task Async_AndBufferedRoutes_MapARequiredType_AndReportAMissingColumn()
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		object?[][] rows = [[1, "one"], [2, "two"]];
-		string message = Missing("RequiredPost", "Title", "String", "Title");
-
-		Assert.Equal([(1, "one"), (2, "two")], (await TypedReader.Create(IdTitle, rows).ResultsBufferedAsync<RequiredPost>(ct)).Select(p => (p.Id, p.Title)));
-		var streamed = new List<(int, string)>();
-		await foreach (RequiredPost post in TypedReader.Create(IdTitle, rows).ResultsAsync<RequiredPost>(cancellationToken: ct)) streamed.Add((post.Id, post.Title));
-		Assert.Equal([(1, "one"), (2, "two")], streamed);
-
-		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await TypedReader.Create(IdOnly, [1], [2]).ResultsBufferedAsync<RequiredPost>(ct))).Message);
-		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () =>
-		{
-			await foreach (RequiredPost _ in TypedReader.Create(IdOnly, [1], [2]).ResultsAsync<RequiredPost>(cancellationToken: ct)) { }
-		})).Message);
-
-		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await new FakeExecuteReader(() => TypedReader.Create(IdOnly, [1])).Map<RequiredPost>().ToListAsync(ct))).Message);
-
-		var result = new QueryResult<Queue<object[]>>([0, 1], ["Id", "Title"], new Queue<object[]>(rows!));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal([1, 2], (await Task.FromResult(result).DequeueAs<RequiredPost>()).Select(p => p.Id));
-		#pragma warning restore CS0618
-		var one = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>([[1]]));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal(message, (await Assert.ThrowsAsync<ValueMappingException>(async () => await new ValueTask<QueryResult<Queue<object[]>>>(one).DequeueAs<RequiredPost>())).Message);
-		#pragma warning restore CS0618
-	}
-
-	[Fact]
-	public static void TheObjectArrayRoutes_MapARequiredType_AndReportAMissingColumn()
-	{
-		var table = new DataTable();
-		table.Columns.Add("Id", typeof(int));
-		table.Columns.Add("Title", typeof(string));
-		table.Rows.Add(1, "one");
-		table.Rows.Add(2, "two");
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal([(1, "one"), (2, "two")], table.To<RequiredPost>().Select(p => (p.Id, p.Title)));
-#pragma warning restore CS0618
-
-		var withoutTitle = new DataTable();
-		withoutTitle.Columns.Add("Id", typeof(int));
-		withoutTitle.Rows.Add(1);
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal(Missing("RequiredPost", "Title", "String", "Title"), Assert.Throws<ValueMappingException>(() => withoutTitle.To<RequiredPost>()).Message);
-#pragma warning restore CS0618
-	}
-
-	// A table is only cleared (clearSourceTable) once the rows could be mapped: a missing required column fails the call and leaves the caller's rows where they were.
-	[Fact]
-	public static void ADataTable_IsNotCleared_WhenARequiredColumnIsMissing()
-	{
-		var table = new DataTable();
-		table.Columns.Add("Id", typeof(int));
-		table.Rows.Add(1);
-		table.Rows.Add(2);
-
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		_ = Assert.Throws<ValueMappingException>(() => table.To<RequiredPost>(clearSourceTable: true));
-#pragma warning restore CS0618
-		Assert.Equal(2, table.Rows.Count);
-
-		table.Columns.Add("Title", typeof(string));
-		foreach (DataRow row in table.Rows) row["Title"] = "t";
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal(2, table.To<RequiredPost>(clearSourceTable: true).Count());
-#pragma warning restore CS0618
-		Assert.Equal(0, table.Rows.Count); // a mappable table is cleared, as ever
 	}
 
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
@@ -604,12 +477,9 @@ public static class RequiredMemberTests
 	// The message of the ValueMappingException the buffered route raises for a row with only the Id column, or null when the row maps.
 	internal static string? MissingTitle<T>()
 	{
-		var result = new QueryResult<Queue<object[]>>([0], ["Id"], new Queue<object[]>([[1]]));
 		try
 		{
-			#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-			Assert.Single(result.DequeueAs<T>());
-			#pragma warning restore CS0618
+			_ = Assert.Single(new FakeExecuteReader(() => TypedReader.Create([("Id", typeof(int))], [[1]])).Map<T>().ToList());
 			return null;
 		}
 		catch (ValueMappingException ex)

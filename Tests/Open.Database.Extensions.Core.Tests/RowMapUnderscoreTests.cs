@@ -159,30 +159,6 @@ public static class RowMapUnderscoreTests
 		Assert.Equal(upperId, twins.ID);
 	}
 
-	// ---- (f) the buffered object[] route ----
-
-	[Fact]
-	public static void BufferedRows_MapUnderscoredColumns()
-	{
-		QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, CountsNames.Length)], [.. CountsNames], new Queue<object[]>([CountsRow()!]));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		AssertCounts(result.DequeueAs<Counts>().Single());
-		#pragma warning restore CS0618
-	}
-
-	// ---- (g) a NULL through an underscored column keeps the initializer ----
-
-	[Fact]
-	public static void ANullThroughAnUnderscoredColumn_KeepsTheInitializer()
-	{
-		AssertCounts(Cmd(CountsColumns, CountsRow(nullDate: true)).Map<Counts>().ToList().Single(), nullDate: true);
-
-		QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, CountsNames.Length)], [.. CountsNames], new Queue<object[]>([CountsRow(nullDate: true)!]));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		AssertCounts(result.DequeueAs<Counts>().Single(), nullDate: true);
-		#pragma warning restore CS0618
-	}
-
 	// ---- a wide result set ----
 
 	[Fact]

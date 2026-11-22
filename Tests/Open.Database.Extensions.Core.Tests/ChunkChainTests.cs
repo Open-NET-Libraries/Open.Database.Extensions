@@ -405,23 +405,6 @@ public static class ChunkChainTests
 			Assert.Equal(i, queue.Dequeue().Value);
 		Assert.Empty(queue);
 	}
-	[Theory]
-	[InlineData(0)]
-	[InlineData(1)]
-	[InlineData(17)]
-	[InlineData(100)]
-	public static async Task ResultsBuffered_ReturnsEveryRow_InOrder(int n)
-	{
-		await using var syncReader = new ChannelTestReader(n);
-		IEnumerable<PoolRow> sync = syncReader
-			.ResultsBuffered<PoolRow>(null);
-		AssertIds([.. sync], n);
-
-		await using var asyncReader = new ChannelTestReader(n);
-		IEnumerable<PoolRow> buffered = await asyncReader
-			.ResultsBufferedAsync<PoolRow>(null, true, Ct);
-		AssertIds([.. buffered], n);
-	}
 
 	// ---- calls that really suspend never share a chain -----------------------
 

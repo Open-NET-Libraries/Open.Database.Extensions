@@ -32,7 +32,6 @@ namespace Open.Database.Extensions;
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Convenience and style.")]
 public static class MappedQueryExtensions
 {
-	const string ReadAsyncTokenFirstObsolete = "Pass the token last: query.ReadAsync(handler, cancellationToken). Removed in 12.";
 
 	/// <summary>
 	/// Asynchronously executes the query and passes the mapped rows to
@@ -84,67 +83,6 @@ public static class MappedQueryExtensions
 
 		return query.ReadAsync((items, _) => handler(items), cancellationToken);
 	}
-
-	/// <summary>
-	/// Obsolete: use <c>query.ReadAsync(handler, cancellationToken)</c>.
-	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/>.
-	/// The cancellation token comes first so the handler can be written as a trailing lambda.
-	/// </summary>
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
-	/// </remarks>
-	/// <inheritdoc cref="ReadAsync{T}(IMappedQuery{T}, Func{IAsyncEnumerable{T}, ValueTask}, CancellationToken)"/>
-	[Obsolete(ReadAsyncTokenFirstObsolete)]
-	public static ValueTask ReadAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, ValueTask> handler)
-		=> query.ReadAsync(handler, cancellationToken);
-
-	/// <summary>
-	/// Obsolete: use <c>query.ReadAsync(handler, cancellationToken)</c>.
-	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/>, and returns the handler's result.
-	/// The cancellation token comes first so the handler can be written as a trailing lambda.
-	/// </summary>
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
-	/// </remarks>
-	/// <inheritdoc cref="ReadAsync{T, TResult}(IMappedQuery{T}, Func{IAsyncEnumerable{T}, ValueTask{TResult}}, CancellationToken)"/>
-	[Obsolete(ReadAsyncTokenFirstObsolete)]
-	public static ValueTask<TResult> ReadAsync<T, TResult>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, ValueTask<TResult>> handler)
-		=> query.ReadAsync(handler, cancellationToken);
-
-	/// <summary>
-	/// Obsolete: use <c>query.ReadAsync(handler, cancellationToken)</c>.
-	/// Asynchronously executes the query and passes the mapped rows to <paramref name="handler"/> together with the cancellation token in effect.
-	/// The cancellation token comes first so the handler can be written as a trailing lambda.
-	/// </summary>
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
-	/// </remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-async']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-task']/*" />
-	/// <seealso cref="IMappedQuery{T}.ReadAsync(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask}, CancellationToken)"/>
-	[Obsolete(ReadAsyncTokenFirstObsolete)]
-	public static ValueTask ReadAsync<T>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler)
-		=> query.ReadAsync(handler, cancellationToken);
-
-	/// <summary>
-	/// Obsolete: use <c>query.ReadAsync(handler, cancellationToken)</c>.
-	/// Asynchronously executes the query, passes the mapped rows to <paramref name="handler"/> together with the cancellation token in effect, and returns the handler's result.
-	/// The cancellation token comes first so the handler can be written as a trailing lambda.
-	/// </summary>
-	/// <remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='obsolete-11']/*" />
-	/// </remarks>
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-result']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='token']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='handler-async']/*" />
-	/// <include file="../Mapped.docs.xml" path="docs/members[@name='returns-task-result']/*" />
-	/// <seealso cref="IMappedQuery{T}.ReadAsync{TResult}(Func{IAsyncEnumerable{T}, CancellationToken, ValueTask{TResult}}, CancellationToken)"/>
-	[Obsolete(ReadAsyncTokenFirstObsolete)]
-	public static ValueTask<TResult> ReadAsync<T, TResult>(this IMappedQuery<T> query, CancellationToken cancellationToken, Func<IAsyncEnumerable<T>, CancellationToken, ValueTask<TResult>> handler)
-		=> query.ReadAsync(handler, cancellationToken);
 
 	/// <summary>
 	/// Reads every mapped row into a new <see cref="List{T}"/>.

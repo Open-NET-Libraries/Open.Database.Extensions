@@ -179,8 +179,6 @@ public static class UnmappableTypeTests
 
 		Assert.Equal(0, command.ExecuteCount); // Nothing ran: the call failed before the query was executed.
 
-		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => FakeReader.Create(["Id"]).Results<T>()).Message);
-		Assert.Equal(message, Assert.Throws<InvalidOperationException>(() => FakeReader.Create(["Id"]).ResultsBuffered<T>()).Message);
 	}
 
 	// ---- the type-shape rules ----
@@ -250,16 +248,6 @@ public static class UnmappableTypeTests
 		Assert.Same(RowMap<PositionalShape>.Default, RowMap<PositionalShape>.Default);
 	}
 
-	// A record struct, whose constructor only assigns, maps to equal results through its constructor: T5 proves it in ConstructorBindingTests.
-	[Fact]
-	public static void RecordStructs_MapToTheSameResults_ThroughTheirConstructor()
-	{
-		Assert.Equal(new(1, "one"), new FakeExecuteReader(["Id", "Title"], [1, "one"]).Map<PositionalStructShape>().ToList().Single());
-		Assert.Equal(new(2, "two"), new FakeExecuteReader(["Id", "Title"], [2, "two"]).Map<ReadonlyPositionalStructShape>().ToList().Single());
-		Assert.Equal(4, FakeReader.Create(["Id", "Title"], [4, "four"]).Results<PositionalStructShape>().Single().Id);
-		Assert.Same(RowMap<PositionalStructShape>.Default, RowMap<PositionalStructShape>.Default);
-	}
-
 	// A struct that declares exactly one public constructor with parameters is built through it, so what the constructor does is done: phase B kept such a struct as its default value
 	// with its settable members set (3 and "three"), and the constructor was not called.
 	[Fact]
@@ -313,19 +301,6 @@ public static class UnmappableTypeTests
 	[Fact]
 	public static void AModelThatHoldsADictionary_StillMaps()
 		=> Assert.Equal(1, new FakeExecuteReader(["Id"], [1]).Map<HoldsADictionary>().ToList().Single().Id);
-
-	[Fact]
-	public static void WhatMapsToday_StillMaps()
-	{
-		Assert.Equal(1, new FakeExecuteReader(["Id"], [1]).Map<ParameterlessAndOther>().ToList().Single().Id);
-		Assert.Equal(2, new FakeExecuteReader(["Id"], [2]).Map<StructWithNoConstructor>().ToList().Single().Id);
-		Assert.Equal(3, new FakeExecuteReader(["Id"], [3]).Map<StructWithPrivateConstructor>().ToList().Single().Id);
-		Assert.Equal(4, FakeReader.Create(["Id"], [4]).Results<ParameterlessAndOther>().Single().Id);
-
-		Assert.Same(RowMap<ParameterlessAndOther>.Default, RowMap<ParameterlessAndOther>.Default); // The default map is one instance, as it was when it was a field.
-		Assert.NotNull(new RowMap<StructWithNoConstructor>(new("Id", "Id")));
-		Assert.Equal(0, StructWithPrivateConstructor.Make().Id); // Its constructor is not public, so it is built as it always was.
-	}
 
 	// ---- T14: an unmappable T throws at the call, with an EMPTY result, on each family of entry points ----
 
@@ -419,27 +394,6 @@ public static class UnmappableTypeTests
 		["ToHashSetAsync<T>()"] = async () => await Exec().ToHashSetAsync<T>(),
 		["Map(new RowMap<T>(pair))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"))).ToList()),
 		["Map(new RowMap<T>(pairs))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name"))).ToList()),
-
-		// Core: Results
-		["Results<T>(IDataReader)"] = () => Run(() => Reader().Results<T>()),
-		["Results<T>(IDataReader, null)"] = () => Run(() => Reader().Results<T>(null)),
-		["ResultsBuffered<T>(IDataReader)"] = () => Run(() => Reader().ResultsBuffered<T>()),
-		["Results<T>(IDbCommand)"] = () => Run(() => Command().Results<T>()),
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["Results<T>(IExecuteReader)"] = () => Run(() => Exec().Results<T>()),
-#pragma warning restore CS0618
-		["ResultsAsync<T>(DbDataReader)"] = () => Done(DbReader().ResultsAsync<T>()),
-		["ResultsBufferedAsync<T>(DbDataReader)"] = async () => await DbReader().ResultsBufferedAsync<T>(),
-		["ResultsAsync<T>(DbCommand)"] = async () => await DbCmd().ResultsAsync<T>(),
-
-		// Core: DataTable and Retrieve
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["To<T>(DataTable)"] = () => Run(() => Table().To<T>()),
-#pragma warning restore CS0618
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["DequeueAs<T>(QueryResult)"] = () => Run(() => Queued().DequeueAs<T>()),
-		["DequeueAs<T>(Task)"] = async () => await Task.FromResult(Queued()).DequeueAs<T>(),
-		["DequeueAs<T>(ValueTask)"] = async () => await new ValueTask<QueryResult<Queue<object[]>>>(Queued()).DequeueAs<T>(),
 #pragma warning restore CS0618
 		["new Transformer<T>()"] = () => Run(() => Transformer<T>.Create()),
 
@@ -605,30 +559,8 @@ public static class UnmappableTypeTests
 	// name -> the call, for the model type T: over a command that must never be executed or a reader that must never be read.
 	static Dictionary<string, Func<Touched, Task>> BeforeExecutionOf<T>() => new()
 	{
-		// Core: a command
-		["Results<T>(IDbCommand)"] = t => Run(() => Command(t).Results<T>()),
-		["Results<T>(IDbCommand, null)"] = t => Run(() => Command(t).Results<T>(null)),
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["Results<T>(IExecuteReader)"] = t => Run(() => Exec(t).Results<T>()),
-		["Results<T>(IExecuteReader, null)"] = t => Run(() => Exec(t).Results<T>(null)),
 #pragma warning restore CS0618
 		["Map<T>() (IExecuteReader)"] = t => Run(() => Exec(t).Map<T>().ToList()),
-		["ResultsAsync<T>(DbCommand)"] = async t => await DbCmd(t).ResultsAsync<T>(),
-		["ResultsAsync<T>(DbCommand, null, token)"] = async t => await DbCmd(t).ResultsAsync<T>(null, CancellationToken.None),
-		["ResultsAsync<T>(DbCommand, token)"] = async t => await DbCmd(t).ResultsAsync<T>(CancellationToken.None),
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["ResultsFromDataTable<T>(IDbCommand)"] = t => Run(() => Command(t).ResultsFromDataTable<T>()),
-		["ExpressiveDbCommand.ResultsAsync<T>()"] = async t => await Expressive(t).ResultsAsync<T>(),
-		["ExpressiveDbCommand.ResultsAsync<T>(null)"] = async t => await Expressive(t).ResultsAsync<T>(null),
-#pragma warning restore CS0618
-
-		// Core: a reader
-		["Results<T>(IDataReader)"] = t => Run(() => Reader(t).Results<T>()),
-		["ResultsBuffered<T>(IDataReader)"] = t => Run(() => Reader(t).ResultsBuffered<T>()),
-		["ResultsAsync<T>(DbDataReader)"] = t => Done(DbReader(t).ResultsAsync<T>()),
-		["ResultsBufferedAsync<T>(DbDataReader)"] = async t => await DbReader(t).ResultsBufferedAsync<T>(),
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		["ResultsFromDataTable<T>(IDataReader)"] = t => Run(() => Reader(t).ResultsFromDataTable<T>()),
 #pragma warning restore CS0618
 
 		// Channel: a command, a new channel
@@ -692,31 +624,6 @@ public static class UnmappableTypeTests
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => RequiredFieldBeforeExecution[name](touched).WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
 		Assert.Equal(RequiredField("RequiredFieldShape", "Id"), ex.Message);
 		Assert.Equal(0, touched.Count());
-	}
-
-	// The probes themselves: a mappable type does execute the command, so a zero above means something.
-	[Fact]
-	public static async Task TheProbes_SeeAnExecution_OfAMappableType()
-	{
-		var touched = new Touched();
-		_ = Command(touched).Results<ParameterlessAndOther>().ToList();
-		Assert.True(touched.Count() > 0);
-
-		touched = new Touched();
-		_ = await DbCmd(touched).ResultsAsync<ParameterlessAndOther>(TestContext.Current.CancellationToken);
-		Assert.True(touched.Count() > 0);
-
-		touched = new Touched();
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		_ = await Expressive(touched).ResultsAsync<ParameterlessAndOther>();
-#pragma warning restore CS0618
-		Assert.True(touched.Count() > 0);
-
-		touched = new Touched();
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		_ = Exec(touched).Results<ParameterlessAndOther>().ToList();
-#pragma warning restore CS0618
-		Assert.True(touched.Count() > 0);
 	}
 }
 

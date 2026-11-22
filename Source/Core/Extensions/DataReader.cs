@@ -11,10 +11,6 @@ namespace Open.Database.Extensions;
 #pragma warning restore IDE0079 // Remove unnecessary suppression
 public static class DataReaderExtensions
 {
-	const string ReaderToListObsolete = "Use reader.Map(transform).ToList() instead. It reads the current result set, as this method does, and takes no CancellationToken: if you passed one, use reader.Select(transform, cancellationToken).ToList(). Removed in 12.";
-	const string ReaderToArrayObsolete = "Use reader.Map(transform).ToArray() instead. It reads the current result set, as this method does. Removed in 12.";
-	const string ReaderToImmutableArrayObsolete = "Use reader.Map(transform).ToImmutableArray() instead. It reads the current result set, as this method does. Removed in 12.";
-	const string ReaderToListAsyncObsolete = "Use await reader.Map(transform).ToListAsync(cancellationToken) instead. It reads the current result set, as this method does, but with Read() where this method used ReadAsync. Removed in 12.";
 
 	/// <summary>
 	/// Calls a handler for each remaining record of the current result set of an <see cref="IDataReader"/>;
@@ -825,61 +821,6 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <summary>
-	/// Iterates the remaining records of the current result set and returns the transformed results as a list.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// <para>
-	/// Use <c>reader.Map(transform)</c> and its <c>ToList</c> terminal instead.
-	/// It reads the current result set, as this method does,
-	/// but takes no token: to pass one, use
-	/// <c>reader.Select(transform, cancellationToken)</c> in its place.
-	/// </para>
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
-	/// <returns>A list of the transformed results.</returns>
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
-	/// </exception>
-	/// <exception cref="OperationCanceledException">
-	/// The token was canceled.
-	/// </exception>
-	[Obsolete(ReaderToListObsolete)]
-	public static List<T> ToList<T>(this IDataReader reader,
-		Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
-		=> reader.Select(transform, cancellationToken).ToList();
-
-	/// <summary>
-	/// Asynchronously iterates the remaining records of the current result set and returns the transformed results as a list.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// <para>
-	/// Use <c>await reader.Map(transform).ToListAsync(cancellationToken)</c> instead.
-	/// It reads the current result set, as this method does,
-	/// but with <c>Read</c> where this method used <c>ReadAsync</c>.
-	/// </para>
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
-	/// <param name="reader">The <see cref="DbDataReader"/> to read from.</param>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
-	/// <returns>
-	/// A task that represents the asynchronous operation.
-	/// Its result is a list of the transformed results.
-	/// </returns>
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
-	/// </exception>
-	[Obsolete(ReaderToListAsyncObsolete)]
-	public static ValueTask<List<T>> ToListAsync<T>(this DbDataReader reader,
-		Func<IDataRecord, T> transform, CancellationToken cancellationToken = default)
-		=> ToListAsyncCore(reader, transform, cancellationToken);
-
 	internal static async ValueTask<List<T>> ToListAsyncCore<T>(DbDataReader reader,
 		Func<IDataRecord, T> transform, CancellationToken cancellationToken)
 	{
@@ -919,48 +860,6 @@ public static class DataReaderExtensions
 		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false)) list.Add(await transform(reader).ConfigureAwait(false));
 		return list;
 	}
-
-	/// <summary>
-	/// Iterates the remaining records of the current result set and returns the transformed results as an array.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// <para>
-	/// Use <c>reader.Map(transform)</c> and its <c>ToArray</c> terminal instead.
-	/// It reads the current result set, as this method does.
-	/// </para>
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
-	/// <returns>An array of the transformed results.</returns>
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
-	/// </exception>
-	[Obsolete(ReaderToArrayObsolete)]
-	public static T[] ToArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
-		=> reader.Select(transform).ToArray();
-
-	/// <summary>
-	/// Iterates the remaining records of the current result set and returns the transformed results as an immutable array.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// <para>
-	/// Use <c>reader.Map(transform)</c> and its <c>ToImmutableArray</c> terminal instead.
-	/// It reads the current result set, as this method does.
-	/// </para>
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
-	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
-	/// <returns>An immutable array of the transformed results.</returns>
-	/// <exception cref="ArgumentNullException">
-	/// <paramref name="reader"/> or <paramref name="transform"/> is <see langword="null"/>.
-	/// </exception>
-	[Obsolete(ReaderToImmutableArrayObsolete)]
-	public static ImmutableArray<T> ToImmutableArray<T>(this IDataReader reader, Func<IDataRecord, T> transform)
-		=> reader.Select(transform).ToImmutableArray();
 
 	/// <summary>
 	/// Loads the current result set of an <see cref="IDataReader"/> into a <see cref="DataTable"/>.

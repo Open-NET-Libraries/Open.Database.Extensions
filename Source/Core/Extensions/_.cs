@@ -5,7 +5,6 @@
 /// </summary>
 public static partial class CoreExtensions
 {
-	const string ToDataTableObsolete = "Use table.Map(map).ToList() instead. It returns a List<T>, not a lazy enumerable, and has no clearSourceTable argument: clear the table yourself after reading it. Removed in 12.";
 
 	internal static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
 		=> (remaining == null || remaining.Count == 0) ? [first] : remaining.Prepend(first);
@@ -228,32 +227,6 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Loads all the data of a <see cref="DataTable"/> into a queue before iterating (dequeuing) the results as type <typeparamref name="T"/>.
-	/// </summary>
-	/// <remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// <para>
-	/// Use <c>table.Map(map)</c> instead.
-	/// </para>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='rowmap-once']/*" />
-	/// </remarks>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='map-T']/*" />
-	/// <param name="table">The <see cref="DataTable"/> to read from.</param>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='map']/*" />
-	/// <param name="clearSourceTable">
-	/// <see langword="true"/> to clear the source table before providing the enumeration;
-	/// otherwise, <see langword="false"/>.
-	/// The default is <see langword="false"/>.
-	/// </param>
-	/// <returns>An enumerable used to iterate the results.</returns>
-	/// <seealso cref="RowMap{T}"/>
-	[Obsolete(ToDataTableObsolete)]
-	public static IEnumerable<T> To<T>(this DataTable table, RowMap<T>? map = null, bool clearSourceTable = false)
-		=> Transformer<T>
-		.Create(map)
-		.Results(table, clearSourceTable);
-
-	/// <summary>
 	/// Dequeues and yields each item of a queue until it is empty.
 	/// </summary>
 	/// <remarks>
@@ -265,7 +238,7 @@ public static partial class CoreExtensions
 	/// <exception cref="ArgumentNullException">
 	/// <paramref name="source"/> is <see langword="null"/>. It is thrown when the enumeration starts.
 	/// </exception>
-	public static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
+	internal static IEnumerable<T> DequeueEach<T>(this Queue<T> source)
 	{
 		if (source is null) throw new ArgumentNullException(nameof(source));
 		Contract.EndContractBlock();

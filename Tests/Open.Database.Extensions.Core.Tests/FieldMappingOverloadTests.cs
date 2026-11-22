@@ -8,8 +8,4 @@ namespace Open.Database.Extensions.Tests;
 public static class FieldMappingOverloadTests
 {
 	static IDataReader Reader() => FakeReader.Create(["given_name", "family_name"], ["Ada", "Lovelace"]);
-
-	[Fact]
-	public static void NoOverrides_LeavesUnmatchedNull()
-		=> Assert.Null(Reader().Results<Person>().Single().FirstName);
 }

@@ -233,42 +233,4 @@ public static partial class ConnectionExtensions
 				connection.Open();
 		}
 	}
-
-	const string ObsoleteMessage = "The library always uses ConfigureAwait(false), so this argument is ignored. Call the overload without it.";
-
-	/// <include file="Connections.docs.xml" path="docs/members[@name='configure-await-ignored']/*" />
-	/// <param name="connection">The connection to open.</param>
-	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
-	/// <inheritdoc cref="EnsureOpenAsync(DbConnection, CancellationToken)" path="/*[not(self::summary) and not(self::param)]"/>
-	[Obsolete(ObsoleteMessage)]
-	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
-	public static ValueTask<ConnectionState> EnsureOpenAsync(
-		this DbConnection connection,
-		bool configureAwait,
-		CancellationToken cancellationToken = default)
-		=> connection.EnsureOpenAsync(cancellationToken);
-
-	/// <include file="Connections.docs.xml" path="docs/members[@name='configure-await-ignored']/*" />
-	/// <param name="connection">The connection to open.</param>
-	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
-	/// <inheritdoc cref="EnsureOpenAsync(IDbConnection, CancellationToken)" path="/*[not(self::summary) and not(self::param)]"/>
-	[Obsolete(ObsoleteMessage)]
-	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
-	public static ValueTask<ConnectionState> EnsureOpenAsync(
-		this IDbConnection connection,
-		bool configureAwait,
-		CancellationToken cancellationToken = default)
-		=> connection.EnsureOpenAsync(cancellationToken);
-
-	/// <include file="Connections.docs.xml" path="docs/members[@name='configure-await-ignored']/*" />
-	/// <param name="connection">The connection to open.</param>
-	/// <param name="cancellationToken">A token that cancels opening the connection.</param>
-	/// <inheritdoc cref="OpenAsync(IDbConnection, CancellationToken)" path="/*[not(self::summary) and not(self::param)]"/>
-	[Obsolete(ObsoleteMessage)]
-	[SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
-	public static ValueTask OpenAsync(
-		this IDbConnection connection,
-		bool configureAwait,
-		CancellationToken cancellationToken = default)
-		=> connection.OpenAsync(cancellationToken);
 }

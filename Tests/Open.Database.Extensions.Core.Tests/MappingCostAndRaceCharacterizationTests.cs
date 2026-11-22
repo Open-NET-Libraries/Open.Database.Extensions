@@ -260,26 +260,6 @@ public static class MappingCostAndRaceCharacterizationTests
 		Assert.Empty(errors);
 	}
 
-	// The buffered route has its own layout cache (by column names); it is raced the same way.
-	[Fact]
-	public static void BufferedRows_MappedByManyThreadsAtOnce_GiveCorrectRows()
-	{
-		RowMap<Gadget> shared = NewDeclared();
-		string[][] shapes = [[.. RenamedColumns.Select(c => c.Name)], [.. ReversedColumns.Select(c => c.Name)], [.. NoNoteColumns.Select(c => c.Name)]];
-		Race(16, t =>
-		{
-			string[] names = shapes[t % shapes.Length];
-			ImmutableArray<ColumnDef> columns = [.. names.Select(n => new ColumnDef(n, typeof(object)))];
-			for (int n = 0; n < 100; n++)
-			{
-				var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object[]>([Row(columns, 1)!]));
-				#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-				AssertGadgets([.. result.DequeueAs(shared)], 1, hasNote: names.Contains("gadget_note"));
-				#pragma warning restore CS0618
-			}
-		});
-	}
-
 	[Fact]
 	public static void ManyMapsBuiltAtOnce_EachKeepsItsOwnMapping()
 		=> Race(16, t =>
@@ -476,25 +456,5 @@ public static class MappingCostAndRaceCharacterizationTests
 		}
 
 		Assert.Empty(errors);
-	}
-
-	// The buffered route has its own layout cache (by column names); it is raced the same way, over a record.
-	[Fact]
-	public static void BufferedRows_OfARecord_MappedByManyThreadsAtOnce_GiveCorrectRows()
-	{
-		RowMap<GadgetRecord> shared = NewDeclaredRecord();
-		string[][] shapes = [[.. RenamedColumns.Select(c => c.Name)], [.. ReversedColumns.Select(c => c.Name)], [.. NoNoteColumns.Select(c => c.Name)]];
-		Race(16, t =>
-		{
-			string[] names = shapes[t % shapes.Length];
-			ImmutableArray<ColumnDef> columns = [.. names.Select(n => new ColumnDef(n, typeof(object)))];
-			for (int n = 0; n < 100; n++)
-			{
-				var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object[]>([Row(columns, 1)!]));
-				#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-				AssertGadgetRecords([.. result.DequeueAs(shared)], 1, hasNote: names.Contains("gadget_note"));
-				#pragma warning restore CS0618
-			}
-		});
 	}
 }

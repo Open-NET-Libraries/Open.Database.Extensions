@@ -79,9 +79,6 @@ public static class ConfigureAwaitTests
 	{
 		KeyValuePair<string, Func<GatedConnection, Task>>[] calls =
 		[
-			new("EnsureOpenAsync(DbConnection, true)", c => c.EnsureOpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
-			new("EnsureOpenAsync(IDbConnection, true)", c => ((IDbConnection)c).EnsureOpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
-			new("OpenAsync(IDbConnection, true)", c => c.OpenAsync(true, TestContext.Current.CancellationToken).AsTask()),
 		];
 
 		foreach (var call in calls)

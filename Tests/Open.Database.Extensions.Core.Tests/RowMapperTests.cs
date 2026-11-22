@@ -374,13 +374,6 @@ public static class RowMapperTests
 	}
 
 	[Fact]
-	public static void Results_OverPlainDataReader_UsesTheRecordPath()
-	{
-		var reader = FakeReader.Create(["Id", "Name"], [1, "a"], [2, "b"]);
-		Assert.Equal([1, 2], reader.Results<Simple>().Select(s => s.Id));
-	}
-
-	[Fact]
 	public static void DictionaryHashSetAndImmutableArray_BuildDirectly()
 	{
 		var dictionary = SimpleRows(4).Map<Simple>().Skip(1).ToDictionary(s => s.Id);
@@ -403,19 +396,6 @@ public static class RowMapperTests
 	{
 		public bool Equals(Simple? x, Simple? y) => x?.Id == y?.Id;
 		public int GetHashCode(Simple obj) => obj.Id;
-	}
-
-	// The buffered Results APIs hand back a queue-draining enumerable: each item is released to the GC as it is
-	// consumed, so the buffer behaves like a stream and a caller can hold the rest for a later pass.
-	[Fact]
-	public static void ResultsBuffered_DrainsAsItIsEnumerated()
-	{
-		using var reader = TypedReader.Create([("Id", typeof(int))], [1], [2], [3]);
-		IEnumerable<Simple> buffered = reader.ResultsBuffered<Simple>();
-
-		Assert.Equal(1, buffered.First().Id);
-		Assert.Equal([2, 3], buffered.Select(s => s.Id)); // The first item was already drained.
-		Assert.Empty(buffered);
 	}
 
 	// ---- async ----
@@ -475,28 +455,5 @@ public static class RowMapperTests
 		cts.Cancel();
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await SimpleRows(3).Map<Simple>().ToListAsync(cts.Token));
-	}
-
-	[Fact]
-	public static async Task ResultsBufferedAsync_WithAndWithoutReadAsync()
-	{
-		var ct = TestContext.Current.CancellationToken;
-		foreach (bool useReadAsync in new[] { true, false })
-		{
-			await using var reader = TypedReader.Create([("Id", typeof(int)), ("Name", typeof(string))], [1, "a"], [2, "b"]);
-			var items = (await reader.ResultsBufferedAsync<Simple>(null, useReadAsync, ct)).ToList();
-			Assert.Equal([1, 2], items.Select(s => s.Id));
-		}
-	}
-
-	[Fact]
-	public static async Task ResultsAsync_StreamsOverTypedReader()
-	{
-		var ct = TestContext.Current.CancellationToken;
-		await using var reader = TypedReader.Create([("Id", typeof(int)), ("Name", typeof(string))], [1, "a"], [2, "b"]);
-
-		var ids = new List<int>();
-		await foreach (Simple s in reader.ResultsAsync<Simple>(cancellationToken: ct)) ids.Add(s.Id);
-		Assert.Equal([1, 2], ids);
 	}
 }

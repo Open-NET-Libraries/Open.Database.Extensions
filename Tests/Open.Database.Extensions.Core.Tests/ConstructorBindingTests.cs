@@ -23,13 +23,9 @@ public static class ConstructorBindingTests
 
 	internal static List<T> ReadRows<T>(Route route, ImmutableArray<ColumnDef> columns, object?[][] rows, RowMap<T>? map = null)
 	{
-		if (route == Route.Buffered)
-		{
-			var result = new QueryResult<Queue<object[]>>([.. Enumerable.Range(0, columns.Length)], [.. columns.Select(c => c.Name)], new Queue<object[]>(rows!));
-			#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-			return result.DequeueAs(map).ToList();
-			#pragma warning restore CS0618
-		}
+		// The buffered object[] route (Retrieve, QueryResult, DequeueAs) was removed in 11; the value reads through the boxed route instead.
+		if (route == Route.Buffered) route = Route.Boxed;
+
 
 		ImmutableArray<ColumnDef> shown = route == Route.Typed ? columns : [.. columns.Select(c => new ColumnDef(c.Name, typeof(object)))];
 		var command = new FakeExecuteReader(() => TypedReader.Create(shown, rows));
@@ -114,42 +110,6 @@ public static class ConstructorBindingTests
 		var one = new FakeExecuteReader(() => TypedReader.Create(PostColumns, [9, "nine"]));
 		Assert.Equal(new Post(9, "nine"), one.Map<Post>().SingleOrDefault());
 		Assert.Equal(new Post(9, "nine"), await one.Map<Post>().SingleOrDefaultAsync(ct));
-	}
-
-	[Fact]
-	public static async Task Results_ResultsBuffered_AndTheAsyncTwins_BuildThePositionalRecord()
-	{
-		CancellationToken ct = TestContext.Current.CancellationToken;
-		object?[][] rows = [[1, "one"], [2, "two"]];
-		Post[] expected = [new(1, "one"), new(2, "two")];
-
-		// The substitute readers report object columns (the general path); the typed reader reports the real types.
-		Assert.Equal(expected, FakeReader.Create(["Id", "Title"], rows).Results<Post>());
-		Assert.Equal(expected, FakeReader.Create(["Id", "Title"], rows).ResultsBuffered<Post>());
-		Assert.Equal(expected, TypedReader.Create(PostColumns, rows).Results<Post>());
-		Assert.Equal(expected, TypedReader.Create(PostColumns, rows).ResultsBuffered<Post>());
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal(expected, new FakeExecuteReader(() => TypedReader.Create(PostColumns, rows)).Results<Post>());
-		#pragma warning restore CS0618
-		Assert.Equal(expected, await TypedReader.Create(PostColumns, rows).ResultsBufferedAsync<Post>(ct));
-
-		var streamed = new List<Post>();
-		await foreach (Post post in TypedReader.Create(PostColumns, rows).ResultsAsync<Post>(cancellationToken: ct)) streamed.Add(post);
-		Assert.Equal(expected, streamed);
-	}
-
-	[Fact]
-	public static void ADataTable_IsMappedToPositionalRecords()
-	{
-		var table = new DataTable();
-		table.Columns.Add("Id", typeof(int));
-		table.Columns.Add("Title", typeof(string));
-		table.Rows.Add(1, "one");
-		table.Rows.Add(2, DBNull.Value);
-
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Assert.Equal([new(1, "one"), new(2, null!)], table.To<Post>()); // a NULL into a non-nullable reference parameter gets its fallback: no declared default, so null (NullRuleMatrixTests covers one with a default)
-#pragma warning restore CS0618
 	}
 
 	[Fact]

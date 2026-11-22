@@ -86,14 +86,6 @@ public class SyncBenchmarks
 
 	[BenchmarkCategory("Untyped"), Benchmark]
 	public int Untyped_ODE() => _conn.Command(Sql).Retrieve().Result.Count;
-
-	// ODE's buffer-then-map route: Retrieve() copies object[] rows, DequeueAs<T>() maps them as they are drained.
-	[BenchmarkCategory("QueryResult"), Benchmark(Baseline = true)]
-	public List<Post> QueryResult_Dapper() => _conn.Query<Post>(Sql).AsList();
-
-	[BenchmarkCategory("QueryResult"), Benchmark]
-#pragma warning disable CS0618 // measures the deprecated Retrieve + DequeueAs route until 12
-	public List<Post> QueryResult_ODE() => _conn.Command(Sql).Retrieve().DequeueAs<Post>().ToList();
 #pragma warning restore CS0618
 
 	[BenchmarkCategory("Dictionary"), Benchmark(Baseline = true)]

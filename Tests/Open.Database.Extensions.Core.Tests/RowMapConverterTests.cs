@@ -688,14 +688,9 @@ public static class RowMapConverterTests
 		Assert.Equal(-1, order.Count); // the nullable TColumn was called with null
 	}
 
+	// The buffered object[] route was removed in 11; the row is read through a typed reader.
 	static List<Order> Buffered(RowMap<Order> map, object?[] row)
-	{
-		string[] names = [.. Columns.Select(c => c.Name)];
-		QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, names.Length)], [.. names], new Queue<object[]>([row!]));
-#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		return result.DequeueAs(map).ToList();
-#pragma warning restore CS0618
-	}
+		=> new FakeExecuteReader(() => TypedReader.Create(Columns, [row])).Map(map).ToList();
 
 	[Fact]
 	public static void BufferedRows_ApplyTheConverters_AndTheNullRules()

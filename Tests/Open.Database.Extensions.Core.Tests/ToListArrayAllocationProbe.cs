@@ -37,7 +37,7 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	static readonly string[] Names =
 	[
 		"class ToList", "class ToArray", "struct ToList", "struct ToArray",
-		"class Queue", "struct Queue", "class HashSet", "struct HashSet",
+		"class HashSet", "struct HashSet",
 		"class Dict", "struct Dict", "class DictKV", "struct DictKV", "class ImmArray", "struct ImmArray",
 	];
 
@@ -83,15 +83,6 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 
 	// The queue is built when the call returns; the enumerable it hands
 	// back is not enumerated.
-	static long QueueBytes<T>(SqliteConnection connection, string sql)
-		=> BytesPerCall(() =>
-		{
-			using SqliteCommand command = connection.CreateCommand();
-			command.CommandText = sql;
-			using SqliteDataReader reader = command.ExecuteReader();
-			return reader.ResultsBufferedAsync<T>(null, true, default).AsTask().GetAwaiter().GetResult();
-		});
-
 #if !DEBUG
 	// The recorded results of master (f6942a7) on these probes, per target
 	// framework, in the order of Names for N = 1, 10, 100. The branch must stay at or under
@@ -99,9 +90,9 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	const long Slack = 64;
 
 #if NET11_0_OR_GREATER
-	static readonly long[][] Master = [[1424, 1368, 1416, 1312, 1272, 1280, 1512, 1528, 1552, 1528, 1552, 1480, 1392, 1336], [2320, 2096, 2040, 1528, 2168, 1904, 2752, 2856, 2984, 2688, 2984, 2256, 2120, 1552], [11392, 10024, 7488, 3688, 11240, 7352, 16576, 18240, 19392, 17056, 19392, 11456, 10048, 3712]];
+	static readonly long[][] Master = [[1424, 1368, 1416, 1312, 1512, 1528, 1552, 1528, 1552, 1480, 1392, 1336], [2320, 2096, 2040, 1528, 2752, 2856, 2984, 2688, 2984, 2256, 2120, 1552], [11392, 10024, 7488, 3688, 16576, 18240, 19392, 17056, 19392, 11456, 10048, 3712]];
 #else
-	static readonly long[][] Master = [[1480, 1424, 1472, 1368, 1328, 1336, 1568, 1584, 1608, 1584, 1608, 1536, 1448, 1392], [2376, 2152, 2096, 1584, 2224, 1960, 2808, 2912, 3040, 2744, 3040, 2312, 2176, 1608], [11448, 10080, 7544, 3744, 11296, 7408, 16632, 18296, 19448, 17112, 19448, 11512, 10104, 3768]];
+	static readonly long[][] Master = [[1480, 1424, 1472, 1368, 1568, 1584, 1608, 1584, 1608, 1536, 1448, 1392], [2376, 2152, 2096, 1584, 2808, 2912, 3040, 2744, 3040, 2312, 2176, 1608], [11448, 10080, 7544, 3744, 16632, 18296, 19448, 17112, 19448, 11512, 10104, 3768]];
 #endif
 #endif
 
@@ -127,8 +118,6 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 				ArrayBytes<ClassRow>(connection, cls),
 				ListBytes<StructRow>(connection, str),
 				ArrayBytes<StructRow>(connection, str),
-				QueueBytes<ClassRow>(connection, cls),
-				QueueBytes<StructRow>(connection, str),
 				HashSetBytes<ClassRow>(connection, cls),
 				HashSetBytes<StructRow>(connection, str),
 				DictBytes<ClassRow>(connection, cls, static r => r.Id),

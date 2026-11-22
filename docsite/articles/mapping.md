@@ -115,7 +115,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 | An interface | `'IPost' cannot be mapped: it is an interface. Map to a class or struct, or use Map(selector).` |
 | An abstract class or a delegate | The same, with `it is an abstract class` or `it is a delegate` |
 | A dictionary (`Dictionary<,>`, `IDictionary<,>`, `IReadOnlyDictionary<,>`) or a dynamic object (`ExpandoObject`) | ``'Dictionary`2' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).`` |
-| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `Results<T>`, `ToChannel<T>`, `To<T>(DataTable)`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().` |
+| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `ToChannel<T>`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().` |
 | No public constructor | `'Post' cannot be mapped: it has no public constructor.` |
 | Two or more public constructors, none without parameters | `'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).` |
 | A `required` public field | `'Post' cannot be mapped: its required field 'Title' cannot be set. Make it a property.` |
@@ -163,7 +163,7 @@ Declare it with the collection syntax, created on first use with the C# 14 `fiel
 
 [!code-csharp[](../samples/Mapping.cs#map_declared)]
 
-Pass it to `Map<T>`. The same `map` parameter is on `Results<T>()` on a reader or an `IDbCommand` ([the foundation](foundation.md#reader-and-command-helpers); the `IExecuteReader` form is deprecated, use `Map<T>(map).ToList()`) and on `ToChannel`, `AsSourceBlock` and `ToTargetBlock` ([Channels and Dataflow](channels-and-dataflow.md)). `DequeueAs<T>()` also took one and is deprecated: use `Map<T>(map).ToList()`.
+Pass it to `Map<T>`. The same `map` parameter is on `ToChannel`, `AsSourceBlock` and `ToTargetBlock` ([Channels and Dataflow](channels-and-dataflow.md)).
 
 [!code-csharp[](../samples/Mapping.cs#map_declared_use)]
 
@@ -342,7 +342,7 @@ A data class can return the mapped query and let each caller pick the terminal:
 
 ## Results, and a failure after the first one
 
-A *result* here is one whole result set: what `NextResult` moves between. It is never a row (this library's `Results<T>()` means rows).
+A *result* here is one whole result set: what `NextResult` moves between. It is never a row.
 
 `Map` returns the rows of the first result set only. Later sets are never mapped. After the rows are read, the terminal reads through the later sets without reading their rows, so a failure in a later statement (a stored procedure or a text batch that fails after its first `SELECT`) is thrown to you as the provider raised it, not lost when the reader is disposed. A trailing status set does not throw and adds no rows.
 

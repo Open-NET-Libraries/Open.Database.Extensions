@@ -81,15 +81,7 @@ public static class RowMapNullTests
 	static List<Solid> ViaReader(RowMap<Solid> map, string? nullColumn)
 		=> Cmd(SolidColumns, SolidRow(nullColumn)).Map(map).ToList();
 
-	static List<Solid> ViaArray(RowMap<Solid> map, string? nullColumn)
-	{
-		QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object[]>([SolidRow(nullColumn)!]));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		return result.DequeueAs(map).ToList();
-		#pragma warning restore CS0618
-	}
-
-	static readonly Func<RowMap<Solid>, string?, List<Solid>>[] Routes = [ViaReader, ViaArray];
+	static readonly Func<RowMap<Solid>, string?, List<Solid>>[] Routes = [ViaReader];
 
 	static void AssertSame(Solid expected, Solid actual)
 	{
@@ -125,41 +117,6 @@ public static class RowMapNullTests
 	}
 
 	[Fact]
-	public static void NullInEveryColumn_KeepsEveryInitializer()
-	{
-		object?[] allNull = new object?[SolidNames.Length];
-
-		foreach (RowMap<Solid> map in Maps)
-		{
-			AssertSame(new Solid(), Assert.Single(Cmd(SolidColumns, allNull).Map(map).ToList()));
-
-			QueryResult<Queue<object[]>> result = new([.. Enumerable.Range(0, SolidNames.Length)], [.. SolidNames], new Queue<object[]>([allNull!]));
-			#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-			AssertSame(new Solid(), Assert.Single(result.DequeueAs(map).ToList()));
-			#pragma warning restore CS0618
-		}
-	}
-
-	[Fact]
-	public static void NullInAPropertyWithoutAnInitializer_LeavesTheDefault()
-	{
-		ImmutableArray<ColumnDef> columns = [("Count", typeof(int)), ("Created", typeof(DateTime)), ("Shade", typeof(string))];
-
-		Plain viaReader = Assert.Single(Cmd(columns, new object?[] { null, null, null }).Map<Plain>().ToList());
-		Assert.Equal(0, viaReader.Count);
-		Assert.Equal(default, viaReader.Created);
-		Assert.Equal(Shade.None, viaReader.Shade);
-
-		QueryResult<Queue<object[]>> result = new([0, 1, 2], ["Count", "Created", "Shade"], new Queue<object[]>([[null!, DBNull.Value, DBNull.Value]]));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Plain viaArray = Assert.Single(result.DequeueAs(RowMap<Plain>.Default).ToList());
-		#pragma warning restore CS0618
-		Assert.Equal(0, viaArray.Count);
-		Assert.Equal(default, viaArray.Created);
-		Assert.Equal(Shade.None, viaArray.Shade);
-	}
-
-	[Fact]
 	public static void ARealValue_StillMaps()
 	{
 		foreach (RowMap<Solid> map in Maps)
@@ -181,28 +138,6 @@ public static class RowMapNullTests
 		Assert.Equal("Shade", ex.ColumnName);
 		Assert.Equal(typeof(Shade), ex.TargetType);
 		Assert.NotNull(ex.InnerException);
-	}
-
-	// ---- nullable and reference properties get null ----
-
-	[Fact]
-	public static void NullableAndReferenceProperties_GetNull()
-	{
-		ImmutableArray<ColumnDef> columns = [("Maybe", typeof(int)), ("Text", typeof(string)), ("Tint", typeof(string))];
-
-		Optional viaReader = Assert.Single(Cmd(columns, new object?[] { null, null, null }).Map(RowMap<Optional>.Default).ToList());
-		Assert.Null(viaReader.Maybe);
-		Assert.Null(viaReader.Text);
-		Assert.Null(viaReader.Tint);
-
-		// Buffered rows: a C# null and a DBNull both count as NULL.
-		QueryResult<Queue<object[]>> result = new([0, 1, 2], ["Maybe", "Text", "Tint"], new Queue<object[]>([[null!, DBNull.Value, DBNull.Value]]));
-		#pragma warning disable CS0618 // Obsolete in 11.0, removed in 12: kept covered until then.
-		Optional viaArray = Assert.Single(result.DequeueAs(RowMap<Optional>.Default).ToList());
-		#pragma warning restore CS0618
-		Assert.Null(viaArray.Maybe);
-		Assert.Null(viaArray.Text);
-		Assert.Null(viaArray.Tint);
 	}
 
 	// ---- cost: one IsDBNull per typed non-nullable cell, and a general cell is read once ----

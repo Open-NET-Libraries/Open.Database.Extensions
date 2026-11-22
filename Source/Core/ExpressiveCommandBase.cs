@@ -17,26 +17,6 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		where TDbType : struct
 		where TThis : ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 {
-	const string ConcatObsolete = "Not part of the command API: use remaining is null ? [first] : remaining.Prepend(first) (Prepend alone throws on null). Removed in 12.";
-
-	/// <summary>
-	/// Prepends a value to a collection of values.
-	/// </summary>
-	/// <remarks>
-	/// <para>Not part of the command API.</para>
-	/// <include file="Commands.docs.xml" path="docs/members[@name='obsolete']/*" />
-	/// </remarks>
-	/// <typeparam name="T">The type of the values.</typeparam>
-	/// <param name="first">The first value.</param>
-	/// <param name="remaining">The remaining values.</param>
-	/// <returns>
-	/// A sequence of <paramref name="first"/> followed by
-	/// <paramref name="remaining"/>; only <paramref name="first"/>
-	/// when <paramref name="remaining"/> is <see langword="null"/> or empty.
-	/// </returns>
-	[Obsolete(ConcatObsolete)]
-	protected static IEnumerable<T> Concat<T>(T first, ICollection<T> remaining)
-		=> CoreExtensions.Concat(first, remaining);
 
 	/// <summary>
 	/// Gets the pool that connections are taken from.

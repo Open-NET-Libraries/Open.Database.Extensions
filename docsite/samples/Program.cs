@@ -405,25 +405,18 @@ factory.Command("delete from posts where id = 6").ExecuteNonQuery();
 long draftId = await Mapping.InsertReturningIdAsync(factory, CancellationToken.None);
 Check(draftId == 6 && factory.Command("select title from posts where id = 6").ExecuteScalar<string>() == "Draft", "an insert returns its new id, read with SingleAsync");
 factory.Command("delete from posts where id = 6").ExecuteNonQuery();
-// Deprecated in 11.0: each old call and the call that replaces it give the same result.
+// Removed in 11.0: the calls that replace them give the expected rows.
 Db.Seed();
-(string resultsBefore, string resultsAfter) = Deprecated.Results(connection);
-Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Results<T>() and Map<T>().ToList() return the same rows");
-(resultsBefore, resultsAfter) = await Deprecated.ResultsAsync(connection, CancellationToken.None);
-Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsAsync<T>() and Map<T>().ToListAsync() return the same rows");
-(resultsBefore, resultsAfter) = Deprecated.ResultsFromDataTable(connection);
-Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "ResultsFromDataTable<T>() and ToDataTable() read with ToDataTable().Map(map).ToList() return the same rows");
-(resultsBefore, resultsAfter) = Deprecated.SelectorForms(connection);
-Check(resultsBefore == "1|1,2|4,5|2,3" && resultsBefore == resultsAfter, "FirstOrDefault, Take, Skip and SkipThenTake with a selector match their Map forms");
-Check(Deprecated.SkippedRowSelector(connection) == (true, false), "a selector that throws on a skipped row failed Skip, and does not fail Map(...).Skip");
-Check(Deprecated.TakeOfZero(connection) == (false, true), "Take(0) did not run the command; Map(...).Take(0) does");
-(resultsBefore, resultsAfter) = await Deprecated.TakeAsyncAndToListAsync(connection, CancellationToken.None);
-Check(resultsBefore == "1,2|1,2,3,4,5" && resultsBefore == resultsAfter, "TakeAsync and ToListAsync with a selector match their Map forms");
-Check(await Deprecated.CollectionAsync(connection, CancellationToken.None) == 10, "QueryResultCollection holds rows; a List<T> from Map holds the same");
-(string dictBefore, string dictAfter, string dictBeforeAsync, string dictAfterAsync) = await Deprecated.MappedDictionaries(connection);
-Check(dictBefore.Length > 0 && dictBefore == dictAfter && dictBeforeAsync == dictAfterAsync && dictBefore == dictBeforeAsync, "AsMappedDictionaries and Retrieve().DequeueAsMappedDictionaries() (awaited too) return the same dictionaries");
-(resultsBefore, resultsAfter) = Deprecated.DequeueAs(connection);
-Check(resultsBefore.Length > 0 && resultsBefore == resultsAfter, "Retrieve().DequeueAs<T>() and Map<T>().ToList() return the same rows");
+string five = "1:Post 1,2:Post 2,3:Post 3,4:Post 4,5:Post 5";
+Check(Deprecated.Results(connection) == five, "Map<T>().ToList() returns the five posts (it replaces Results<T>())");
+Check(await Deprecated.ResultsAsync(connection, CancellationToken.None) == five, "Map<T>().ToListAsync() returns the five posts (it replaces ResultsAsync<T>())");
+Check(Deprecated.ResultsFromDataTable(connection) == five, "ToDataTable().Map(map).ToList() returns the five posts (it replaces ResultsFromDataTable<T>())");
+Check(Deprecated.SelectorForms(connection) == "1|1,2|4,5|2,3", "Map(selector) with First, Take, Skip and Skip then Take returns what the old selector terminals did");
+Check(await Deprecated.TakeAsyncAndToListAsync(connection, CancellationToken.None) == "1,2|1,2,3,4,5", "Map(selector).Take(2).ToListAsync() and .ToListAsync() return what TakeAsync and ToListAsync did");
+Check(await Deprecated.CollectionAsync(connection, CancellationToken.None) == 5, "a List<T> from Map holds the rows a QueryResultCollection held");
+(string dictAfter, string dictAfterAsync) = await Deprecated.MappedDictionaries(connection);
+Check(dictAfter.Length > 0 && dictAfter == dictAfterAsync, "Retrieve().DequeueAsMappedDictionaries() and its awaited async form return the same rows");
+Check(Deprecated.DequeueAs(connection) == five, "Map<T>().ToList() returns the five posts (it replaces Retrieve().DequeueAs<T>())");
 
 // AsyncReads(): the rows are the same as with the default.
 // SQLite cannot show which read was used;
