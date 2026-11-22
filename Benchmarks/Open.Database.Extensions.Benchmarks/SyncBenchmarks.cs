@@ -55,12 +55,12 @@ public class SyncBenchmarks
 	}
 
 	[BenchmarkCategory("Stream"), Benchmark]
-	public long Stream_ODE() => _conn.Command(Sql).Map<Post>().Read(static items =>
+	public async Task<long> Stream_ODE()
 	{
 		long sum = 0;
-		foreach (Post p in items) sum += p.Id;
+		await foreach (Post p in _conn.Command(Sql).Map<Post>().Stream(Timeout.InfiniteTimeSpan)) sum += p.Id;
 		return sum;
-	});
+	}
 
 	[BenchmarkCategory("Params"), Benchmark(Baseline = true)]
 	public List<Post> Params_Dapper() => _conn.Query<Post>(ParamSql, new { id = 0 }).AsList();

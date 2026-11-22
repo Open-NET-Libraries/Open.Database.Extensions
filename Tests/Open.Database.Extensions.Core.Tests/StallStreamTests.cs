@@ -1,3 +1,5 @@
+using Open.Database.Extensions.Core;
+
 namespace Open.Database.Extensions.Tests;
 
 // Stream(stallTimeout, ct): the rows one at a time off the open reader,

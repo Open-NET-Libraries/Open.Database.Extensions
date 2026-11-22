@@ -32,7 +32,7 @@ internal interface IStallSignal
 /// That wait is the stall, and it is measured on the producer's own side: when it lasts <c>stallTimeout</c>
 /// the producer stops the read from inside its own handler, so the cleanup of the query runs on the thread that owns the reader.
 /// The consumer never touches the reader.
-/// Only the channel, the expiry flag and the cancellation sources are shared between the two sides.
+/// Only the channel, the expiry and disposal flags and the cancellation sources are shared between the two sides.
 /// </remarks>
 internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 {
@@ -225,10 +225,14 @@ internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 			return;
 		}
 
-		// A timer that fired after the previous wait ended and before it was disarmed:
-		// the consumer went the whole time without a pull.
-		if (_wait.IsCancellationRequested && !token.IsCancellationRequested)
-			throw Expire();
+		// A timer that fired after the previous wait ended and before it was disarmed: the consumer had pulled,
+		// so the source is replaced and no expiry is reported.
+		if (_wait.IsCancellationRequested)
+		{
+			token.ThrowIfCancellationRequested();
+			_wait.Dispose();
+			_wait = CancellationTokenSource.CreateLinkedTokenSource(_read!.Token);
+		}
 
 		// The wait is the stall. A cancel of the read ends it too, and is told apart from an expiry below.
 		_wait.CancelAfter(_stall);

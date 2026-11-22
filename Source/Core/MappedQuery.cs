@@ -869,7 +869,6 @@ readonly struct MappedQueryCore<T>(
 		TimeSpan stallTimeout,
 		CancellationToken cancellationToken)
 	{
-		_ = Command;
 		if (stallTimeout != Timeout.InfiniteTimeSpan && stallTimeout <= TimeSpan.Zero)
 		{
 			throw new ArgumentOutOfRangeException(
@@ -878,6 +877,7 @@ readonly struct MappedQueryCore<T>(
 				"The stall timeout must be a positive span, or Timeout.InfiniteTimeSpan.");
 		}
 
+		_ = Command;
 		return new StallStream<T>(this, stallTimeout, cancellationToken);
 	}
 

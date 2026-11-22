@@ -717,14 +717,20 @@ public static partial class SyntheticChecks
 			for (int i = 0; i < Rows; i++) Spin.Microseconds(DelayUs);
 		});
 
-		// Through the library: Read(handler) holds the reader open while the handler runs; ToList() closes it first.
+		// Through the library: Stream holds the reader open while the consumer works; ToList() closes it first.
 		double libBase = Run(static c => SyntheticVariants.V1(c));
-		double libInside = Run(static c => c.Command(SyntheticVariants.Sql).Map<SynRow>().Read(static items =>
+		double libInside = Run(static c =>
 		{
-			int n = 0;
-			foreach (var _ in items) { Spin.Microseconds(DelayUs); n++; }
-			return n;
-		}));
+			IAsyncEnumerator<SynRow> rows = c.Command(SyntheticVariants.Sql).Map<SynRow>().Stream(Timeout.InfiniteTimeSpan).GetAsyncEnumerator();
+			try
+			{
+				while (rows.MoveNextAsync().AsTask().GetAwaiter().GetResult()) Spin.Microseconds(DelayUs);
+			}
+			finally
+			{
+				rows.DisposeAsync().AsTask().GetAwaiter().GetResult();
+			}
+		});
 		double libAfter = Run(static c =>
 		{
 			foreach (var _ in SyntheticVariants.V1(c)) Spin.Microseconds(DelayUs);
