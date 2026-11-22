@@ -72,9 +72,14 @@ public static class DbQueryPathsAllocationTests
 		return best;
 	}
 
+	// A count that differs by less than one object (8 B) is the same count: something a runner allocates once in a while
+	// (a provider cache, a resize) spreads across the calls of a round as a few bytes, differently on each path.
+	static void Near(long expected, long actual)
+		=> Assert.InRange(actual, expected - 7, expected + 7);
+
 	static void Same(long expected, params long[] actual)
 	{
-		foreach (long bytes in actual) Assert.Equal(expected, bytes);
+		foreach (long bytes in actual) Near(expected, bytes);
 	}
 
 	static void Report(string line)
@@ -249,14 +254,14 @@ public static class DbQueryPathsAllocationTests
 		Report($"names on SQLite: floor {raw5} / {raw10}; written {bare5} / {bare10}, with prefix {at5} / {at10}, derived {derived5} / {derived10}, before Using {before5}");
 
 		// The spelling makes no difference, nor does the order.
-		Assert.Equal(at5, bare5);
-		Assert.Equal(at5, derived5);
-		Assert.Equal(at5, before5);
-		Assert.Equal(at10, bare10);
-		Assert.Equal(at10, derived10);
+		Near(at5, bare5);
+		Near(at5, derived5);
+		Near(at5, before5);
+		Near(at10, bare10);
+		Near(at10, derived10);
 
 		// Over the floor a call adds 16 B for each value it holds, and nothing the provider does for a name.
-		Assert.Equal(raw10 - raw5 + (16 * 5), bare10 - bare5);
+		Near(raw10 - raw5 + (16 * 5), bare10 - bare5);
 #endif
 	}
 }

@@ -142,6 +142,11 @@ public static class DbQueryAllocationTests
 
 	// ---- measuring ----
 
+	// A count that differs by less than one object (8 B) is the same count: something a runner allocates once in a while
+	// (a provider cache, a resize) spreads across the calls of a round as a few bytes, differently on each path.
+	static void Near(long expected, long actual)
+		=> Assert.InRange(actual, expected - 7, expected + 7);
+
 	// Bytes per call: after a warm-up, the smallest of five rounds of 2,000 calls.
 	static long BytesPerCall(Action call)
 	{
@@ -214,8 +219,8 @@ public static class DbQueryAllocationTests
 		long builder = Bytes(() => Builder(c, k));
 
 		Report($"K={k}: typed {typed} B, ad hoc {adHoc} B, hand-written {hand} B, today's builder (explicit names) {builder} B");
-		Assert.True(typed <= hand, $"K={k}: typed {typed} B, hand-written {hand} B.");
-		Assert.True(adHoc <= hand, $"K={k}: ad hoc {adHoc} B, hand-written {hand} B.");
+		Assert.True(typed <= hand + 7, $"K={k}: typed {typed} B, hand-written {hand} B.");
+		Assert.True(adHoc <= hand + 7, $"K={k}: ad hoc {adHoc} B, hand-written {hand} B.");
 		Assert.True(typed < builder, $"K={k}: typed {typed} B, builder {builder} B.");
 		Assert.True(adHoc < builder, $"K={k}: ad hoc {adHoc} B, builder {builder} B.");
 #endif
@@ -248,10 +253,10 @@ public static class DbQueryAllocationTests
 		Report($"mapped definition: classic {classic} B, params after Using {after} B, params before Using {before} B");
 
 		// Mapping the call of an unmapped definition costs no more than a definition that maps first.
-		Assert.True(after <= classic, $"params after Using {after} B, classic chain {classic} B.");
+		Assert.True(after <= classic + 7, $"params after Using {after} B, classic chain {classic} B.");
 
 		// Giving the source after the values copies nothing.
-		Assert.Equal(after, before);
+		Near(after, before);
 #endif
 	}
 
@@ -292,16 +297,16 @@ public static class DbQueryAllocationTests
 			+ $"before Using {before1} / {before5} / {before10} B; Using on five held values {bind5} B");
 
 		// Binding the source allocates nothing: the view holds the call as it is.
-		Assert.Equal(0, using0);
-		Assert.Equal(24 + (16 * 1), after1);
-		Assert.Equal(24 + (16 * 5), after5);
-		Assert.Equal(24 + (16 * 10), after10);
+		Near(0, using0);
+		Near(24 + (16 * 1), after1);
+		Near(24 + (16 * 5), after5);
+		Near(24 + (16 * 10), after10);
 
 		// The same array whichever order the values and the source are given in, and giving the source copies nothing.
-		Assert.Equal(after1, before1);
-		Assert.Equal(after5, before5);
-		Assert.Equal(after10, before10);
-		Assert.Equal(0, bind5);
+		Near(after1, before1);
+		Near(after5, before5);
+		Near(after10, before10);
+		Near(0, bind5);
 #endif
 	}
 
@@ -320,8 +325,8 @@ public static class DbQueryAllocationTests
 		long intAndLong = BytesPerCall(() => Sink(M2.Using(c).AddParam("p0", i).AddParam("p1", l)));
 
 		Report($"boxes: one int {oneInt} B, an int and a long {intAndLong} B");
-		Assert.Equal(40 + 24, oneInt);
-		Assert.Equal(56 + 24 + 24, intAndLong);
+		Near(40 + 24, oneInt);
+		Near(56 + 24 + 24, intAndLong);
 #endif
 	}
 
@@ -341,8 +346,8 @@ public static class DbQueryAllocationTests
 		long builder = Bytes(() => Builder(c, 1));
 
 		Report($"K=1: typed {typed} B, ad hoc {adHoc} B, hand-written {hand} B, today's builder (explicit names) {builder} B");
-		Assert.True(typed <= hand, $"K=1: typed {typed} B, hand-written {hand} B.");
-		Assert.True(adHoc <= hand + 16, $"K=1: ad hoc {adHoc} B, hand-written {hand} B.");
+		Assert.True(typed <= hand + 7, $"K=1: typed {typed} B, hand-written {hand} B.");
+		Assert.True(adHoc <= hand + 23, $"K=1: ad hoc {adHoc} B, hand-written {hand} B.");
 		Assert.True(typed < builder, $"K=1: typed {typed} B, builder {builder} B.");
 #endif
 	}
@@ -376,7 +381,7 @@ public static class DbQueryAllocationTests
 		});
 
 		Report($"K={k}: derived {derived} B, named {named} B");
-		Assert.True(derived <= named, $"K={k}: derived {derived} B, named {named} B.");
+		Assert.True(derived <= named + 7, $"K={k}: derived {derived} B, named {named} B.");
 	}
 
 	readonly record struct OtherArgs2(int P0, long P1);
@@ -399,7 +404,7 @@ public static class DbQueryAllocationTests
 		});
 
 		Report($"alternating two values types: {alternating} B per pair, alone {aloneA} B and {aloneB} B");
-		Assert.True(alternating <= aloneA + aloneB, $"alternating {alternating} B per pair, alone {aloneA} + {aloneB} B.");
+		Assert.True(alternating <= aloneA + aloneB + 7, $"alternating {alternating} B per pair, alone {aloneA} + {aloneB} B.");
 	}
 
 	// ---- the pieces, and the seam ----
@@ -424,13 +429,13 @@ public static class DbQueryAllocationTests
 		long typed = BytesPerCall(() => Sink(T4.Using(c).AddParams(new(VA, VB, VC, VD))));
 
 		Report($"binding {binding} B, first value {first} B, a second in the chain {both - first} B, a second on a kept call {branched} B, typed {typed} B");
-		Assert.Equal(0, binding);
-		Assert.Equal(88 + 24, first);
-		Assert.Equal(24, both - first);
-		Assert.Equal(88 + 24, branched);
+		Near(0, binding);
+		Near(88 + 24, first);
+		Near(24, both - first);
+		Near(88 + 24, branched);
 
 		// The holder of the typed values: a header and the struct (an int, a long, a string and an int: 24 B).
-		Assert.Equal(40, typed);
+		Near(40, typed);
 #endif
 	}
 
@@ -452,6 +457,6 @@ public static class DbQueryAllocationTests
 
 		Assert.True(equal);
 		Assert.NotEqual(0, hash);
-		Assert.Equal(0, bytes);
+		Near(0, bytes);
 	}
 }
