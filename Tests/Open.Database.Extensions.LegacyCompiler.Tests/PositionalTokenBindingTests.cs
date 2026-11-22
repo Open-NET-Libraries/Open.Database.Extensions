@@ -18,6 +18,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 	// Every target runs the calls at its language version: C# 7.3 (net472), 9 (net8.0), 12 (net10.0) and 13 (net11.0).
 	// A bare default must bind the rung that takes the token, a bare null the rung that takes the comparer,
 	// with no help from [OverloadResolutionPriority] (which only C# 13 reads).
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "The calls are compiled only so their IL shows which overload binds; they never run.")]
 	public static class PositionalTokenBindingTests
 	{
 		static readonly CancellationToken Token = new CancellationToken();
@@ -25,11 +26,11 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		static readonly Func<int, string> Value = i => "";
 		static readonly IEqualityComparer<int> IntComparer = EqualityComparer<int>.Default;
 		static readonly Action<DbDataReader> DbHandler = r => { };
-		static readonly Func<DbDataReader, ValueTask> DbAsyncHandler = r => default(ValueTask);
+		static readonly Func<DbDataReader, ValueTask> DbAsyncHandler = r => default;
 		static readonly Func<DbDataReader, int> DbTransform = r => 1;
-		static readonly Func<DbDataReader, ValueTask<int>> DbAsyncTransform = r => default(ValueTask<int>);
-		static readonly Func<IDataReader, ValueTask> DataAsyncHandler = r => default(ValueTask);
-		static readonly Func<IDataReader, ValueTask<int>> DataAsyncTransform = r => default(ValueTask<int>);
+		static readonly Func<DbDataReader, ValueTask<int>> DbAsyncTransform = r => default;
+		static readonly Func<IDataReader, ValueTask> DataAsyncHandler = r => default;
+		static readonly Func<IDataReader, ValueTask<int>> DataAsyncTransform = r => default;
 		static readonly Action<IDataRecord> Record = r => { };
 
 		static string Name(Type type)
