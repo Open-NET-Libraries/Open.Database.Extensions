@@ -10,6 +10,7 @@ namespace Open.Database.Extensions.Benchmarks.Generated;
 /// <remarks>
 /// The generated reader enters ODX's loop through the public selector overload, <c>Map(Func&lt;IDataRecord, T&gt;)</c>, the entry V2 uses;
 /// it tests IsDBNull on every member whose NULL the runtime map would keep or assign (V2 tests the nullable members only) and binds its layout once per result set.
+/// Twins exist for the catalog widths (1, 3, 5, 10, 20), as V2's hand-written selectors do; another width (ODX_SYN_WIDTHS, --widths) throws, as V2's Hand does.
 /// </remarks>
 public static class GeneratedReads
 {

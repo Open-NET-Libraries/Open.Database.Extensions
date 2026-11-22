@@ -27,6 +27,10 @@ public static partial class SyntheticChecks
 	{
 		int sites = GeneratedReads.InterceptedCallSites();
 		report.Check(sites == 10, $"Gen/GenD: {sites} intercepted call sites, expected the 10 of GeneratedReads (is the generator referenced there?)");
+
+		// And none here: V1 (the baseline) and every other runtime variant of this project stay the runtime map.
+		bool interceptedHere = typeof(SyntheticChecks).Assembly.GetTypes().Any(static t => t.Name.EndsWith("OdxInterceptors", StringComparison.Ordinal));
+		report.Check(!interceptedHere, "the Benchmarks assembly carries generated interceptors: its runtime variants would not be the runtime map");
 		CompareGenerated(report, "Gen vs V2", where, v2, (IList)SyntheticGenerated.Gen(conn, width));
 		CompareGenerated(report, "GenD vs V2", where, v2, (IList)SyntheticGenerated.GenD(conn, width));
 	}

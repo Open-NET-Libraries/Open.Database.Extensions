@@ -4,8 +4,8 @@ namespace Open.Database.Extensions.Generator;
 
 // Writes the one generated file. Shape (SG.md section 2, through the existing public overloads only: no hook in Core):
 //   - per call site, an interceptor: Map_n(this <receiver> x) => CoreExtensions.Map<T>(x, new M_T().Row), the existing Map(Func<IDataRecord, T>) overload;
-//   - per model type, a binder class M_T: its Row method is the selector. It binds once per result set (the first row it sees from a reader),
-//     against a static last-layout cache (one immutable object, swapped atomically), and then reads every row with typed getters.
+//   - per model type, a binder class M_T: its Row method is the selector. It binds once per reader (and again when the column count changes),
+//     against a small static cache of the layouts met lately, and then reads every row with typed getters in one of four read modes.
 //   - a layout the generated code does not serve, and a row an object initializer cannot build (an init-only or required member whose cell is a
 //     NULL that must keep its value), is mapped by the runtime RowMap<T> (through Transformer<T>, the public route to its object[] row reader),
 //     so the rows, and the exceptions, are the runtime's.
@@ -81,6 +81,8 @@ static class Emitter
 		sb.AppendLine("\t\tpublic static long RowsDeclined;");
 		sb.AppendLine("\t\t/// <summary>Rows read by generated row readers.</summary>");
 		sb.AppendLine("\t\tpublic static long RowsServed;");
+		sb.AppendLine("\t\t/// <summary>Result sets bound, by read mode: 0 runtime, 1 full, 2 guarded, 3 constant ordinals, 4 full with converting reads.</summary>");
+		sb.AppendLine("\t\tpublic static readonly long[] Modes = new long[5];");
 		sb.AppendLine("\t}");
 		sb.AppendLine();
 	}
@@ -125,8 +127,9 @@ static class Emitter
 		public readonly global::System.Type[] Types;
 
 		// 0: the runtime map serves it. 1: every slot fed in ascending column order, every read exact (no presence test).
-		// 2: some slots absent, a converting read, or the columns not in slot order (guarded, read in column order).
-		// 3: as 1, at the constant ordinals the members declare ([Column(Order = n)]).
+		// 2: some slots absent, or the columns not in slot order (guarded, read in column order).
+		// 3: as 1, at the constant ordinals the members declare ([Column(Order = n)]), read in Order.
+		// 4: as 1, with a converting read chosen per column once per layout (a switch on it per cell, no presence test).
 		public int Mode;
 
 		// The column of each slot, -1 for none (in slot order); null when the runtime serves the layout.
@@ -363,7 +366,9 @@ static class Emitter
 		sb.AppendLine("\t\t}");
 		sb.AppendLine();
 
-		sb.AppendLine("\t\tstatic Layout s_last;");
+		// The layouts met lately (a few, as queries over one model with different column lists alternate); a slot is replaced in turn. References are swapped atomically.
+		sb.AppendLine("\t\tstatic readonly Layout[] s_layouts = new Layout[8];");
+		sb.AppendLine("\t\tstatic int s_next;");
 		sb.AppendLine();
 
 		// Resolve: once per new result-set layout.
@@ -402,9 +407,11 @@ static class Emitter
 		}
 
 		sb.AppendLine("\t\t\tl.Ordinals = o;");
+		// Every slot fed: constant ordinals when each sits at its declared Order (read in Order, which is column order), else, in ascending column order, exact reads (1)
+		// or a converting read chosen per column (4). Anything else is guarded (2), read in column order.
 		sb.AppendLine(m.AllOrdered
-			? "\t\t\tl.Mode = !(full && exact && ascending) ? 2 : literal ? 3 : 1;"
-			: "\t\t\tl.Mode = full && exact && ascending ? 1 : 2;");
+			? "\t\t\tl.Mode = !full ? 2 : exact && literal ? 3 : !ascending ? 2 : exact ? 1 : 4;"
+			: "\t\t\tl.Mode = !full || !ascending ? 2 : exact ? 1 : 4;");
 		sb.AppendLine("\t\t\tif (l.Mode == 2) l.Sequence = OdxMatch.Sequence(o, Slots);");
 		sb.AppendLine("\t\t\treturn l;");
 		sb.AppendLine("\t\t}");
@@ -434,7 +441,11 @@ static class Emitter
 		sb.AppendLine("\t\t\t\tReader = reader;");
 		sb.AppendLine("\t\t\t\tLayout = layout;");
 		if (options.Counters)
+		{
 			sb.AppendLine("\t\t\t\tglobal::System.Threading.Interlocked.Increment(ref layout.Mode == 0 ? ref OdxGeneratedCounters.Declined : ref OdxGeneratedCounters.Served);");
+			sb.AppendLine("\t\t\t\tglobal::System.Threading.Interlocked.Increment(ref OdxGeneratedCounters.Modes[layout.Mode]);");
+		}
+
 		sb.AppendLine("\t\t\t\t// A declined layout builds the runtime's reader now, at the first row, where the runtime builds (or throws) its own.");
 		sb.AppendLine("\t\t\t\tif (layout.Mode == 0) _runtime = Runtime.For(layout.Names);");
 		sb.AppendLine("\t\t\t}");
@@ -446,6 +457,9 @@ static class Emitter
 		sb.AppendLine("\t\t\t\tRecord.GetValues(row);");
 		sb.AppendLine("\t\t\t\treturn map(row);");
 		sb.AppendLine("\t\t\t}");
+		sb.AppendLine();
+		sb.AppendLine("\t\t\t// A served row the runtime builds from the values already read (never read twice: a SequentialAccess reader allows each cell once).");
+		sb.AppendLine($"\t\t\tpublic {T} ByRuntime(object[] row) => (_runtime ??= Runtime.For(Layout.Names))(row);");
 		sb.AppendLine("\t\t}");
 		sb.AppendLine();
 
@@ -456,13 +470,16 @@ static class Emitter
 		sb.AppendLine($"\t\tpublic {T} Row({Record} record)");
 		sb.AppendLine("\t\t{");
 		sb.AppendLine("\t\t\tBound b = _bound;");
-		sb.AppendLine("\t\t\tif (b == null || !ReferenceEquals(b.Record, record)) _bound = b = Bind(record);");
+		// Bound once per reader, and again when the reader's column count changes: a reader view run again after NextResult (same reader) meets the new set.
+		// A new set with the same column count on the same reader keeps the binding (no per-row layout check; a Core hook per result set would close this).
+		sb.AppendLine("\t\t\tif (b == null || !ReferenceEquals(b.Record, record) || record.FieldCount != b.Layout.Names.Length) _bound = b = Bind(record);");
 		if (options.Counters) sb.AppendLine("\t\t\tif (b.Layout.Mode != 0) global::System.Threading.Interlocked.Increment(ref OdxGeneratedCounters.RowsServed);");
 		sb.AppendLine("\t\t\tswitch (b.Layout.Mode)");
 		sb.AppendLine("\t\t\t{");
 		if (m.AllOrdered) sb.AppendLine("\t\t\t\tcase 3: return ReadLiteral(b);");
 		sb.AppendLine("\t\t\t\tcase 1: return ReadFull(b);");
 		sb.AppendLine("\t\t\t\tcase 2: return ReadGuarded(b);");
+		sb.AppendLine("\t\t\t\tcase 4: return ReadConverting(b);");
 		sb.AppendLine("\t\t\t\tdefault: return b.ByRuntime();");
 		sb.AppendLine("\t\t\t}");
 		sb.AppendLine("\t\t}");
@@ -472,8 +489,15 @@ static class Emitter
 		sb.AppendLine("\t\t{");
 		sb.AppendLine($"\t\t\tif (record is {DbReader} r)");
 		sb.AppendLine("\t\t\t{");
-		sb.AppendLine("\t\t\t\tLayout l = s_last;");
-		sb.AppendLine("\t\t\t\tif (l == null || !l.Matches(r)) s_last = l = Resolve(r);");
+		sb.AppendLine("\t\t\t\tLayout[] layouts = s_layouts;");
+		sb.AppendLine("\t\t\t\tfor (int i = 0; i < layouts.Length; i++)");
+		sb.AppendLine("\t\t\t\t{");
+		sb.AppendLine("\t\t\t\t\tLayout known = global::System.Threading.Volatile.Read(ref layouts[i]);");
+		sb.AppendLine("\t\t\t\t\tif (known != null && known.Matches(r)) return new Bound(record, r, known);");
+		sb.AppendLine("\t\t\t\t}");
+		sb.AppendLine();
+		sb.AppendLine("\t\t\t\tLayout l = Resolve(r);");
+		sb.AppendLine("\t\t\t\tglobal::System.Threading.Volatile.Write(ref layouts[(int)((uint)global::System.Threading.Interlocked.Increment(ref s_next) % (uint)layouts.Length)], l);");
 		sb.AppendLine("\t\t\t\treturn new Bound(record, r, l);");
 		sb.AppendLine("\t\t\t}");
 		sb.AppendLine();
@@ -502,12 +526,25 @@ static class Emitter
 		if (m.AllOrdered) EmitRead(sb, m, "ReadLiteral", styleB, ReadMode.Literal, options);
 		EmitRead(sb, m, "ReadFull", styleB, ReadMode.Full, options);
 		EmitRead(sb, m, "ReadGuarded", styleB, ReadMode.Guarded, options);
+		EmitRead(sb, m, "ReadConverting", styleB, ReadMode.Converting, options);
 
 		sb.AppendLine("\t}");
 		sb.AppendLine();
 	}
 
-	enum ReadMode { Literal, Full, Guarded }
+	enum ReadMode { Literal, Full, Guarded, Converting }
+
+	// The order a mode reads (and sets) the slots in: by declared Order at constant ordinals (column order), else slot order (ascending columns,
+	// or any order for a guarded read, which walks Layout.Sequence instead).
+	static IEnumerable<int> ReadOrder(System.Collections.Immutable.ImmutableArray<SlotSpec> slots, ReadMode mode)
+	{
+		IEnumerable<int> mapped = Enumerable.Range(0, slots.Length).Where(k => !slots[k].NotMapped);
+		return mode == ReadMode.Literal ? mapped.OrderBy(k => slots[k].Order) : mapped;
+	}
+
+	// A member name as code: a keyword is escaped (@event).
+	static string Code(string name)
+		=> Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetKeywordKind(name) != Microsoft.CodeAnalysis.CSharp.SyntaxKind.None ? "@" + name : name;
 
 	static void EmitRead(StringBuilder sb, ModelSpec m, string name, bool styleB, ReadMode mode, Options options)
 	{
@@ -524,6 +561,18 @@ static class Emitter
 		{
 			sb.AppendLine($"\t\t\t{T} item = default;");
 			sb.AppendLine("\t\t\tbool byRuntime = false;");
+
+			// The typed locals live outside the try: the kept-NULL fallback after it builds the runtime's row from them.
+			for (int k = 0; k < slots.Length; k++)
+			{
+				SlotSpec s = slots[k];
+				if (s.NotMapped) continue;
+
+				string init = s.Fallback ?? "default(" + s.Type + ")";
+				sb.Append($"\t\t\t{s.Type} v{k} = {init};");
+				if (s.Keeps) sb.Append($" bool n{k} = false;");
+				sb.AppendLine();
+			}
 		}
 
 		sb.AppendLine("\t\t\ttry");
@@ -534,11 +583,9 @@ static class Emitter
 			// RowMap.CreateThenSet: new T(), then each fed cell read and set in column order (ascending: slot order).
 			sb.AppendLine($"{I}var item = {m.Create};");
 			string at = OpenSequence(sb, mode, I);
-			for (int k = 0; k < slots.Length; k++)
+			foreach (int k in ReadOrder(slots, mode))
 			{
 				SlotSpec s = slots[k];
-				if (s.NotMapped) continue;
-
 				EmitSlot(sb, s, k, mode, at, (read, general) => SetStatement(s, read, general));
 			}
 
@@ -549,23 +596,10 @@ static class Emitter
 		{
 			// RowMap.BindConstructor (and CreateThenSet for a model with init-only or required members): every fed cell read into a typed local
 			// in column order, then the model is built, then the members the constructor does not cover are set.
-			for (int k = 0; k < slots.Length; k++)
-			{
-				SlotSpec s = slots[k];
-				if (s.NotMapped) continue;
-
-				string init = s.Fallback ?? "default(" + s.Type + ")";
-				sb.Append($"{I}{s.Type} v{k} = {init};");
-				if (s.Keeps) sb.Append($" bool n{k} = false;");
-				sb.AppendLine();
-			}
-
 			string at = OpenSequence(sb, mode, I);
-			for (int k = 0; k < slots.Length; k++)
+			foreach (int k in ReadOrder(slots, mode))
 			{
 				SlotSpec s = slots[k];
-				if (s.NotMapped) continue;
-
 				EmitSlot(sb, s, k, mode, at, (read, general) => LocalStatement(s, k, read, general));
 			}
 
@@ -589,7 +623,7 @@ static class Emitter
 			string create = m.UseConstructor ? $"new {T}({string.Join(", ", args)})" : m.Create;
 			var inits = Enumerable.Range(0, slots.Length)
 				.Where(k => slots[k].InitBound && !slots[k].NotMapped && slots[k].Position < 0)
-				.Select(k => $"{slots[k].Name} = OdxMatch.At(ref s, {k}, v{k})")
+				.Select(k => $"{Code(slots[k].Name)} = OdxMatch.At(ref s, {k}, v{k})")
 				.ToList();
 			if (inits.Count > 0)
 			{
@@ -600,8 +634,8 @@ static class Emitter
 
 			sb.AppendLine($"{J}s = -1; // A constructor that throws is not the fault of the last column read.");
 			sb.AppendLine($"{J}item = {create};");
-			var sets = Enumerable.Range(0, slots.Length)
-				.Where(k => !slots[k].NotMapped && slots[k].Position < 0 && !slots[k].InitBound)
+			var sets = ReadOrder(slots, mode)
+				.Where(k => slots[k].Position < 0 && !slots[k].InitBound)
 				.ToList();
 			if (sets.Count > 0)
 			{
@@ -610,7 +644,8 @@ static class Emitter
 				foreach (int k in sets)
 				{
 					SlotSpec s = slots[k];
-					string set = s.Keeps ? $"s = {k}; if (!n{k}) item.{s.Name} = v{k};" : $"s = {k}; item.{s.Name} = v{k};";
+					string member = "item." + Code(s.Name);
+					string set = s.Keeps ? $"s = {k}; if (!n{k}) {member} = v{k};" : $"s = {k}; {member} = v{k};";
 					sb.AppendLine(mode == ReadMode.Guarded ? $"{setAt}case {k}: {set} break;" : $"{J}{set}");
 				}
 
@@ -631,7 +666,19 @@ static class Emitter
 			sb.AppendLine();
 			sb.AppendLine("\t\t\tif (!byRuntime) return item;");
 			if (options.Counters) sb.AppendLine("\t\t\tglobal::System.Threading.Interlocked.Increment(ref OdxGeneratedCounters.RowsDeclined);");
-			sb.AppendLine("\t\t\treturn b.ByRuntime();");
+			// The cells were read once already: the runtime gets them as values (NULL as DBNull), every column it does not feed left NULL.
+			sb.AppendLine("\t\t\tobject[] row = new object[l.Names.Length];");
+			sb.AppendLine("\t\t\tfor (int i = 0; i < row.Length; i++) row[i] = global::System.DBNull.Value;");
+			foreach (int k in ReadOrder(slots, ReadMode.Full))
+			{
+				SlotSpec s = slots[k];
+				string value = s.Keeps
+					? $"n{k} ? global::System.DBNull.Value : (object)v{k}"
+					: $"(object)v{k} ?? global::System.DBNull.Value";
+				sb.AppendLine($"\t\t\tif (l.O{k} >= 0) row[l.O{k}] = {value};");
+			}
+
+			sb.AppendLine("\t\t\treturn b.ByRuntime(row);");
 		}
 
 		sb.AppendLine("\t\t}");
@@ -642,7 +689,7 @@ static class Emitter
 	static void EmitSlot(StringBuilder sb, SlotSpec s, int k, ReadMode mode, string indent, Func<string, bool, string> statement)
 	{
 		var cases = s.Cases.Items;
-		if (mode != ReadMode.Guarded)
+		if (mode is ReadMode.Literal or ReadMode.Full || (mode == ReadMode.Converting && cases.Length == 1))
 		{
 			string o = mode == ReadMode.Literal ? s.Order.ToString(System.Globalization.CultureInfo.InvariantCulture) : "l.O" + k;
 			ReadCase c = cases[0];
@@ -650,8 +697,10 @@ static class Emitter
 			return;
 		}
 
-		// Inside the column-order loop (OpenSequence): this slot's case, then its read case by the column's type.
-		sb.AppendLine(indent + $"case {k}:");
+		bool guarded = mode == ReadMode.Guarded;
+		// Guarded: inside the column-order loop (OpenSequence), this slot's case. Converting: every slot is fed, in ascending column order, so no presence test.
+		// Either way the read case was chosen once per layout, by the column's type.
+		sb.AppendLine(indent + (guarded ? $"case {k}:" : "// " + s.Name));
 		sb.AppendLine(indent + "{");
 		sb.AppendLine(indent + $"\ts = {k};");
 		sb.AppendLine(indent + $"\tint o = l.O{k};");
@@ -665,7 +714,7 @@ static class Emitter
 		}
 
 		sb.AppendLine(indent + "\t}");
-		sb.AppendLine(indent + "\tbreak;");
+		if (guarded) sb.AppendLine(indent + "\tbreak;");
 		sb.AppendLine(indent + "}");
 	}
 
@@ -693,7 +742,7 @@ static class Emitter
 	// Create-then-set: the statement that sets the property from its cell ({O} is the ordinal), under the NULL table (RowMap.ReadValue, NullTest).
 	static string SetStatement(SlotSpec s, string read, bool general)
 	{
-		string target = "item." + s.Name;
+		string target = "item." + Code(s.Name);
 		if (general)
 		{
 			string value = read.Replace("{0}", "c");

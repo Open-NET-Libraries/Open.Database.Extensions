@@ -8,7 +8,7 @@ namespace Open.Database.Extensions.Generator.Tests;
 /// Each test reads the same data twice: <c>q.Map(RowMap&lt;T&gt;.Default)</c> (the runtime map: an argument, never intercepted)
 /// and <c>q.Map&lt;T&gt;()</c> (intercepted), then asks for the same rows, or the same exception, and for what the generated code did.
 /// </summary>
-public class ParityTests
+public partial class ParityTests
 {
 	static readonly DateTime Day = new(2026, 1, 2, 3, 4, 5, DateTimeKind.Unspecified);
 	static readonly Guid KeyA = new("6f1c2b0e-3a4d-4e5f-8a9b-0c1d2e3f4a5b");
@@ -39,13 +39,22 @@ public class ParityTests
 		else Parity.SameError(r, g);
 	}
 
-    static void Served(Counts c, int sets = 1) => Assert.True(c.Intercepted == sets && c.Served == sets && c.Declined == 0, $"expected {sets} intercepted and served: {c}");
+	/// <summary>Both threw (the runtime too), the same exception.</summary>
+	static void SameThrow<T>(Func<List<T>> runtime, Func<List<T>> generated)
+		=> Parity.SameError(Catch(() => runtime()), Catch(() => generated()));
 
-    static void Declined(Counts c) => Assert.True(c.Intercepted == 1 && c.Served == 0 && c.Declined == 1, $"expected 1 intercepted and declined: {c}");
+	/// <summary>Intercepted and served by generated code; by default no row was handed to the runtime.</summary>
+	static void Served(Counts c, int sets = 1, int rowsDeclined = 0)
+		=> Assert.True(
+			c.Intercepted == sets && c.Served == sets && c.Declined == 0 && c.RowsDeclined == rowsDeclined,
+			$"expected {sets} intercepted and served, {rowsDeclined} rows declined: {c}");
 
-    // ---- the undecorated twin: read by name ----
+	static void Declined(Counts c)
+		=> Assert.True(c.Intercepted == 1 && c.Served == 0 && c.Declined == 1 && c.RowsServed == 0, $"expected 1 intercepted and declined: {c}");
 
-    static readonly Col[] PostColumns =
+	// ---- the undecorated twin: read by name ----
+
+	static readonly Col[] PostColumns =
 	[
 		Col.Of<int>("Id"),
 		Col.Of<DateTime>("Created"),
@@ -82,8 +91,8 @@ public class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Served(c);
+		Assert.Equal(1, c.Full);
 		Assert.Equal(PostRows.Length, c.RowsServed);
-		Assert.Equal(0, c.RowsDeclined);
 		Assert.Equal("untitled", generated[1].Title);
 		Assert.Null(generated[1].Label);
 	}
@@ -127,6 +136,7 @@ public class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Served(c);
+		Assert.Equal(1, c.Guarded);
 	}
 
 	[Fact]
@@ -163,7 +173,7 @@ public class ParityTests
 		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<long>("Big"), Col.Of<long>("Qty")], [1, 2L, 5_000_000_000L]);
 
 		Counts start = Counts.Now();
-		SameOutcome(
+		SameThrow(
 			() => q.Map(RowMap<PlainPost>.Default).ToList(),
 			() => q.Map<PlainPost>().ToList());
 		Counts c = Counts.Now().Since(start);
@@ -217,6 +227,7 @@ public class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Served(c);
+		Assert.Equal(1, c.Literal);
 		Assert.All(generated, p => Assert.Equal("kept", p.Display));
 	}
 
@@ -246,7 +257,7 @@ public class ParityTests
 		var q = new TableQuery(columns, rows);
 
 		Counts start = Counts.Now();
-		SameOutcome(
+		SameThrow(
 			() => q.Map(RowMap<DecoratedPost>.Default).ToList(),
 			() => q.Map<DecoratedPost>().ToList());
 		Counts c = Counts.Now().Since(start);
@@ -260,7 +271,7 @@ public class ParityTests
 		var q = new TableQuery([.. DecoratedColumns.Take(5)], [1, Day, "t", 1m, 2]);
 
 		Counts start = Counts.Now();
-		SameOutcome(
+		SameThrow(
 			() => q.Map(RowMap<DecoratedPost>.Default).ToList(),
 			() => q.Map<DecoratedPost>().ToList());
 		Counts c = Counts.Now().Since(start);
@@ -276,9 +287,11 @@ public class ParityTests
 		columns[0] = Col.Of<int>("postid");
 		var q = new TableQuery(columns, PostRows[0]);
 
-		SameOutcome(
+		Counts start = Counts.Now();
+		SameThrow(
 			() => q.Map(RowMap<DecoratedPost>.Default).ToList(),
 			() => q.Map<DecoratedPost>().ToList());
+		Declined(Counts.Now().Since(start));
 	}
 
 	[Fact]
@@ -303,9 +316,11 @@ public class ParityTests
 	{
 		var q = new TableQuery([Col.Of<int>("post_id"), Col.Of<string>("Note")], [1, "n"]);
 
-		SameOutcome(
+		Counts start = Counts.Now();
+		SameThrow(
 			() => q.Map(RowMap<NamedPost>.Default).ToList(),
 			() => q.Map<NamedPost>().ToList());
+		Declined(Counts.Now().Since(start));
 	}
 
 	// ---- constructors ----
@@ -378,7 +393,6 @@ public class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Served(c);
-		Assert.Equal(0, c.RowsDeclined);
 	}
 
 	[Fact]
@@ -398,8 +412,7 @@ public class ParityTests
 			() => q.Map<PlainInit>().ToList());
 		Counts c = Counts.Now().Since(start);
 
-		Served(c);
-		Assert.Equal(2, c.RowsDeclined);
+		Served(c, rowsDeclined: 2);
 	}
 
 	[Fact]
@@ -422,9 +435,11 @@ public class ParityTests
 	{
 		var q = new TableQuery([Col.Of<string>("Title")], ["one"]);
 
-		SameOutcome(
+		Counts start = Counts.Now();
+		SameThrow(
 			() => q.Map(RowMap<PlainInit>.Default).ToList(),
 			() => q.Map<PlainInit>().ToList());
+		Declined(Counts.Now().Since(start));
 	}
 
 	[Fact]
@@ -470,11 +485,11 @@ public class ParityTests
 	{
 		var q = new TableQuery(PostColumns, PostRows);
 		List<PlainPost> runtime;
-		using (DataTableReader reader = q.OpenReader()) runtime = reader.Map(RowMap<PlainPost>.Default).ToList();
+		using (System.Data.Common.DbDataReader reader = q.OpenReader()) runtime = reader.Map(RowMap<PlainPost>.Default).ToList();
 
 		Counts start = Counts.Now();
 		List<PlainPost> generated;
-		using (DataTableReader reader = q.OpenReader()) generated = reader.Map<PlainPost>().ToList();
+		using (System.Data.Common.DbDataReader reader = q.OpenReader()) generated = reader.Map<PlainPost>().ToList();
 		Counts c = Counts.Now().Since(start);
 
 		Parity.SameRows(runtime, generated);
@@ -507,7 +522,7 @@ public class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Assert.Equal(1, c.Intercepted);
-		Assert.Equal(1, c.Served + c.Declined);
+		Served(c);
 	}
 
 	[Fact]
@@ -601,7 +616,7 @@ public class ParityTests
 		var q = new TableQuery([Col.Of<int>("Id")], [1]);
 
 		Counts start = Counts.Now();
-		SameOutcome(
+		SameThrow(
 			() => q.Map(RowMap<InvalidOrderPost>.Default).ToList(),
 			() => q.Map<InvalidOrderPost>().ToList());
 		Counts c = Counts.Now().Since(start);

@@ -186,3 +186,82 @@ public sealed class InvalidOrderPost
 	[Column(Order = -1)]
 	public int Id { get; set; }
 }
+
+/// <summary>Two members declaring one ordinal: a type error in the runtime, so the generator leaves the call to it.</summary>
+public sealed class DuplicateOrderPost
+{
+	[Column(Order = 0)]
+	public int Id { get; set; }
+
+	[Column(Order = 0)]
+	public string? Title { get; set; }
+}
+
+/// <summary>A member both [NotMapped] and [Column]: a type error in the runtime, so the generator leaves the call to it.</summary>
+public sealed class NotMappedColumnPost
+{
+	public int Id { get; set; }
+
+	[NotMapped, Column("title")]
+	public string? Title { get; set; }
+}
+
+/// <summary>Member names that are C# keywords: the generated code must escape them (@event).</summary>
+public sealed class KeywordPost
+{
+#pragma warning disable IDE1006 // Naming: keyword-named members on purpose.
+	public int @event { get; set; }
+
+	public string? @class { get; set; }
+#pragma warning restore IDE1006
+}
+
+/// <summary>[Column(Order = n)] without a name: the member's own name is the declared column.</summary>
+public sealed class OrderOnlyPost
+{
+	[Column(Order = 0)]
+	public int Id { get; set; }
+
+	[Column(Order = 1)]
+	public string? Title { get; set; }
+}
+
+/// <summary>Members declared in another order than their Order: still read at constant ordinals, in column order.</summary>
+public sealed class ReorderedPost
+{
+	[Column("title", Order = 1)]
+	public string? Title { get; set; }
+
+	[Column("post_id", Order = 0)]
+	public int Id { get; set; }
+}
+
+/// <summary>Two public constructors and no parameterless one: not intercepted (the runtime decides).</summary>
+public sealed class TwoConstructorsPost
+{
+	public TwoConstructorsPost(int id) => Id = id;
+
+	public TwoConstructorsPost(int id, string title)
+	{
+		Id = id;
+		Title = title;
+	}
+
+	public int Id { get; }
+
+	public string? Title { get; }
+}
+
+/// <summary>A base with a virtual member.</summary>
+public class VirtualPost
+{
+	public virtual int Id { get; set; }
+}
+
+/// <summary>An overridden member: not intercepted (the runtime decides).</summary>
+public sealed class OverridePost : VirtualPost
+{
+	public override int Id { get; set; }
+
+	public string? Title { get; set; }
+}
