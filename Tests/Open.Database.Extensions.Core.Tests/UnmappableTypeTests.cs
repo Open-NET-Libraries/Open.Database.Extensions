@@ -115,7 +115,7 @@ public static class UnmappableTypeTests
 	}
 
 	static string Single(string name)
-		=> $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().";
+		=> $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().";
 	static string NotConcrete(string name, string kind) => $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
 	static string NoConstructor(string name) => $"'{name}' cannot be mapped: it has no public constructor.";
 	static string Ambiguous(string name, int count, string signatures) => $"'{name}' cannot be mapped: it has {count} public constructors, {signatures}, and none without parameters. Make one of them non-public, or use Map(selector).";
@@ -332,8 +332,6 @@ public static class UnmappableTypeTests
 		return table;
 	}
 
-	static QueryResult<Queue<object[]>> Queued() => new([0], ["Id"], new Queue<object[]>());
-
 	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
 	{
 		public bool UseAsyncRead => false;
@@ -394,7 +392,6 @@ public static class UnmappableTypeTests
 		["ToHashSetAsync<T>()"] = async () => await Exec().ToHashSetAsync<T>(),
 		["Map(new RowMap<T>(pair))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"))).ToList()),
 		["Map(new RowMap<T>(pairs))"] = () => Run(() => Exec().Map(new RowMap<T>(new KeyValuePair<string, string?>("Id", "Id"), new("Name", "Name"))).ToList()),
-		["new Transformer<T>()"] = () => Run(() => Transformer<T>.Create()),
 
 		// Channel: a new channel
 		["ToChannel<T>(IDataReader)"] = () => Done(Reader().ToChannel<T>(true)),

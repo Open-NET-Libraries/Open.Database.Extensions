@@ -32,25 +32,7 @@ public class Transformer<T>
 	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter.", Justification = "<Pending>")]
 	protected internal static readonly ArrayPool<object> LocalPool = ArrayPool<object>.Create(1024, MaxArrayBuffer);
 
-	/// <summary>
-	/// Gets the <see cref="System.Type"/> of <typeparamref name="T"/>.
-	/// </summary>
-	/// <value>The type of the model that the transformer creates.</value>
-	public Type Type => typeof(T);
-
 	readonly RowMap<T> _plan;
-
-	/// <summary>
-	/// Gets the property names.
-	/// </summary>
-	/// <value>The names of the properties of <typeparamref name="T"/> that the map reads a column into.</value>
-	public IEnumerable<string> PropertyNames => _plan.PropertyNames;
-
-	/// <summary>
-	/// Gets the column names.
-	/// </summary>
-	/// <value>The names of the columns that the mapped properties read.</value>
-	public IEnumerable<string> ColumnNames => _plan.ColumnNames;
 
 	/// <summary>
 	/// Finds the columns of the record that feed a property.
@@ -70,26 +52,6 @@ public class Transformer<T>
 	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map']/*" />
 	protected internal Transformer(RowMap<T>? map = null)
 		=> _plan = map ?? RowMap<T>.Default;
-
-	/// <summary>
-	/// Creates a transformer that reads by column name.
-	/// </summary>
-	/// <returns>A new <see cref="Transformer{T}"/>.</returns>
-	[ExcludeFromCodeCoverage]
-	[OverloadResolutionPriority(1)]
-	public static Transformer<T> Create() => new();
-
-	/// <summary>
-	/// Creates a <see cref="Transformer{T}"/>.
-	/// </summary>
-	/// <remarks>
-	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map-declare-once']/*" />
-	/// </remarks>
-	/// <include file="RowMapping.docs.xml" path="docs/members[@name='map']/*" />
-	/// <returns>A new transformer that uses <paramref name="map"/>.</returns>
-	/// <seealso cref="RowMap{T}"/>
-	public static Transformer<T> Create(RowMap<T>? map)
-		=> new(map);
 
 	/// <summary>
 	/// Processes the results of the transformer.
@@ -133,77 +95,5 @@ public class Transformer<T>
 		/// <param name="names">The column/property names to process.</param>
 		public void SetNames(ImmutableArray<string> names)
 			=> Transform = Transformer._plan.ArrayMapper(names);
-	}
-
-	/// <summary>
-	/// Dequeues the results and transforms each one by one during enumeration.
-	/// </summary>
-	/// <param name="results">The results to process.</param>
-	/// <returns>A dequeuing enumerable of the transformed results.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="results"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ValueMappingException">A required property has no column in the results.</exception>
-	public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results)
-	{
-		if (results is null) throw new ArgumentNullException(nameof(results));
-		Contract.EndContractBlock();
-
-		return Drain(results.Result, _plan.ArrayMapper(results.Names));
-	}
-
-	/// <summary>
-	/// Dequeues the results and transforms each one by one during enumeration.
-	/// </summary>
-	/// <param name="results">The results to process.</param>
-	/// <param name="arrayPool">The array pool to return the buffers to.</param>
-	/// <param name="clearArrays"><see langword="true"/> to clear the columns written to the buffers before they go back to the pool; otherwise, <see langword="false"/>. The default is <see langword="false"/>.</param>
-	/// <returns>A dequeuing enumerable of the transformed results.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="results"/> or <paramref name="arrayPool"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ValueMappingException">A required property has no column in the results.</exception>
-	public IEnumerable<T> AsDequeueingEnumerable(QueryResult<Queue<object[]>> results, ArrayPool<object> arrayPool, bool clearArrays = false)
-	{
-		if (results is null) throw new ArgumentNullException(nameof(results));
-		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
-		Contract.EndContractBlock();
-
-		return Drain(results.Result, _plan.ArrayMapper(results.Names), arrayPool, clearArrays, results.ColumnCount);
-	}
-
-	/// <summary>
-	/// Dequeues the rows and maps each one during enumeration.
-	/// </summary>
-	/// <remarks>
-	/// Each row leaves the queue as it is mapped, so it can be collected while the rest are still pending.
-	/// </remarks>
-	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map)
-	{
-		while (queue.Count > 0)
-			yield return map(queue.Dequeue());
-	}
-
-	/// <summary>
-	/// Dequeues the rows and maps each one during enumeration, then returns its array to the pool.
-	/// </summary>
-	/// <remarks>
-	/// Only the columns were written, so only they are cleared (when asked): the rest of a rented array was never used.
-	/// </remarks>
-	static IEnumerable<T> Drain(Queue<object[]> queue, Func<object?[], T> map, ArrayPool<object> pool, bool clear, int columnCount)
-	{
-		while (queue.Count > 0)
-		{
-			object[] row = queue.Dequeue();
-			T item;
-			try
-			{
-				item = map(row);
-			}
-			finally
-			{
-				// Only the columns were written, so only they are cleared: the rest of a rented array was never used.
-				if (clear) Array.Clear(row, 0, Math.Min(columnCount, row.Length));
-				pool.Return(row, false);
-			}
-
-			yield return item;
-		}
 	}
 }

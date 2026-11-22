@@ -2555,7 +2555,7 @@ sealed class Shape
 		setsRequiredMembers = false;
 		string name = TypeName(type);
 
-		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().";
+		if (IsScalar(type)) return $"'{name}' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().";
 		if (NotConcrete(type) is { } kind) return $"'{name}' cannot be mapped: it is {kind}. Map to a class or struct, or use Map(selector).";
 		if (IsDictionaryOrDynamic(type)) return $"'{name}' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).";
 

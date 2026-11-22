@@ -21,28 +21,6 @@ public static class DataReaderExtensionsTests
 	}
 
 	[Fact]
-	public static void AsEnumerable_Ordinals_ProjectsSelectedColumns()
-	{
-		IDataReader reader = FakeReader.Create(IdNameExtra, [1, "a", "x"]);
-
-		IEnumerable<int> ordinals = [2, 0];
-		object[] row = Assert.Single([.. reader.AsEnumerable(ordinals)]);
-
-		Assert.Equal(["x", 1], row);
-	}
-
-	[Fact]
-	public static void AsEnumerable_ParamsOrdinals_ProjectsSelectedColumns()
-	{
-		IDataReader reader = FakeReader.Create(IdNameExtra, [1, "a", "x"]);
-
-		// n = 0, others = 2  ->  ordinals [0, 2]
-		object[] row = Assert.Single([.. reader.AsEnumerable(0, 2)]);
-
-		Assert.Equal([1, "x"], row);
-	}
-
-	[Fact]
 	public static void Select_TransformsEachRecord()
 	{
 		IDataReader reader = FakeReader.Create(["Id"], [1], [2], [3]);
@@ -63,15 +41,4 @@ public static class DataReaderExtensionsTests
 		Assert.Equal(7, sum);
 	}
 
-	[Fact]
-	public static void FirstOrdinalResults_ReadsFirstColumn_ConvertsDBNull()
-	{
-		IDataReader reader = FakeReader.Create(IdName, [1, "a"], [DBNull.Value, "b"]);
-
-		List<object?> firsts = [.. reader.FirstOrdinalResults()];
-
-		Assert.Equal(2, firsts.Count);
-		Assert.Equal(1, firsts[0]);
-		Assert.Null(firsts[1]); // DBNull -> null
-	}
 }

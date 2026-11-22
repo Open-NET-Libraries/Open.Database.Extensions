@@ -424,9 +424,10 @@ Check(Migration.ResultsFromDataTable(connection) == five, "ToDataTable().Map(map
 Check(await Migration.SelectorForms(connection, CancellationToken.None) == "1|1,2|4,5|2,3", "Map(selector) with First, Take, Skip and Skip then Take returns what the old selector terminals did");
 Check(await Migration.TakeAsyncAndToListAsync(connection, CancellationToken.None) == "1,2|1,2,3,4,5", "Map(selector).Take(2).ToListAsync() and .ToListAsync() return what TakeAsync and ToListAsync did");
 Check(await Migration.CollectionAsync(connection, CancellationToken.None) == 5, "a List<T> from Map holds the rows a QueryResultCollection held");
-(string dictAfter, string dictAfterAsync) = await Migration.MappedDictionaries(connection);
-Check(dictAfter.Length > 0 && dictAfter == dictAfterAsync, "Retrieve().DequeueAsMappedDictionaries() and its awaited async form return the same rows");
-Check(await Migration.DequeueAs(connection, CancellationToken.None) == five, "Map<T>().ToList() returns the five posts (it replaces Retrieve().DequeueAs<T>())");
+string dictAfter = await Migration.MappedDictionaries(connection, CancellationToken.None);
+Check(dictAfter == "id=1;id=2;id=3;id=4;id=5", "AsDictionaryRows().ToListAsync() returns a dictionary for each row, with the column names");
+Check(await Migration.ObjectArrays(connection, CancellationToken.None) == "1,42,Post 1,Body 1,10;2,42,Post 2,,20;3,42,Post 3,Body 3,30;4,7,Post 4,,40;5,7,Post 5,Body 5,50", "AsObjectArrays().ToListAsync() returns an array of values for each row, a NULL as null");
+Check(await Migration.DequeueAs(connection, CancellationToken.None) == five, "Map<T>().ToListAsync() returns the five posts");
 
 // AsyncReads(): the rows are the same as with the default.
 // SQLite cannot show which read was used;

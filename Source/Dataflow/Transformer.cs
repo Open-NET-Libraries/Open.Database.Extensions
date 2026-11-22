@@ -10,14 +10,14 @@ internal class Transformer<T>(RowMap<T>? map = null)
 	/// <inheritdoc cref="Create(RowMap{T}?)"/>
 	[ExcludeFromCodeCoverage]
 	[OverloadResolutionPriority(1)]
-	public static new Transformer<T> Create()
+	public static Transformer<T> Create()
 		=> new();
 
 	/// <summary>
 	/// Static utility for creating a Transformer <typeparamref name="T"/>.
 	/// </summary>
 	/// <param name="map">An optional prebuilt <see cref="RowMap{T}"/>; <see langword="null"/> reads by column name.</param>
-	public static new Transformer<T> Create(RowMap<T>? map)
+	public static Transformer<T> Create(RowMap<T>? map)
 		=> new(map);
 
 	/// <summary>

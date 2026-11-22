@@ -644,19 +644,6 @@ public static class DataReaderEdgeTests
 
 	// ---- AsEnumerable / AsAsyncEnumerable ----
 
-	[Fact]
-	public static void AsEnumerable_WithAPool_RentsEachRowFromIt_SizedForTheOrdinalsAsked()
-	{
-		var pool = new SizedPool();
-		TypedReader reader = Reader([1, "a", null], [2, "b", "n2"]);
-
-		object[][] rows = reader.AsEnumerable(pool, 2, 0).ToArray();
-
-		Assert.Equal([2, 2], pool.Requests);
-		Assert.Equal([DBNull.Value, 1], rows[0]); // the NULL is kept, in the order asked
-		Assert.Equal(["n2", 2], rows[1]);
-	}
-
 	[Theory]
 	[InlineData("pool")]
 	[InlineData("ordinals and pool")]
@@ -801,23 +788,6 @@ public static class DataReaderEdgeTests
 	}
 
 	// ---- FirstOrdinalResults ----
-
-	[Theory]
-	[InlineData(true)]
-	[InlineData(false)]
-	public static void FirstOrdinalResults_ReadsEveryRowBeforeItReturns_AndTurnsNullsIntoNull(bool providerReader)
-	{
-		object?[][] rows = [[1], [null], [3]];
-		IDataReader reader = providerReader
-			? TypedReader.Create([("Id", typeof(int))], rows)
-			: FakeReader.Create(["Id"], rows);
-
-		IEnumerable<object?> values = reader.FirstOrdinalResults();
-
-		if (reader is TypedReader typed)
-			Assert.Equal(3, typed.RowsRead); // before it is enumerated, so the connection can be released
-		Assert.Equal([1, null, 3], values.ToArray());
-	}
 
 	// ---- argument guards ----
 

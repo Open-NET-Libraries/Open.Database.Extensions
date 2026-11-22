@@ -193,22 +193,6 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>
-	/// Copies the rows, in order, into a queue made from exactly that many
-	/// rows.
-	/// </summary>
-	/// <remarks>
-	/// <see cref="Queue{T}"/> has no way in but its constructors; the one that
-	/// takes an <see cref="IEnumerable{T}"/> that is also an
-	/// <see cref="ICollection{T}"/> (this chain is one) makes one array of
-	/// exactly <see cref="Count"/> and block-copies into it, and keeps that
-	/// array (the constructor path is checked by a test on the shipped
-	/// runtimes; older runtimes enqueue one by one, which is the same result).
-	/// </remarks>
-	/// <returns>A new queue of <see cref="Count"/> rows.</returns>
-	public Queue<T> ToQueue()
-		=> Count == 0 ? new Queue<T>() : new Queue<T>(this);
-
-	/// <summary>
 	/// Adds the rows to a new hash set sized to them, so that it does not
 	/// regrow (duplicates are dropped, as a hash set does).
 	/// </summary>
@@ -370,9 +354,8 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 
 	/// <summary>Gets the number of rows added.</summary>
 	/// <remarks>
-	/// The chain is an <see cref="ICollection{T}"/> only so that a
-	/// <see cref="Queue{T}"/> can be made from it in one exact copy (see
-	/// <see cref="ToQueue"/>); nothing else about it is a collection.
+	/// The chain is an <see cref="ICollection{T}"/> only so that a collection
+	/// constructor can be given the exact count; nothing else about it is a collection.
 	/// </remarks>
 	int ICollection<T>.Count => Count;
 

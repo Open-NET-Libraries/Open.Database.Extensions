@@ -419,7 +419,7 @@ internal static class RowReader
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is one async method for every collecting terminal (<c>ToList</c>, <c>ToArray</c>, <c>ToQueue</c>,
+/// This is one async method for every collecting terminal (<c>ToList</c>, <c>ToArray</c>,
 /// <c>ToHashSet</c>, <c>ToDictionary</c>): the read loop and the build share a single
 /// state machine, so a read that really suspends boxes one machine, not a
 /// wrapper around another.
@@ -618,11 +618,6 @@ internal readonly struct ImmutableArrayBuild<T> : IChainBuild<T, ImmutableArray<
 		return ImmutableArray.Create(array);
 #endif
 	}
-}
-
-internal readonly struct QueueBuild<T> : IChainBuild<T, Queue<T>>
-{
-	public Queue<T> Build(ChunkChain<T> chain) => chain.ToQueue();
 }
 
 internal readonly struct HashSetBuild<T>(IEqualityComparer<T>? comparer)

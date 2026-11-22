@@ -216,7 +216,6 @@ public static class LeakRetentionTests
 					break;
 				case "ExecuteScalar": command.ExecuteScalar(); break;
 				case "ExecuteNonQueryAsync": await command.ExecuteNonQueryAsync(); break;
-				case "Retrieve": command.Retrieve(); break;
 				case "ToListAsyncFails": await command.Map<Row>().ToListAsync(none); break;
 				case "ToArrayAsyncFails": await command.Map<Row>().ToArrayAsync(none); break;
 				case "ToListAsyncLinkedToken":
@@ -250,7 +249,6 @@ public static class LeakRetentionTests
 	[InlineData("ReadAsyncAbandon")]
 	[InlineData("ExecuteScalar")]
 	[InlineData("ExecuteNonQueryAsync")]
-	[InlineData("Retrieve")]
 	[InlineData("ToListAsyncFails")]
 	[InlineData("ToArrayAsyncFails")]
 	[InlineData("ToListAsyncLinkedToken")]

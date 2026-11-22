@@ -79,7 +79,6 @@ public static class LeakMatrixTests
 			return e.MoveNext();
 		})),
 		Sync<ExpressiveDbCommand, bool>("ExecuteReader.State", Traits.Reader, c => c.ExecuteReader(0, static (r, _) => r.Read())),
-		Sync<ExpressiveDbCommand, QueryResultQueue<object[]>>("Retrieve", Traits.Reader, c => c.Retrieve()),
 		Sync<ExpressiveDbCommand, object?>("ExecuteScalar", Traits.None, c => c.ExecuteScalar()),
 		Sync<ExpressiveDbCommand, int>("ExecuteNonQuery", Traits.None, c => c.ExecuteNonQuery()),
 		Sync<ExpressiveDbCommand, object?>("ExecuteReturn", Traits.None, c => c.ExecuteReturn()),
@@ -97,7 +96,6 @@ public static class LeakMatrixTests
 			return await e.MoveNextAsync();
 		}, ct)),
 		Async<ExpressiveDbCommand, bool>("ExecuteReaderAsync.State", Traits.Reader, (c, ct) => c.UseCancellationToken(ct).ExecuteReaderAsync(0, static (r, _) => new ValueTask<bool>(r.Read()))),
-		Async<ExpressiveDbCommand, QueryResultQueue<object[]>>("RetrieveAsync", Traits.Reader, (c, ct) => c.UseCancellationToken(ct).RetrieveAsync()),
 		Async<ExpressiveDbCommand, object?>("ExecuteScalarAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteScalarAsync()),
 		Async<ExpressiveDbCommand, int>("ExecuteNonQueryAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteNonQueryAsync()),
 		Async<ExpressiveDbCommand, object?>("ExecuteReturnAsync", Traits.None, (c, ct) => c.UseCancellationToken(ct).ExecuteReturnAsync()),

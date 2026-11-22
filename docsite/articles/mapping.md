@@ -115,7 +115,7 @@ A type that cannot be mapped throws `InvalidOperationException` at the call, bef
 | An interface | `'IPost' cannot be mapped: it is an interface. Map to a class or struct, or use Map(selector).` |
 | An abstract class or a delegate | The same, with `it is an abstract class` or `it is a delegate` |
 | A dictionary (`Dictionary<,>`, `IDictionary<,>`, `IReadOnlyDictionary<,>`) or a dynamic object (`ExpandoObject`) | ``'Dictionary`2' cannot be mapped: it is a dictionary or a dynamic object, which has no properties to set from the columns. Map to a class or record, or use Map(selector).`` |
-| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `ToChannel<T>`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else FirstOrdinalResults<T>() or ExecuteScalar<T>().` |
+| A single value (`int`, `string`, ...) passed to a method that maps rows to a model (`RowMap<T>`, `ToChannel<T>`, ...) | `'Int32' is a single value, not a row model. On a command use Map<T>() or ToListAsync<T>(), which read the first column; else ExecuteScalar<T>().` |
 | No public constructor | `'Post' cannot be mapped: it has no public constructor.` |
 | Two or more public constructors, none without parameters | `'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).` |
 | A `required` public field | `'Post' cannot be mapped: its required field 'Title' cannot be set. Make it a property.` |
@@ -135,7 +135,7 @@ The rules:
 - **NULL.** Follows [the NULL rules](#null-in-a-non-nullable-column): `Map<int>().Single()` over a NULL is `0`, and `Map<int?>()` gives `null`.
 - **Read through.** As every `Map` terminal, they (and the async forms on the command) read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
 
-It differs from the two other ways to read one column. `FirstOrdinalResults<T>()` returns the provider's own value (its typed getter, or a plain cast) from the first result set only, and is the form for a raw `IDbCommand` or a reader (see [the foundation](foundation.md#reader-and-command-helpers)); `ExecuteScalar<T>()` returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
+It differs from `ExecuteScalar<T>()`, which returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
 Pass the token or nothing to these `Async` forms: the token goes straight after the comparer, or first when there is no comparer (`ToHashSetAsync<int>(ct)`, `ToHashSetAsync(comparer, ct)`), as on `MappedQuery<T>`.
 
@@ -339,6 +339,18 @@ A mapped query has no `Select`: to shape each row into another type, give `Map` 
 A data class can return the mapped query and let each caller pick the terminal:
 
 [!code-csharp[](../samples/Mapping.cs#map_query_factory)]
+
+## Rows without a model
+
+When there is no model class, ask for the rows as they are. `AsObjectArrays()` gives each row as an `object?[]`, one value for each column in order, a database NULL as `null`. `AsDictionaryRows()` gives a `DictionaryRow`, the same values with the column names:
+
+[!code-csharp[](../samples/Migration.cs#migration_objectarrays_after)]
+
+[!code-csharp[](../samples/Migration.cs#migration_mappeddictionaries_after)]
+
+Both are mapped views like `Map<T>()`: the same terminals, `Skip` and `Take`, `SingleResult()`, `AsyncReads()` and `UsePool(pool, clearOnReturn)`, and the same read through the later result sets. They exist on an expressive command, an `IDbCommand`, a reader you own, a `DataTable` and a `DbQuery` definition. Every column is read once, in order, so a provider can stream the row. The arrays that hold the rows are pooled and always cleared; the row arrays are yours.
+
+A `DictionaryRow` is a `struct` over the row's values and one list of column names that every row of the result set shares, so a million rows build the names once and no dictionary each. Its dictionary side covers the distinct names (the first column with a name wins; a name is found exactly, else ignoring case; a missing name throws `KeyNotFoundException`); the ordinal indexer and `FieldCount` reach every column. `ToDictionary()` makes a copy you own. Handing the row to an `IReadOnlyDictionary<string, object?>` boxes it. A result with no rows has no names. It is not a model: `Map<DictionaryRow>()` is not supported.
 
 ## Results, and a failure after the first one
 

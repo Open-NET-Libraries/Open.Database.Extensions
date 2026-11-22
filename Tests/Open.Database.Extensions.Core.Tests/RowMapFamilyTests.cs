@@ -67,9 +67,6 @@ public static class RowMapFamilyTests
 		return table;
 	}
 
-	static QueryResult<Queue<object[]>> Queued()
-		=> new([0, 1, 2, 3], [.. RowMapTests.Renamed], new Queue<object[]>(Rows!));
-
 	// ---- draining what each family produces ----
 	static async Task<List<Item>> Drain(ChannelReader<Item> reader)
 	{

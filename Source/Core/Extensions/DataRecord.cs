@@ -9,30 +9,13 @@
 public static partial class DataRecordExtensions
 {
 	/// <summary>
-	/// Reads the values of the current row into a new array sized to the record's <see cref="IDataRecord.FieldCount"/>.
-	/// </summary>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
-	/// <returns>A new array containing the value of each column in ordinal order.</returns>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
-	/// <seealso cref="GetValues(IDataRecord, ArrayPool{object})"/>
-	public static object[] GetValues(this IDataRecord record)
-	{
-		if (record is null) throw new ArgumentNullException(nameof(record));
-		Contract.EndContractBlock();
-
-		object[] result = new object[record.FieldCount];
-		record.GetValues(result);
-		return result;
-	}
-
-	/// <summary>
 	/// Reads the values of the current row into a new array of the specified length.
 	/// </summary>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="arrayLength">The size of the resultant array. If it is smaller than the field count, only that many leading values are copied; if it is larger, the extra elements are <see langword="null"/>.</param>
 	/// <returns>A new array containing the values in ordinal order.</returns>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
-	public static object[] GetValues(this IDataRecord record, int arrayLength)
+	internal static object[] GetValues(this IDataRecord record, int arrayLength)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
@@ -53,7 +36,7 @@ public static partial class DataRecordExtensions
 	/// The caller owns the rented array and must return it to <paramref name="arrayPool"/>. The array can be longer than requested, and elements beyond the copied values are not cleared, so they can hold values from earlier use. Because the array holds database values, consider returning it with its contents cleared.
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="arrayPool"/> is <see langword="null"/>.</exception>
-	public static object[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object> arrayPool)
+	internal static object[] GetValues(this IDataRecord record, int minimumArrayLength, ArrayPool<object> arrayPool)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
@@ -63,27 +46,6 @@ public static partial class DataRecordExtensions
 		record.GetValues(result);
 		return result;
 	}
-	/// <summary>
-	/// Reads the values of the current row into an array rented from <paramref name="arrayPool"/>, sized for the record's <see cref="IDataRecord.FieldCount"/>.
-	/// </summary>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
-	/// <param name="arrayPool">The array pool to rent the buffer from.</param>
-	/// <returns>The rented array containing the values in ordinal order.</returns>
-	/// <remarks>
-	/// The caller owns the rented array and must return it to <paramref name="arrayPool"/>. The array can be longer than requested, and elements beyond the copied values are not cleared, so they can hold values from earlier use. Because the array holds database values, consider returning it with its contents cleared.
-	/// </remarks>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="arrayPool"/> is <see langword="null"/>.</exception>
-	public static object[] GetValues(this IDataRecord record, ArrayPool<object> arrayPool)
-	{
-		if (record is null) throw new ArgumentNullException(nameof(record));
-		if (arrayPool is null) throw new ArgumentNullException(nameof(arrayPool));
-
-		Contract.EndContractBlock();
-		object[] result = arrayPool.Rent(record.FieldCount);
-		record.GetValues(result);
-		return result;
-	}
-
 	/// <summary>
 	/// Lazily enumerates the column names of the current result set in ordinal order.
 	/// </summary>
@@ -309,71 +271,6 @@ public static partial class DataRecordExtensions
 			foreach (int i in remainingOrdinals)
 				yield return record.GetValue(i);
 		}
-	}
-
-	/// <summary>
-	/// Reads the values of the columns at the specified ordinals into the provided span.
-	/// </summary>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
-	/// <param name="ordinals">The ordinals to read.</param>
-	/// <param name="values">The span that receives the values. It must be at least as long as <paramref name="ordinals"/>.</param>
-	/// <returns>The provided span, updated with values matching the ordinal positions requested.</returns>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
-	/// <exception cref="IndexOutOfRangeException"><paramref name="values"/> is shorter than <paramref name="ordinals"/>, or an ordinal is not a valid column index for the record.</exception>
-	public static Span<object> GetValuesFromOrdinals(this IDataRecord record, ReadOnlySpan<int> ordinals, Span<object> values)
-	{
-		if (record is null) throw new ArgumentNullException(nameof(record));
-		Contract.EndContractBlock();
-
-		int len = ordinals.Length;
-		for (int i = 0; i < len; i++)
-			values[i] = record.GetValue(ordinals[i]);
-		return values;
-	}
-
-	/// <summary>
-	/// Reads the values of the columns at the specified ordinals into the provided list.
-	/// </summary>
-	/// <typeparam name="TList">The type of the list that receives the values.</typeparam>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
-	/// <param name="ordinals">The ordinals to read.</param>
-	/// <param name="values">The list that receives the values. It must already have at least as many elements as <paramref name="ordinals"/>.</param>
-	/// <returns>The provided list, updated with values matching the ordinal positions requested.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinals"/> is <see langword="null"/>.</exception>
-	public static TList GetValuesFromOrdinals<TList>(this IDataRecord record, IReadOnlyList<int> ordinals, TList values)
-		where TList : IList<object>
-	{
-		if (record is null) throw new ArgumentNullException(nameof(record));
-		if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
-		Contract.EndContractBlock();
-
-		int count = ordinals.Count;
-		for (int i = 0; i < count; i++)
-			values[i] = record.GetValue(ordinals[i]);
-		return values;
-	}
-
-	/// <summary>
-	/// Reads the values of the columns at the specified ordinals into a new array.
-	/// </summary>
-	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
-	/// <param name="ordinals">The ordinals to read. The values are returned in this order.</param>
-	/// <returns>A new array of values matching the ordinal positions requested. It is empty if <paramref name="ordinals"/> is empty.</returns>
-	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinals"/> is <see langword="null"/>.</exception>
-	/// <exception cref="IndexOutOfRangeException">An ordinal is not a valid column index for the record.</exception>
-	public static object[] GetValuesFromOrdinals(this IDataRecord record, IReadOnlyList<int> ordinals)
-	{
-		if (record is null) throw new ArgumentNullException(nameof(record));
-		if (ordinals is null) throw new ArgumentNullException(nameof(ordinals));
-		Contract.EndContractBlock();
-
-		int count = ordinals.Count;
-		if (count == 0) return [];
-
-		object[] values = new object[count];
-		for (int i = 0; i < count; i++)
-			values[i] = record.GetValue(ordinals[i]);
-		return values;
 	}
 
 	/// <summary>

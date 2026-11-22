@@ -375,37 +375,6 @@ public static class ChunkChainTests
 
 	// ---- the queue is made from the exact count ------------------------------
 
-	[Theory]
-	[InlineData(0)]
-	[InlineData(1)]
-	[InlineData(15)]
-	[InlineData(16)]
-	[InlineData(17)]
-	[InlineData(100)]
-	[InlineData(5000)]
-	public static void TheQueue_IsOneArrayOfExactlyTheRows_InOrder(int n)
-	{
-		using ChunkChain<Cell> chain = RentChain();
-		for (int i = 0; i < n; ++i) chain.Add(new Cell(i));
-
-		Queue<Cell> queue = chain.ToQueue();
-
-		// Queue's constructor over an ICollection keeps the exact array:
-		// this is what proves the runtime does it (and fails if one
-		// ever stops). The field is the BCL's own.
-		var items = (Cell?[])typeof(Queue<Cell>)
-			.GetField(
-				"_array",
-				BindingFlags.Instance | BindingFlags.NonPublic)!
-			.GetValue(queue)!;
-		Assert.Equal(n, items.Length);
-		Assert.Equal(n, queue.Count);
-
-		for (int i = 0; i < n; ++i)
-			Assert.Equal(i, queue.Dequeue().Value);
-		Assert.Empty(queue);
-	}
-
 	// ---- calls that really suspend never share a chain -----------------------
 
 	// A reader whose every ReadAsync gives up the thread first, so the
