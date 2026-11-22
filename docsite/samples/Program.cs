@@ -147,6 +147,8 @@ Check(
 	"ToArrayAsync<int>(token) on a command");
 Check(Mapping.StreamRows(connection) == 15, "Read streams rows inside the handler");
 Check((await Mapping.ByIdAsync(connection, CancellationToken.None)).Count == 5, "ToDictionaryAsync");
+Check((await connection.Command("select * from posts").Map<Post>().ToDictionaryAsync(static post => post.Id, CancellationToken.None)).Count == 5, "the token goes straight after the key selector");
+Check((await connection.Command("select * from posts").Map<Post>().ToHashSetAsync(CancellationToken.None)).Count == 5, "the token goes first when there is no comparer");
 (List<PostSummary> summaries, PostSummary? newest) = await Mapping.QueryFactoryCallers(factory, CancellationToken.None);
 Check(summaries.Select(s => s.Id).SequenceEqual([3, 2, 1]) && newest == new PostSummary(3, "Post 3"), "a query factory returns a MappedQuery<PostSummary> (a factory map) and each caller picks the terminal");
 int projected = 0;

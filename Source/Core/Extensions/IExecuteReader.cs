@@ -152,12 +152,17 @@ public static class IExecuteReaderExtensions
 		CancellationToken cancellationToken = default)
 		=> command.Map<T>().SingleAsync(cancellationToken);
 
+	/// <inheritdoc cref="ToHashSetAsync{T}(IExecuteReader, IEqualityComparer{T}, CancellationToken)" path="/*[not(self::param[@name='comparer'])]"/>
+	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(
+		this IExecuteReader command,
+		CancellationToken cancellationToken = default)
+		=> ToHashSetAsync<T>(command, null, cancellationToken);
+
 	/// <summary>
 	/// Reads every row into a hash set, asynchronously.
 	/// Equivalent to <c>command.Map&lt;T&gt;().ToHashSetAsync(comparer, cancellationToken)</c>.
-	/// The comparer comes first, as on <see cref="MappedQuery{T}"/>:
-	/// pass the token by name,
-	/// <c>ToHashSetAsync&lt;int&gt;(cancellationToken: ct)</c>.
+	/// The token goes straight after the comparer, or first when there is no comparer:
+	/// <c>ToHashSetAsync&lt;int&gt;(ct)</c>.
 	/// </summary>
 	/// <inheritdoc cref="ToListAsync{T}(IExecuteReader, CancellationToken)" path="/*[not(self::summary) and not(self::returns) and not(self::param)]"/>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
@@ -166,7 +171,7 @@ public static class IExecuteReaderExtensions
 	/// <returns>The rows as a hash set.</returns>
 	public static ValueTask<HashSet<T>> ToHashSetAsync<T>(
 		this IExecuteReader command,
-		IEqualityComparer<T>? comparer = null,
+		IEqualityComparer<T>? comparer,
 		CancellationToken cancellationToken = default)
 		=> command.Map<T>().ToHashSetAsync(comparer, cancellationToken);
 

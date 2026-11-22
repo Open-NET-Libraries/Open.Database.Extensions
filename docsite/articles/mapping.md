@@ -137,7 +137,7 @@ The rules:
 
 It differs from the two other ways to read one column. `FirstOrdinalResults<T>()` returns the provider's own value (its typed getter, or a plain cast) from the first result set only, and is the form for a raw `IDbCommand` or a reader (see [the foundation](foundation.md#reader-and-command-helpers)); `ExecuteScalar<T>()` returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
-Pass the token or nothing to these `Async` forms: `ToHashSetAsync<int>(cancellationToken: ct)` names the token because the comparer comes first, as on `MappedQuery<T>`.
+Pass the token or nothing to these `Async` forms: the token goes straight after the comparer, or first when there is no comparer (`ToHashSetAsync<int>(ct)`, `ToHashSetAsync(comparer, ct)`), as on `MappedQuery<T>`.
 
 Errors in the data throw per row: a missing `required` column and an unconvertible value throw `ValueMappingException`, and a constructor that throws is wrapped (see [Values that cannot be mapped](#values-that-cannot-be-mapped)).
 

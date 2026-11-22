@@ -1471,6 +1471,13 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		});
 	}
 
+	/// <inheritdoc cref="ExecuteReaderAsync{TState, TResult}(TState, Func{IDataReader, TState, ValueTask{TResult}}, CommandBehavior, CancellationToken)" path="/*[not(self::param[@name='behavior'])]"/>
+	public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(
+		TState state,
+		Func<IDataReader, TState, ValueTask<TResult>> transform,
+		CancellationToken cancellationToken = default)
+		=> ExecuteReaderAsync<TState, TResult>(state, transform, CommandBehavior.Default, cancellationToken);
+
 	/// <summary>
 	/// Executes a reader on the command,
 	/// passing <paramref name="state"/> to <paramref name="transform"/>.
@@ -1497,7 +1504,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(
 		TState state,
 		Func<IDataReader, TState, ValueTask<TResult>> transform,
-		CommandBehavior behavior = CommandBehavior.Default,
+		CommandBehavior behavior,
 		CancellationToken cancellationToken = default)
 	{
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
