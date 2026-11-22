@@ -188,6 +188,22 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	}
 
 	/// <summary>
+	/// Reads each row without a model, as an array of its values, and returns the mapped definition.
+	/// </summary>
+	/// <remarks>See <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>: the same rows, with this definition's options.</remarks>
+	/// <returns>The mapped definition.</returns>
+	public MappedDbQuery<object?[]> AsObjectArrays()
+		=> new(this, ObjectArraySource.Instance);
+
+	/// <summary>
+	/// Reads each row without a model, as a <see cref="DictionaryRow"/>, and returns the mapped definition.
+	/// </summary>
+	/// <remarks>See <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>: the same rows, with this definition's options.</remarks>
+	/// <returns>The mapped definition.</returns>
+	public MappedDbQuery<DictionaryRow> AsDictionaryRows()
+		=> new(this, DictionaryRowSource.Instance);
+
+	/// <summary>
 	/// Declares the type of the values: a <see langword="struct"/>
 	/// (a <see langword="readonly"/> <see langword="record"/>
 	/// <see langword="struct"/> is the intended shape)
@@ -339,6 +355,16 @@ public sealed class DbQuery<TParams>
 	public MappedDbQuery<TParams, T> Map<T>(Func<IDataRecord, T> selector)
 		// DbQuery.Map throws ArgumentNullException for a null selector.
 		=> new(_definition.Map(selector));
+
+	/// <inheritdoc cref="DbQuery.AsObjectArrays"/>
+	/// <returns>The mapped definition, whose parameters are the struct.</returns>
+	public MappedDbQuery<TParams, object?[]> AsObjectArrays()
+		=> new(_definition.AsObjectArrays());
+
+	/// <inheritdoc cref="DbQuery.AsDictionaryRows"/>
+	/// <returns>The mapped definition, whose parameters are the struct.</returns>
+	public MappedDbQuery<TParams, DictionaryRow> AsDictionaryRows()
+		=> new(_definition.AsDictionaryRows());
 
 	/// <inheritdoc cref="DbQuery.Using(DbConnection)"/>
 	public DbQueryUsing<TParams> Using(DbConnection connection)
