@@ -107,6 +107,7 @@ public static partial class S4Probe
 		if (o.Scale != 1 && !o.Setup) throw new ArgumentException("--s4-scale is only used with --s4-setup");
 		if (o.DataDir is not null && !o.Setup) throw new ArgumentException("--s4-data-dir is only used with --s4-setup");
 		if ((o.Cell is not null || o.Teardown) && o.Db is null) throw new ArgumentException("--s4-db <name> is needed");
+		if (o.Setup && o.LocalDb is not null && o.DataDir is null) throw new ArgumentException("--s4-data-dir <folder> is needed with --sql-localdb: LocalDB would otherwise put the database files in its default location");
 		ApplyProcessSettings(o);
 		if (o.Cell is not null) return RunCell(o);
 		if (o.Setup) return Setup(o);
