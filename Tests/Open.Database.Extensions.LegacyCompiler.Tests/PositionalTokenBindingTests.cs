@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Open.Database.Extensions.LegacyCompiler.Tests
 {
-	// The cancellation token is passable positionally after any prefix of the optional parameters (rule 1.9):
+	// The cancellation token is passable positionally after any prefix of the optional parameters:
 	// where a comparer, a command behavior or a flag is optional, the call can put the token straight after
 	// the parameters before it. Each family is a ladder of rungs, every one ending in a token with a default,
 	// and the optional parameter in the middle is required on the rung that names it.
@@ -30,7 +30,6 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		static readonly Func<DbDataReader, ValueTask<int>> DbAsyncTransform = r => default(ValueTask<int>);
 		static readonly Func<IDataReader, ValueTask> DataAsyncHandler = r => default(ValueTask);
 		static readonly Func<IDataReader, ValueTask<int>> DataAsyncTransform = r => default(ValueTask<int>);
-		static readonly Func<IDataReader, int, ValueTask<int>> StateTransform = (r, s) => default(ValueTask<int>);
 		static readonly Action<IDataRecord> Record = r => { };
 
 		static string Name(Type type)
@@ -236,7 +235,7 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 
 		const string Ext = "CommandExtensions.ExecuteReaderAsync";
 
-		static void Behavior<T>(string withoutBehavior, string withBehavior, Action<T> none, Action<T> token, Action<T> defaulted, Action<T> behavior, Action<T> both)
+		static void BehaviorLadder<T>(string withoutBehavior, string withBehavior, Action<T> none, Action<T> token, Action<T> defaulted, Action<T> behavior, Action<T> both)
 		{
 			Binds(withoutBehavior, "ExecuteReaderAsync", none);
 			Binds(withoutBehavior, "ExecuteReaderAsync", token);
@@ -248,19 +247,19 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		[Fact]
 		public static void ExecuteReaderAsync_OnADbCommand_BindsEachRung()
 		{
-			Behavior<DbCommand>(
+			BehaviorLadder<DbCommand>(
 				Ext + "(DbCommand,Action<DbDataReader>,CancellationToken)", Ext + "(DbCommand,Action<DbDataReader>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DbHandler), c => c.ExecuteReaderAsync(DbHandler, Token), c => c.ExecuteReaderAsync(DbHandler, default),
 				c => c.ExecuteReaderAsync(DbHandler, CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(DbHandler, CommandBehavior.SequentialAccess, Token));
-			Behavior<DbCommand>(
+			BehaviorLadder<DbCommand>(
 				Ext + "(DbCommand,Func<DbDataReader,ValueTask>,CancellationToken)", Ext + "(DbCommand,Func<DbDataReader,ValueTask>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DbAsyncHandler), c => c.ExecuteReaderAsync(DbAsyncHandler, Token), c => c.ExecuteReaderAsync(DbAsyncHandler, default),
 				c => c.ExecuteReaderAsync(DbAsyncHandler, CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(DbAsyncHandler, CommandBehavior.SequentialAccess, Token));
-			Behavior<DbCommand>(
+			BehaviorLadder<DbCommand>(
 				Ext + "(DbCommand,Func<DbDataReader,Int32>,CancellationToken)", Ext + "(DbCommand,Func<DbDataReader,Int32>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DbTransform), c => c.ExecuteReaderAsync(DbTransform, Token), c => c.ExecuteReaderAsync(DbTransform, default),
 				c => c.ExecuteReaderAsync(DbTransform, CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(DbTransform, CommandBehavior.SequentialAccess, Token));
-			Behavior<DbCommand>(
+			BehaviorLadder<DbCommand>(
 				Ext + "(DbCommand,Func<DbDataReader,ValueTask<Int32>>,CancellationToken)", Ext + "(DbCommand,Func<DbDataReader,ValueTask<Int32>>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DbAsyncTransform), c => c.ExecuteReaderAsync(DbAsyncTransform, Token), c => c.ExecuteReaderAsync(DbAsyncTransform, default),
 				c => c.ExecuteReaderAsync(DbAsyncTransform, CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(DbAsyncTransform, CommandBehavior.SequentialAccess, Token));
@@ -269,15 +268,15 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 		[Fact]
 		public static void ExecuteReaderAsync_OnAnIDbCommand_BindsEachRung()
 		{
-			Behavior<IDbCommand>(
+			BehaviorLadder<IDbCommand>(
 				Ext + "(IDbCommand,CancellationToken)", Ext + "(IDbCommand,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(), c => c.ExecuteReaderAsync(Token), c => c.ExecuteReaderAsync(default),
 				c => c.ExecuteReaderAsync(CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(CommandBehavior.SequentialAccess, Token));
-			Behavior<IDbCommand>(
+			BehaviorLadder<IDbCommand>(
 				Ext + "(IDbCommand,Func<IDataReader,ValueTask>,CancellationToken)", Ext + "(IDbCommand,Func<IDataReader,ValueTask>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DataAsyncHandler), c => c.ExecuteReaderAsync(DataAsyncHandler, Token), c => c.ExecuteReaderAsync(DataAsyncHandler, default),
 				c => c.ExecuteReaderAsync(DataAsyncHandler, CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(DataAsyncHandler, CommandBehavior.SequentialAccess, Token));
-			Behavior<IDbCommand>(
+			BehaviorLadder<IDbCommand>(
 				Ext + "(IDbCommand,Func<IDataReader,ValueTask<Int32>>,CancellationToken)", Ext + "(IDbCommand,Func<IDataReader,ValueTask<Int32>>,CommandBehavior,CancellationToken)",
 				c => c.ExecuteReaderAsync(DataAsyncTransform), c => c.ExecuteReaderAsync(DataAsyncTransform, Token), c => c.ExecuteReaderAsync(DataAsyncTransform, default),
 				c => c.ExecuteReaderAsync(DataAsyncTransform, CommandBehavior.SequentialAccess), c => c.ExecuteReaderAsync(DataAsyncTransform, CommandBehavior.SequentialAccess, Token));
@@ -295,6 +294,13 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			Binds<DbDataReader>(Token1, "ForEachAsync", r => r.ForEachAsync(Record, Token));
 			Binds<DbDataReader>(Flag, "ForEachAsync", r => r.ForEachAsync(Record, false));
 			Binds<DbDataReader>(Flag, "ForEachAsync", r => r.ForEachAsync(Record, true, Token));
+
+			// A bare default in the second slot now binds the token rung (the flag rung is the one that takes a bool):
+			// it reads with ReadAsync, as the call without the flag does, where default(bool) used to turn that off.
+			Binds<DbDataReader>(Token1, "ForEachAsync", r => r.ForEachAsync(Record, default));
 		}
+
+		// A single bare default on a DbCommand receiver does not compile, with or without these rungs: it is ambiguous
+		// between DbCommand's own ExecuteReaderAsync(CommandBehavior) and ExecuteReaderAsync(CancellationToken) (CS0121).
 	}
 }
