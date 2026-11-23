@@ -21,7 +21,14 @@
 		<PackageReference Include="Dapper" Version="2.1.89" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="11.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
+		<!-- The "No service layer" article: controllers and their tests, run on a test server by Program.cs. -->
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" />
+		<PackageReference Include="xunit.v3.assert" Version="3.2.2" />
+		<PackageReference Include="xunit.v3.extensibility.core" Version="3.2.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 
 	<ItemGroup>

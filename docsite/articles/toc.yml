@@ -7,6 +7,9 @@
 - href: async-reads.md
 - href: channels-and-dataflow.md
 - href: async-buffers.md
+- href: no-service-layer.md
+  items:
+  - href: no-service-layer-minimal-apis.md
 - href: performance.md
   items:
   - href: benchmarks/library-comparison.md

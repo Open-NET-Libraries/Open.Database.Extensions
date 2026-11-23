@@ -96,42 +96,16 @@ The controller above serializes the rows itself, inside the method, so it can di
 
 The pattern is to register the buffer with the response, and then return the rows:
 
-```csharp
-// Not compiled by the docs build: the samples project has no ASP.NET
-// reference. Checked against ASP.NET Core 11.0.0, with TestServer and
-// with Kestrel.
-[ApiController]
-[Route("posts")]
-public class PostsController(
-	IDbConnectionFactory<SqliteConnection> connectionFactory)
-	: ControllerBase
-{
-	[HttpGet]
-	public async Task<IReadOnlyList<Post>> GetAsync()
-	{
-		// LatestPosts is the data-layer method shown above (call it as you
-		// have named it): the read starts here.
-		PooledBuffer<Post> buffer = LatestPosts(
-			connectionFactory,
-			HttpContext.RequestAborted);
+[!code-csharp[](../samples/AsyncBuffersController.cs#buffers_aspnet_controller)]
 
-		// The framework disposes it when the request is over.
-		Response.RegisterForDispose(buffer);
+What was observed, on ASP.NET Core 11.0.0 against SQLite, with an action that awaited `Items`:
 
-		// A PooledArray<Post> is an IReadOnlyList<Post>:
-		// System.Text.Json writes it as a JSON array.
-		return await buffer.Items;
-	}
-}
-```
-
-What was observed, on ASP.NET Core 11.0.0 against SQLite:
-
-- The response is `200` with a JSON array of the rows, equal to the array the same query gives with `ToListAsync`. The declared return type can be `IReadOnlyList<Post>` or `PooledArray<Post>`.
+- The response is `200` with a JSON array of the rows, equal to the array the same query gives with `ToListAsync`. The action returns `Items` without awaiting it, so it declares `Task<PooledArray<Post>>`: a `Task<T>` is not covariant. An `async` action that returns `await buffer.Items` can declare `IReadOnlyList<Post>` instead, and the JSON is the same.
 - Every array went back to the pool once the request was over.
 - `HttpResponse.RegisterForDispose` and `HttpResponse.RegisterForDisposeAsync` both exist. A `PooledBuffer<T>` is both `IDisposable` and `IAsyncDisposable`, and the framework disposed it with `DisposeAsync` whichever of the two was used, so `RegisterForDispose` is enough.
-- Register the buffer before you await `Items`. When the client aborted while the read ran, Kestrel still disposed the buffer and the arrays went back. When the action threw, Kestrel disposed an object registered the same way (a spy that was both `IDisposable` and `IAsyncDisposable`). A client abort cancels `HttpContext.RequestAborted`, which cancels the query: on a 1,000,000-row query aborted after 30 ms the read stopped early, having rented 12 arrays (at most 65,520 rows, worked out from the chunk sizes, not measured) where a full read rents 16.
+- Register the buffer before you return `Items`. When the client aborted while the read ran, Kestrel still disposed the buffer and the arrays went back. When the action threw, Kestrel disposed an object registered the same way (a spy that was both `IDisposable` and `IAsyncDisposable`). A client abort cancels `HttpContext.RequestAborted`, which cancels the query: on a 1,000,000-row query aborted after 30 ms the read stopped early, having rented 12 arrays (at most 65,520 rows, worked out from the chunk sizes, not measured) where a full read rents 16.
 
+The form above, which returns the task, is checked on the test server: it writes the same JSON as `ToListAsync`, and the controller of [A controller with no service layer](no-service-layer.md#what-do-you-test-now), written the same way, gives every array back. It has not been run on Kestrel with an abort or a throw.
 > [!NOTE]
 > TestServer did not dispose what the request had registered when the action threw or the client aborted before the response started. Kestrel did. If a test of your own controller counts the arrays that come back, it sees them only on a successful request, or on a real server.
 
@@ -273,9 +247,11 @@ The numbers come from a synthetic provider on net11, not from a real database, a
 
 ## When to use something else
 
-For a small result, or one that nobody else needs, `ToArrayAsync` or `ToListAsync` is the better tool. The connection is released as soon as the array or list is built, and there is nothing to dispose.
+When the rows are only read or written once, the buffer is the default, whatever the size: the rows exist once, no list is built, and the arrays are reused by the next request. It is not faster: see [What it costs](#what-it-costs).
 
-[!code-csharp[](../samples/AsyncBuffers.cs#buffers_small_result)]
+When you need an array or a list that you keep or change, `ToArrayAsync` or `ToListAsync` is the tool. The rows are copied once into it, it is yours, and there is nothing to dispose.
+
+[!code-csharp[](../samples/AsyncBuffers.cs#buffers_rows_to_keep)]
 
 To shape a stream's rows, use `System.Linq.Async` over `ToBufferedAsyncStream`, and leave the filtering to the SQL. It is in the box on net10 and later.
 

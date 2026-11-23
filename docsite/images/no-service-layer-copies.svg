@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 404" role="img" aria-labelledby="nsl-title nsl-desc">
+  <title id="nsl-title">Copies of copies, or one copy</title>
+  <desc id="nsl-desc">Two lanes read left to right, the classic stack on top and ODX below, with the database, the serializer and the JSON in the same places. Classic lane: the database, then a repository that reads the rows into entities and a list, the first set of row objects; then a service that copies the entities into DTOs and another list, the second set; then the serializer and the JSON. A caption says there are two sets of row objects and two lists, and the garbage collector takes them all after the response. ODX lane: the database, then the command factory, whose rows are read once into Post objects in pooled arrays, the only set; then the serializer and the JSON. Below the pooled arrays is the array pool: the arrays are rented from it for the read and go back to it after the response. A caption says there is one set of row objects and the arrays are reused by later requests. The figure shows no measurements.</desc>
+  <style>
+    :root {
+      --ink: #1f2328;
+      --bg: #ffffff;
+      --frame: #d0d7de;
+      --muted: #4b5563;
+      --plain-fill: #f6f8fa;
+      --plain-line: #57606a;
+      --copy-fill: #fff1e5;
+      --copy-line: #bc4c00;
+      --odx-fill: #ddf4ff;
+      --odx-line: #0969da;
+      --pool-fill: #dafbe1;
+      --pool-line: #1a7f37;
+      --glow: #8250df;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf3;
+        --bg: #0d1117;
+        --frame: #30363d;
+        --muted: #b1bac4;
+        --plain-fill: #21262d;
+        --plain-line: #8b949e;
+        --copy-fill: #3d1f00;
+        --copy-line: #f0883e;
+        --odx-fill: #0c2d6b;
+        --odx-line: #58a6ff;
+        --pool-fill: #0f3d1f;
+        --pool-line: #3fb950;
+        --glow: #bc8cff;
+      }
+    }
+    .frame { fill: var(--bg); stroke: var(--frame); stroke-width: 1; }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); font-size: 13px; }
+    .title { font-size: 18px; font-weight: 600; }
+    .lane { font-size: 15px; font-weight: 600; }
+    .head { font-weight: 600; }
+    .small { font-size: 12px; fill: var(--muted); }
+    .caption { font-size: 13px; fill: var(--muted); }
+    .mid { text-anchor: middle; }
+    .plain { fill: var(--plain-fill); stroke: var(--plain-line); stroke-width: 2; }
+    .copy { fill: var(--copy-fill); stroke: var(--copy-line); stroke-width: 2; }
+    .odx { fill: var(--odx-fill); stroke: var(--odx-line); stroke-width: 2; }
+    .pool { fill: var(--pool-fill); stroke: var(--pool-line); stroke-width: 2; }
+    .card-copy { fill: var(--bg); stroke: var(--copy-line); stroke-width: 1.5; }
+    .card-odx { fill: var(--bg); stroke: var(--odx-line); stroke-width: 1.5; }
+    .badge-copy { fill: var(--copy-line); }
+    .badge-odx { fill: var(--odx-line); }
+    .badge-text { fill: var(--bg); font-size: 12px; font-weight: 600; }
+    .arrow { stroke: var(--plain-line); stroke-width: 2; fill: none; }
+    .arrow-pool { stroke: var(--pool-line); stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+    .head-plain { fill: var(--plain-line); }
+    .head-pool { fill: var(--pool-line); }
+
+    /* One gentle walk through the stages, under five seconds, then the still image, which says everything. */
+    .hl { fill: none; stroke: var(--glow); stroke-width: 4; opacity: 0; animation: glow 1.4s ease-in-out 1 both; }
+    .d1 { animation-delay: 0s; }
+    .d2 { animation-delay: 0.7s; }
+    .d3 { animation-delay: 1.4s; }
+    .d4 { animation-delay: 2.1s; }
+    .d5 { animation-delay: 2.8s; }
+    .d6 { animation-delay: 3.5s; }
+    .flow { animation: flow 2.4s linear 2; }
+    @keyframes glow {
+      0% { opacity: 0; }
+      25% { opacity: 0.9; }
+      70% { opacity: 0.9; }
+      100% { opacity: 0; }
+    }
+    @keyframes flow {
+      from { stroke-dashoffset: 20; }
+      to { stroke-dashoffset: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hl { animation: none; opacity: 0; }
+      .flow { animation: none; }
+    }
+  </style>
+  <defs>
+    <marker id="nsl-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head-plain" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+    <marker id="nsl-arrow-pool" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head-pool" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <rect class="frame" x="0.5" y="0.5" width="719" height="403" rx="8"/>
+  <text class="title" x="20" y="30">Copies of copies, or one copy</text>
+
+  <!-- Classic lane -->
+  <text class="lane" x="20" y="62">Classic: repository, service, DTOs</text>
+
+  <rect class="plain" x="20" y="74" width="80" height="64" rx="6"/>
+  <text class="mid" x="60" y="110">database</text>
+  <rect class="hl d1" x="20" y="74" width="80" height="64" rx="6"/>
+
+  <line class="arrow" x1="100" y1="106" x2="122" y2="106" marker-end="url(#nsl-arrow)"/>
+
+  <rect class="copy" x="124" y="74" width="150" height="64" rx="6"/>
+  <text class="head" x="136" y="96">repository</text>
+  <text x="136" y="114">entities</text>
+  <text class="small" x="136" y="130">List&lt;PostEntity&gt;</text>
+  <rect class="card-copy" x="226" y="86" width="30" height="20" rx="3"/>
+  <rect class="card-copy" x="232" y="92" width="30" height="20" rx="3"/>
+  <rect class="card-copy" x="238" y="98" width="30" height="20" rx="3"/>
+  <rect class="hl d2" x="124" y="74" width="150" height="64" rx="6"/>
+
+  <line class="arrow" x1="274" y1="106" x2="296" y2="106" marker-end="url(#nsl-arrow)"/>
+
+  <rect class="copy" x="298" y="74" width="150" height="64" rx="6"/>
+  <text class="head" x="310" y="96">service</text>
+  <text x="310" y="114">DTOs, copied</text>
+  <text class="small" x="310" y="130">List&lt;PostDto&gt;</text>
+  <rect class="card-copy" x="400" y="86" width="30" height="20" rx="3"/>
+  <rect class="card-copy" x="406" y="92" width="30" height="20" rx="3"/>
+  <rect class="card-copy" x="412" y="98" width="30" height="20" rx="3"/>
+  <rect class="hl d3" x="298" y="74" width="150" height="64" rx="6"/>
+
+  <line class="arrow" x1="448" y1="106" x2="470" y2="106" marker-end="url(#nsl-arrow)"/>
+
+  <rect class="plain" x="472" y="74" width="104" height="64" rx="6"/>
+  <text class="mid" x="524" y="110">serializer</text>
+  <rect class="hl d4" x="472" y="74" width="104" height="64" rx="6"/>
+
+  <line class="arrow" x1="576" y1="106" x2="598" y2="106" marker-end="url(#nsl-arrow)"/>
+
+  <rect class="plain" x="600" y="74" width="100" height="64" rx="6"/>
+  <text class="mid" x="650" y="110">JSON</text>
+  <rect class="hl d5" x="600" y="74" width="100" height="64" rx="6"/>
+
+  <rect class="badge-copy" x="124" y="144" width="150" height="20" rx="10"/>
+  <text class="badge-text mid" x="199" y="158">1st set of objects</text>
+  <rect class="badge-copy" x="298" y="144" width="150" height="20" rx="10"/>
+  <text class="badge-text mid" x="373" y="158">2nd set of objects</text>
+
+  <text class="caption" x="20" y="188">Two sets of row objects and two lists. The garbage collector takes them all after the response.</text>
+
+  <!-- ODX lane -->
+  <text class="lane" x="20" y="226">ODX: command factory</text>
+
+  <rect class="plain" x="20" y="238" width="80" height="64" rx="6"/>
+  <text class="mid" x="60" y="274">database</text>
+  <rect class="hl d1" x="20" y="238" width="80" height="64" rx="6"/>
+
+  <line class="arrow" x1="100" y1="270" x2="122" y2="270" marker-end="url(#nsl-arrow)"/>
+
+  <rect class="odx" x="124" y="238" width="324" height="64" rx="6"/>
+  <text class="head" x="136" y="260">command factory</text>
+  <text x="136" y="278">Post rows, read once</text>
+  <text class="small" x="136" y="294">into pooled arrays</text>
+  <rect class="card-odx" x="330" y="252" width="16" height="20" rx="2"/>
+  <rect class="card-odx" x="352" y="252" width="32" height="20" rx="2"/>
+  <rect class="card-odx" x="390" y="252" width="44" height="20" rx="2"/>
+  <rect class="badge-odx" x="330" y="278" width="104" height="18" rx="9"/>
+  <text class="badge-text mid" x="382" y="291">the only set</text>
+  <rect class="hl d2" x="124" y="238" width="324" height="64" rx="6"/>
+
+  <line class="arrow" x1="448" y1="270" x2="470" y2="270" marker-end="url(#nsl-arrow)"/>
+
+  <rect class="plain" x="472" y="238" width="104" height="64" rx="6"/>
+  <text class="mid" x="524" y="274">serializer</text>
+  <rect class="hl d4" x="472" y="238" width="104" height="64" rx="6"/>
+
+  <line class="arrow" x1="576" y1="270" x2="598" y2="270" marker-end="url(#nsl-arrow)"/>
+
+  <rect class="plain" x="600" y="238" width="100" height="64" rx="6"/>
+  <text class="mid" x="650" y="274">JSON</text>
+  <rect class="hl d5" x="600" y="238" width="100" height="64" rx="6"/>
+
+  <!-- The pool: rented for the read, given back after the response -->
+  <line class="arrow-pool flow" x1="180" y1="336" x2="180" y2="305" marker-end="url(#nsl-arrow-pool)"/>
+  <text class="small" x="188" y="326">rented for the read</text>
+  <line class="arrow-pool flow" x1="400" y1="303" x2="400" y2="334" marker-end="url(#nsl-arrow-pool)"/>
+  <text class="small" x="408" y="326">back after the response</text>
+
+  <rect class="pool" x="124" y="338" width="324" height="30" rx="6"/>
+  <text class="mid" x="286" y="358">array pool</text>
+  <rect class="hl d6" x="124" y="338" width="324" height="30" rx="6"/>
+
+  <text class="caption" x="20" y="392">One set of row objects. The arrays are reused by later requests.</text>
+</svg>

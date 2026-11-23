@@ -255,9 +255,9 @@ Check(
 	"System.Linq over ToBufferedAsyncStream, returned with no await, projects the filtered rows");
 
 Check(
-	(await AsyncBuffers.SmallResultAsync(factory, CancellationToken.None))
+	(await AsyncBuffers.PostsToKeepAsync(factory, CancellationToken.None))
 		.Length == 5,
-	"ToArrayAsync returns the small result");
+	"ToArrayAsync returns the rows to keep");
 
 CountingPool<Post> overloadPool = new();
 Check(
@@ -631,6 +631,10 @@ Check(
 Check(
 	ShapingRows.SingleValueFactoryIsRejected(),
 	"a factory map for a single value is rejected: a single value is not a row model");
+
+// No service layer: the controllers and the article's tests, on a test server.
+Db.Seed();
+await NoServiceLayerChecks.RunAsync(Check);
 
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
