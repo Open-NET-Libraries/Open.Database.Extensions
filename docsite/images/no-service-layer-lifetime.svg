@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 312" role="img" aria-labelledby="nsl-life-title nsl-life-desc">
   <title id="nsl-life-title">One request, from the query to the pool</title>
-  <desc id="nsl-life-desc">A timeline of one request, with time running left to right and no numbers. Four bars. The action: it starts the read with ToAsyncBuffer, registers the buffer with RegisterForDispose and awaits Items, then returns. The connection: open only while the read runs; it is released when the read is over, before the action returns. The Post rows: in pooled arrays held by the buffer, from the read until the response is over. The serializer: it writes the JSON from those rows after the action returns. A first marker says the read is over, the connection released and Items complete. A second marker says the response is over, the framework disposes the buffer and the arrays go back to the array pool.</desc>
+  <desc id="nsl-life-desc">A timeline of one request, with time running left to right and no numbers. Four bars. The action: it starts the read with ToAsyncBuffer, registers the buffer with RegisterForDispose and returns the task of the rows, Items, at once, without awaiting it. The connection: open only while the read runs; it is released when the read is over. The Post rows: in pooled arrays held by the buffer, from the read until the response is over. The framework: from the moment the action returns, it awaits Items, then writes the JSON from those rows. A first marker says the read is over, the connection released and Items complete. A second marker says the response is over, the framework disposes the buffer and the arrays go back to the array pool.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -66,8 +66,8 @@
 
   <!-- The action -->
   <text class="row" x="20" y="77">action</text>
-  <rect class="plain" x="180" y="60" width="220" height="26" rx="5"/>
-  <text x="190" y="78">start, register, await Items</text>
+  <rect class="plain" x="180" y="60" width="160" height="26" rx="5"/>
+  <text x="190" y="78">start, register, return</text>
 
   <!-- The connection -->
   <text class="row" x="20" y="117">connection</text>
@@ -79,10 +79,10 @@
   <rect class="odx" x="186" y="140" width="414" height="26" rx="5"/>
   <text x="196" y="158">in pooled arrays, held by the buffer</text>
 
-  <!-- The serializer -->
-  <text class="row" x="20" y="197">serializer</text>
-  <rect class="plain" x="400" y="180" width="180" height="26" rx="5"/>
-  <text x="410" y="198">writes the JSON</text>
+  <!-- The framework -->
+  <text class="row" x="20" y="197">framework</text>
+  <rect class="plain" x="340" y="180" width="240" height="26" rx="5"/>
+  <text x="350" y="198">awaits Items, writes the JSON</text>
 
   <!-- The pool -->
   <line class="arrow-pool" x1="602" y1="153" x2="624" y2="153" marker-end="url(#nsl-life-pool)"/>

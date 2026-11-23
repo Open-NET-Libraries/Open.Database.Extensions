@@ -255,9 +255,9 @@ Check(
 	"System.Linq over ToBufferedAsyncStream, returned with no await, projects the filtered rows");
 
 Check(
-	(await AsyncBuffers.SmallResultAsync(factory, CancellationToken.None))
+	(await AsyncBuffers.PostsToKeepAsync(factory, CancellationToken.None))
 		.Length == 5,
-	"ToArrayAsync returns the small result");
+	"ToArrayAsync returns the rows to keep");
 
 CountingPool<Post> overloadPool = new();
 Check(

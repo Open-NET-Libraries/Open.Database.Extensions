@@ -64,7 +64,7 @@ public sealed class PostsController(PostCommands commands)
 	: ControllerBase
 {
 	[HttpGet("by-author/{author}")]
-	public async Task<IReadOnlyList<Post>> ByAuthorAsync(
+	public Task<PooledArray<Post>> ByAuthorAsync(
 		int author)
 	{
 		PooledBuffer<Post> buffer = commands
@@ -74,8 +74,8 @@ public sealed class PostsController(PostCommands commands)
 		// The framework disposes it after the response.
 		Response.RegisterForDispose(buffer);
 
-		// The read is over and the connection released.
-		return await buffer.Items;
+		// The framework awaits the rows, then writes them.
+		return buffer.Items;
 	}
 }
 #endregion

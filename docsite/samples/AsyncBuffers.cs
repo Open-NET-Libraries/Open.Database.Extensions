@@ -208,11 +208,12 @@ public static class AsyncBuffers
 			.Select(static post => $"{post.Id}: {post.Title}");
 	#endregion
 
-	#region buffers_small_result
-	public static async Task<Post[]> SmallResultAsync(
+	#region buffers_rows_to_keep
+	// An array that is yours to keep or change. Nothing to dispose.
+	public static ValueTask<Post[]> PostsToKeepAsync(
 		IDbConnectionFactory<SqliteConnection> connectionFactory,
 		CancellationToken cancellationToken)
-		=> await connectionFactory
+		=> connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
 			.ToArrayAsync(cancellationToken);

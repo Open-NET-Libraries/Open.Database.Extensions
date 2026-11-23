@@ -56,24 +56,24 @@ The entry point of the app provides the connection factory (SQLite in these samp
 Read the controller of the side-by-side from the top:
 
 1. `ToAsyncBuffer` starts the read at the call, on its own producer, and returns the buffer at once.
-2. `Response.RegisterForDispose(buffer)` hands the buffer to the framework, which disposes it when the request is over. Register it before you await anything, so that the framework still disposes it when the client aborts or the action throws (observed on Kestrel).
-3. `await buffer.Items` completes when the read is over. The connection has been released by then, before the action returns, so nothing waits on the database while the JSON is written.
-4. The action returns the rows. A `PooledArray<Post>` is an `IReadOnlyList<Post>`, and `System.Text.Json` writes it as a JSON array.
+2. `Response.RegisterForDispose(buffer)` hands the buffer to the framework, which disposes it when the request is over. Register it before you return, so that the framework owns it however the request ends (see [Caveats](#caveats)).
+3. The action returns `buffer.Items`, the task of the rows, as it is: nothing in the action runs after the rows are ready, so there is no `async` and no `await`. The framework awaits it. The task completes when the read is over and the connection released, so nothing waits on the database while the JSON is written.
+4. The declared type is `Task<PooledArray<Post>>`, because a `Task<T>` is not covariant. A `PooledArray<Post>` is an `IReadOnlyList<Post>`, so the JSON is the same: `System.Text.Json` writes it as an array.
 5. After the response is written, the framework disposes the buffer, and the arrays go back to the pool.
 
-<div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/no-service-layer-lifetime.svg" alt="A timeline of one request. The connection is open only while the read runs, and is released before the action returns. The rows stay in pooled arrays from the read until the response is over. The serializer writes them after the action returns. When the response is over the framework disposes the buffer and the arrays go back to the pool." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
+<div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/no-service-layer-lifetime.svg" alt="A timeline of one request. The action starts the read, registers the buffer and returns at once. The connection is open only while the read runs. The rows stay in pooled arrays from the read until the response is over. The framework awaits the rows, then writes the JSON. When the response is over the framework disposes the buffer and the arrays go back to the pool." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
 
 What was observed on a real server, with a client abort and an action that throws, is on [Returning it from a controller](async-buffers.md#returning-it-from-a-controller). The use case behind the buffer is on [The controller story](async-buffers.md#the-controller-story).
 
 ### Or a list
 
-The controller can ask the same command factory for a `List<Post>` instead:
+The buffer is the default, whatever the size of the result: the rows exist once, as `Post` objects in pooled arrays, no list is built, and the arrays are reused by the next request. It is not faster: on a synthetic provider, dumping a result into a buffer held the reader longer than `ToArrayAsync` at zero latency, and about as long on a simulated link. See [What it costs](async-buffers.md#what-it-costs).
+
+Take a `List<Post>` when you need a list that you keep or change. The same command factory gives one (here the action only returns it, to show the shape):
 
 [!code-csharp[](../samples/NoServiceLayer.cs#nsl_list)]
 
-`ToListAsync` returns a `ValueTask<List<Post>>`, and the action returns it as it is: no `async`, no `await`. There is nothing to register, and nothing about the list's lifetime to get wrong. What it costs: the rows are read into pooled chunks and then copied once into the list, and the list is garbage after the response.
-
-For a small result, the list is the better tool (see [When to use something else](async-buffers.md#when-to-use-something-else)); the three rows of this page's example only show the shape. Take the buffer when the result is larger and its rows exist only to be written: there is no list to build, and the arrays are reused by the next request. The buffer has its own cost, measured on a synthetic provider: see [What it costs](async-buffers.md#what-it-costs).
+`ToListAsync` returns a `ValueTask<List<Post>>`, and the action returns it as it is, like the buffer's task. There is nothing to register, and the list is yours. What it costs: the rows are read into pooled chunks and then copied once into the list, and the list is garbage after the response. See [When to use something else](async-buffers.md#when-to-use-something-else).
 
 ## ETag: read the rows twice
 
@@ -111,6 +111,6 @@ With no service layer there is no pass-through code to mock. What is left to tes
 ## Caveats
 
 - **Nothing may hold the rows past the response.** Do not keep the `PooledArray<Post>` in a field or a cache, and do not hand it to work that outlives the request: once the buffer is disposed, the view throws `ObjectDisposedException`. Copy what you keep with `ToList()`. See [Lifetime and ownership](async-buffers.md#lifetime-and-ownership).
-- **Register before you await.** Call `RegisterForDispose` before `await buffer.Items`, so that the arrays still go back when the client aborts or the action throws (observed on Kestrel).
-- **Do not dispose it in the action.** An `await using` on a buffer whose rows the action returns disposes it before the framework serializes them, and on Kestrel the response is a `500`. See [The trap](async-buffers.md#the-trap-dispose-before-the-framework-serializes).
+- **Register before you return the task.** Call `RegisterForDispose` before `return buffer.Items`, so that the framework owns the buffer however the request ends. On Kestrel, a registered buffer was still disposed when the client aborted, and a registered object when the action threw; that was observed with an action that awaited `Items`, not yet with this form.
+- **Do not dispose it in the action.** A `using` or an `await using` on a buffer whose rows the action returns disposes it before the framework serializes them; with `await using`, the response on Kestrel was a `500`. See [The trap](async-buffers.md#the-trap-dispose-before-the-framework-serializes).
 - **The buffer holds the whole result until the response is written.** For a very large result, return the stream: see [A very large result](async-buffers.md#a-very-large-result-return-the-stream).

@@ -16,10 +16,10 @@ public static class PostEndpoints
 	{
 		RouteGroupBuilder posts = endpoints.MapGroup("minimal/posts");
 
-		// The pooled buffer: registered, then awaited, then returned.
+		// The pooled buffer: registered, then its rows' task returned.
 		posts.MapGet(
 			"by-author/{author}",
-			static async Task<IReadOnlyList<Post>> (
+			static Task<PooledArray<Post>> (
 				int author,
 				PostCommands commands,
 				HttpContext http) =>
@@ -28,7 +28,7 @@ public static class PostEndpoints
 					.ByAuthor(author)
 					.ToAsyncBuffer(http.RequestAborted);
 				http.Response.RegisterForDispose(buffer);
-				return await buffer.Items;
+				return buffer.Items;
 			});
 
 		// A list: one expression, nothing to register.

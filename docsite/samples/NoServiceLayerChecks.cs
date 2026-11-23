@@ -1,10 +1,12 @@
 using System.Buffers;
 using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Open.Database.Extensions;
 
 namespace Samples;
 
@@ -63,6 +65,14 @@ public static class NoServiceLayerChecks
 		string minimalList = await client.GetStringAsync("minimal/posts/by-author/42/list");
 		check(minimal == classic && minimalList == classic, "no service layer: the minimal API endpoints, buffer and list, write the same JSON");
 
+		// The controller of "Returning it from a controller" (async buffers article).
+		string latest = await client.GetStringAsync("posts");
+		List<Post> latestList = await Db.Factory
+			.Command("select * from posts order by id")
+			.Map<Post>()
+			.ToListAsync(CancellationToken.None);
+		check(latest == JsonSerializer.Serialize(latestList, JsonSerializerOptions.Web), "async buffers: the controller that returns Items without awaiting it writes the same JSON as ToListAsync");
+
 		// ETag: a 200 with the tag, then a 304 for the same tag, with no body.
 		using HttpResponseMessage first = await client.GetAsync("cached/posts/by-author/42");
 		string? etag = first.Headers.ETag?.Tag;
@@ -113,8 +123,8 @@ public sealed class ForgotToRegisterController(PostCommands commands)
 	: Microsoft.AspNetCore.Mvc.ControllerBase
 {
 	[Microsoft.AspNetCore.Mvc.HttpGet("by-author/{author}")]
-	public async Task<IReadOnlyList<Post>> ByAuthorAsync(int author)
-		=> await commands
+	public Task<PooledArray<Post>> ByAuthorAsync(int author)
+		=> commands
 			.ByAuthor(author)
 			.ToAsyncBuffer(HttpContext.RequestAborted)
 			.Items;
