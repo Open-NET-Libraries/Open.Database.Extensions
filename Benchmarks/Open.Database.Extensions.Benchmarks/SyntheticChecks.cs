@@ -259,6 +259,9 @@ public static partial class SyntheticChecks
 				bench.Setup();
 				foreach (var method in typeof(SyntheticBenchmarks).GetMethods().Where(static m => m.GetCustomAttributes(typeof(BenchmarkDotNet.Attributes.BenchmarkAttribute), false).Length > 0))
 				{
+					// The control and the decomposition of Gen read the 20 catalog columns at fixed ordinals: width 20 only.
+					if (width != 20 && WidthTwentyOnly(method.Name)) continue;
+
 					bench.Connection.Options.Recorder.Reset();
 					object? result;
 					try { result = Await(method.Invoke(bench, null)); }
@@ -282,7 +285,7 @@ public static partial class SyntheticChecks
 						case List<object[]> boxed:
 							report.Check(boxed.Count == rows, $"{name} {where}: {boxed.Count} rows, expected {rows}");
 							break;
-						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal):
+						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal) || method.Name == "Ctl_Sync":
 							CompareGenerated(report, name, where, v1, generated);
 							break;
 						case System.Collections.IList shaped:

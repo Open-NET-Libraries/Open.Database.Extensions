@@ -91,7 +91,8 @@ public partial class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Served(c);
-		Assert.Equal(1, c.Full);
+		// The columns are the members in their declared order: the identity layout, read at constant ordinals (mode 5).
+		Assert.Equal(1, c.Identity);
 		Assert.Equal(PostRows.Length, c.RowsServed);
 		Assert.Equal("untitled", generated[1].Title);
 		Assert.Null(generated[1].Label);

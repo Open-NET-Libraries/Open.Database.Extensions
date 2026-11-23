@@ -253,6 +253,26 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public object GenD_Sync() { _label = nameof(GenD_Sync); return SyntheticGenerated.GenD(Connection, Width); }
 
+	// ---- The control and the decomposition of Gen against V2 (width 20 only; GenParity.cs) ----
+	[Benchmark]
+	public object Ctl_Sync() { _label = nameof(Ctl_Sync); return SyntheticGenerated.Ctl(Connection); }
+
+	// V2 with the generated reader's NULL semantics (IsDBNull on every member): the fair bar for Gen (GP1 in the first decomposition run).
+	[Benchmark]
+	public List<SynRow> V2n_Sync() { _label = nameof(V2n_Sync); return SyntheticVariants.V2(Connection, GenParity.V2n); }
+
+	[Benchmark]
+	public List<SynRow> GP2_Sync() { _label = nameof(GP2_Sync); return SyntheticVariants.V2(Connection, GenParity.GP2); }
+
+	[Benchmark]
+	public List<SynRow> GP3_Sync() { _label = nameof(GP3_Sync); return SyntheticVariants.V2(Connection, GenParity.GP3); }
+
+	[Benchmark]
+	public List<SynRow> GP4_Sync() { _label = nameof(GP4_Sync); return SyntheticVariants.V2(Connection, GenParity.GP4()); }
+
+	[Benchmark]
+	public List<SynRow> GP5_Sync() { _label = nameof(GP5_Sync); return SyntheticVariants.V2(Connection, GenParity.GP5); }
+
 	// ---- V3 to V6 (BS-B): the domain object is SynItem; Pace applies to V3, V3s, V4a, V4b, V6c only ----------------------------------------------------------------
 	[Benchmark]
 	public List<SynItem> V3_Sync() { _label = nameof(V3_Sync); return SyntheticVariantsB.V3(Connection, Pace); }

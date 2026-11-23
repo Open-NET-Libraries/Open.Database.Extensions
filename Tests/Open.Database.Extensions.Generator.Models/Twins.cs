@@ -226,6 +226,17 @@ public sealed class OrderOnlyPost
 	public string? Title { get; set; }
 }
 
+/// <summary>An undecorated model with a member not mapped between two mapped ones: its identity layout is Id at 0, Title at 1.</summary>
+public sealed class SkippedPost
+{
+	public int Id { get; set; }
+
+	[NotMapped]
+	public string Display { get; set; } = "kept";
+
+	public string? Title { get; set; }
+}
+
 /// <summary>Members declared in another order than their Order: still read at constant ordinals, in column order.</summary>
 public sealed class ReorderedPost
 {

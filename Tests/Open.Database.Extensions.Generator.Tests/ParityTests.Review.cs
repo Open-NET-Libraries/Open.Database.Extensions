@@ -320,9 +320,9 @@ public partial class ParityTests
 		Parity.SameRows(w20.Map(RowMap<GenRowD20>.Default).ToList(), w20.Map<GenRowD20>().ToList());
 		Counts c = Counts.Now().Since(start);
 
-		// The undecorated twins read every catalog column exactly, in order (mode 1); the decorated ones at constant ordinals (mode 3).
+		// The undecorated twins read every catalog column exactly, at their declaration positions (mode 5); the decorated ones at their declared ordinals (mode 3).
 		Served(c, sets: 10);
-		Assert.Equal(5, c.Full);
+		Assert.Equal(5, c.Identity);
 		Assert.Equal(5, c.Literal);
 	}
 }

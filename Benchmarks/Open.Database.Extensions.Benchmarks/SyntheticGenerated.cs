@@ -18,6 +18,10 @@ public static class SyntheticGenerated
 
 	public static object GenD(SyntheticConnection connection, int width)
 		=> GeneratedReads.GenD(connection.Command(SyntheticVariants.Sql), width);
+
+	/// <summary>The control of Gen at width 20: V2's selector copied into the generated project's assembly, on Gen's twin of the row.</summary>
+	public static object Ctl(SyntheticConnection connection)
+		=> GeneratedControl.Control20(connection.Command(SyntheticVariants.Sql));
 }
 
 public static partial class SyntheticChecks
@@ -33,7 +37,26 @@ public static partial class SyntheticChecks
 		report.Check(!interceptedHere, "the Benchmarks assembly carries generated interceptors: its runtime variants would not be the runtime map");
 		CompareGenerated(report, "Gen vs V2", where, v2, (IList)SyntheticGenerated.Gen(conn, width));
 		CompareGenerated(report, "GenD vs V2", where, v2, (IList)SyntheticGenerated.GenD(conn, width));
+
+		// The control and the decomposition (GenParity.cs) read the 20 catalog columns at fixed ordinals: width 20 only.
+		if (width != 20) return;
+
+		CompareGenerated(report, "Ctl vs V2", where, v2, (IList)SyntheticGenerated.Ctl(conn));
+		KeyValuePair<string, Func<List<SynRow>>>[] parity =
+		[
+			new("V2n vs V2", () => SyntheticVariants.V2(conn, GenParity.V2n)),
+			new("GP2 vs V2", () => SyntheticVariants.V2(conn, GenParity.GP2)),
+			new("GP3 vs V2", () => SyntheticVariants.V2(conn, GenParity.GP3)),
+			new("GP4 vs V2", () => SyntheticVariants.V2(conn, GenParity.GP4())),
+			new("GP5 vs V2", () => SyntheticVariants.V2(conn, GenParity.GP5)),
+		];
+		foreach (var variant in parity)
+			Compare(report, variant.Key, where, v2, variant.Value());
 	}
+
+	// The benchmark methods that read the 20 catalog columns at fixed ordinals (GenParity.cs, GeneratedControl.cs): they run at width 20 only.
+	static bool WidthTwentyOnly(string method)
+		=> method is "Ctl_Sync" or "V2n_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
 
 	static void CompareGenerated(Report report, string name, string where, List<SynRow> expected, IList actual)
 	{
