@@ -170,16 +170,16 @@ public static class ClassicParamPathsAllocationTests
 	}
 
 	[Fact]
-	public static void TwoWrittenSpellingsOfOneName_AreRefused()
+	public static void TwoWrittenSpellingsOfOneName_AreSentAsWritten()
 	{
 		using var c = new SqliteConnection("Data Source=:memory:");
 		c.Open();
 
 		ExpressiveDbCommand command = c.Command("select @Id").AddParam("id", 1).AddParam("@Id", 2);
 
-		var ex = Assert.Throws<InvalidOperationException>(() => command.ExecuteScalar());
+		string[] sent = command.Execute(static cmd => cmd.Parameters.Cast<SqliteParameter>().Select(static p => p.ParameterName).ToArray());
 
-		Assert.Contains("'@Id'", ex.Message);
+		Assert.Equal(["id", "@Id"], sent);
 	}
 
 	[Fact]
