@@ -4,7 +4,7 @@ Every page in [Benchmarks](../performance.md) is measured the same way. This pag
 
 ## In short
 
-- Almost every number comes from [BenchmarkDotNet](https://benchmarkdotnet.org/) 0.15.8, run in Release mode on one desktop PC, with every case run once. The exception is [Slow links and large values](slow-links-and-large-values.md), which uses the project's own probe programs against SQL Server in a container; that page says so.
+- Almost every number comes from [BenchmarkDotNet](https://benchmarkdotnet.org/) 0.15.8, run in Release mode on one desktop PC, with every case run once. The exceptions are [Slow links and large values](slow-links-and-large-values.md), which uses the project's own probe programs against SQL Server in a container, and the bin tests on [Pooling and clearing](pooling-and-clearing.md); those pages say so.
 - All the rows of a result come back as the same objects from every library. A check in the benchmark project (`--verify`) fails if two variants return different data.
 - Most runs use a synthetic reader, so they show the library's own cost with no database in the way. Two runs use a real database (SQL Server LocalDB and a SQLite file), and they show how much of that cost survives.
 - Gaps of a few percent between two bars are noise. We say so on each page where it applies.
@@ -23,7 +23,7 @@ Allocation is deterministic, so memory does not depend on how busy the machine w
 
 | Provider | What it is | What it tells you |
 |---|---|---|
-| **Synthetic reader** | An in-memory ADO.NET reader that serves up to 20 typed columns (`int`, `long`, `decimal`, `double`, `bool`, `DateTime`, `Guid`, short and long strings, `byte[]`, some of them with `NULL`s), generated from the row number so every run gets the same data. No network, no disk, no server. | The library's own overhead. Differences between approaches are as large as they can be. |
+| **Synthetic reader** | An in-memory ADO.NET reader that serves up to 20 typed columns (`int`, `long`, `decimal`, `double`, `bool`, `DateTime`, `Guid`, short and long strings, `byte[]`, some of them with `NULL`s), generated from the row number so every run gets the same data. No network, no disk, no server. | The library's own overhead. |
 | **SQL Server LocalDB** | A database created for the run, read through `Microsoft.Data.SqlClient` 7.1.1, and deleted after it. | A real provider where the database does most of the work. |
 | **SQLite file** | A file created for the run, read through `Microsoft.Data.Sqlite`, and deleted after it. | A second real provider. |
 
@@ -55,7 +55,7 @@ Each data set has a CSV file in the repository and a source file beside it that 
 
 Data files and sources: [library-synthetic](../../perf-data/library-synthetic.csv) ([source](../../perf-data/library-synthetic.source.txt)), [library-real](../../perf-data/library-real.csv) ([source](../../perf-data/library-real.source.txt)), [synthetic-overhead](../../perf-data/synthetic-overhead.csv) ([source](../../perf-data/synthetic-overhead.source.txt)), [width-sweep](../../perf-data/width-sweep.csv) ([source](../../perf-data/width-sweep.source.txt)), [map-cost](../../perf-data/map-cost.csv) ([source](../../perf-data/map-cost.source.txt)), [real-providers](../../perf-data/real-providers.csv) ([source](../../perf-data/real-providers.source.txt)), [sync-async](../../perf-data/sync-async.csv) ([source](../../perf-data/sync-async.source.txt)).
 
-The synthetic, real-database, map-cost and sync-against-async runs were made on 2026-11-14, before 11.0.0-rc.6; the slow-link memory and large-value runs on 2026-11-15; the channel numbers are older. A page says so at the top when it rests on older or hand-recorded numbers.
+Each page gives the build and date of its runs on its *Build, date, machine* line, and says so at the top when it rests on older or hand-recorded numbers. The channel numbers are the oldest.
 
 The [interactive ranking](../../benchmarks/ranking.html) shows the 16-variant synthetic run as one page with hover details. It is a snapshot from 2026-11-14.
 

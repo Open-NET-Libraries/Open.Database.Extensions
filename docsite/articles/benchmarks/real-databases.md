@@ -8,7 +8,7 @@
 
 - **On SQL Server LocalDB, `Map<T>()` ties with hand-written code and with Dapper.** For 10,000 rows of 20 columns it took 25.9 ms, a hand-written selector 25.2 ms and Dapper 27.6 ms. BenchmarkDotNet's own error margin on the 20-column SQL Server runs is 3.1 to 8.8% of the mean (the tables show each one), so those gaps are not a result.
 - **Memory is where ODX still wins over Dapper.** On SQL Server `Map<T>()` allocates 9.48 MB, the same as hand-written code; Dapper allocates 12.27 MB, 29.4% more. On SQLite `Map<T>()` allocates 14.11 MB: 4.6% less than Dapper (14.79) and 17.9% more than hand-written code (11.96).
-- **Not faster on SQLite, on this older build.** `Map<T>()` is 20.9% slower than a hand-written selector at 20 columns (31.3 against 25.9 ms) and 24.3% slower at 5 columns. Against Dapper it is 5.1% slower at 20 columns and 2.1% faster at 5. These runs do not show why.
+- **Not faster on SQLite, on this older build.** `Map<T>()` is 20.9% slower than a hand-written selector at 20 columns (31.3 against 25.9 ms) and 24.3% slower at 5 columns. Against Dapper it is 5.1% slower at 20 columns and 2.1% faster at 5.
 
 ## Time per call
 
@@ -52,7 +52,7 @@ Each table lists time and memory for the same five ways of reading the rows. *Ha
 
 **What you can count on is memory, against Dapper.** Allocations are the library's, so they show through any provider. They are also what the garbage collector later pays for.
 
-**SQLite is the one place `Map<T>()` is behind.** The hand loop and the hand-written selector are the two leaders on SQLite at both widths, and `Map<T>()` is about a fifth behind at 20 columns. These runs do not show why, so we do not claim a cause.
+**SQLite is the one place `Map<T>()` is behind.** The hand loop and the hand-written selector are the two leaders on SQLite at both widths, and `Map<T>()` is about a fifth behind at 20 columns.
 
 **How long the connection is held open is not on these charts.** The real-provider runs measure the whole call, not how long the connection is held. The synthetic pages show the connection time, which is the number a busy service cares about.
 

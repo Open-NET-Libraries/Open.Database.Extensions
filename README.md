@@ -6,7 +6,7 @@
 [![Docs](https://github.com/Open-NET-Libraries/Open.Database.Extensions/actions/workflows/docs.yml/badge.svg)](https://github.com/Open-NET-Libraries/Open.Database.Extensions/actions/workflows/docs.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/LICENSE)
 
-Open.Database.Extensions handles the ADO.NET code around your own SQL with one fluent command: create the connection, add the parameters, run it, map the rows, dispose everything, the way ADO.NET best practice says. It works with any ADO.NET provider and the ADO.NET types you already use, holds a connection open as briefly as it can, and allocates little.
+Open.Database.Extensions handles the ADO.NET code around your own SQL with one fluent command: create the connection, add the parameters, run it, map the rows, dispose everything, the way ADO.NET best practice says. It works with any ADO.NET provider and the ADO.NET types you already use, and holds a connection open only while a query needs it.
 
 **[Documentation](https://open-net-libraries.github.io/Open.Database.Extensions/)** · [Getting started](https://open-net-libraries.github.io/Open.Database.Extensions/articles/getting-started.html) · [API reference](https://open-net-libraries.github.io/Open.Database.Extensions/api/index.html) · [Benchmarks](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md)
 
@@ -162,9 +162,9 @@ dotnet add package Microsoft.Data.Sqlite
 | `Open.Database.Extensions.Channel` | Rows into `System.Threading.Channels`. |
 | `Open.Database.Extensions.Dataflow` | Rows into TPL Dataflow blocks. |
 | `Open.Database.Extensions.MSSqlClient` | `SqlConnectionFactory` and SQL Server specializations on `Microsoft.Data.SqlClient`. |
-| `Open.Database.Extensions` | Discontinued. It only referenced Core: use `Open.Database.Extensions.Core`. The last published version is 9.0.3. |
+| `Open.Database.Extensions` | Discontinued: use `Open.Database.Extensions.Core`. |
 
-Targets: `netstandard2.0`, `netstandard2.1`, `net10.0` and `net11.0` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Version 11 is a release candidate (`11.0.0-rc.12`). Please try it and tell us what you find.
+Targets: `netstandard2.0`, `netstandard2.1`, `net10.0` and `net11.0` (`MSSqlClient`: `net472`, `net10.0` and `net11.0`). Version 11 is a release candidate.
 
 Publishing trimmed or native AOT? See [Trimming and native AOT](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Source/Core/README.md#trimming-and-native-aot).
 
@@ -181,18 +181,21 @@ Most of the library is extension methods on the ADO.NET types you already use (`
 // ExecuteTransactionConditionalAsync opens it if it is closed
 // and starts the transaction.
 // Returning true commits; false (or a throw) rolls back.
+// Here the caller decides: shouldCommit is a bool passed in.
 bool committed = await connectionFactory.UsingAsync(connection
-    => connection.ExecuteTransactionConditionalAsync(async transaction =>
-    {
-        int inserted = await transaction
-            .Command("""
-                insert into posts (id, author, title, body, views)
-                values (100, 1, 'Temporary', null, 0)
-                """)
-            .ExecuteNonQueryAsync(cancellationToken);
+    => connection.ExecuteTransactionConditionalAsync(
+        async transaction =>
+        {
+            await transaction
+                .Command("""
+                    insert into posts (id, author, title, body, views)
+                    values (100, 1, 'Temporary', null, 0)
+                    """)
+                .ExecuteNonQueryAsync(cancellationToken);
 
-        return inserted == 1;
-    }, cancellationToken));
+            return shouldCommit;
+        },
+        cancellationToken));
 ```
 
 See [The foundation](https://open-net-libraries.github.io/Open.Database.Extensions/articles/foundation.html).
@@ -271,17 +274,15 @@ Person[] people = await connection
     .ToArrayAsync(cancellationToken);
 ```
 
-`field ??=` (C# 14) builds the map on first use; older compilers use an explicit backing field. Declare a map once and reuse it: a map built at the call site is rebuilt on every call. More in [Columns named differently](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently).
+`field ??=` (C# 14) builds the map on first use. Declare a map once and reuse it: a map built at the call site is rebuilt on every call. More in [Columns named differently](https://open-net-libraries.github.io/Open.Database.Extensions/articles/mapping.html#columns-named-differently).
 
-## Why it is fast
+## Performance
 
-Everything above rests on keeping a connection open for as short a time as possible and allocating as little as possible while it is.
+- **Against Dapper 2.1.89 on an in-memory ADO.NET reader (no I/O; 1,000 rows, 20 columns):** `Map<T>()` takes 0.35 of Dapper's time (85 against 246 µs) and allocates 0.41 of its memory (227 against 548 KB).
+- **Against a real database (10,000 rows, 20 columns; SQL Server LocalDB and a SQLite file, two runs each):** `Map<T>()` takes 0.87 to 0.96 of Dapper's time (the error margins overlap in three of the four runs) and allocates 0.77 to 0.85 of its memory.
+- **Built to hold a connection briefly:** the row mapping is compiled once per result shape and cached, and a command built from a factory opens its connection when it runs and disposes it afterwards.
 
-- **Measured against Dapper 2.1.89 on an in-memory ADO.NET provider (no I/O):** `Map<T>()` is roughly 2 to 3 times faster at 100 or more rows, with about a third of the allocations (0.33 to 0.38 of Dapper's on multi-row results).
-- **With a real database the database dominates:** against SQL Server LocalDB it is on par, within about 10% either way (ratios 0.89 to 1.08, mostly ties; this library's time over Dapper's, so below 1 is faster) with about 0.55 to 0.6 times the allocations on multi-row results.
-- **Built to hold a connection briefly:** the row mapping is compiled once per result shape and cached, values are read with typed getters (nothing is boxed on the common path), `Skip` advances without mapping, and a command built from a factory opens its connection when it runs and disposes it afterwards.
-
-These figures come from the 11.0.0-preview01 build, re-run independently on a noisy machine, so read the timing ratios as indicative. The SQLite results are published but were not independently re-run, and a re-baseline is pending. Channels and Dataflow are conveniences, not speed-ups. See [Performance](https://open-net-libraries.github.io/Open.Database.Extensions/articles/performance.html).
+These figures come from benchmark build b5b0014 (run 2026-11-21; the data and its sources are in [`docsite/perf-data`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/tree/master/docsite/perf-data)). Read the timing ratios as indicative. Channels and Dataflow are conveniences, not speed-ups. See [Performance](https://open-net-libraries.github.io/Open.Database.Extensions/articles/performance.html).
 
 ## And more
 
@@ -289,8 +290,8 @@ These figures come from the 11.0.0-preview01 build, re-run independently on a no
 - **SQL Server:** `SqlConnectionFactory` and stored procedures on `Microsoft.Data.SqlClient`. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/getting-started.html#with-sql-server)
 - **Coming from Dapper:** the same jobs side by side. [Guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/coming-from-dapper.html)
 
-**Coming from v10?** Version 11 is a significant break. The ADO.NET extensions themselves changed little; how typed results are mapped and returned changed a lot. See the [migration guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html).
-
 ## Contributing and license
 
-Documentation lives next to the code and is rebuilt and published from `master` automatically; see [where each kind of documentation lives](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/CONTRIBUTING-DOCS.md). Released under the [MIT license](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/LICENSE).
+To contribute to the docs, see [where each kind of documentation lives](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/docsite/CONTRIBUTING-DOCS.md). Released under the [MIT license](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/LICENSE).
+
+Coming from earlier versions? See the [migration guide](https://open-net-libraries.github.io/Open.Database.Extensions/articles/whats-new-11.html).

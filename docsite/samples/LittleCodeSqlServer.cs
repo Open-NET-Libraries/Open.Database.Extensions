@@ -78,10 +78,10 @@ public sealed class LittleCodeSqlServer : IAsyncDisposable
 		return new LittleCodeSqlServer();
 	}
 
-	public async ValueTask DisposeAsync()
-		=> await ExecuteAsync(
+	public ValueTask DisposeAsync()
+		=> new(ExecuteAsync(
 			$"drop procedure if exists dbo.SearchPosts; drop table if exists {Table};",
-			CancellationToken.None);
+			CancellationToken.None));
 
 	static async Task ExecuteAsync(
 		string sql,

@@ -12,10 +12,10 @@ Here `author` is an `int` variable: the parameter name `author` comes from the a
 
 ## The idea
 
-1. **A foundation of best-practice extensions.** Most of the library is a provider-agnostic collection of extensions on `IDbConnection`, `IDbCommand`, `IDataReader` and friends. They apply the usual best practices (open late, close early, dispose what you create, honor cancellation) so common database work is almost effortless. See [The foundation](articles/foundation.md).
+1. **A foundation of best-practice extensions.** Most of the library is a provider-agnostic collection of extensions on `IDbConnection`, `IDbCommand`, `IDataReader` and friends. They apply the usual best practices (open late, close early, dispose what you create, honor cancellation). See [The foundation](articles/foundation.md).
 2. **Expressive commands on top.** Build a command from a connection factory or a connection, add parameters, and call a terminal. See [Expressive commands](articles/expressive-commands.md).
 3. **Row mapping on top of that.** `Map<T>()` reads rows into your classes. See [Mapping rows to objects](articles/mapping.md).
-4. **All of it rests on performance.** The goal is to keep a connection open for as short a time as possible and to allocate as little as possible. See [Performance](articles/performance.md) for what is measured and what is not.
+4. **Performance.** See [Performance](articles/performance.md) for what is measured and what is not.
 
 ## How little code
 
@@ -28,7 +28,7 @@ The same four tasks written with ODX, Dapper, EF Core and plain ADO.NET are on [
 | 3. The rows of one author in memory, then LINQ | 15 | 15 | 13 | 26 |
 | 4. A stored procedure with two parameters | 11 | 14 | 12 | 29 |
 
-ODX is not the smallest in every row: EF Core is shorter in all four. The connection factory (ODX) and the context (EF Core) are set up once and are not counted: see the page for what each count includes. The ODX versions of the first two tasks:
+ODX is not the smallest in every row: EF Core is shorter in the first three. The connection factory (ODX) and the context (EF Core) are set up once and are not counted: see the page for what each count includes. The ODX versions of the first two tasks:
 
 [!code-csharp[](samples/HowLittleCode.cs#little_list_odx)]
 
@@ -47,7 +47,7 @@ The stream method has no `async`, `await` or `using`: the stream opens the conne
 | See how it differs from Dapper | [Coming from Dapper](articles/coming-from-dapper.md) |
 | Look up a type or a method | [API reference](api/index.md) |
 
-Every code sample in this guide is compiled by the build and run against SQLite before the site is published.
+Every code sample in this guide is compiled by the build, and the ones that do not need SQL Server run against SQLite before the site is published.
 
 ## How it fits together
 

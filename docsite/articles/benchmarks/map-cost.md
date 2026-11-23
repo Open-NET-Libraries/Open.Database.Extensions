@@ -1,6 +1,6 @@
 # What building a map costs
 
-**The question:** `Map<T>()` is fast because it builds a mapping once and reuses it. How much does that one build cost, and what happens if you build one on every call?
+**The question:** `Map<T>()` builds a mapping once and reuses it. How much does that one build cost, and what happens if you build one on every call?
 
 ## In short
 
@@ -26,7 +26,7 @@ You get this by default: a plain `Map<T>()` finds its cached mapping by the resu
 
 ## When the mapping is built on every call (older run)
 
-The call-site forms (a collection expression or `new RowMap<T>([...])` written inline) build a new mapping on every call. This older run measured it on a 12-property model, a one-row read, an in-memory provider, at commit `9840925`, .NET 10 and BenchmarkDotNet 0.15.8, before the final API of 11.0.0-preview02. It was not repeated on the final code and has no data file. The source is [`RESULTS.md`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md#rowmapt-a-prebuilt-column-mapping-when-every-column-is-named-differently).
+The call-site forms (a collection expression or `new RowMap<T>([...])` written inline) build a new mapping on every call. This older run measured it on a 12-property model, a one-row read, an in-memory provider, at commit `9840925`, .NET 10 and BenchmarkDotNet 0.15.8. It was not repeated on the final code and has no data file. The source is [`RESULTS.md`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md#rowmapt-a-prebuilt-column-mapping-when-every-column-is-named-differently).
 
 | One-row `List` read | Time | Memory |
 |---|---:|---:|

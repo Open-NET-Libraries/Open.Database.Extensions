@@ -2,7 +2,7 @@
 
 [![Open.Database.Extensions.Dataflow: You write the SQL. ODX writes the other twenty lines.](https://raw.githubusercontent.com/Open-NET-Libraries/Open.Database.Extensions/master/docsite/images/hero-dataflow.svg)](https://open-net-libraries.github.io/Open.Database.Extensions/)
 
-Rows from a mapped query into a TPL Dataflow pipeline you build: the query is read at full speed into your blocks. `ToTargetBlock` sends the rows to a block you own, so its scheduler and priorities stay yours; `AsSourceBlock` makes a block for you. The query is read at full speed and the connection is closed when the read ends. This package depends only on [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/) and `System.Threading.Tasks.Dataflow`.
+Rows from a mapped query into a TPL Dataflow pipeline you build. `ToTargetBlock` sends the rows to a block you own, so its scheduler and priorities stay yours; `AsSourceBlock` makes a block for you. The connection is closed when the read ends. This package depends only on [Open.Database.Extensions.Core](https://www.nuget.org/packages/Open.Database.Extensions.Core/) and `System.Threading.Tasks.Dataflow`.
 
 ```sh
 dotnet add package Open.Database.Extensions.Dataflow --prerelease
@@ -17,7 +17,7 @@ public record Post(int Id, string Title);
 // connectionFactory is a DbConnectionFactory<TConnection>, created once per application (see the Core package page, which also names the provider to install).
 var block = new BufferBlock<Post>();
 
-// complete: true completes the block after the last row, or faults it if reading fails.
+// complete: true completes the block after the last row, or faults it with the exception that ended the pass, a cancel included.
 long count = await connectionFactory
     .Command("select * from posts order by id")
     .Map<Post>()

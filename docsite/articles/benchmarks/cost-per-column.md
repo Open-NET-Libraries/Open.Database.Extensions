@@ -8,7 +8,7 @@
 
 - Every approach grows in a nearly straight line, so each has a **cost per cell**. `Map<T>()` costs **3.65 ns** per cell. Dapper costs 9.70 ns, and `object[]` rows 8.90 ns.
 - That makes `Map<T>()`'s lead **grow with the width of the result**: at 20 columns it is 2.5 times faster than Dapper (81.7 against 202.7 µs for 1,000 rows); at 1 column it is 1.5 times faster (12.4 against 18.5 µs).
-- **Not faster:** at one column the plain `object[]` rows are the fastest of the five (9.5 µs, against 12.4 µs for `Map<T>()`), probably because they do the least fixed work. A hand-written selector is faster than `Map<T>()` at every width (47.0 against 81.7 µs at 20 columns).
+- **Not faster:** at one column the plain `object[]` rows are the fastest of the five (9.5 µs, against 12.4 µs for `Map<T>()`). A hand-written selector is faster than `Map<T>()` at every width (47.0 against 81.7 µs at 20 columns).
 
 ## The chart
 
@@ -19,13 +19,6 @@ Time for one call that reads 1,000 rows, as the result gets wider. Each line is 
 [!include[](../../includes/perf/width.md)]
 
 The last column is the cost of one more cell: the time at 20 columns minus the time at 1 column, divided by the cells added (19 columns of 1,000 rows each). Times in the other columns are microseconds for the whole call.
-
-## Why the lines have these slopes
-
-- **Hand-written selector (1.91 ns per cell).** It reads each column with a typed getter and nothing else. This is the floor.
-- **`Map<T>()` (3.65 ns).** It reads each column with a typed getter too, through a mapping compiled once and cached.
-- **`object[]` rows (8.90 ns).** Every cell is boxed, which allocates, so each column costs an allocation. It is the fastest of the five at one column and the fourth at twenty.
-- **Dapper (9.70 ns).** The slope is close to the `object[]` rows'. These runs measure the slope, not what causes it.
 
 The practical reading: the more columns a query returns, the more it matters how the cells are read. For a narrow result the choice hardly shows; for a wide one it is the main cost.
 

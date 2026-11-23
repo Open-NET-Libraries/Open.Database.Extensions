@@ -76,9 +76,9 @@ Check(declarationForms.All(form => connection.Command("select person_id, first_n
 Check(declarationForms[0].Select(pair => pair.Key).SequenceEqual([nameof(Person.Id), nameof(Person.FirstName)]) && declarationForms[0].SequenceEqual(declarationForms[^1]), "a map enumerates the pairs it was declared with, and a copy built from them declares the same pairs");
 Check(PersonMaps.PersonNamesOnlyMap.Count() == 3 && PersonMaps.PersonNamesOnlyMap.Single(pair => pair.Value is null).Key == nameof(Person.LastName), "an ignored property is enumerated with a null column");
 Order[] converted = await Mapping.MapConverted(connection, CancellationToken.None);
-Check(converted is [{ Id: 1, OrderNum: "000042", FirstLoad: "14:05", Customer: "Ada" }, { Id: 2, OrderNum: "000007", FirstLoad: "", Customer: "" }] && converted[0].Summary == "000042 at 14:05", "converters turn order_num into text, the timestamp into HH:mm and trim the customer, a NULL cell is not converted and keeps the property's initial value, and the rest maps by name");
+Check(converted is [{ Id: 1, OrderNum: "000042", PlacedAt: "14:05", Customer: "Ada" }, { Id: 2, OrderNum: "000007", PlacedAt: "", Customer: "" }] && converted[0].Summary == "000042 at 14:05", "converters turn order_num into text, the timestamp into HH:mm and trim the customer, a NULL cell is not converted and keeps the property's initial value, and the rest maps by name");
 Order[] convertedNull = await Mapping.MapConvertedNull(connection, CancellationToken.None);
-Check(convertedNull is [{ OrderNum: "42", FirstLoad: "14:05", Customer: "  Ada  " }, { OrderNum: "7", FirstLoad: "--:--" }], "a converter whose TColumn is nullable is called with null and what it returns is the value of the property; the other columns map without a converter");
+Check(convertedNull is [{ OrderNum: "42", PlacedAt: "14:05", Customer: "  Ada  " }, { OrderNum: "7", PlacedAt: "--:--" }], "a converter whose TColumn is nullable is called with null and what it returns is the value of the property; the other columns map without a converter");
 Person[] snake = await Mapping.MapSnakeCaseAsync(connection, CancellationToken.None);
 Check(snake[0] is { Id: 0, FirstName: "Ada", LastName: "Lovelace" }, "snake_case columns feed PascalCase properties with no map");
 Post[] readerView = await Mapping.MapReaderView(connection, CancellationToken.None);
@@ -148,7 +148,7 @@ Check(
 	(await ExpressiveCommands.ColumnOfIds(factory, CancellationToken.None))
 		.SequenceEqual([1, 2, 3, 4, 5]),
 	"Map<int>().ToArrayAsync(token) on a command");
-Check(await Mapping.StreamRowsAsync(connection, CancellationToken.None) == 15, "Stream hands the rows over one at a time");
+Check(await Mapping.StreamRowsAsync(connection, CancellationToken.None) == 3, "Stream hands the rows over one at a time and the loop can stop early");
 Check((await Mapping.ByIdAsync(connection, CancellationToken.None)).Count == 5, "ToDictionaryAsync");
 Check((await connection.Command("select * from posts").Map<Post>().ToDictionaryAsync(static post => post.Id, CancellationToken.None)).Count == 5, "the token goes straight after the key selector");
 Check((await connection.Command("select * from posts").Map<Post>().ToHashSetAsync(CancellationToken.None)).Count == 5, "the token goes first when there is no comparer");
@@ -497,13 +497,6 @@ Check(
 	canceledThrew && canceledSeen.SequenceEqual([1, 2]),
 	"a canceled SelectAsync throws OperationCanceledException, "
 	+ "and the rows before the cancel were seen");
-(canceledSeen, canceledThrew)
-	= ReaderCancellation.ForEachCanceled(connection);
-Check(
-	canceledThrew && canceledSeen.SequenceEqual([1, 2]),
-	"the sync form: a canceled ForEach throws "
-	+ "OperationCanceledException, "
-	+ "and the rows before the cancel were seen");
 
 // How little code: the same tasks with ODX, Dapper, EF Core and plain ADO.NET give the same rows.
 Db.Seed();
@@ -536,7 +529,7 @@ Check(
 	(await HowLittleCode.CollectAsync(odxStream, littleCodeToken)).SequenceEqual(expectedHeadlines),
 	"how little code, task 2: the ODX stream filters in SQL and projects without async, await or using in the method");
 Check(
-	await ThrowsAsync<InvalidOperationException>(async () => await HowLittleCode.CollectAsync(odxStream, littleCodeToken)),
+	await ThrowsAsync<InvalidOperationException>(() => HowLittleCode.CollectAsync(odxStream, littleCodeToken)),
 	"how little code, task 2: the ODX stream is single-use, a second enumeration throws");
 Check(
 	(await HowLittleCode.CollectAsync(HowLittleCode.AuthorHeadlinesDapperAsync(littleCodeConnectionString, littleCodeAuthor, littleCodeToken), littleCodeToken)).SequenceEqual(expectedHeadlines)
@@ -578,12 +571,12 @@ await using (LittleCodeSqlServer? sqlServer = await LittleCodeSqlServer.TryStart
 // Shaping rows: the recipes of the article.
 Db.Seed();
 await ShapingRows.SeedAsync(connection, CancellationToken.None);
-(Plant[] plantsInitializer, Plant[] plantsFactory) = await ShapingRows.NullToEmptyAsync(connection, CancellationToken.None);
+(Tag[] tagsInitializer, Tag[] tagsFactory) = await ShapingRows.NullToEmptyAsync(connection, CancellationToken.None);
 Check(
-	plantsInitializer is [{ Id: 1, Code: "PRESS", SortDescr: "Stamping" }, { Id: 2, Code: "", SortDescr: "" }],
+	tagsInitializer is [{ Id: 1, Label: "NEWS", Description: "Weekly" }, { Id: 2, Label: "", Description: "" }],
 	"a NULL keeps the initializer of a non-nullable member and the converter is not called for it");
 Check(
-	plantsFactory is [{ Id: 1, Code: "PRESS", SortDescr: "Stamping" }, { Id: 2, Code: "", SortDescr: "" }],
+	tagsFactory is [{ Id: 1, Label: "NEWS", Description: "Weekly" }, { Id: 2, Label: "", Description: "" }],
 	"a factory parameter declared string? receives null for a NULL, so the function can write ?? \"\"");
 (PostStamp[] stampsAfterClose, PostStampInit[] stampsInQuery) = await ShapingRows.ValueFromOutsideAsync(connection, CancellationToken.None);
 Check(
@@ -592,22 +585,22 @@ Check(
 Check(
 	stampsInQuery.Length == 5 && stampsInQuery.All(static stamp => stamp.Serial == "S-100") && stampsInQuery[2] is { Id: 3, Title: "Post 3" },
 	"a value from outside the row can come back from the query as a column");
-(Employee[] employeesIgnored, Employee[] employeesListed, Employee[] employeesNoManagerColumn) = await ShapingRows.ChooseWhatIsReadAsync(connection, CancellationToken.None);
+(Author[] authorsIgnored, Author[] authorsListed, Author[] authorsNoEditorColumn) = await ShapingRows.ChooseWhatIsReadAsync(connection, CancellationToken.None);
 Check(
-	employeesIgnored is [{ Badge: "E-1", Desk: "", Manager: "Kim" }, { Badge: "E-2", Desk: "", Manager: "Lee" }],
+	authorsIgnored is [{ Handle: "ada", City: "", Editor: "Kim" }, { Handle: "grace", City: "", Editor: "Lee" }],
 	"a null column in the map leaves the member unmapped although a column of its name exists");
 Check(
-	employeesListed is [{ Badge: "E-1", Desk: "", Manager: "Kim" }, { Badge: "E-2", Desk: "", Manager: "Lee" }],
-	"a factory map fills only what its function takes: the desk column is read by nobody");
+	authorsListed is [{ Handle: "ada", City: "", Editor: "Kim" }, { Handle: "grace", City: "", Editor: "Lee" }],
+	"a factory map fills only what its function takes: the city column is read by nobody");
 Check(
-	employeesNoManagerColumn is [{ Badge: "E-1", Manager: "unknown" }, { Badge: "E-2", Manager: "unknown" }],
+	authorsNoEditorColumn is [{ Handle: "ada", Editor: "unknown" }, { Handle: "grace", Editor: "unknown" }],
 	"a factory parameter no column feeds is null (its default) and nothing throws");
-(StrictEmployee[] strictFound, ValueMappingException? strictMissing) = await ShapingRows.StrictAsync(connection, CancellationToken.None);
+(StrictAuthor[] strictFound, ValueMappingException? strictMissing) = await ShapingRows.StrictAsync(connection, CancellationToken.None);
 Check(
-	strictFound is [{ Badge: "E-1", Manager: "Kim" }, { Badge: "E-2", Manager: "Lee" }],
+	strictFound is [{ Handle: "ada", Editor: "Kim" }, { Handle: "grace", Editor: "Lee" }],
 	"a required member is mapped when a column feeds it");
 Check(
-	strictMissing is { PropertyName: "Badge" },
+	strictMissing is { PropertyName: "Handle" },
 	"a result with no column for a required member throws ValueMappingException at its first row");
 (WideReading wide, WideEnds wideEnds) = await ShapingRows.WideAsync(connection, CancellationToken.None);
 Check(

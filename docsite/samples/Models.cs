@@ -38,27 +38,27 @@ public class Person
 	public string LastName { get; set; } = "";
 }
 
-// order_num is a number, first_load_datetime a timestamp: the model keeps the first as text and shows the second as "HH:mm" (see the converters in OrderMaps).
+// order_num is a number, placed_at a timestamp: the model keeps the first as text and shows the second as "HH:mm" (see the converters in OrderMaps).
 #region order_model
 public class Order
 {
 	public required int Id { get; init; }
 	public string OrderNum { get; init; } = "";
-	public string FirstLoad { get; init; } = "";
+	public string PlacedAt { get; init; } = "";
 	public string Customer { get; init; } = "";
 
 	// Computed from the converted members: never mapped.
-	public string Summary => $"{OrderNum} at {FirstLoad}";
+	public string Summary => $"{OrderNum} at {PlacedAt}";
 }
 #endregion
 
 #region order_line_model
 public class OrderLine
 {
-	public int Quantity { get; set; } = 1;   // NULL leaves 1: a non-nullable value type keeps its initializer, else its default
-	public int? Discount { get; set; }       // NULL gives null
-	public string? Note { get; set; }        // NULL gives null
-	public string Title { get; set; } = "";  // NULL leaves "": a non-nullable reference (nullable annotations on) keeps its initializer too
+	public int Quantity { get; init; } = 1;   // NULL leaves 1: a non-nullable value type keeps its initializer, else its default
+	public int? Discount { get; init; }       // NULL gives null
+	public string? Note { get; init; }        // NULL gives null
+	public string Title { get; init; } = "";  // NULL leaves "": a non-nullable reference (nullable annotations on) keeps its initializer too
 }
 #endregion
 
