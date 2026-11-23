@@ -12,18 +12,6 @@ Open.Database.Extensions.DbConnectionFactory<TConnection>
 Open.Database.Extensions.DbConnectionFactory<TConnection>.Create() -> TConnection
 Open.Database.Extensions.DbConnectionFactory<TConnection>.DbConnectionFactory(System.Func<TConnection>! factory) -> void
 Open.Database.Extensions.DbConnectionFactoryExtensions
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter.ConnectionFactoryToPoolAdapter() -> void
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter.ConnectionFactoryToPoolAdapter(Open.Database.Extensions.IDbConnectionFactory! factory) -> void
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter.ConnectionFactoryToPoolAdapter(System.Func<System.Data.IDbConnection!>! factory) -> void
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter.Give(System.Data.IDbConnection! connection) -> void
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter.Take() -> System.Data.IDbConnection!
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection>
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection>.ConnectionFactoryToPoolAdapter() -> void
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection>.ConnectionFactoryToPoolAdapter(Open.Database.Extensions.IDbConnectionFactory<TConnection>! factory) -> void
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection>.ConnectionFactoryToPoolAdapter(System.Func<TConnection>! factory) -> void
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection>.Give(System.Data.IDbConnection! connection) -> void
-Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection>.Take() -> TConnection
 Open.Database.Extensions.ExpressiveCommand
 Open.Database.Extensions.ExpressiveCommand.ExpressiveCommand(Open.Database.Extensions.IDbConnectionFactory! connFactory, System.Data.CommandType type, string! command, System.Collections.Generic.IEnumerable<Open.Database.Extensions.ExpressiveCommandBase<System.Data.IDbConnection!, System.Data.IDbCommand!, System.Data.IDataReader!, System.Data.DbType, Open.Database.Extensions.ExpressiveCommand!>.Param>? params = null) -> void
 Open.Database.Extensions.ExpressiveCommand.ExpressiveCommand(Open.Database.Extensions.IDbConnectionPool! connectionPool, System.Data.CommandType type, string! command, System.Collections.Generic.IEnumerable<Open.Database.Extensions.ExpressiveCommandBase<System.Data.IDbConnection!, System.Data.IDbCommand!, System.Data.IDataReader!, System.Data.DbType, Open.Database.Extensions.ExpressiveCommand!>.Param>? params = null) -> void
@@ -126,7 +114,6 @@ Open.Database.Extensions.IExecuteReader<TReader>.ExecuteReaderAsync<T>(System.Fu
 Open.Database.Extensions.IExecuteReaderAsync
 Open.Database.Extensions.IExecuteReaderAsync.UseAsyncRead.get -> bool
 Open.Database.Extensions.IExecuteReaderAsync<TReader>
-Open.Database.Extensions.IExecuteReaderExtensions
 Open.Database.Extensions.IMappedQuery<T>
 Open.Database.Extensions.MappedQuery<T>
 Open.Database.Extensions.MappedQuery<T>.FirstOrDefaultAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
@@ -273,13 +260,9 @@ static Open.Database.Extensions.CoreExtensions.ReplaceDBNullWithNull(this System
 static Open.Database.Extensions.CoreExtensions.ReplaceDBNullWithNull(this System.Span<object?> values) -> System.Span<object?>
 static Open.Database.Extensions.CoreExtensions.ReplaceDBNullWithNull(this object?[]! values) -> object?[]!
 static Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(this System.Data.Common.DbDataReader! reader, System.Buffers.ArrayPool<object!>? arrayPool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<object![]!>!
-static Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(this System.Data.Common.DbDataReader! reader, System.Buffers.ArrayPool<object!>? arrayPool, System.Threading.CancellationToken cancellationToken, int n, params System.Collections.Generic.IEnumerable<int>! others) -> System.Collections.Generic.IAsyncEnumerable<object![]!>!
-static Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(this System.Data.Common.DbDataReader! reader, System.Buffers.ArrayPool<object!>? arrayPool, int n, params System.Collections.Generic.IEnumerable<int>! others) -> System.Collections.Generic.IAsyncEnumerable<object![]!>!
 static Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(this System.Data.Common.DbDataReader! reader, System.Collections.Generic.IEnumerable<int>! ordinals, System.Buffers.ArrayPool<object!>? arrayPool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<object![]!>!
 static Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(this System.Data.Common.DbDataReader! reader, System.Collections.Generic.IEnumerable<int>! ordinals, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<object![]!>!
 static Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(this System.Data.Common.DbDataReader! reader, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<object![]!>!
-static Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(this System.Data.Common.DbDataReader! reader, System.Threading.CancellationToken cancellationToken, int n, params System.Collections.Generic.IEnumerable<int>! others) -> System.Collections.Generic.IAsyncEnumerable<object![]!>!
-static Open.Database.Extensions.DataReaderExtensions.AsAsyncEnumerable(this System.Data.Common.DbDataReader! reader, int n, params System.Collections.Generic.IEnumerable<int>! others) -> System.Collections.Generic.IAsyncEnumerable<object![]!>!
 static Open.Database.Extensions.DataReaderExtensions.ForEach(this System.Data.IDataReader! reader, System.Action<System.Data.IDataRecord!>! handler, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
 static Open.Database.Extensions.DataReaderExtensions.ForEachAsync(this System.Data.Common.DbDataReader! reader, System.Action<System.Data.IDataRecord!>! handler, bool useReadAsync = true, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 static Open.Database.Extensions.DataReaderExtensions.ForEachAsync(this System.Data.Common.DbDataReader! reader, System.Func<System.Data.IDataRecord!, System.Threading.Tasks.ValueTask>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
@@ -302,7 +285,6 @@ static Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals
 static Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IReadOnlyList<int>! ordinals) -> System.Collections.Generic.IEnumerable<object!>!
 static Open.Database.Extensions.DataRecordExtensions.EnumerateValuesFromOrdinals(this System.Data.IDataRecord! record, int firstOrdinal, params System.Collections.Generic.IEnumerable<int>! remainingOrdinals) -> System.Collections.Generic.IEnumerable<object!>!
 static Open.Database.Extensions.DataRecordExtensions.GetDataTypeNames(this System.Data.IDataRecord! record) -> string![]!
-static Open.Database.Extensions.DataRecordExtensions.GetMatchingOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> (string! Name, int Ordinal)[]!
 static Open.Database.Extensions.DataRecordExtensions.GetNames(this System.Data.IDataRecord! record) -> System.Collections.Immutable.ImmutableArray<string!>
 static Open.Database.Extensions.DataRecordExtensions.GetNames(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<int>! ordinals) -> System.Collections.Immutable.ImmutableArray<string!>
 static Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> (string! Name, int Ordinal)[]!
@@ -321,10 +303,10 @@ static Open.Database.Extensions.DbConnectionFactory.Create<TConnection>(System.F
 static Open.Database.Extensions.DbConnectionFactory.implicit operator Open.Database.Extensions.DbConnectionFactory!(System.Func<System.Data.IDbConnection!>! factory) -> Open.Database.Extensions.DbConnectionFactory!
 static Open.Database.Extensions.DbConnectionFactory<TConnection>.implicit operator Open.Database.Extensions.DbConnectionFactory<TConnection>!(System.Func<TConnection>! factory) -> Open.Database.Extensions.DbConnectionFactory<TConnection>!
 static Open.Database.Extensions.DbConnectionFactoryExtensions.AsGeneric(this Open.Database.Extensions.IDbConnectionFactory! connectionFactory) -> Open.Database.Extensions.IDbConnectionFactory<System.Data.IDbConnection!>!
-static Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool(this Open.Database.Extensions.IDbConnectionFactory! connectionFactory) -> Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter
-static Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool(this System.Func<System.Data.IDbConnection!>! connectionFactory) -> Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter
-static Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool<TConnection>(this Open.Database.Extensions.IDbConnectionFactory<TConnection>! connectionFactory) -> Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection>
-static Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool<TConnection>(this System.Func<TConnection>! connectionFactory) -> Open.Database.Extensions.DbConnectionFactoryExtensions.ConnectionFactoryToPoolAdapter<TConnection>
+static Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool(this Open.Database.Extensions.IDbConnectionFactory! connectionFactory) -> Open.Database.Extensions.IDbConnectionPool!
+static Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool(this System.Func<System.Data.IDbConnection!>! connectionFactory) -> Open.Database.Extensions.IDbConnectionPool!
+static Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool<TConnection>(this Open.Database.Extensions.IDbConnectionFactory<TConnection>! connectionFactory) -> Open.Database.Extensions.IDbConnectionPool<TConnection>!
+static Open.Database.Extensions.DbConnectionFactoryExtensions.AsPool<TConnection>(this System.Func<TConnection>! connectionFactory) -> Open.Database.Extensions.IDbConnectionPool<TConnection>!
 static Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.EnsureReaderType<TActual>(TActual reader) -> TReader!
 static Open.Database.Extensions.RowMap.Create<T>(System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> mappings) -> Open.Database.Extensions.RowMap<T>!
 static Open.Database.Extensions.RowMap<T>.Default.get -> Open.Database.Extensions.RowMap<T>!
@@ -374,11 +356,6 @@ Open.Database.Extensions.MappedQueryWithSkip<T>.AsyncReads() -> Open.Database.Ex
 Open.Database.Extensions.MappedQueryWithSkip<T>.SingleResult() -> Open.Database.Extensions.MappedQueryWithSkip<T>
 Open.Database.Extensions.MappedQueryWithTake<T>.AsyncReads() -> Open.Database.Extensions.MappedQueryWithTake<T>
 Open.Database.Extensions.MappedQueryWithTake<T>.SingleResult() -> Open.Database.Extensions.MappedQueryWithTake<T>
-static Open.Database.Extensions.IExecuteReaderExtensions.ToListAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.List<T>!>
-static Open.Database.Extensions.IExecuteReaderExtensions.ToArrayAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T[]!>
-static Open.Database.Extensions.IExecuteReaderExtensions.ToImmutableArrayAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Immutable.ImmutableArray<T>>
-static Open.Database.Extensions.IExecuteReaderExtensions.FirstOrDefaultAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
-static Open.Database.Extensions.IExecuteReaderExtensions.SingleOrDefaultAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReaderAsync(System.Action<TReader!>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReaderAsync(System.Func<TReader!, System.Threading.Tasks.ValueTask>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Open.Database.Extensions.ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>.ExecuteReaderAsync<T>(System.Func<TReader!, System.Threading.Tasks.ValueTask<T>>! handler, System.Data.CommandBehavior behavior = System.Data.CommandBehavior.Default, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
@@ -491,8 +468,6 @@ Open.Database.Extensions.MappedTable<T>.FirstAsync(System.Threading.Cancellation
 Open.Database.Extensions.MappedTable<T>.Single() -> T
 Open.Database.Extensions.MappedTable<T>.SingleAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
 Open.Database.Extensions.MappedTable<T>.ToDictionary<TKey, TValue>(System.Func<T, TKey>! keySelector, System.Func<T, TValue>! valueSelector, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> System.Collections.Generic.Dictionary<TKey, TValue>!
-static Open.Database.Extensions.IExecuteReaderExtensions.FirstAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
-static Open.Database.Extensions.IExecuteReaderExtensions.SingleAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
 static Open.Database.Extensions.RowMap<T>.From(System.Delegate! factory, params System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string!, string?>> pairs) -> Open.Database.Extensions.RowMap<T>!
 static Open.Database.Extensions.DataReaderExtensions.Select<T>(this System.Data.IDataReader! reader, System.Func<System.Data.IDataRecord!, T>! transform, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IEnumerable<T>!
 static Open.Database.Extensions.DataReaderExtensions.Select<T>(this System.Data.IDataReader! reader, System.Threading.CancellationToken cancellationToken, System.Func<System.Data.IDataRecord!, T>! transform) -> System.Collections.Generic.IEnumerable<T>!
@@ -709,8 +684,6 @@ static Open.Database.Extensions.CoreExtensions.AsObjectArrays(this System.Data.D
 static Open.Database.Extensions.CoreExtensions.AsObjectArrays(this System.Data.IDataReader! reader) -> Open.Database.Extensions.MappedReader<object?[]!>
 static Open.Database.Extensions.CoreExtensions.AsObjectArrays(this System.Data.IDbCommand! command) -> Open.Database.Extensions.MappedCommand<object?[]!>
 static Open.Database.Extensions.DataReaderExtensions.ForEachAsync(this System.Data.Common.DbDataReader! reader, System.Action<System.Data.IDataRecord!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
-static Open.Database.Extensions.IExecuteReaderExtensions.ToHashSetAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Collections.Generic.IEqualityComparer<T>? comparer, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
-static Open.Database.Extensions.IExecuteReaderExtensions.ToHashSetAsync<T>(this Open.Database.Extensions.IExecuteReader! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.HashSet<T>!>
 static Open.Database.Extensions.MappedDbQueryExtensions.AddParam<T, TValue>(this Open.Database.Extensions.MappedQuery<T> query, string! name, TValue value) -> Open.Database.Extensions.MappedQuery<T>
 static Open.Database.Extensions.MappedDbQueryExtensions.AddParam<T, TValue>(this Open.Database.Extensions.MappedQuery<T> query, TValue value, string? expression = null) -> Open.Database.Extensions.MappedQuery<T>
 static Open.Database.Extensions.MappedDbQueryExtensions.AddParam<T>(this Open.Database.Extensions.MappedQuery<T> query, string! name, string? value) -> Open.Database.Extensions.MappedQuery<T>

@@ -15,6 +15,7 @@ Every way of turning rows into objects is `Map<T>()` followed by a terminal. The
 | In 10.x | In 11 |
 |---|---|
 | `Results<T>()`, `ResultsAsync<T>()`, `ResultsBuffered<T>()` | `.Map<T>().ToListAsync(cancellationToken)` |
+| `command.ToListAsync<T>(cancellationToken)` and the other command shortcut terminals (`ToArrayAsync<T>`, `ToImmutableArrayAsync<T>`, `ToHashSetAsync<T>`, `FirstAsync<T>`, `FirstOrDefaultAsync<T>`, `SingleAsync<T>`, `SingleOrDefaultAsync<T>`) | `command.Map<T>().ToListAsync(cancellationToken)` and the sibling terminals |
 | `FirstOrDefault(selector)`, `Take(n, selector)`, `Skip`, `SkipThenTake`, `ToList(selector)`, `IterateReader(...)` | `.Map(selector).Skip(s).Take(t).ToListAsync(cancellationToken)` |
 | `ResultsFromDataTable<T>()`, `DataTable.To<T>()` | `command.ToDataTable()`, then `table.Map(map).ToList()` |
 | `Map<T>(("Name", "column"), ...)` and the other key/value and tuple overloads | a `RowMap<T>` declared once and passed to `Map` |
@@ -131,6 +132,8 @@ Rows that hold references are always cleared before their array goes back to the
 
 ## Transactions and connections
 
+
+`new ...ConnectionFactoryToPoolAdapter(factory)` is not public any more: `factory.AsPool()` returns an `IDbConnectionPool`.
 The `ExecuteTransaction*` overloads that took the token right after the connection are gone: pass the token after the callback, `ExecuteTransaction(connection, action, cancellationToken)`. `EnsureOpenAsync` and `OpenAsync` have no `bool configureAwait` overload: the library always awaits with `ConfigureAwait(false)`, and returning to your context is your call. `EnsureOpenScopeAsync` on a connection, a factory or a pool opens the connection if it is needed and lets go of it the way its source calls for. A null argument to a connection extension throws `ArgumentNullException` at the call.
 
 ## Channel and Dataflow
@@ -142,6 +145,8 @@ Every mapped overload takes one `RowMap<T>? map` where 10.x took key/value pairs
 - `Concat<T>` (protected) on `ExpressiveCommandBase`: `remaining is null ? [first] : remaining.Prepend(first)`.
 - `AddParameterType(IDbCommand, string, SqlDbType)`: call it on the `SqlCommand`.
 - `QueryResultCollection<T>`: a list holds the same rows.
+- `reader.AsAsyncEnumerable(n, others...)`: `reader.AsAsyncEnumerable([n, ..others])`.
+- `record.GetMatchingOrdinals(names, sort)`: `record.MatchingOrdinals(names, sort).ToArray()`.
 - A custom `IExecuteReader` must implement the state-passing `ExecuteReader` overloads and an `ExecuteReaderAsync` that takes the call's token; a custom `IMappedQuery<T>` implements `ToAsyncBufferStream` and `Stream`.
 - A static property is not mapped.
 
