@@ -149,7 +149,7 @@ public static class StallStreamTests
 		Assert.Equal(1, rows.Current.Id);
 
 		// No pull for much longer than the timeout.
-		await WaitUntil(() => tally.Connections[0].State == ConnectionState.Closed);
+		await WaitUntil(() => tally.Connections[0].ClosedAfterOpen);
 
 		TimeoutException ex = await Assert.ThrowsAsync<TimeoutException>(
 			async () => await rows.MoveNextAsync());
@@ -185,7 +185,7 @@ public static class StallStreamTests
 		Assert.True(await rows.MoveNextAsync());
 
 		// Never pulled again, never disposed.
-		await WaitUntil(() => tally.Connections[0].State == ConnectionState.Closed);
+		await WaitUntil(() => tally.Connections[0].ClosedAfterOpen);
 		Assert.Equal(1, tally.Readers[0].Disposes);
 
 		await rows.DisposeAsync();
@@ -260,7 +260,7 @@ public static class StallStreamTests
 				// The consumer was not pulling: the next pull reports the cancel.
 				while (await rows.MoveNextAsync()) { }
 			});
-		await WaitUntil(() => tally.Connections[0].State == ConnectionState.Closed);
+		await WaitUntil(() => tally.Connections[0].ClosedAfterOpen);
 	}
 
 	[Theory]

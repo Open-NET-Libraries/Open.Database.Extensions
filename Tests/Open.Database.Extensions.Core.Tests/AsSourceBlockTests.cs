@@ -49,7 +49,7 @@ public static class AsSourceBlockTests
 
 		await ChannelWait.Until(
 			() => tally.Connections.Count == 1
-				&& tally.Connections[0].State == ConnectionState.Closed,
+				&& tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 		Assert.Equal(1, tally.Readers[0].Disposes);
 		Assert.Equal(ChannelWait.Ids(500), await Receive(block, 500));
@@ -85,7 +85,7 @@ public static class AsSourceBlockTests
 
 		Assert.IsType<OperationCanceledException>(error, exactMatch: false);
 		await ChannelWait.Until(
-			() => tally.Connections[0].State == ConnectionState.Closed,
+			() => tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 	}
 
@@ -175,7 +175,7 @@ public static class AsSourceBlockTests
 
 		await ChannelWait.Until(
 			() => tally.Connections.Count == 1
-				&& tally.Connections[0].State == ConnectionState.Closed,
+				&& tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 		Assert.Equal(ChannelWait.Ids(300), await Receive(block, 300));
 	}
@@ -195,7 +195,7 @@ public static class AsSourceBlockTests
 		// The read finishes (the connection is free) while the block holds four.
 		await ChannelWait.Until(
 			() => tally.Connections.Count == 1
-				&& tally.Connections[0].State == ConnectionState.Closed,
+				&& tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 		await ChannelWait.Until(
 			() => ((BufferBlock<ChannelRow>)block).Count == 4,

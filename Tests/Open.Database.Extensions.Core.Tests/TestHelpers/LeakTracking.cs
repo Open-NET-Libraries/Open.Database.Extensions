@@ -105,6 +105,9 @@ internal sealed class TrackedConnection(DbTally tally) : DbConnection
 
 	public int Disposes { get; private set; }
 
+	/// <summary>The connection was opened and has been closed again; false for one that is still closed because it has not been opened yet.</summary>
+	public bool ClosedAfterOpen => Closes > 0 && _state == ConnectionState.Closed;
+
 	/// <summary>The connection is lost while open: it reports Broken until it is closed (as a provider does).</summary>
 	public void Break() => _state = ConnectionState.Broken;
 
