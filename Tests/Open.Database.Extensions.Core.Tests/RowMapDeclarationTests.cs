@@ -247,8 +247,6 @@ public static class RowMapDeclarationTests
 
 	// ---- overload resolution: nothing is ambiguous, every spelling reaches the map ----
 
-	static IDataReader Reader() => FakeReader.Create(RowMapTests.Renamed, [RowMapTests.Row(RowMapTests.Renamed, 1), RowMapTests.Row(RowMapTests.Renamed, 2)]);
-
 	static void AssertRenamed(IEnumerable<Item> items) => RowMapTests.AssertItems([.. items], 2);
 
 	[Fact]

@@ -34,7 +34,9 @@ internal sealed class ReadRefillRequest : RefillRequest
 	{
 		_reader = reader;
 		if (cancellationToken.CanBeCanceled)
+#pragma warning disable IDE0370 // the analyzer reports the `!` as unnecessary; without it the compiler warns CS8600
 			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((ReadRefillRequest)state!)._source.TrySetCanceled(token), this);
+#pragma warning restore IDE0370
 	}
 
 	/// <summary>The task ReadAsync returns: incomplete until the refill ends or the token is canceled.</summary>
@@ -67,7 +69,9 @@ internal sealed class GetterRefillRequest<T> : RefillRequest
 		_ordinal = ordinal;
 		_read = read;
 		if (cancellationToken.CanBeCanceled)
+#pragma warning disable IDE0370 // the analyzer reports the `!` as unnecessary; without it the compiler warns CS8600
 			_registration = cancellationToken.UnsafeRegister(static (state, token) => ((GetterRefillRequest<T>)state!)._source.TrySetCanceled(token), this);
+#pragma warning restore IDE0370
 	}
 
 	internal Task<T> Result => _source.Task;

@@ -282,26 +282,6 @@ public static class RequiredMemberTests
 		AssertMissing<RecordMixed>(route, IdTitle, [1, "t"], Missing("RecordMixed", "Body", "String", "Body"));
 	}
 
-	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
-
-	static async Task<List<T>> Drain<T>(ChannelReader<T> reader, CancellationToken ct)
-	{
-		var items = new List<T>();
-		await foreach (T item in reader.ReadAllAsync(ct).ConfigureAwait(false)) items.Add(item);
-		return items;
-	}
-
-	static async Task<List<T>> Received<T>(IReceivableSourceBlock<T> block, CancellationToken ct)
-	{
-		var items = new List<T>();
-		while (await block.OutputAvailableAsync(ct).WaitAsync(Timeout, ct))
-		{
-			while (block.TryReceive(out T? item)) items.Add(item);
-		}
-
-		return items;
-	}
-
 	// ---- T16: [SetsRequiredMembers] on the chosen constructor: nothing is enforced, the properties are ordinary ----
 
 	[Theory]

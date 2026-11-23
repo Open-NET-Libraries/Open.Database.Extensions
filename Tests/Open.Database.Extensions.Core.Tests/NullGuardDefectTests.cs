@@ -10,7 +10,6 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class NullGuardDefectTests
 {
-	static readonly IEnumerable<int> Ordinals = [0];
 	static readonly IEnumerable<string> Names = ["id"];
 
 	// Defect 7: a null remainder means no more ordinals. It used to be a NullReferenceException while enumerated, after the first value.
@@ -43,7 +42,9 @@ public static class NullGuardDefectTests
 	public static void OpenAsync_NullConnection_IsRefusedByTheCall_NamingTheConnection()
 	{
 		var ex = Assert.Throws<ArgumentNullException>(
+#pragma warning disable RCS1021 // An expression body would bind to the Func<Task> overload of Throws, which xUnit refuses.
 			() => { _ = ((IDbConnection)null!).OpenAsync(TestContext.Current.CancellationToken).AsTask(); });
+#pragma warning restore RCS1021
 
 		Assert.Equal("connection", ex.ParamName);
 	}
@@ -114,7 +115,7 @@ public static class NullGuardDefectTests
 		IDataRecord record = Substitute.For<IDataRecord>();
 
 		Assert.Equal("source", Assert.Throws<ArgumentNullException>( // Select is the one guard.
-			() => record.GetNames((IEnumerable<int>)null!)).ParamName);
+			() => record.GetNames(null!)).ParamName);
 	}
 
 	// These are lazy: the refusal comes with the call, not while the result is enumerated.

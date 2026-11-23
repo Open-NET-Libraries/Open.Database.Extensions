@@ -293,14 +293,14 @@ public static class ToTargetBlockStreamingTests
 	public static void TheGuards_ThrowAtTheCall()
 	{
 		MappedQuery<ChannelRow> query = Read(Tally(1));
-		IMappedQuery<ChannelRow> none = null!;
+		IMappedQuery<ChannelRow> none = null;
 
 		Assert.Throws<ArgumentNullException>(
 			() => Drop(none.ToTargetBlockHoldingConnection(NewBlock(), Long, Ct)));
 		Assert.Throws<ArgumentNullException>(
-			() => Drop(query.ToTargetBlockHoldingConnection(null!, Long, Ct)));
+			() => Drop(query.ToTargetBlockHoldingConnection(null, Long, Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(((IMappedQuery<ChannelRow>)default(MappedQuery<ChannelRow>))
+			() => Drop(default(MappedQuery<ChannelRow>)
 				.ToTargetBlockHoldingConnection(NewBlock(), Long, Ct)));
 	}
 

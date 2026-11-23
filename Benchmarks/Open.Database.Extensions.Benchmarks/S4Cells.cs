@@ -109,6 +109,21 @@ public sealed class S4Result(S4Counters counters, long totalTicks, long allocByt
 	public string VerifyLine(string scenario, string path) => $"S4VERIFY scenario={scenario} path={path} {verify.Format()}";
 }
 
+/// <summary>The hash the rows are checked with.</summary>
+static class S4Hash
+{
+	public static ulong Fnv(ulong hash, ReadOnlySpan<byte> data)
+	{
+		foreach (byte b in data)
+		{
+			hash ^= b;
+			hash *= 1_099_511_628_211UL;
+		}
+
+		return hash;
+	}
+}
+
 /// <summary>How to build, read, measure and check one row type.</summary>
 abstract class S4Kind<TRow, TBody> where TRow : class, new()
 {
@@ -123,17 +138,6 @@ abstract class S4Kind<TRow, TBody> where TRow : class, new()
 	/// <summary>The deterministic value of a row of the self-test data (salt changes the value).</summary>
 	public abstract TBody Make(int row, int size, int salt);
 
-	internal static ulong Fnv(ulong hash, ReadOnlySpan<byte> data)
-	{
-		foreach (byte b in data)
-		{
-			hash ^= b;
-			hash *= 1_099_511_628_211UL;
-		}
-
-		return hash;
-	}
-
 	public S4Verify Summarize(List<TRow> rows)
 	{
 		ulong hash = 14_695_981_039_346_656_037UL;
@@ -142,7 +146,7 @@ abstract class S4Kind<TRow, TBody> where TRow : class, new()
 		foreach (var row in rows)
 		{
 			System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(id, IdOf(row));
-			hash = Fnv(hash, id);
+			hash = S4Hash.Fnv(hash, id);
 			var body = BodyOf(row);
 			if (body is null) continue;
 			bytes += Length(body);
@@ -168,8 +172,8 @@ sealed class S4BinKind : S4Kind<S4BinRow, byte[]>
 	{
 		ReadOnlySpan<byte> all = body;
 		int n = Math.Min(64, all.Length);
-		hash = Fnv(hash, all[..n]);
-		return Fnv(hash, all[^n..]);
+		hash = S4Hash.Fnv(hash, all[..n]);
+		return S4Hash.Fnv(hash, all[^n..]);
 	}
 
 	public override byte[] Make(int row, int size, int salt)
@@ -195,8 +199,8 @@ sealed class S4StrKind : S4Kind<S4StrRow, string>
 	{
 		ReadOnlySpan<char> all = body;
 		int n = Math.Min(32, all.Length);
-		hash = Fnv(hash, MemoryMarshal.AsBytes(all[..n]));
-		return Fnv(hash, MemoryMarshal.AsBytes(all[^n..]));
+		hash = S4Hash.Fnv(hash, MemoryMarshal.AsBytes(all[..n]));
+		return S4Hash.Fnv(hash, MemoryMarshal.AsBytes(all[^n..]));
 	}
 
 	public override string Make(int row, int size, int salt)
@@ -265,7 +269,7 @@ public static partial class S4Cells
 	static async Task<List<TRow>> Raw<TRow, TBody>(S4Kind<TRow, TBody> kind, DbConnection connection, string sql, CommandBehavior behavior, bool asyncRead, bool asyncGetter, S4Counters counters)
 		where TRow : class, new()
 	{
-		using var command = connection.CreateCommand();
+		await using var command = connection.CreateCommand();
 		command.CommandText = sql;
 		command.CommandTimeout = counters.CommandTimeout;
 		long openStart = Stopwatch.GetTimestamp();
@@ -400,7 +404,7 @@ public static partial class S4Cells
 				insert.Transaction = transaction;
 				insert.CommandText = $"insert into [{scenario.Id}] (Id, Body) values ($id, $body)";
 				insert.Parameters.AddWithValue("$id", kind.IdOf(row));
-				insert.Parameters.AddWithValue("$body", kind.BodyOf(row)!);
+				insert.Parameters.AddWithValue("$body", kind.BodyOf(row));
 				insert.ExecuteNonQuery();
 			}
 

@@ -12,6 +12,7 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class RowsFormAllocationTests
 {
+#if !DEBUG
 	static DictionaryRow Row()
 	{
 		DbDataReader reader = FakeReader.CreateDb(["Id", "Name", "Other"], [1, "a", 3]);
@@ -34,6 +35,7 @@ public static class RowsFormAllocationTests
 		return best;
 	}
 
+#endif
 	[Fact]
 	public static void TheDirectMembers_AllocateNothing_AndTheInterfaceBoxesTheRow()
 	{

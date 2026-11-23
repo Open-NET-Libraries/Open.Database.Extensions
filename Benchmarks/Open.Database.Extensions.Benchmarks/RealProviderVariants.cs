@@ -80,11 +80,8 @@ public static class RealProviderVariants
 		long start = Stopwatch.GetTimestamp();
 		using (var reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
 		{
-			if (reader.Read())
-			{
-				do list.Add(read(reader));
-				while (reader.Read());
-			}
+			while (reader.Read())
+				list.Add(read(reader));
 
 			while (reader.NextResult()) { }
 		}
@@ -101,11 +98,8 @@ public static class RealProviderVariants
 		long start = Stopwatch.GetTimestamp();
 		using (var reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
 		{
-			if (reader.Read())
-			{
-				do list.Add(read(reader));
-				while (reader.Read());
-			}
+			while (reader.Read())
+				list.Add(read(reader));
 
 			while (reader.NextResult()) { }
 		}
@@ -120,11 +114,8 @@ public static class RealProviderVariants
 		{
 			var db = (DbDataReader)reader;
 			var list = new List<SynRow>();
-			if (db.Read())
-			{
-				do list.Add(map(db));
-				while (db.Read());
-			}
+			while (db.Read())
+				list.Add(map(db));
 
 			while (db.NextResult()) { }
 			return list;

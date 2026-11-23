@@ -90,7 +90,7 @@ public static class CommandExtensionsTests
 		var probe = new ConnectionProbe();
 
 		Assert.Equal("handler", Assert.Throws<ArgumentNullException>(
-			() => probe.Command.ExecuteReader((Action<IDataReader>)null!)).ParamName);
+			() => probe.Command.ExecuteReader(null!)).ParamName);
 		Assert.Equal("command", Assert.Throws<ArgumentNullException>(
 			() => ((IDbCommand)null!).ExecuteReader(_ => { })).ParamName);
 		Assert.Equal(string.Empty, probe.Log);

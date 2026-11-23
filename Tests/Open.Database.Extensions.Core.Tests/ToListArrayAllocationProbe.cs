@@ -150,6 +150,7 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 #endif
 	}
 
+#if !DEBUG
 	// The immutable array is the same read as ToArrayAsync (one state
 	// machine, no wrapper around it) with the exact array wrapped: the same
 	// bytes, plus a constant 24 bytes per call that master has as well (it
@@ -157,6 +158,7 @@ public sealed class ToListArrayAllocationProbe(ITestOutputHelper output)
 	// and the cause is not isolated). Both are measured by awaiting the
 	// ValueTask directly (the call completes synchronously).
 	const long ImmutableExtra = 24;
+#endif
 
 	[Fact]
 	[SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly")]

@@ -43,7 +43,6 @@ public enum TokenTerminal
 public static class TokenTerminalTests
 {
 	static readonly TimeSpan Patience = TimeSpan.FromSeconds(10);
-	static readonly string[] IdColumn = ["Id"];
 
 	public static TheoryData<TokenTerminal> Terminals
 		=> [.. Enum.GetValues<TokenTerminal>()];
@@ -335,19 +334,6 @@ public static class TokenTerminalTests
 			.ExecuteReaderAsync(1, static (_, s) => new ValueTask<int>(s));
 		Assert.Equal(commandSource.Token, Assert.Single(plain.Open));
 	}
-
-	static RecordingAsyncExecuteReader Rows(
-		int count = 3,
-		bool asyncRead = false)
-		=> new(
-			IdColumn,
-			[.. Enumerable.Range(1, count).Select(i => (object?[])[i])])
-		{
-			UseAsyncRead = asyncRead
-		};
-
-	static readonly Func<IDataRecord, TokenItem> ToItem = static r
-		=> new TokenItem { Id = r.GetInt32(0) };
 
 	// ---- allocation: a call with no token, or one token,
 	// or the same token twice, costs what the call with no token costs ----

@@ -121,8 +121,8 @@ public sealed class SynRow
 		return all[..width];
 	}
 
-	static object N<T>(T? value) where T : struct => value.HasValue ? value.Value : DBNull.Value;
-	static object N(string? value) => value is null ? DBNull.Value : value;
+	static object N<T>(T? value) where T : struct => (object?)value ?? DBNull.Value;
+	static object N(string? value) => value ?? (object)DBNull.Value;
 }
 
 /// <summary>
@@ -153,7 +153,7 @@ public static class SyntheticVariants
 	public static ValueTask<List<object[]>> V0Async(SyntheticConnection connection)
 		=> connection.Command(Sql).ExecuteReaderAsync<List<object[]>>(static async reader =>
 		{
-			var db = (DbDataReader)reader;
+			var db = reader;
 			var rows = new List<object[]>();
 			while (await db.ReadAsync().ConfigureAwait(false))
 			{

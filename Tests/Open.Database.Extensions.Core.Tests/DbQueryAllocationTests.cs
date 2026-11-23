@@ -69,10 +69,12 @@ public static class DbQueryAllocationTests
 	// The names come from the variables.
 	static ValueTask<List<Row>> AdHoc(DbConnection c, int k)
 	{
+#pragma warning disable RCS1118 // Locals on purpose: a constant would be folded into the call instead of passed as a caller's value.
 		int p0 = VA;
 		long p1 = VB;
 		string p2 = VC;
 		int p3 = VD;
+#pragma warning restore RCS1118
 		if (k == 1)
 			return Q1.Using(c).AddParam(p0).Map<Row>().ToListAsync();
 		if (k == 2)
@@ -81,6 +83,7 @@ public static class DbQueryAllocationTests
 			.Map<Row>().ToListAsync();
 	}
 
+#if !DEBUG
 	static ValueTask<List<Row>> Builder(DbConnection c, int k)
 		=> k switch
 		{
@@ -90,6 +93,7 @@ public static class DbQueryAllocationTests
 			_ => c.Command(SqlFor(4)).AddParam("p0", VA).AddParam("p1", VB)
 				.AddParam("p2", VC).AddParam("p3", VD).Map<Row>().ToListAsync(),
 		};
+#endif
 
 	static async ValueTask<List<Row>> HandWritten(DbConnection connection, int k)
 	{
@@ -227,6 +231,7 @@ public static class DbQueryAllocationTests
 #endif
 	}
 
+#if !DEBUG
 	static readonly DbQuery Q5 = DbQuery.Text(SqlFor(5));
 	static readonly DbQuery Q10 = DbQuery.Text(SqlFor(10));
 
@@ -234,6 +239,7 @@ public static class DbQueryAllocationTests
 	static readonly MappedDbQuery<Row> M2 = Q2.Map<Row>();
 	static readonly MappedDbQuery<Row> M5 = Q5.Map<Row>();
 	static readonly MappedDbQuery<Row> M10 = Q10.Map<Row>();
+#endif
 
 	// Map-first: a mapped definition reads the same call at no more than the chain that maps after the source,
 	// and the values cost the same array whether they come before the source or after it.
@@ -261,7 +267,9 @@ public static class DbQueryAllocationTests
 #endif
 	}
 
+#if !DEBUG
 	// Takes a value without boxing it (assigning a struct to an object would box it and be counted).
+	[SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "Write-only on purpose: the count keeps the measured call from being optimized away.")]
 	static int _sunk;
 
 	[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -269,6 +277,7 @@ public static class DbQueryAllocationTests
 	{
 		if (value is null) _sunk++;
 	}
+#endif
 
 	// Where each byte of the map-first path goes. A call keeps its values in one array sized from the definition:
 	// 24 B of array header and 16 B per value (a name and a value), allocated by the first value added and written
@@ -360,10 +369,12 @@ public static class DbQueryAllocationTests
 	public static void DerivedNames_CostNoMoreThanNamedOnes(int k)
 	{
 		using DbConnection c = NewConnection();
+#pragma warning disable RCS1118 // Locals on purpose: a constant would be folded into the call instead of passed as a caller's value.
 		int p0 = VA;
 		long p1 = VB;
 		string p2 = VC;
 		int p3 = VD;
+#pragma warning restore RCS1118
 		DbQuery q = k switch { 1 => Q1, 2 => Q2, _ => Q4 };
 
 		long derived = Bytes(() => k switch

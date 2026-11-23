@@ -617,7 +617,9 @@ public sealed class SyntheticReader : DbDataReader
 	{
 		if (IsDBNull(ordinal))
 		{
+#pragma warning disable IDE0370 // the analyzer reports the `!` as unnecessary; without it the compiler warns CS8603
 			if (default(T) is null) return default!;
+#pragma warning restore IDE0370
 			throw new InvalidCastException($"The column is NULL and {typeof(T)} cannot hold that.");
 		}
 

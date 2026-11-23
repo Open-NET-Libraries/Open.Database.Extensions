@@ -36,6 +36,7 @@ public static class DbQueryPathsAllocationTests
 		public string P4 { get; set; } = Value;
 	}
 
+#if !DEBUG
 	static readonly DbQuery Q1 = DbQuery.Text("select @p0");
 
 	static readonly DbQuery Q5 = DbQuery.Text("select @p0, @p1, @p2, @p3, @p4");
@@ -48,6 +49,7 @@ public static class DbQueryPathsAllocationTests
 
 	static readonly MappedDbQuery<S5, long> T5 = Q5.Params<S5>().Map<long>();
 
+	[SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "Write-only on purpose: the count keeps the measured call from being optimized away.")]
 	static int _sunk;
 
 	// Takes a value without boxing it (assigning a struct to an object would box it and be counted).
@@ -90,6 +92,7 @@ public static class DbQueryPathsAllocationTests
 		if (Environment.GetEnvironmentVariable("ODE_ALLOC_LOG") is { Length: > 0 } path)
 			File.AppendAllText(path, line + Environment.NewLine);
 	}
+#endif
 
 	// What the chain builds, per path (what each costs on top of the provider's own parameters):
 	//  - a written name, with or without its prefix, or a derived name: one array, 24 B and 16 B per value, whatever the order;

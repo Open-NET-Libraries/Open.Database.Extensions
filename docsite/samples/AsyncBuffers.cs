@@ -438,7 +438,7 @@ public sealed class CountingPool<T> : ArrayPool<T>
 
 		if (Array.Exists(
 			array,
-			static item => !EqualityComparer<T>.Default.Equals(item, default!)))
+			static item => !EqualityComparer<T>.Default.Equals(item, default)))
 		{
 			Interlocked.Increment(ref _dirty);
 		}

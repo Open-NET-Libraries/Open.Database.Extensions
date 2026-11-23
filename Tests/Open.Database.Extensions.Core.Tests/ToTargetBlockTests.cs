@@ -216,14 +216,14 @@ public static class ToTargetBlockTests
 		DbTally tally = Tally(1);
 		MappedQuery<ChannelRow> query = Read(tally);
 		BufferBlock<ChannelRow> block = NewBlock();
-		IMappedQuery<ChannelRow> none = null!;
+		IMappedQuery<ChannelRow> none = null;
 
 		Assert.Throws<ArgumentNullException>(
 			() => Drop(none.ToTargetBlock(block, Ct)));
 		Assert.Throws<ArgumentNullException>(
-			() => Drop(query.ToTargetBlock(null!, Ct)));
+			() => Drop(query.ToTargetBlock(null, Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(((IMappedQuery<ChannelRow>)default(MappedQuery<ChannelRow>))
+			() => Drop(default(MappedQuery<ChannelRow>)
 				.ToTargetBlock(block, Ct)));
 		Assert.Empty(tally.Connections);
 	}

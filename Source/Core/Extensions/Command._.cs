@@ -13,8 +13,10 @@ public static partial class CommandExtensions
 	{
 #if DEBUG
 		if (command.Connection is null) throw new InvalidOperationException("Cannot execute a command with a null connection.");
-#endif
+		return command.Connection.EnsureOpen();
+#else
 		return command.Connection!.EnsureOpen();
+#endif
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -22,8 +24,10 @@ public static partial class CommandExtensions
 	{
 #if DEBUG
 		if (command.Connection is null) throw new ArgumentException("Cannot execute a command with a null connection.");
-#endif
+		return command.Connection.EnsureOpenAsync(cancellationToken);
+#else
 		return command.Connection!.EnsureOpenAsync(cancellationToken);
+#endif
 	}
 
 	/// <summary>

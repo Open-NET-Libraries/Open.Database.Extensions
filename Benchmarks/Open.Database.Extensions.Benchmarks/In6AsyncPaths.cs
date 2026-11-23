@@ -61,7 +61,7 @@ public sealed class AsyncPlan<TRow>(Func<TRow> create, AsyncColumn<TRow>[] colum
 	/// <summary>Reads the rows (at most maxRows) with ExecuteReaderAsync, ReadAsync and the async getters; drains the other result sets when it read them all.</summary>
 	public async Task<List<TRow>> ReadAllAsync(DbConnection connection, string sql, CommandBehavior behavior, int maxRows = int.MaxValue)
 	{
-		using var command = connection.CreateCommand();
+		await using var command = connection.CreateCommand();
 		command.CommandText = sql;
 		await using var reader = await command.ExecuteReaderAsync(behavior).ConfigureAwait(false);
 		var list = new List<TRow>();
@@ -87,7 +87,7 @@ public sealed class AsyncPlan<TRow>(Func<TRow> create, AsyncColumn<TRow>[] colum
 	/// </summary>
 	public async Task<List<TRow>> ReadAllRawAsync(DbConnection connection, string sql, In6Stats stats, int maxRows = int.MaxValue)
 	{
-		using var command = connection.CreateCommand();
+		await using var command = connection.CreateCommand();
 		command.CommandText = sql;
 		long openStart = Stopwatch.GetTimestamp();
 		var reader = await command.ExecuteReaderAsync(CommandBehavior.Default).ConfigureAwait(false);

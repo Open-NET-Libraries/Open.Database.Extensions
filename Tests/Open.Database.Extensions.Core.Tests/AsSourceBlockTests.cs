@@ -109,7 +109,7 @@ public static class AsSourceBlockTests
 	[Fact]
 	public static void TheGuards_ThrowAtTheCall()
 	{
-		IMappedQuery<ChannelRow> none = null!;
+		IMappedQuery<ChannelRow> none = null;
 		IMappedQuery<ChannelRow> view = default(MappedQuery<ChannelRow>);
 
 		Assert.Throws<ArgumentNullException>(
@@ -117,7 +117,7 @@ public static class AsSourceBlockTests
 		Assert.Throws<ArgumentNullException>(
 			() => none.AsSourceBlock(new DataflowBlockOptions(), Ct));
 		Assert.Throws<ArgumentNullException>(
-			() => Read(Tally(1)).AsSourceBlock(null!, Ct));
+			() => Read(Tally(1)).AsSourceBlock(null, Ct));
 		Assert.Throws<InvalidOperationException>(
 			() => view.AsSourceBlock(Ct));
 	}

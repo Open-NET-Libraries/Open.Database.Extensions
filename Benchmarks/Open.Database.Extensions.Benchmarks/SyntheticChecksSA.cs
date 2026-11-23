@@ -38,7 +38,7 @@ public static partial class SyntheticChecks
 	}
 
 	// Drives ReadAsync by hand on the CALLING thread (the main thread, which is not a pool thread): an incomplete task gets a continuation, the caller waits for it.
-	static AsyncDrive DriveAsync(DbDataReader reader)
+	static AsyncDrive Drive(DbDataReader reader)
 	{
 		var drive = new AsyncDrive();
 		int caller = Environment.CurrentManagedThreadId;
@@ -114,7 +114,7 @@ public static partial class SyntheticChecks
 		var conn = RefillConnection(rec);
 		using (var r = OpenReader(conn)) report.Check(ReadSync(r) == RefillRows, "sync read, refill off: row count");
 		AsyncDrive drive;
-		using (var r = OpenReader(conn)) drive = DriveAsync(r);
+		using (var r = OpenReader(conn)) drive = Drive(r);
 		report.Check(drive.Rows == RefillRows && drive.Incomplete == 0, $"async read, refill off: {drive.Rows} rows, {drive.Incomplete} incomplete tasks, expected {RefillRows} and 0");
 		var rows = SyntheticVariants.V1(conn);
 		var rowsAsyncRead = Wait(SyntheticVariants.V1AsyncRead(conn));
@@ -127,9 +127,9 @@ public static partial class SyntheticChecks
 	static void RefillCostChecks(Report report)
 	{
 		Console.WriteLine("== (b) both paths pay about the refill time per boundary ==");
-		int boundaries = (RefillRows - 1) / RefillBuffer;
-		double expected = boundaries * (double)RefillUs;
-		double handOff = 400; // Per boundary, the most the async hand-off (timer thread wake-up, pool wake-up) may add to the refill time before the check fails.
+		const int boundaries = (RefillRows - 1) / RefillBuffer;
+		const double expected = boundaries * (double)RefillUs;
+		const double handOff = 400; // Per boundary, the most the async hand-off (timer thread wake-up, pool wake-up) may add to the refill time before the check fails.
 
 		var offRec = new SyntheticRecorder();
 		var onRec = new SyntheticRecorder();
@@ -138,12 +138,12 @@ public static partial class SyntheticChecks
 
 		double syncOff = MedianUs(() => { using var r = OpenReader(off); ReadSync(r); }, RefillReps);
 		double syncOn = MedianUs(() => { using var r = OpenReader(on); ReadSync(r); }, RefillReps);
-		double asyncOff = MedianUs(() => { using var r = OpenReader(off); DriveAsync(r); }, RefillReps);
-		double asyncOn = MedianUs(() => { using var r = OpenReader(on); DriveAsync(r); }, RefillReps);
+		double asyncOff = MedianUs(() => { using var r = OpenReader(off); Drive(r); }, RefillReps);
+		double asyncOn = MedianUs(() => { using var r = OpenReader(on); Drive(r); }, RefillReps);
 		double syncExtra = syncOn - syncOff, asyncExtra = asyncOn - asyncOff;
 		Console.WriteLine($"  raw loops, total us: sync {Us(syncOff)} -> {Us(syncOn)} (+{Us(syncExtra)}), async {Us(asyncOff)} -> {Us(asyncOn)} (+{Us(asyncExtra)}); expected +{Us(expected)}; async minus sync per boundary {Us((asyncExtra - syncExtra) / boundaries)} us");
-		report.Check(syncExtra >= 0.95 * expected && syncExtra <= (1.10 * expected) + 200, $"sync Read: refill added {Us(syncExtra)} us, expected {Us(expected)} (tolerance -5% to +10% and 200 us)");
-		report.Check(asyncExtra >= 0.95 * expected && asyncExtra <= (1.10 * expected) + (boundaries * handOff), $"ReadAsync: refill added {Us(asyncExtra)} us, expected {Us(expected)} (tolerance -5% to +10% and {Us(boundaries * handOff)} us of hand-off)");
+		report.Check(syncExtra is >= 0.95 * expected and <= (1.10 * expected) + 200, $"sync Read: refill added {Us(syncExtra)} us, expected {Us(expected)} (tolerance -5% to +10% and 200 us)");
+		report.Check(asyncExtra is >= 0.95 * expected and <= (1.10 * expected) + (boundaries * handOff), $"ReadAsync: refill added {Us(asyncExtra)} us, expected {Us(expected)} (tolerance -5% to +10% and {Us(boundaries * handOff)} us of hand-off)");
 
 		// The library's three paths, reader-open as the recorder sees it (from ExecuteReader to the close).
 		var variants = new (string Name, Func<SyntheticConnection, List<SynRow>> Run, bool PaysAsync)[]
@@ -188,7 +188,7 @@ public static partial class SyntheticChecks
 			var rec = new SyntheticRecorder();
 			var conn = RefillConnection(rec, rows, RefillBuffer, RefillUs);
 			AsyncDrive d;
-			using (var r = OpenReader(conn)) d = DriveAsync(r);
+			using (var r = OpenReader(conn)) d = Drive(r);
 			int boundaries = (rows - 1) / RefillBuffer;
 			var expectedAt = Enumerable.Range(1, boundaries).Select(static i => i * RefillBuffer).ToList();
 			bool at = d.IncompleteAt.SequenceEqual(expectedAt);
@@ -202,7 +202,7 @@ public static partial class SyntheticChecks
 		// A zero-cost refill still hands off on the async path and costs the sync path nothing: the boundary is the thread switch itself.
 		var zero = RefillConnection(new SyntheticRecorder(), RefillRows, RefillBuffer, 0);
 		AsyncDrive z;
-		using (var r = OpenReader(zero)) z = DriveAsync(r);
+		using (var r = OpenReader(zero)) z = Drive(r);
 		report.Check(z.Incomplete == (RefillRows - 1) / RefillBuffer, $"refill cost 0: {z.Incomplete} incomplete tasks, expected {(RefillRows - 1) / RefillBuffer}");
 		Console.WriteLine($"  refill cost 0 us: {z.Incomplete} incomplete tasks (a pure thread hand-off)");
 
@@ -266,7 +266,7 @@ public static partial class SyntheticChecks
 		report.Check(k == Environment.ProcessorCount * 2 && ThreadPoolPressure.Parse("3") == 3 && ThreadPoolPressure.Parse("") == 0, $"Parse: auto = {k} (processor count x 2 = {Environment.ProcessorCount * 2}), 3 = 3, empty = 0");
 
 		const int Rows = 1000, Buffer = 100, PressureRefillUs = 100;
-		int boundaries = (Rows - 1) / Buffer;
+		const int boundaries = (Rows - 1) / Buffer;
 		var variants = new (string Name, Func<SyntheticConnection, List<SynRow>> Run)[]
 		{
 			("V1 (sync Read)", SyntheticVariants.V1),
@@ -306,7 +306,7 @@ public static partial class SyntheticChecks
 			if (pressure == 1) ThreadPoolPressure.Stop();
 		}
 
-		double expectedFloor = 0.1 * boundaries * ThreadPoolPressure.SliceMicroseconds;
+		const double expectedFloor = 0.1 * boundaries * ThreadPoolPressure.SliceMicroseconds;
 		for (int v = 0; v < variants.Length; v++)
 			Console.WriteLine($"  {variants[v].Name,-16} reader-open (median, us): pressure off {Us(open[v, 0])}, on {Us(open[v, 1])} ({(open[v, 1] >= open[v, 0] ? "+" : "")}{Us(open[v, 1] - open[v, 0])}); {boundaries} boundaries of {PressureRefillUs} us per read, busy slice {ThreadPoolPressure.SliceMicroseconds} us");
 
@@ -333,7 +333,7 @@ public static partial class SyntheticChecks
 
 		// The refill timer thread ends by itself when idle.
 		var recT = new SyntheticRecorder();
-		using (var r = OpenReader(RefillConnection(recT, 3, 1, 10))) DriveAsync(r);
+		using (var r = OpenReader(RefillConnection(recT, 3, 1, 10))) Drive(r);
 		bool started = RefillTimer.IsRunning;
 		Thread.Sleep(RefillTimer.IdleExitMs + 400);
 		report.Check(started && !RefillTimer.IsRunning, $"the refill timer thread was running after a boundary ({started}) and is gone after {RefillTimer.IdleExitMs + 400} ms idle ({!RefillTimer.IsRunning}); started {RefillTimer.ThreadStarts} time(s) in this process");

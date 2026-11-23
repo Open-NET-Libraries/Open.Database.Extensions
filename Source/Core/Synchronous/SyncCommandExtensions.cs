@@ -1,5 +1,3 @@
-using static Open.Database.Extensions.CommandExtensions;
-
 namespace Open.Database.Extensions.Synchronous;
 
 /// <summary>

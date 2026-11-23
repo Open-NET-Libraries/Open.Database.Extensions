@@ -125,7 +125,9 @@ ValueMappingException? bad = await Mapping.MapValueErrorAsync(connection, Cancel
 Check(bad is { PropertyName: "Id", ColumnName: "id" } && bad.TargetType == typeof(int) && bad.InnerException is not null, "an overflow throws ValueMappingException with the property, column, target type and inner exception");
 Check(bad?.Message == "Unable to set value of property 'Id' (Int32) from column 'id'.", "the ValueMappingException message names the property, its type and the column");
 Exception? badException = bad;
+#pragma warning disable IDE0078 // The pattern form is an error: after "is DataException" the type cannot be an InvalidOperationException (CS8121).
 Check(badException is DataException && badException is not InvalidOperationException, "ValueMappingException is a DataException, not an InvalidOperationException");
+#pragma warning restore IDE0078
 Check(ReferenceEquals(PersonMaps.PersonMap, PersonMaps.PersonMap), "a map held with field ??= is built once and shared");
 Check(ReferenceEquals(HoldingAMap.BackingMap, HoldingAMap.BackingMap), "a map held in a backing field is built once and shared");
 Check(Mapping.MapUnknownProperty().Contains("'Headline'", StringComparison.Ordinal), "a RowMap with an unknown property throws when it is created");
@@ -162,7 +164,7 @@ Check(projected == 0, "Map(selector) runs nothing until a terminal runs");
 Check((await lazyIds.ToListAsync(CancellationToken.None)).Count == 5 && projected == 5, "the selector runs once per row");
 Check(await lazyIds.FirstOrDefaultAsync(CancellationToken.None) == 1 && projected == 6, "a terminal that stops early maps only the rows it reads, and runs the command again");
 Dictionary<int, string> bodiesById = await Mapping.BodiesByIdAsync(connection, CancellationToken.None);
-Check(bodiesById.Count == 5 && bodiesById[1] == "Body 1" && bodiesById[2] == "", "ToDictionaryAsync with a value selector keeps only the value (NULL as empty text)");
+Check(bodiesById.Count == 5 && bodiesById[1] == "Body 1" && bodiesById[2] is { Length: 0 }, "ToDictionaryAsync with a value selector keeps only the value (NULL as empty text)");
 Check(connection.Command("select * from posts order by id").Map<Post>().First().Id == 1, "First returns the first of several rows");
 Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts").Map<Post>().Single()), "Single throws for more than one row");
 Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts where id = 999").Map<Post>().First()), "First throws for no rows");
@@ -554,7 +556,7 @@ await using (LittleCodeSqlServer? sqlServer = await LittleCodeSqlServer.TryStart
 {
 	if (sqlServer is not null)
 	{
-		string serverConnectionString = LittleCodeSqlServer.ConnectionString;
+		const string serverConnectionString = LittleCodeSqlServer.ConnectionString;
 		IDbConnectionFactory<SqlConnection> serverFactory = new SqlConnectionFactory(serverConnectionString);
 		await using HowLittleCode.BlogContext serverEf = new(
 			new DbContextOptionsBuilder<HowLittleCode.BlogContext>()
@@ -563,7 +565,7 @@ await using (LittleCodeSqlServer? sqlServer = await LittleCodeSqlServer.TryStart
 
 		const int searchAuthor = 42;
 		const string searchTitle = "2";
-		string expectedSearch = "2:42:Post 2:<null>";
+		const string expectedSearch = "2:42:Post 2:<null>";
 		Check(
 			HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsOdxAsync(serverFactory, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch
 			&& HowLittleCode.Fingerprint(await HowLittleCode.SearchPostsDapperAsync(serverConnectionString, searchAuthor, searchTitle, littleCodeToken)) == expectedSearch

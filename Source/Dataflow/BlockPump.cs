@@ -142,7 +142,7 @@ internal readonly struct RowFeed<T>(IAsyncEnumerable<T> rows)
 		// so it waits on the caller's token and creates nothing.
 		IStallSignal? signal = rows as IStallSignal;
 		using CancellationTokenSource? link
-			= signal is not null && signal.Expired.CanBeCanceled
+			= signal?.Expired.CanBeCanceled is true
 				? CancellationTokenSource.CreateLinkedTokenSource(
 					cancellationToken,
 					signal.Expired)

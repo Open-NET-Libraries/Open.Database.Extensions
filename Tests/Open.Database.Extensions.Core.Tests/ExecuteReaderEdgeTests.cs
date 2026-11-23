@@ -1,6 +1,3 @@
-using System.Data.Common;
-using static Open.Database.Extensions.Tests.ReaderFixtures;
-
 #nullable enable
 
 namespace Open.Database.Extensions.Tests;
@@ -10,18 +7,6 @@ namespace Open.Database.Extensions.Tests;
 [ExcludeFromCodeCoverage]
 public static class ExecuteReaderEdgeTests
 {
-	static int Id(IDataRecord record) => record.GetInt32(0);
-
-	static string? Name(IDataRecord record) => record.GetString(1);
-
-	/// <summary>A command over <paramref name="rowCount"/> rows; <paramref name="rowsRead"/> says how many of them the last execution read.</summary>
-	static FakeExecuteReader Command(int rowCount, out Func<int> rowsRead)
-	{
-		TypedReader? last = null;
-		rowsRead = () => last?.RowsRead ?? 0;
-		return new FakeExecuteReader(() => last = Reader(Rows(rowCount)));
-	}
-
 	// ---- a result set into a DataTable ----
 
 	[Fact]
@@ -43,12 +28,4 @@ public static class ExecuteReaderEdgeTests
 	}
 
 	// ---- argument guards ----
-
-	// ---- the asynchronous forms, over a real command on a tracking connection ----
-
-	static (DbTally Tally, ExpressiveDbCommand Command) Tracked(int rowCount, Action<int>? onRead = null)
-	{
-		var tally = new DbTally(new DbScript { Columns = Columns, Rows = Rows(rowCount), OnRead = onRead });
-		return (tally, tally.NewConnection().Command("select 1"));
-	}
 }

@@ -867,7 +867,7 @@ public static class DbQueryTests
 		using Tracked c = db.Connect();
 		IExecuteReaderSync reader = Posts.Using(c);
 
-		Assert.Throws<ArgumentNullException>(() => reader.ExecuteReader((Action<IDataReader>)null!));
+		Assert.Throws<ArgumentNullException>(() => reader.ExecuteReader(null!));
 		Assert.Throws<ArgumentNullException>(() => reader.ExecuteReader((Func<IDataReader, int>)null!));
 		Assert.Equal(0, c.Opens);
 	}

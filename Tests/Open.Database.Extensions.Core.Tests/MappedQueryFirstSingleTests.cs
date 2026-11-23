@@ -78,18 +78,6 @@ public static class MappedQueryFirstSingleTests
 			q.FirstOrDefault, q.SingleOrDefault,
 			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
 
-	static Terminals Of(MappedQueryWithSkip<Person> q)
-		=> new(
-			q.First, q.Single, q.FirstAsync, q.SingleAsync,
-			q.FirstOrDefault, q.SingleOrDefault,
-			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
-
-	static Terminals Of(MappedQueryWithTake<Person> q)
-		=> new(
-			q.First, q.Single, q.FirstAsync, q.SingleAsync,
-			q.FirstOrDefault, q.SingleOrDefault,
-			q.FirstOrDefaultAsync, q.SingleOrDefaultAsync);
-
 	static Terminals Of(MappedReader<Person> q)
 		=> new(
 			q.First, q.Single, q.FirstAsync, q.SingleAsync,

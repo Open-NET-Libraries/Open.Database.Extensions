@@ -293,11 +293,8 @@ public static class SyntheticVariantsF
 		{
 			var db = (UnsealedSyntheticReader)reader;
 			var list = new List<SynRow>();
-			if (db.Read())
-			{
-				do list.Add(read(db));
-				while (db.Read());
-			}
+			while (db.Read())
+				list.Add(read(db));
 
 			while (db.NextResult()) { }
 			return list;

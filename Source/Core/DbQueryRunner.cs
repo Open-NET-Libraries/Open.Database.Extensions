@@ -510,12 +510,22 @@ static class DbQueryRunner
 					cancellationToken)
 				.ConfigureAwait(false)
 			: null;
+#if NETSTANDARD2_0
 		using DbCommand command = Make(
 			lease.Connection,
 			lease.Transaction,
 			definition,
 			call,
 			names);
+#else
+		DbCommand command = Make(
+			lease.Connection,
+			lease.Transaction,
+			definition,
+			call,
+			names);
+		await using var commandDisposal = command.ConfigureAwait(false);
+#endif
 		CommandBehavior b = lease.Behavior(behavior);
 #if NETSTANDARD2_0
 		using DbDataReader reader = await command

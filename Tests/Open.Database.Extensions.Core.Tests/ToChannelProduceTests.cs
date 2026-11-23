@@ -196,7 +196,7 @@ public static class ToChannelProduceTests
 	[Fact]
 	public static void ANullSource_ThrowsAtTheCall()
 	{
-		IMappedQuery<ChannelRow> source = null!;
+		IMappedQuery<ChannelRow> source = null;
 
 		Assert.Throws<ArgumentNullException>(
 			() => source.ToChannelReader(Ct));

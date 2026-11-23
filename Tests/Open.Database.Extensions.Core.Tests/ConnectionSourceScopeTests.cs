@@ -98,8 +98,10 @@ public static class ConnectionSourceScopeTests
 		IDbConnectionFactory factory = new CountingFactory(connection);
 
 		// The synchronous scope: plain using is what this test checks (Dispose, not DisposeAsync).
+#pragma warning disable RCS1261 // The synchronous scope is the subject of this test.
 		using (ConnectionScope<IDbConnection> scope = factory.EnsureOpenScope())
 			Assert.Same(connection, scope.Connection);
+#pragma warning restore RCS1261
 
 		// The fake keeps its state when disposed; a real connection would not be open.
 		connection.SetState(ConnectionState.Closed);
@@ -245,8 +247,10 @@ public static class ConnectionSourceScopeTests
 		IDbConnectionPool pool = counting;
 
 		// The synchronous scope: plain using is what this test checks (Dispose, not DisposeAsync).
+#pragma warning disable RCS1261 // The synchronous scope is the subject of this test.
 		using (ConnectionScope<IDbConnection> scope = pool.EnsureOpenScope())
 			Assert.Same(connection, scope.Connection);
+#pragma warning restore RCS1261
 
 		await using (ConnectionScope<IDbConnection> scope = await pool.EnsureOpenScopeAsync(Ct))
 			Assert.Same(connection, scope.Connection);
