@@ -186,6 +186,39 @@ public static class ClassicParamPathsAllocationTests
 	}
 
 	[Fact]
+	public static void AnOutputParameter_NextToADerivedOne_IsSentUnderTheNameItWasAddedWith()
+	{
+		var tally = new DbTally();
+		TrackedConnection c = tally.NewOpenConnection();
+		const int id = 1;
+
+		ExpressiveDbCommand command = c.Command("select @Id, @Name")
+			.AddParam(id)
+			.AddParam("name", null, ParameterDirection.Output);
+
+		string[] sent = command.Execute(static cmd => cmd.Parameters.Cast<System.Data.Common.DbParameter>().Select(static p => p.ParameterName).ToArray());
+
+		Assert.Equal(["@Id", "name"], sent);
+	}
+
+	[Theory]
+	[InlineData(ParameterDirection.Input, ParameterDirection.Output)]
+	[InlineData(ParameterDirection.Output, ParameterDirection.Input)]
+	public static void TwoSpellingsOfOneName_OfAnyDirection_AreSentAsWritten(ParameterDirection first, ParameterDirection second)
+	{
+		var tally = new DbTally();
+		TrackedConnection c = tally.NewOpenConnection();
+
+		ExpressiveDbCommand command = c.Command("select @Id")
+			.AddParam("id", null, first)
+			.AddParam("@Id", null, second);
+
+		string[] sent = command.Execute(static cmd => cmd.Parameters.Cast<System.Data.Common.DbParameter>().Select(static p => p.ParameterName).ToArray());
+
+		Assert.Equal(["id", "@Id"], sent);
+	}
+
+	[Fact]
 	public static void TwoWrittenSpellingsOfOneName_AreSentAsWritten()
 	{
 		using var c = new SqliteConnection("Data Source=:memory:");
