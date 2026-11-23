@@ -183,7 +183,8 @@ public partial class ParityTests
 	{
 		// THE KNOWN SILENT DIFFERENCE (README, "Known limits"; a ship blocker until Core has a per-result-set hook). Same reader, one query value
 		// run again after NextResult, the second set with the same column count in another order: the runtime reads it right, the generated
-		// reader keeps the first set's ordinals and swaps the values. When a hook closes this, this test fails: turn it into a parity test.
+		// reader keeps the first set's ordinals and swaps the values (WRONG VALUES, silently). A row-index restart cannot be detected either, without
+		// a check on every row: see the next test. When a hook closes this, this test fails: turn it into a parity test.
 		static DataSet Sets()
 		{
 			var set = new DataSet();
@@ -211,6 +212,34 @@ public partial class ParityTests
 
 		Assert.Equal((2, 20), (runtimeSecond.Id, runtimeSecond.Qty));
 		Assert.Equal((20, 2), (generatedSecond.Id, generatedSecond.Qty)); // Pinned: wrong, silently.
+	}
+
+	[Fact]
+	public void Known_limit_a_next_set_with_the_same_column_count_continues_the_row_count()
+	{
+		// The second set has the layout of the first, so the binding is kept and so is its row counter: a NULL in the second set's first row is
+		// reported as row 2 (after the first set's two rows), not row 0. With another column count the binding is renewed and the count restarts.
+		static DataSet Sets(int secondColumns)
+		{
+			var set = new DataSet();
+			set.Tables.Add(TableQuery.Table([Col.Of<int>("Id"), Col.Of<int>("Qty")], [1, 10], [2, 11]));
+			set.Tables.Add(secondColumns == 2
+				? TableQuery.Table([Col.Of<int>("Id"), Col.Of<int>("Qty")], [null, 5])
+				: TableQuery.Table([Col.Of<int>("Id"), Col.Of<int>("Qty"), Col.Of<string>("Extra")], [null, 5, "x"]));
+			return set;
+		}
+
+		string Report(int secondColumns)
+		{
+			using DataTableReader reader = Sets(secondColumns).CreateDataReader();
+			MappedReader<PlainPost> view = reader.Map<PlainPost>();
+			Assert.Equal(2, view.ToList().Count);
+			Assert.True(reader.NextResult());
+			return Assert.IsType<ValueMappingException>(Catch(() => view.ToList())).Message;
+		}
+
+		Assert.Contains("at row 2", Report(2), StringComparison.Ordinal);
+		Assert.Contains("at row 0", Report(3), StringComparison.Ordinal);
 	}
 
 	// ---- left to the runtime: not intercepted ----

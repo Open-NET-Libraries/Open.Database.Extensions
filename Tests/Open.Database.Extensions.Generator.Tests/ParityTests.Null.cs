@@ -10,25 +10,30 @@ namespace Open.Database.Extensions.Generator.Tests;
 // null, as the runtime map gives it: parity. A member declared non-nullable is read with its typed getter alone, as a hand-written selector reads it:
 // a NULL there is exceptional, the provider's getter throws, and the generated reader reports the model and the row, the provider's exception inside.
 // The runtime map keeps the member's value instead (it does not throw): that difference is the decided rule for generated code, pinned here.
-// In a Debug build of the generated code, a Debug.Assert before each such read names the member and the column first (ThrowingListener).
+// In a Debug build of the generated code, a [Conditional("DEBUG")] check before each such read throws the same ValueMappingException type itself,
+// with the member and the column named (PropertyName, ColumnName), instead of waiting for the provider's getter. These tests run in both configurations.
 public partial class ParityTests
 {
-	// The generated code's Debug.Assert throws in this process instead of ending it.
-	static ParityTests()
-		=> ThrowingListener.Install();
-
 	/// <summary>
-	/// A NULL in a non-nullable member: reported with the model and the row, the provider's exception of this type inside; in a Debug build the
-	/// generated assert fires first and is the exception inside, naming the member and the column.
+	/// A NULL in a non-nullable member throws a ValueMappingException naming the model and the row, in Debug and in Release. Release: the provider's
+	/// exception of this type inside, no member or column. Debug: the member and the column named (PropertyName, ColumnName), no inner exception.
+	/// <paramref name="name"/> is the model as the generator names it (a plain type's name by default).
 	/// </summary>
-	static void NullThrows<TInner>(Exception? error, Type model, int row, string member, string column)
+	static ValueMappingException NullThrows<TInner>(Exception? error, Type model, int row, string member, string column, string? name = null)
 		where TInner : Exception
 	{
 #if DEBUG
-		var e = RowError<DebugAssertException>(error, model, row);
-		Assert.Equal($"{model.Name}.{member} is non-nullable but column '{column}' is NULL at this row.", e.InnerException!.Message);
+		var e = Assert.IsType<ValueMappingException>(error);
+		Assert.Null(e.InnerException);
+		Assert.Equal(model, e.TargetType);
+		Assert.Equal(member, e.PropertyName);
+		Assert.Equal(column, e.ColumnName);
+		Assert.Equal(
+			$"A NULL was read into the non-nullable member {name ?? model.Name}.{member} (column '{column}') at row {row}. Declare the member nullable (int?, string?).",
+			e.Message);
+		return e;
 #else
-		RowError<TInner>(error, model, row);
+		return RowError<TInner>(error, model, row, name);
 #endif
 	}
 
@@ -149,19 +154,25 @@ public partial class ParityTests
 	}
 
 	[Fact]
-	public void A_null_trips_the_generated_assert_only_in_a_Debug_build()
+	public void A_null_gives_a_ValueMappingException_in_Debug_and_Release_with_the_member_only_in_Debug()
 	{
-		// The assert is [Conditional("DEBUG")]: this project's Debug build compiles it into the generated code, its Release build does not
-		// (GeneratedIlTests: the Release IL is the same as without it).
-		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title")], [null, "one"]);
+		// The same type in both configurations, so a consumer's negative test passes in both. The Debug check is [Conditional("DEBUG")]: this
+		// project's Debug build compiles it into the generated code, its Release build does not (GeneratedIlTests: the Release IL is the same without it).
+		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title")], [1, "one"], [null, "two"]);
 		var e = Assert.IsType<ValueMappingException>(Catch(() => q.Map<PlainPost>().ToList()));
+		Assert.Equal(typeof(PlainPost), e.TargetType);
+		Assert.Contains("at row 1", e.Message, StringComparison.Ordinal);
 #if DEBUG
-		var assert = Assert.IsType<DebugAssertException>(e.InnerException);
-		Assert.Equal("PlainPost.Id is non-nullable but column 'Id' is NULL at this row.", assert.Message);
+		Assert.Equal("Id", e.PropertyName);
+		Assert.Equal("Id", e.ColumnName);
+		Assert.Null(e.InnerException); // Thrown by the check itself, and not wrapped a second time by the row's handler.
 #else
+		Assert.Equal("", e.PropertyName);
+		Assert.Equal("", e.ColumnName);
 		Assert.IsType<InvalidCastException>(e.InnerException);
 #endif
 	}
+
 
 	// ---- real providers: what a NULL in a non-nullable member does, end to end ----
 

@@ -385,26 +385,3 @@ internal abstract class ProxyReader(DbDataReader inner) : DbDataReader
 		base.Dispose(disposing);
 	}
 }
-
-/// <summary>A failed <see cref="System.Diagnostics.Debug.Assert(bool, string)"/>, thrown instead of ending the process.</summary>
-internal sealed class DebugAssertException(string? message) : Exception(message);
-
-/// <summary>
-/// The generated code's Debug builds assert that a non-nullable member's cell is not NULL before reading it. The default listener ends the
-/// process on a failed assert; this one throws, so a test sees the assert as the exception inside the row's report.
-/// </summary>
-internal sealed class ThrowingListener : System.Diagnostics.TraceListener
-{
-	public static void Install()
-	{
-		System.Diagnostics.Trace.Listeners.Clear();
-		System.Diagnostics.Trace.Listeners.Add(new ThrowingListener());
-	}
-
-	public override void Fail(string? message, string? detailMessage)
-		=> throw new DebugAssertException(message);
-
-	public override void Write(string? message) { }
-
-	public override void WriteLine(string? message) { }
-}

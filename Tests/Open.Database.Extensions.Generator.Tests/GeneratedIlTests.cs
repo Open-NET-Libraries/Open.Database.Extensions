@@ -7,15 +7,20 @@ using System.Text.RegularExpressions;
 namespace Open.Database.Extensions.Generator.Tests;
 
 /// <summary>
-/// The Debug.Assert the generator writes before each read of a non-nullable member costs a Release build nothing: compiled without DEBUG, the
-/// generated file (this project's own, as the generator wrote it) gives the same IL, method by method, with and without the asserts; with DEBUG it
-/// does not. Each compile is in memory (no file is written).
+/// The NotNull call the generator writes before each read of a non-nullable member ([Conditional("DEBUG")]) costs a Release build nothing: compiled
+/// without DEBUG, the generated file (this project's own, as the generator wrote it) gives the same IL, method by method, with and without the calls;
+/// with DEBUG it does not. Each compile is in memory (no file is written).
 /// </summary>
 public class GeneratedIlTests
 {
-	// One generated assert, as Emitter.Statement writes it, up to the space before the read it guards.
-	static readonly Regex Assert_ = new(
-		"""global::System\.Diagnostics\.Debug\.Assert\(.*?"' is NULL at this row\."\); """,
+	// One generated check call, as Emitter.Statement writes it, up to the space before the read it guards.
+	static readonly Regex NotNull_ = new(
+		"""NotNull\(b, [^,;]+, "[^"]*"\); """,
+		RegexOptions.CultureInvariant);
+
+	// A read that tests the cell for NULL itself (a nullable member), whatever precedes it: never behind a NotNull call.
+	static readonly Regex TestedRead = new(
+		"""NotNull\(b, [^,;]+, "[^"]*"\); (?:item\.\w+|v\d+) = r\.IsDBNull|NotNull\(b, [^,;]+, "[^"]*"\); \{ object c = """,
 		RegexOptions.CultureInvariant);
 
 	/// <summary>The generated file of this build (EmitCompilerGeneratedFiles), without its interceptor attributes (a compile here has no interceptors).</summary>
@@ -80,13 +85,15 @@ public class GeneratedIlTests
 	}
 
 	[Fact]
-	public void Release_IL_is_the_same_with_and_without_the_generated_asserts()
+	public void Release_IL_is_the_same_with_and_without_the_generated_checks()
 	{
 		string source = GeneratedSource();
-		string stripped = Assert_.Replace(source, "");
-		int asserts = Assert_.Matches(source).Count;
-		Assert.True(asserts > 100, $"Expected the generated asserts in the file, found {asserts}.");
-		Assert.DoesNotContain("Debug.Assert", stripped, StringComparison.Ordinal);
+		string stripped = NotNull_.Replace(source, "");
+		int checks = NotNull_.Matches(source).Count;
+		Assert.True(checks > 100, $"Expected the generated checks in the file, found {checks}.");
+		Assert.DoesNotContain("NotNull(b,", stripped, StringComparison.Ordinal);
+		Assert.DoesNotMatch(TestedRead, source);
+		Assert.DoesNotContain("Debug.Assert", source, StringComparison.Ordinal);
 
 		MetadataReference[] references = [.. References()];
 		var release = CompileIl(source, debugSymbol: false, references);
@@ -97,10 +104,10 @@ public class GeneratedIlTests
 		for (int i = 0; i < release.Count; i++)
 			Assert.True(release[i].Value.AsSpan().SequenceEqual(releaseStripped[i].Value), $"{release[i].Key}: the IL differs.");
 
-		// The probe works: with DEBUG the same source keeps the asserts, so the row readers' IL differs.
+		// The probe works: with DEBUG the same source keeps the checks, so the row readers' IL differs.
 		var debug = CompileIl(source, debugSymbol: true, references);
 		byte[] debugRead = debug.Single(m => m.Key.EndsWith("GenRowT20.ReadLiteral", StringComparison.Ordinal)).Value;
 		byte[] releaseRead = release.Single(m => m.Key.EndsWith("GenRowT20.ReadLiteral", StringComparison.Ordinal)).Value;
-		Assert.True(debugRead.Length > releaseRead.Length, "The DEBUG compile should keep the asserts.");
+		Assert.True(debugRead.Length > releaseRead.Length, "The DEBUG compile should keep the checks.");
 	}
 }

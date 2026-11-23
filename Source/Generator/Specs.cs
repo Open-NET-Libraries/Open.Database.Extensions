@@ -76,6 +76,8 @@ sealed record SlotSpec(
 
 sealed record ModelSpec(
 	string Type,
+	// The type's name for a message, made at generation time: its own name, its outer types and its generic arguments by name (Outer.Inner, Page<Int32>).
+	string Name,
 	// Built through its one public constructor (true) or created then set (false).
 	bool UseConstructor,
 	// How a created model starts: "new T()" or "default(T)" (a struct with no public parameterless constructor).

@@ -5,6 +5,9 @@ namespace Open.Database.Extensions.Generator.Models;
 // The benchmark twins (SG.md 5f): the first 1, 3, 5, 10 and 20 members of the Benchmarks project's SynRow, with its types and nullability,
 // so Gen (undecorated, read by name) and GenD (decorated, constant ordinals) read exactly the columns V2's Hand(width) reads, at every catalog width.
 // Every member is fed by the synthetic catalog of that width, so a passing result set is a full layout.
+// The twins of widths 1, 3, 5 and 10 have only those members, while V2's Hand(width) at those widths builds a full SynRow (its 20 members): so at widths
+// below 20 a twin allocates less than SynRow, and Gen (and GenD) there is NOT comparable with V2 in time or in allocation: only width 20, where the twin
+// has all 20 members, is. At width 20 GenRow20 and GenRowD20 differ from SynRow in being separate classes with the same members.
 
 /// <summary>Width 1, undecorated.</summary>
 public sealed class GenRow1
@@ -139,8 +142,10 @@ public sealed class GenRowD20
 /// <summary>
 /// Width 20, undecorated, with the member types V2's hand-written selector assumes: Title, Body and Tag are non-nullable <c>string</c> (V2 reads them
 /// with GetString alone), the rest as <see cref="GenRow20"/>. The generator reads a non-nullable member without an IsDBNull test, so this twin's
-/// generated reader makes exactly V2's reads (IsDBNull on Qty, Note, Amount, Stamp, Flag, Link and Summary only; Blob through GetValue).
-/// <see cref="GenRow20"/> stays as it was (string? members, tested), so earlier numbers stay comparable.
+/// generated reader reads V2's cells the way V2 does for every member but one: IsDBNull on Qty, Note, Amount, Stamp, Flag, Link and Summary only, the
+/// strings alone. The exception is Blob: it is <c>byte[]?</c> here, so the generator tests the value of GetValue for NULL (a compare per row), where V2
+/// casts it alone. It builds a GenRowT20 (its own class), not V2's SynRow. <see cref="GenRow20"/> stays as it was (string? members, tested), so earlier
+/// numbers stay comparable.
 /// </summary>
 public sealed class GenRowT20
 {

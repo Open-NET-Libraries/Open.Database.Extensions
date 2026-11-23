@@ -83,16 +83,19 @@ public partial class ParityTests
 
 	// ---- the report ----
 
-	/// <summary>The message the generated reader gives a failed row, by the type of the exception inside.</summary>
-	static string RowMessage(Exception inner, Type model, int row)
+	/// <summary>
+	/// The message the generated reader gives a failed row, by the type of the exception inside. <paramref name="name"/> is the model as the generator
+	/// names it (the type's name, its outer types and generic arguments by name); the default is a plain type's name.
+	/// </summary>
+	static string RowMessage(Exception inner, Type model, int row, string? name = null)
 		=> inner is SqlNullValueException
-			? $"A NULL was read into a non-nullable member of {model.Name} at row {row}. Declare the member nullable (int?, string?)."
+			? $"A NULL was read into a non-nullable member of {name ?? model.Name} at row {row}. Declare the member nullable (int?, string?)."
 			: inner is InvalidCastException
-				? $"A value at row {row} could not be read into a member of {model.Name}: either a NULL in a non-nullable member (declare the member nullable: int?, string?) or a column whose type does not match the member."
-				: $"Unable to map row {row} to '{model.Name}'.";
+				? $"A value at row {row} could not be read into a member of {name ?? model.Name}: either a NULL in a non-nullable member (declare the member nullable: int?, string?) or a column whose type does not match the member."
+				: $"Unable to map row {row} to '{name ?? model.Name}'.";
 
 	/// <summary>The generated reader's report: the model type and the row, no member or column, the exception of this type inside.</summary>
-	static ValueMappingException RowError<TInner>(Exception? error, Type model, int row)
+	static ValueMappingException RowError<TInner>(Exception? error, Type model, int row, string? name = null)
 		where TInner : Exception
 	{
 		var e = Assert.IsType<ValueMappingException>(error);
@@ -100,7 +103,7 @@ public partial class ParityTests
 		Assert.Equal(model, e.TargetType);
 		Assert.Equal("", e.PropertyName);
 		Assert.Equal("", e.ColumnName);
-		Assert.Equal(RowMessage(inner, model, row), e.Message);
+		Assert.Equal(RowMessage(inner, model, row, name), e.Message);
 		return e;
 	}
 

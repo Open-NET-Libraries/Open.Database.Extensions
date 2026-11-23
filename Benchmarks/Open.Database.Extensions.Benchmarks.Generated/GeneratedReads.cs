@@ -13,6 +13,7 @@ namespace Open.Database.Extensions.Benchmarks.Generated;
 /// it tests IsDBNull on the members the types declare nullable, as V2 does (GenRowN declares SynRow's string? members; GenRowT20 the strings V2 reads alone)
 /// and binds its layout once per result set.
 /// Twins exist for the catalog widths (1, 3, 5, 10, 20), as V2's hand-written selectors do; another width (ODX_SYN_WIDTHS, --widths) throws, as V2's Hand does.
+/// The twins of widths 1 to 10 have only that many members, while V2 builds a full SynRow at every width: Gen is comparable with V2 at width 20 only.
 /// </remarks>
 public static class GeneratedReads
 {

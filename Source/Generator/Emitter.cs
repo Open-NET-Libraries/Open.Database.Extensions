@@ -8,13 +8,21 @@ namespace Open.Database.Extensions.Generator;
 //     against a small static cache of the layouts met lately, and then reads every row with typed getters in one of five read modes.
 //   - errors: each row reader (one per read mode) is ONE try region around the whole row (reads, construction, sets), entered once per row; its
 //     handler is cold and does no reader work. Anything but a DbException or an OperationCanceledException (RowMap.Guard's filter: those pass
-//     through untouched) is thrown as a ValueMappingException naming the model type and the row (its 0-based index among the rows mapped: Bound.Rows,
-//     one increment per row), the exception inside. No member or column is named (the runtime map names them; tracking the cell would put work
-//     on the hot path), and the report is the same on a SequentialAccess reader. A layout the runtime serves (mode 0) reports as the runtime does.
+//     through untouched, and a ValueMappingException is already the report) is thrown as a ValueMappingException naming the model type and the row
+//     (its 0-based index among the rows this binding mapped: Bound.Rows, one increment per row), the exception inside. A Release build names no member
+//     or column (tracking the cell would put work on the hot path), and the report is the same on a SequentialAccess reader. A layout the runtime
+//     serves (mode 0) reports as the runtime does.
+//   - the row index and a next result set: the binding is per reader and is renewed when the column count changes, which is the only change a row
+//     reader can see without a per-row check (a check per row would cost every row). A next result set (NextResult on the same reader) with the SAME
+//     column count keeps the previous binding, so (1) it reads the new set at the FIRST set's ordinals: WRONG VALUES, silently (or a cast error), where
+//     the runtime map re-checks the layout per result set; and (2) the row index continues from the first set instead of restarting at 0.
+//     Pinned by tests; closing it needs a per-result-set hook in Core, which this generator does not use.
 //   - NULL, by the member's type: a member declared non-nullable (a value type other than Nullable<T>, a reference annotated non-nullable) is read
 //     with its typed getter alone, as a hand-written selector reads it; a NULL there is exceptional: the provider's getter throws (ProviderNullTests)
 //     and the row's handler reports it. A nullable member (int?, string?, a reference in code with nullable annotations off, object) is tested
-//     with IsDBNull and gets null. (The runtime map keeps a non-nullable member's value on a NULL instead; whether it takes this rule too is open.)
+//     with IsDBNull and gets null. (The runtime map keeps a non-nullable member's value on a NULL instead.) In a consumer's Debug build, a
+//     [Conditional("DEBUG")] call before each non-nullable read tests the cell and, on a NULL, throws the same ValueMappingException type directly,
+//     adding the member and the column (PropertyName, ColumnName) to the report: Debug and Release throw the same type for the same NULL.
 //   - a layout the generated code does not serve is mapped by the runtime RowMap<T> (through its public, hidden ArrayMapper, the route to its
 //     object[] row reader), so the rows, and the exceptions, are the runtime's.
 static class Emitter
@@ -311,21 +319,25 @@ static class Emitter
 			}
 		}
 
-		// Shape.TypeName: Int32, Int32? for a Nullable<T>.
-		public static string TypeName(global::System.Type type)
-			=> global::System.Nullable.GetUnderlyingType(type) is { } underlying ? underlying.Name + "?" : type.Name;
-
-		// RowMap.Guard's filter: the provider's own failures and cancellation propagate untouched; everything else is attributed.
+		// RowMap.Guard's filter: the provider's own failures and cancellation propagate untouched; everything else is attributed. A ValueMappingException
+		// is the report already (the Debug NULL check throws one), so it is not wrapped in a second.
 		public static bool Wraps(global::System.Exception ex)
-			=> ex is not global::System.Data.Common.DbException && ex is not global::System.OperationCanceledException;
+			=> ex is not global::System.Data.Common.DbException
+				&& ex is not global::System.OperationCanceledException
+				&& ex is not global::Open.Database.Extensions.ValueMappingException;
+
+		// The report of a NULL the Debug check found in a non-nullable member (cold): the member and the column are named. The same type as RowError.
+		public static global::System.Exception NullRead(global::System.Type model, string name, string member, string column, int row)
+			=> new global::Open.Database.Extensions.ValueMappingException(
+				$"A NULL was read into the non-nullable member {name}.{member} (column '{column}') at row {row}. Declare the member nullable (int?, string?).",
+				member, column, model);
 
 		// The report of a row the generated reader could not map (cold, no reader work): the model type and the row (0-based among the rows this map
 		// read), worded by the TYPE of the exception inside, which is kept: SqlClient's SqlNullValueException is a NULL read (ProviderNullTests);
 		// InvalidCastException is a NULL or a column of another type (a DataTable reader, a cast of GetValue); anything else is not classified
 		// (Microsoft.Data.Sqlite's NULL read is an InvalidOperationException, a type its other failures share). Never a member or column.
-		public static global::System.Exception RowError(global::System.Exception ex, global::System.Type model, int row)
+		public static global::System.Exception RowError(global::System.Exception ex, global::System.Type model, string name, int row)
 		{
-			string name = TypeName(model);
 			string message = ex is global::System.Data.SqlTypes.SqlNullValueException
 				? $"A NULL was read into a non-nullable member of {name} at row {row}. Declare the member nullable (int?, string?)."
 				: ex is global::System.InvalidCastException
@@ -457,6 +469,7 @@ static class Emitter
 		sb.AppendLine();
 		sb.AppendLine("\t\t\t// The rows this binding has started (Row counts each before reading it): the row in flight is Rows - 1, the index a failure reports.");
 		sb.AppendLine("\t\t\t// A new binding (another reader, a new execution of the same query, or a next result set with another column count) starts at 0.");
+		sb.AppendLine("\t\t\t// A next result set with the SAME column count is not seen (see the header): the count continues, and the first set's ordinals are kept.");
 		sb.AppendLine("\t\t\tpublic int Rows;");
 		sb.AppendLine();
 		sb.AppendLine($"\t\t\tpublic Bound({Record} record, {DbReader} reader, Layout layout)");
@@ -492,7 +505,8 @@ static class Emitter
 		sb.AppendLine("\t\t{");
 		sb.AppendLine("\t\t\tBound b = _bound;");
 		// Bound once per reader, and again when the reader's column count changes: a reader view run again after NextResult (same reader) meets the new set.
-		// A new set with the same column count on the same reader keeps the binding (no per-row layout check; a Core hook per result set would close this).
+		// A new set with the same column count on the same reader keeps the binding: it reads at the first set's ordinals (wrong values, silently) and the
+		// row index continues. Neither is detectable here without a check per row, which every row would pay (see the header).
 		sb.AppendLine("\t\t\tif (b == null || !ReferenceEquals(b.Record, record) || record.FieldCount != b.Layout.Names.Length) _bound = b = Bind(record);");
 		if (options.Counters) sb.AppendLine("\t\t\tif (b.Layout.Mode != 0) global::System.Threading.Interlocked.Increment(ref OdxGeneratedCounters.RowsServed);");
 		sb.AppendLine("\t\t\tb.Rows++;");
@@ -530,7 +544,18 @@ static class Emitter
 		// The error for a row that failed (cold: only the row reader's one handler calls it, and it does no reader work): the model type and the row,
 		// the provider's (or the model's) exception inside. No member or column: the row has one try region, so which cell failed is not tracked
 		// (the runtime map names it; the generated reader keeps the hot path free of that bookkeeping). The same on every reader, SequentialAccess too.
-		sb.AppendLine($"\t\tstatic global::System.Exception Fail(global::System.Exception ex, Bound b) => OdxMatch.RowError(ex, typeof({T}), b.Rows - 1);");
+		sb.AppendLine($"\t\tstatic global::System.Exception Fail(global::System.Exception ex, Bound b) => OdxMatch.RowError(ex, typeof({T}), {Str(m.Name)}, b.Rows - 1);");
+		sb.AppendLine();
+
+		// Debug builds only: [Conditional("DEBUG")] removes the call, its arguments included, from a consumer's Release build (GeneratedIlTests). In a
+		// Debug build it tests the cell before a non-nullable read and, on a NULL, throws the report with the member and the column named, built only then.
+		// The member is passed as a constant, so a cell that is not NULL costs one IsDBNull and no string work.
+		sb.AppendLine("\t\t[global::System.Diagnostics.Conditional(\"DEBUG\")]");
+		sb.AppendLine("\t\tstatic void NotNull(Bound b, int ordinal, string member)");
+		sb.AppendLine("\t\t{");
+		sb.AppendLine("\t\t\tif (b.Reader.IsDBNull(ordinal))");
+		sb.AppendLine($"\t\t\t\tthrow OdxMatch.NullRead(typeof({T}), {Str(m.Name)}, member, b.Layout.Names[ordinal], b.Rows - 1);");
+		sb.AppendLine("\t\t}");
 		sb.AppendLine();
 
 		EmitRead(sb, m, "ReadLiteral", styleB, ReadMode.Literal, literal);
@@ -578,7 +603,7 @@ static class Emitter
 	{
 		string T = m.Type;
 		var slots = m.Slots.Items;
-		string owner = T.Substring(T.LastIndexOf('.') + 1); // The model as its Debug.Assert messages name it.
+
 		const string I = "\t\t\t\t";
 
 		sb.AppendLine($"\t\tstatic {T} {name}(Bound b)");
@@ -597,7 +622,7 @@ static class Emitter
 			foreach (int k in ReadOrder(slots, mode, literal))
 			{
 				SlotSpec s = slots[k];
-				EmitSlot(sb, s, k, mode, at, literal[k], (read, general) => Statement(s, owner, "item." + Code(s.Name), read, general));
+				EmitSlot(sb, s, k, mode, at, literal[k], (read, general) => Statement(s, "item." + Code(s.Name), read, general));
 			}
 
 			CloseSequence(sb, mode, I);
@@ -619,7 +644,7 @@ static class Emitter
 			foreach (int k in ReadOrder(slots, mode, literal))
 			{
 				SlotSpec s = slots[k];
-				EmitSlot(sb, s, k, mode, readAt, literal[k], (read, general) => Statement(s, owner, "v" + k, read, general));
+				EmitSlot(sb, s, k, mode, readAt, literal[k], (read, general) => Statement(s, "v" + k, read, general));
 			}
 
 			CloseSequence(sb, mode, I);
@@ -740,15 +765,15 @@ static class Emitter
 	// A member its type declares non-nullable is read alone (a general read casts GetValue), as a hand-written selector reads it: no IsDBNull, since a
 	// NULL there is exceptional; the provider's typed getter throws on it (ProviderNullTests), or the cast of DBNull does, and the row's handler
 	// reports it. A nullable member is tested for NULL first and gets null.
-	// Before a non-nullable read, a Debug.Assert that the cell is not NULL: [Conditional("DEBUG")], so it is compiled into the consumer's Debug
-	// builds only (a Release build has no trace of it, arguments included: GeneratedIlTests), where it names the member and the column at the
-	// NULL even for a provider that would return a default silently.
-	static string Statement(SlotSpec s, string owner, string target, string read, bool general)
+	// Before a non-nullable read, a call to the model's NotNull ([Conditional("DEBUG")]: compiled into the consumer's Debug builds only, a Release build
+	// has no trace of it, arguments included: GeneratedIlTests), which throws the report naming the member and the column at a NULL, even for a
+	// provider that would return a default silently. A nullable member never calls it.
+	static string Statement(SlotSpec s, string target, string read, bool general)
 	{
 		if (s.NonNullable)
 		{
-			string assert = $"global::System.Diagnostics.Debug.Assert(!r.IsDBNull({{O}}), {Str(owner + "." + s.Name + " is non-nullable but column '")} + b.Layout.Names[{{O}}] + \"' is NULL at this row.\"); ";
-			return assert + target + " = " + (general ? read.Replace("{0}", "r.GetValue({O})") : read) + ";";
+			string check = $"NotNull(b, {{O}}, {Str(s.Name)}); ";
+			return check + target + " = " + (general ? read.Replace("{0}", "r.GetValue({O})") : read) + ";";
 		}
 
 		if (general)

@@ -9,17 +9,31 @@ namespace Open.Database.Extensions.Benchmarks;
 // reader does and V2 does not, through the same Map(Func<IDataRecord, SynRow>) entry V2 uses (SyntheticVariants.V2).
 //   V2n  V2 plus IsDBNull on every member (the NULL rule of the runtime map: a NULL leaves the member's default), constant ordinals: the hand-written
 //        selector with the generated reader's former NULL semantics (named GP1 in the first decomposition run; the generator now tests nullable members only).
-//   GP2  V2n with the ordinals read from a layout object (resolved once per result set), as the generated reader's mode 1 reads them.
+//   GP2  V2n with the ordinals read from a layout object (resolved once per result set), as the generated reader's mode 1 reads them. THE STEP BUNDLES
+//        TWO CHANGES: Read2 also takes the reader as a DbDataReader (a cast, then virtual calls on the abstract class) where V2n calls the IDataRecord
+//        interface, so the V2n -> GP2 difference is the ordinal source AND the interface-versus-virtual call, not the layout alone.
 //   GP3  GP2 inside try/catch with the error-position stores (s = k) in front of every member.
 //   GP4  GP3 behind the binder: the bound-layout check and the read-mode switch of the generated Row method, on an instance delegate.
 //   GP5  V2n with each member in its own try region (no position store): a former row shape of the generator (per-member error attribution).
 //   GP6  V2's own read (SyntheticVariants.Read20: no NULL test on a non-nullable member, IsDBNull on a nullable one) inside ONE try/catch per row
 //        with a cold throw: the row shape the generator emits now (one try region per row reader). Equal to V2 if entering a try region is free.
-//   GP6r GP6 plus the generated reader's row counter (Bound.Rows: one increment of an int field on a heap object per row), the row a failure reports.
+//   GP6r GP6 plus a row counter: one increment of an int field on a heap object per row, as Bound.Rows is. The counter here is a STATIC object shared by
+//        every query and thread and never reset, so it measures the increment only (a static-field load added to the heap-field increment, and a shared
+//        cache line if queries ran in parallel); the row a failure reports is cumulative across queries, not the row of its own query as the generated
+//        reader's per-binding counter gives. Nothing here checks the reported index.
 //   GP7  the raw loop (as V10r): ExecuteReader's callback, while (db.Read()) list.Add(Read(db)), V2's read at constant ordinals on DbDataReader,
 //        with ONE try/catch around the whole loop (the row number a loop local). Measurable only: a Map(Func) selector cannot put a try around
-//        Core's loop without a Core hook, so the generator does not use this placement.
-//   GP7c GP7 with no try: the bar of the loop placement.
+//        Core's loop without a Core hook, so the generator does not use this placement. GP7 and GP7c open the reader with CommandBehavior.SequentialAccess
+//        (as V10r does), where V2 and every Map(Func) selector run with the default behavior: so GP7 against V2 or GP6 changes the access mode as well as
+//        the loop placement. Only GP7 against GP7c isolates the try.
+//   GP7c GP7 with no try: the bar of the loop placement (SequentialAccess too).
+//
+// WIDTH 20 ONLY. V2n, GP2 to GP7c and (SyntheticBenchmarks.cs) Ctl, Ctl_T and Gen_T read the 20 catalog columns at fixed ordinals. At widths 1, 3, 5 and 10
+// the provider has fewer columns, so each of these methods throws NotSupportedException from its own width check, and BenchmarkDotNet reports the case as
+// failed. Running these: set ODX_SYN_WIDTHS=20 and filter to the methods, as the diagnostic run does:
+//   $env:ODX_SYN_WIDTHS = '20'; $env:ODX_SYN_ROWS = '1000'
+//   --filter "*SyntheticBenchmarks.V2_Sync" "*.V2n_Sync" "*.Gen_Sync" "*.GenD_Sync" "*.Ctl_Sync" "*.Gen_T_Sync" "*.Ctl_T_Sync" "*.GP5_Sync" "*.GP6_Sync" "*.GP6r_Sync" "*.GP7_Sync" "*.GP7c_Sync"
+// (add GP2_Sync, GP3_Sync and GP4_Sync to see the earlier steps). The `--verify` sweep skips them at the other widths on its own.
 public static class GenParity
 {
 	sealed class Layout
@@ -195,7 +209,7 @@ public static class GenParity
 		}
 	}
 
-	/// <summary>The row counter of GP6r: a field on a heap object, as Bound.Rows is (never reset here: a benchmark measures the increment).</summary>
+	/// <summary>The row counter of GP6r: a field on a heap object, as Bound.Rows is, but one static instance, shared and never reset (see the header: the increment only).</summary>
 	sealed class RowCount
 	{
 		public int Rows;

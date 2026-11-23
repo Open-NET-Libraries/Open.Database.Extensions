@@ -277,6 +277,37 @@ public sealed class OverridePost : VirtualPost
 	public string? Title { get; set; }
 }
 
+/// <summary>A generic model closed over a marker type: a message names it with its argument (TaggedPost&lt;Int32&gt;), not as a bare "TaggedPost`1".</summary>
+public sealed class TaggedPost<TMarker>
+{
+	public int Id { get; set; }
+
+	public string Title { get; set; } = "untitled";
+}
+
+/// <summary>Holds a nested model: a message names it with its outer type (PostHolder.Inner).</summary>
+public sealed class PostHolder
+{
+	public sealed class Inner
+	{
+		public int Id { get; set; }
+
+		public string Title { get; set; } = "untitled";
+	}
+}
+
+/// <summary>
+/// Non-nullable interface members. A NULL in Value throws like a class member's (the cast of DBNull to IComparable fails); DBNull implements
+/// IConvertible, so the cast succeeds and Other stays tested: a NULL gives null.
+/// </summary>
+public sealed class InterfacePost
+{
+	public int Id { get; set; }
+
+	public IComparable Value { get; set; } = "";
+
+	public IConvertible Other { get; set; } = "";
+}
 #nullable disable
 
 /// <summary>A model in code with nullable annotations off: its string is oblivious, nullable to the map and to the generator (tested, a NULL gives null).</summary>

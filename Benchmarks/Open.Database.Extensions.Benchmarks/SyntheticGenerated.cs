@@ -9,6 +9,9 @@ namespace Open.Database.Extensions.Benchmarks;
 //   Gen   command.Map<GenRowN>().ToList(): an undecorated twin of SynRow's first N members, matched by name, read by the generated row reader.
 //   GenD  command.Map<GenRowDN>().ToList(): the decorated twin ([Column(Name, Order)] on every member), read at constant ordinals.
 //
+// Comparing Gen and GenD with V2: only at width 20. The twins of widths 1, 3, 5 and 10 have only that many members, while V2's Hand(width) builds a full
+// SynRow, so at those widths the twin allocates less (fewer members) and Gen is not comparable with V2 in time or in allocation.
+//
 // The intercepted call sites are in Open.Database.Extensions.Benchmarks.Generated (GeneratedReads): the generator intercepts every plain Map<T>()
 // of the project it runs in, and this project's V1 and the other runtime variants must stay the runtime map. The command is built here, as V2 builds it.
 public static class SyntheticGenerated
@@ -19,15 +22,15 @@ public static class SyntheticGenerated
 	public static object GenD(SyntheticConnection connection, int width)
 		=> GeneratedReads.GenD(connection.Command(SyntheticVariants.Sql), width);
 
-	/// <summary>The control of Gen at width 20: V2's selector copied into the generated project's assembly, on Gen's twin of the row.</summary>
+	/// <summary>The control of Gen at width 20: the selector the generator would write for Gen's twin (its NULL tests included), written by hand in the generated project's assembly.</summary>
 	public static object Ctl(SyntheticConnection connection)
 		=> GeneratedControl.Control20(connection.Command(SyntheticVariants.Sql));
 
-	/// <summary>Gen_T (width 20): the twin whose member types are the ones V2 assumes (non-nullable Title, Body, Tag), so its generated reads are V2's reads.</summary>
+	/// <summary>Gen_T (width 20): the twin whose Title, Body and Tag are non-nullable, as V2 assumes (read alone, as V2 reads them); its Blob is tested for NULL, which V2's is not.</summary>
 	public static object GenT(SyntheticConnection connection)
 		=> GeneratedReads.GenT20(connection.Command(SyntheticVariants.Sql));
 
-	/// <summary>The control of Gen_T: V2's selector on Gen_T's twin, compiled beside it.</summary>
+	/// <summary>The control of Gen_T: the hand-written selector of Gen_T's twin (the same Blob test as the generator makes), compiled beside it.</summary>
 	public static object CtlT(SyntheticConnection connection)
 		=> GeneratedControl.ControlT20(connection.Command(SyntheticVariants.Sql));
 }

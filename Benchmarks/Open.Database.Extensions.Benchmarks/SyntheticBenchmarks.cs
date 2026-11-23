@@ -247,54 +247,67 @@ public class SyntheticBenchmarks
 	public ValueTask<List<SynRow>> V2_Async() { _label = nameof(V2_Async); return SyntheticVariants.V2Async(Connection, _hand); }
 
 	// ---- Gen and GenD (SG.md 5f): the prototype source generator's plain Map<T>() on the undecorated and the decorated twin (SyntheticGenerated.cs) ----
+	// Comparable with V2 at width 20 only: the narrower twins (widths 1 to 10) have fewer members than the SynRow V2 builds, so they allocate less.
 	[Benchmark]
 	public object Gen_Sync() { _label = nameof(Gen_Sync); return SyntheticGenerated.Gen(Connection, Width); }
 
 	[Benchmark]
 	public object GenD_Sync() { _label = nameof(GenD_Sync); return SyntheticGenerated.GenD(Connection, Width); }
 
-	// ---- The control and the decomposition of Gen against V2 (width 20 only; GenParity.cs) ----
-	[Benchmark]
-	public object Ctl_Sync() { _label = nameof(Ctl_Sync); return SyntheticGenerated.Ctl(Connection); }
+	// ---- The control and the decomposition of Gen against V2 (WIDTH 20 ONLY; GenParity.cs) ----
+	// Ctl, Ctl_T, Gen_T, V2n and GP2 to GP7c read the 20 catalog columns at fixed ordinals, so at the catalog's other widths (1, 3, 5, 10) the provider has fewer
+	// columns and they cannot run: each throws NotSupportedException (WidthTwenty) there, which BenchmarkDotNet reports as a failed case. Run them as
+	//   ODX_SYN_WIDTHS=20 and a method filter (the names above), e.g. --filter "*SyntheticBenchmarks.Gen_T_Sync" "*SyntheticBenchmarks.Ctl_T_Sync"
+	// (GenParity.cs, "Running these", has the list). The verify sweep (--verify) skips them at the other widths on its own.
+	void WidthTwenty()
+	{
+		if (Width != 20)
+			throw new NotSupportedException($"This method reads 20 columns at fixed ordinals: width 20 only (this case has width {Width}). Run with ODX_SYN_WIDTHS=20 and a method filter.");
+	}
 
-	// The honest ladder at width 20: Gen_T is the generated reader on the twin whose member types are V2's (non-nullable Title, Body, Tag: read without a
-	// NULL test, as V2 reads them), Ctl_T is V2's selector on that twin in the same assembly. Expected: Gen_T = Ctl_T = V2, up to the binder and try regions.
 	[Benchmark]
-	public object Gen_T_Sync() { _label = nameof(Gen_T_Sync); return SyntheticGenerated.GenT(Connection); }
+	public object Ctl_Sync() { _label = nameof(Ctl_Sync); WidthTwenty(); return SyntheticGenerated.Ctl(Connection); }
+
+	// The ladder at width 20: Gen_T is the generated reader on the twin whose Title, Body and Tag are non-nullable (read without a NULL test, as V2 reads
+	// them), Ctl_T is the hand-written selector of that twin in the same assembly (GeneratedControl.cs). Gen_T and Ctl_T differ from V2 by Blob (byte[]?: a NULL
+	// test on the value, one compare per row; V2 casts GetValue alone), and they build a GenRowT20, not a SynRow: compare Gen_T with Ctl_T for the generated
+	// code's own cost, and with V2 only to that extent. Expected: Gen_T = Ctl_T, up to the binder and try regions.
+	[Benchmark]
+	public object Gen_T_Sync() { _label = nameof(Gen_T_Sync); WidthTwenty(); return SyntheticGenerated.GenT(Connection); }
 
 	[Benchmark]
-	public object Ctl_T_Sync() { _label = nameof(Ctl_T_Sync); return SyntheticGenerated.CtlT(Connection); }
+	public object Ctl_T_Sync() { _label = nameof(Ctl_T_Sync); WidthTwenty(); return SyntheticGenerated.CtlT(Connection); }
 
 	// V2 with IsDBNull on every member: the generated reader's former NULL semantics (GP1 in the first decomposition run). The generator now reads a
 	// non-nullable member without a NULL test, as V2 does, so V2 (with Ctl_T) is the bar for Gen_T; V2n stays for comparison with earlier runs.
 	[Benchmark]
-	public List<SynRow> V2n_Sync() { _label = nameof(V2n_Sync); return SyntheticVariants.V2(Connection, GenParity.V2n); }
+	public List<SynRow> V2n_Sync() { _label = nameof(V2n_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.V2n); }
 
 	[Benchmark]
-	public List<SynRow> GP2_Sync() { _label = nameof(GP2_Sync); return SyntheticVariants.V2(Connection, GenParity.GP2); }
+	public List<SynRow> GP2_Sync() { _label = nameof(GP2_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP2); }
 
 	[Benchmark]
-	public List<SynRow> GP3_Sync() { _label = nameof(GP3_Sync); return SyntheticVariants.V2(Connection, GenParity.GP3); }
+	public List<SynRow> GP3_Sync() { _label = nameof(GP3_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP3); }
 
 	[Benchmark]
-	public List<SynRow> GP4_Sync() { _label = nameof(GP4_Sync); return SyntheticVariants.V2(Connection, GenParity.GP4()); }
+	public List<SynRow> GP4_Sync() { _label = nameof(GP4_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP4()); }
 
 	[Benchmark]
-	public List<SynRow> GP5_Sync() { _label = nameof(GP5_Sync); return SyntheticVariants.V2(Connection, GenParity.GP5); }
+	public List<SynRow> GP5_Sync() { _label = nameof(GP5_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP5); }
 
 	// GP6/GP6r: V2's read in one try/catch per row, without and with the row counter (the generated reader's error shape); equal to V2 if a try is free.
 	[Benchmark]
-	public List<SynRow> GP6_Sync() { _label = nameof(GP6_Sync); return SyntheticVariants.V2(Connection, GenParity.GP6); }
+	public List<SynRow> GP6_Sync() { _label = nameof(GP6_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP6); }
 
 	[Benchmark]
-	public List<SynRow> GP6r_Sync() { _label = nameof(GP6r_Sync); return SyntheticVariants.V2(Connection, GenParity.GP6r); }
+	public List<SynRow> GP6r_Sync() { _label = nameof(GP6r_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP6r); }
 
 	// GP7/GP7c: the raw loop (as V10r) with one try around it, and without: the loop placement, measurable only (no Core hook for a selector).
 	[Benchmark]
-	public List<SynRow> GP7_Sync() { _label = nameof(GP7_Sync); return GenParity.GP7(Connection); }
+	public List<SynRow> GP7_Sync() { _label = nameof(GP7_Sync); WidthTwenty(); return GenParity.GP7(Connection); }
 
 	[Benchmark]
-	public List<SynRow> GP7c_Sync() { _label = nameof(GP7c_Sync); return GenParity.GP7c(Connection); }
+	public List<SynRow> GP7c_Sync() { _label = nameof(GP7c_Sync); WidthTwenty(); return GenParity.GP7c(Connection); }
 	// ---- V3 to V6 (BS-B): the domain object is SynItem; Pace applies to V3, V3s, V4a, V4b, V6c only ----------------------------------------------------------------
 	[Benchmark]
 	public List<SynItem> V3_Sync() { _label = nameof(V3_Sync); return SyntheticVariantsB.V3(Connection, Pace); }

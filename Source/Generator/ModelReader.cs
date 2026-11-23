@@ -17,9 +17,16 @@ static class ModelReader
 
 	static readonly SymbolDisplayFormat Fq = SymbolDisplayFormat.FullyQualifiedFormat;
 
+	// A model's name in a message: the type's own name, its outer types before it, its generic arguments by name (Outer.Inner, Page<Int32>): no namespace.
+	static readonly SymbolDisplayFormat Named = new(
+		typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypes,
+		genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters);
+
 	public static ModelSpec? Read(INamedTypeSymbol t, Compilation compilation)
 	{
 		if (!IsMappableShape(t, compilation)) return null;
+
+		INamedTypeSymbol? dbNull = compilation.GetTypeByMetadataName("System.DBNull");
 
 		// Shape.Choose: the constructor a model is built through.
 		var constructors = t.InstanceConstructors
@@ -108,7 +115,7 @@ static class ModelReader
 				string? fallback = Fallback(parameter);
 				if (fallback is null) return null;
 
-				SlotSpec? slot = Slot(name, parameter.Name, i, parameter.Type, IsNonNullableReference(parameter), false, false, declared, fallback);
+				SlotSpec? slot = Slot(name, parameter.Name, i, parameter.Type, IsNonNullableReference(parameter), false, false, declared, fallback, dbNull);
 				if (slot is null) return null;
 				slots.Add(slot);
 			}
@@ -123,7 +130,7 @@ static class ModelReader
 			bool required = p.IsRequired && !setsRequired;
 			if (declared.Invalid || declared.NotMapped && (declared.HasColumnAttribute || required)) return null; // A type error at run time.
 
-			SlotSpec? slot = Slot(p.Name, null, -1, p.Type, IsNonNullableReference(p), setter.IsInitOnly || required, required, declared, null);
+			SlotSpec? slot = Slot(p.Name, null, -1, p.Type, IsNonNullableReference(p), setter.IsInitOnly || required, required, declared, null, dbNull);
 			if (slot is null) return null;
 			slots.Add(slot);
 		}
@@ -135,6 +142,7 @@ static class ModelReader
 
 		return new ModelSpec(
 			t.ToDisplayString(Fq),
+			t.ToDisplayString(Named),
 			constructor is not null,
 			create,
 			constructor?.Parameters.Length ?? 0,
@@ -204,14 +212,16 @@ static class ModelReader
 		return list;
 	}
 
-	static SlotSpec? Slot(string name, string? parameter, int position, ITypeSymbol type, bool nonNullableReference, bool initBound, bool required, Decoration declared, string? fallback)
+	static SlotSpec? Slot(string name, string? parameter, int position, ITypeSymbol type, bool nonNullableReference, bool initBound, bool required, Decoration declared, string? fallback, INamedTypeSymbol? dbNull)
 	{
 		bool nullableValue = type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 		ITypeSymbol underlying = nullableValue ? ((INamedTypeSymbol)type).TypeArguments[0] : type;
 
 		// RowMap's Slot.KeepsValueOnNull test: a value type other than Nullable<T>, or a reference type the source declares non-nullable (oblivious:
-		// nullable). Read without a NULL test, except object or an interface: GetValue's DBNull would pass its cast silently, so those stay tested.
-		bool nonNullable = type.IsValueType ? !nullableValue : nonNullableReference && type.SpecialType != SpecialType.System_Object && type.TypeKind != TypeKind.Interface;
+		// nullable). Such a member is read without a NULL test: a NULL throws (the typed getter, or the cast of GetValue's DBNull), and that is the rule.
+		// The one exception is a type DBNull itself converts to (object, dynamic, and the interfaces it implements: IConvertible, ISerializable): there the
+		// cast of DBNull succeeds, nothing would throw, so such a member stays tested and a NULL gives null. Any other interface throws like a class does.
+		bool nonNullable = type.IsValueType ? !nullableValue : nonNullableReference && !AcceptsDbNull(type, dbNull);
 
 		ImmutableArray<ReadCase> cases = Cases(underlying);
 		if (cases.IsEmpty) return null;
@@ -224,6 +234,13 @@ static class ModelReader
 			fallback,
 			new EquatableArray<ReadCase>(cases));
 	}
+
+	// Whether the cast of DBNull.Value to the type succeeds (so a read by cast cannot tell a NULL from a value).
+	static bool AcceptsDbNull(ITypeSymbol type, INamedTypeSymbol? dbNull)
+		=> type.SpecialType == SpecialType.System_Object
+			|| type.TypeKind == TypeKind.Dynamic
+			|| dbNull is not null && (SymbolEqualityComparer.Default.Equals(type, dbNull)
+				|| type.TypeKind == TypeKind.Interface && dbNull.AllInterfaces.Contains(type, SymbolEqualityComparer.Default));
 
 	// RowMap.TypedGetters, in the order the reads are offered when no exact read exists.
 	static readonly (SpecialType Type, string Getter)[] Getters =
