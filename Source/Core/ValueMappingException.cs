@@ -1,4 +1,4 @@
-namespace Open.Database.Extensions;
+﻿namespace Open.Database.Extensions;
 
 // Deliberately a DataException and not an InvalidOperationException: application code often catches that type as a business-rule failure and reports its message.
 /// <summary>

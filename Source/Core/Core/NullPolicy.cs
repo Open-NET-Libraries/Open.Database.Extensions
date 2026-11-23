@@ -85,7 +85,7 @@ public enum NullAction
 /// <seealso cref="NullValueAttribute"/>
 /// <seealso cref="ValueMappingException"/>
 /// <param name="action">What a NULL does: no check, a throw, or the member's default.</param>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false, Inherited = true)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property | AttributeTargets.Parameter, AllowMultiple = false, Inherited = true)]
 public sealed class NullPolicyAttribute(NullAction action) : Attribute
 {
 	/// <summary>
@@ -103,7 +103,7 @@ public sealed class NullPolicyAttribute(NullAction action) : Attribute
 /// <remarks>
 /// <para>
 /// It always applies, nullable members included, and it overrides any <see cref="NullPolicyAttribute"/>: the type's, and the member's own.
-/// It costs one NULL test per covered member per row.
+/// It costs one NULL test per row.
 /// A pair or a converter of a <see cref="RowMap{T}"/> that names the member overrides it in that map, as it does a member's policy.
 /// A converter whose column type is a reference type (<see cref="string"/>) is not called for a NULL; the member then follows the NULL rules and the type's policy.
 /// </para>
@@ -129,7 +129,7 @@ public sealed class NullPolicyAttribute(NullAction action) : Attribute
 /// <seealso cref="NullPolicyAttribute"/>
 /// <seealso cref="NullAction"/>
 /// <param name="value">The value a NULL gives the member: <see langword="null"/>, a string, a bool, a char, a number or an enum value.</param>
-[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
 public sealed class NullValueAttribute(object? value) : Attribute
 {
 	/// <summary>
