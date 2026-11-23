@@ -112,7 +112,7 @@ public sealed class S4Result(S4Counters counters, long totalTicks, long allocByt
 /// <summary>The hash the rows are checked with.</summary>
 static class S4Hash
 {
-	internal static ulong Fnv(ulong hash, ReadOnlySpan<byte> data)
+	public static ulong Fnv(ulong hash, ReadOnlySpan<byte> data)
 	{
 		foreach (byte b in data)
 		{

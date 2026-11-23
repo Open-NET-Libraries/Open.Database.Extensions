@@ -32,36 +32,8 @@ public static class RowMapFamilyTests
 		public ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReaderAsync(transform, behavior);
 	}
 
-	static object?[][] Rows => [RowMapTests.Row(RowMapTests.Renamed, 1), RowMapTests.Row(RowMapTests.Renamed, 2)];
-
 	// ---- receivers ----
-	static IDataReader Reader() => FakeReader.Create(RowMapTests.Renamed, Rows);
 	static FakeExecuteReader Exec() => RowMapTests.Cmd(RowMapTests.Renamed, 2);
-
-	static IDbCommand Command()
-	{
-		var command = Substitute.For<IDbCommand>();
-		var connection = Substitute.For<IDbConnection>();
-		command.Connection.Returns(connection);
-		connection.State.Returns(ConnectionState.Open);
-		command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => FakeReader.Create(RowMapTests.Renamed, Rows));
-		return command;
-	}
-
-	// ---- draining what each family produces ----
-	static async Task<List<Item>> Receive(IReceivableSourceBlock<Item> block, int count = 2)
-	{
-		var items = new List<Item>();
-		for (int i = 0; i < count; i++) items.Add(await block.ReceiveAsync(TimeSpan.FromSeconds(10)));
-		return items;
-	}
-
-	static async Task<List<Item>> ToBlock(Func<BufferBlock<Item>, ValueTask<long>> run)
-	{
-		var block = new BufferBlock<Item>();
-		Assert.Equal(2, await run(block));
-		return await Receive(block);
-	}
 
 	static Task<List<Item>> Now(IEnumerable<Item> items) => Task.FromResult(items.ToList());
 

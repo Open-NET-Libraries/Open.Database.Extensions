@@ -304,18 +304,7 @@ public static class UnmappableTypeTests
 
 	// ---- T14: an unmappable T throws at the call, with an EMPTY result, on each family of entry points ----
 
-	static IDataReader Reader() => FakeReader.Create(["Id"]);
 	static FakeExecuteReader Exec() => new(["Id"]);
-
-	static IDbCommand Command()
-	{
-		var command = Substitute.For<IDbCommand>();
-		var connection = Substitute.For<IDbConnection>();
-		command.Connection.Returns(connection);
-		connection.State.Returns(ConnectionState.Open);
-		command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => FakeReader.Create(["Id"]));
-		return command;
-	}
 
 	// A call that returns a reader reports a failure through its Completion, as documented; a call that returns a task reports it on the task.
 	// The call itself, when it fails before it returns anything.
@@ -324,9 +313,6 @@ public static class UnmappableTypeTests
 		call();
 		return Task.CompletedTask;
 	}
-
-	static async Task Done<T>(IReceivableSourceBlock<T> block) => await block.Completion;
-	static async Task Done<T>(ValueTask<T> task) => await task;
 
 	// name -> the call, for the model type T, over an empty result: one list serves every type-shape error, each family of entry points once.
 	// (The calls are written for any T, so a type that cannot be mapped for another reason meets the same entry points: see the required field below.)
@@ -400,36 +386,11 @@ public static class UnmappableTypeTests
 	// What was done to a receiver: commands executed, connections opened, readers read. Zero is "nothing".
 	sealed class Touched { public Func<int> Count { get; set; } = static () => 0; }
 
-	static int CountCalls(object substitute, Func<string, bool> named) => substitute.ReceivedCalls().Count(c => named(c.GetMethodInfo().Name));
-
-	static IDbCommand Command(Touched touched)
-	{
-		var command = Substitute.For<IDbCommand>();
-		var connection = Substitute.For<IDbConnection>();
-		command.Connection.Returns(connection);
-		connection.State.Returns(ConnectionState.Closed); // An execution would have to open it.
-		command.ExecuteReader(Arg.Any<CommandBehavior>()).Returns(_ => FakeReader.Create(["Id"]));
-
-		int Total() => CountCalls(command, n => n.StartsWith("Execute", StringComparison.Ordinal)) + CountCalls(connection, n => n.StartsWith("Open", StringComparison.Ordinal));
-		int baseline = Total();
-		touched.Count = () => Total() - baseline;
-		return command;
-	}
-
 	static FakeExecuteReader Exec(Touched touched)
 	{
 		FakeExecuteReader command = Exec();
 		touched.Count = () => command.ExecuteCount;
 		return command;
-	}
-
-	static bool ReadsOrCloses(string name) => name is "Read" or "ReadAsync" or "NextResult" or "NextResultAsync" or "GetSchemaTable" or "GetSchemaTableAsync" or "Close" or "Dispose" or "DisposeAsync";
-
-	static IDataReader Reader(Touched touched)
-	{
-		IDataReader reader = Reader();
-		touched.Count = () => CountCalls(reader, ReadsOrCloses);
-		return reader;
 	}
 
 	// A closed connection that hands out one fake command, for the ExpressiveDbCommand.
@@ -450,8 +411,6 @@ public static class UnmappableTypeTests
 		protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
 		protected override DbCommand CreateDbCommand() => Created = new FakeDbCommand(this, () => FakeReader.CreateDb(["Id"]));
 	}
-
-	static BufferBlock<T> Target<T>() => new();
 
 	// name -> the call, for the model type T: over a command that must never be executed or a reader that must never be read.
 	static Dictionary<string, Func<Touched, Task>> BeforeExecutionOf<T>() => new()
