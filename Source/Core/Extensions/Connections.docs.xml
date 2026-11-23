@@ -209,6 +209,7 @@
 
   <members name="using-disposed">
     <remarks>
+      The connection is not opened by this method.
       Useful for single-line operations.
       Exceptions thrown by the action propagate after the connection has been
       disposed.
@@ -217,6 +218,7 @@
 
   <members name="using-given-back">
     <remarks>
+      The connection is not opened by this method.
       Useful for single-line operations.
       Exceptions thrown by the action propagate after the connection has been
       given back to the pool.

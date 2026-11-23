@@ -4,7 +4,7 @@ namespace Open.Database.Extensions;
 
 /// <summary>
 /// One set of real parameter names (a procedure's, or the <c>@name</c> markers of a SQL text) and what is worked out from it:
-/// the names without their <c>@</c>, once, and the real name each argument expression matched, so a repeat execution allocates nothing to match.
+/// the names without their <c>@</c>, once, and the real name each argument expression matched, so a repeat execution does no matching.
 /// </summary>
 sealed class NameSet
 {
@@ -13,13 +13,11 @@ sealed class NameSet
 	/// matches nothing), by the expression as the caller wrote it.
 	/// </summary>
 	/// <remarks>
-	/// Bounded by the call sites and member names that run against this set;
-	/// the set is replaced when its procedure's names expire (5 minutes;
-	/// 15 seconds for a "not known" answer) or are read again, so no limit is
-	/// needed.
+	/// The set is replaced when its procedure's names expire or are read again.
 	/// The shared "not known" set (no names) is never asked to match: callers
 	/// check that a set has names first.
 	/// </remarks>
+	// Bounded by the call sites and member names that run against this set, so no limit is needed.
 	readonly Dictionary<string, string?> _matches = new(StringComparer.Ordinal);
 
 	/// <summary>Initializes a new instance from the names as the provider reported them (a leading <c>@</c> is fine); never the default array, but may be empty (a text without markers).</summary>
@@ -35,9 +33,11 @@ sealed class NameSet
 
 	/// <summary>
 	/// Whether this set is the answer of a second look: the names were read again because the set before did not fit.
-	/// A member of an <c>AddParams</c> object that such a set does not declare is dropped without another read (the procedure was just asked about it),
-	/// so a member that the procedure never takes costs one extra read when the names are read, not one in every run.
 	/// </summary>
+	/// <remarks>
+	/// A member of an <c>AddParams</c> object that such a set does not declare is dropped without another read.
+	/// </remarks>
+	// The procedure was just asked about it, so a member it never takes costs one extra read, not one per run.
 	internal bool Rechecked { get; }
 
 	/// <summary>The names as the provider reported them.</summary>
@@ -46,12 +46,10 @@ sealed class NameSet
 	/// <summary>The same names without a leading <c>@</c>.</summary>
 	internal ImmutableArray<string> BareNames { get; }
 
-	/// <summary>
-	/// One name of the set, with its place in it, held once per set: a call that stores it allocates nothing, and a call that binds it
-	/// knows its place without looking the name up.
-	/// </summary>
+	/// <summary>One name of the set, with its place in it.</summary>
 	/// <param name="real">The name as the set holds it, with its <c>@</c> when it has one.</param>
 	/// <param name="index">The place of the name in <see cref="Names"/>.</param>
+	// Held once per set: a call that stores it allocates nothing, and a call that binds it knows its place without looking the name up.
 	internal sealed class Entry(string real, int index)
 	{
 		/// <summary>Gets the name as the set holds it.</summary>
@@ -92,13 +90,13 @@ sealed class NameSet
 	/// Finds a name of the set, written with or without its <c>@</c> and in any case.
 	/// </summary>
 	/// <remarks>
-	/// Allocates nothing once the set has been asked.
 	/// When two names differ only in case or in the <c>@</c> the first is the one found.
 	/// </remarks>
 	/// <param name="name">The name to look for.</param>
 	/// <returns>The entry, or <see langword="null"/> when the set has no such name.</returns>
 	public Entry? Find(string name)
 	{
+		// Allocates nothing once the set has been asked.
 		Dictionary<string, Entry> entries = Volatile.Read(ref _entries) ?? BuildEntries();
 		return entries.TryGetValue(name, out Entry? found) ? found : null;
 	}
@@ -117,9 +115,11 @@ sealed class NameSet
 	}
 
 	/// <summary>
-	/// The real name that the argument expression stands for, or <see langword="null"/> when it matches none. The answer is remembered, so the next call with the same expression does no matching.
-	/// An ambiguity throws (see <see cref="ParameterNames.MatchBare"/>) and is not remembered, so it throws on every call.
+	/// The real name that the argument expression stands for, or <see langword="null"/> when it matches none.
 	/// </summary>
+	/// <remarks>
+	/// The answer is remembered. An ambiguity throws (see <see cref="ParameterNames.MatchBare"/>) and is not remembered, so it throws on every call.
+	/// </remarks>
 	/// <param name="expression">The text of the argument, or the name of a member of an <c>AddParams</c> object.</param>
 	/// <param name="procedure">The procedure's name or the command text, for the message of an ambiguity.</param>
 	/// <returns>The real name, or <see langword="null"/> when the expression matches none.</returns>

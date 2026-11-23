@@ -1,7 +1,7 @@
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
-/// Where the producer hands its chunks.
+/// Receives the chunks that a producer hands over.
 /// </summary>
 /// <typeparam name="T">The type of the rows in a chunk.</typeparam>
 /// <remarks>

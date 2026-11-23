@@ -5,7 +5,7 @@ namespace Open.Database.Extensions;
 /// <summary>
 /// The public instance properties and fields of <typeparamref name="T"/> and a compiled getter for each, built once per type, for <c>AddParams(object)</c>.
 /// </summary>
-/// <remarks>One immutable copy per type, like the tables of <c>RowMap&lt;T&gt;</c>: a getter for a type is the same for every command, so there is nothing to key or expire.</remarks>
+/// <typeparam name="T">The type whose members are read.</typeparam>
 static class ParamSource<T>
 {
 	/// <summary>The names of the members.</summary>
@@ -15,6 +15,7 @@ static class ParamSource<T>
 	/// <summary>The type of each member, in the order of <see cref="Names"/>.</summary>
 	internal static readonly Type[] Types;
 
+	// One copy per type: every command gets the same getters, so nothing is keyed or expired.
 	static ParamSource()
 	{
 		var names = new List<string>();

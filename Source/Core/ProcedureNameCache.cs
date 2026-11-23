@@ -3,11 +3,12 @@ using System.Diagnostics;
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// The server, the database and the procedure a set of names belongs to. A small struct compared part by part, so looking a procedure up builds no string.
+/// The server, the database and the procedure a set of names belongs to.
 /// </summary>
 /// <remarks>
 /// Each part is compared ignoring case. A part that is <see langword="null"/> is the empty string.
 /// </remarks>
+// A small struct compared part by part, so looking a procedure up builds no string.
 readonly struct ProcedureKey : IEquatable<ProcedureKey>
 {
 	/// <summary>Initializes a new instance.</summary>
@@ -39,11 +40,9 @@ readonly struct ProcedureKey : IEquatable<ProcedureKey>
 	public override bool Equals(object? obj) => obj is ProcedureKey other && Equals(other);
 
 	/// <inheritdoc />
-	/// <remarks>
-	/// <c>System.HashCode</c> is not in netstandard2.0, so the hash is combined by hand.
-	/// </remarks>
 	public override int GetHashCode()
 	{
+		// System.HashCode is not in netstandard2.0, so the hash is combined by hand.
 		StringComparer comparer = StringComparer.OrdinalIgnoreCase;
 		unchecked
 		{
@@ -56,35 +55,29 @@ readonly struct ProcedureKey : IEquatable<ProcedureKey>
 }
 
 /// <summary>
-/// Remembers the parameter names of stored procedures, and what is worked out from them, so a command with derived parameter names asks the database once, not on every execution.
+/// Remembers the parameter names of stored procedures, and what is worked out from them, so a command with derived parameter names does not ask the database on every execution.
 /// </summary>
 /// <remarks>
 /// An entry belongs to the object commands take their connections from (the connection factory, the pool, or the bare connection), held weakly,
 /// so the application's own objects decide how long names are remembered and nothing here keeps anything alive.
 /// An entry is a <see cref="NameSet"/>: the names, and the real name each argument expression has matched so far, so a repeat execution matches nothing again.
-/// Names expire so that a procedure whose parameters change is read again (the matches go with them), and one object remembers at most 1024 procedures.
+/// Names expire so that a procedure whose parameters change is read again (the matches go with them), and one object remembers a limited number of procedures.
 /// An empty answer ("not known": an unreadable procedure, or one that declares nothing) is remembered too, as an entry with no names and for a short while only
-/// (<see cref="UnknownLifetimeTicks"/>), and it replaces any older entry of that procedure, so a list the procedure has outgrown is not served on.
+/// (<see cref="UnknownLifetimeTicks"/>), and it replaces any older entry of that procedure.
 /// </remarks>
 static class ProcedureNameCache
 {
-	/// <summary>
-	/// How long the names of a procedure are trusted, in stopwatch ticks (5 minutes).
-	/// </summary>
+	/// <summary>How long the names of a procedure are trusted, in stopwatch ticks.</summary>
+	// 5 minutes.
 	internal static readonly long LifetimeTicks = 5 * 60 * Stopwatch.Frequency;
 
 	/// <summary>
-	/// How long "not known" is trusted, in stopwatch ticks: a twentieth of
-	/// <see cref="LifetimeTicks"/> (15 seconds).
+	/// How long "not known" is trusted, in stopwatch ticks: much shorter than
+	/// <see cref="LifetimeTicks"/>.
 	/// </summary>
-	/// <remarks>
-	/// Without it a procedure the login cannot read is looked up on every run,
-	/// which is one extra schema query per execute while the connection is
-	/// open; a long memory would hide a procedure that is created, granted or
-	/// changed.
-	/// Fifteen seconds takes that cost down to one lookup in fifteen seconds,
-	/// and still shows the procedure soon.
-	/// </remarks>
+	// 15 seconds (a twentieth of LifetimeTicks). Without a short memory, a procedure the login cannot read is looked up on every run,
+	// which is one extra schema query per execute while the connection is open; a long memory would hide a procedure that is created,
+	// granted or changed. A short one takes that cost down to one lookup per period and still shows the procedure soon.
 	internal static readonly long UnknownLifetimeTicks = LifetimeTicks / 20;
 
 	/// <summary>
@@ -178,6 +171,7 @@ static class ProcedureNameCache
 	/// <summary>Remembers that the names of the procedure are not known, for a short while, in place of any older entry.</summary>
 	/// <param name="source">The object commands take their connections from.</param>
 	/// <param name="key">The server, database and procedure.</param>
+	// It replaces any older entry, so a list the procedure has outgrown is not served on.
 	internal static void SetUnknown(object source, ProcedureKey key)
 		=> Store(source, key, Unknown, UnknownLifetimeTicks);
 
@@ -200,15 +194,11 @@ static class ProcedureNameCache
 	/// <summary>
 	/// Makes room for another procedure.
 	/// </summary>
-	/// <remarks>
-	/// An expired entry is dropped when it is read again, so a source used
-	/// with a stream of different procedures would keep every one of them.
-	/// At the limit the expired entries go; if every entry is still fresh, they
-	/// all go and are read again when needed (as the row-map layouts do).
-	/// </remarks>
 	/// <param name="byProcedure">The entries of the source.</param>
 	static void Trim(Dictionary<ProcedureKey, Entry> byProcedure)
 	{
+		// An expired entry is dropped when it is read again, so a source used with a stream of different procedures would keep every one of them.
+		// At the limit the expired entries go; if every entry is still fresh, they all go and are read again when needed (as the row-map layouts do).
 		long now = Stopwatch.GetTimestamp();
 		List<ProcedureKey> expired = [];
 		foreach (KeyValuePair<ProcedureKey, Entry> pair in byProcedure)

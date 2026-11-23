@@ -5,10 +5,9 @@ namespace Open.Database.Extensions;
 /// value cannot tell the provider (a <see langword="null"/> carries no type).
 /// </summary>
 /// <remarks>
-/// The same choices Dapper makes.
-/// <see langword="null"/> means no choice: the provider infers as it always
-/// did.
+/// <see langword="null"/> means no choice: the provider infers the type.
 /// </remarks>
+// The same choices Dapper makes.
 static class ClrDbTypes
 {
 	/// <summary>Gets the database type a value of a CLR type is sent as.</summary>

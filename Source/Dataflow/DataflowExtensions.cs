@@ -1,7 +1,7 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// Rows from a mapped query into a Dataflow block.
+/// Extensions that read the rows of a mapped query into a Dataflow block.
 /// </summary>
 public static partial class DataflowExtensions
 {
@@ -24,9 +24,7 @@ public static partial class DataflowExtensions
 	/// A faulted block drops the rows it holds that were not received yet.
 	/// </para>
 	/// <para>
-	/// To control how the block runs (its task scheduler, a bound, its name),
-	/// pass <see cref="DataflowBlockOptions"/>;
-	/// to put the rows into a pipeline you built, use
+	/// To put the rows into a pipeline you built, use
 	/// <see cref="ToTargetBlock{T}(IMappedQuery{T}, ITargetBlock{T}, CancellationToken)"/>.
 	/// </para>
 	/// </remarks>
@@ -36,6 +34,7 @@ public static partial class DataflowExtensions
 	/// <returns>The new block.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
 	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> is already canceled.</exception>
+	/// <seealso cref="AsSourceBlock{T}(IMappedQuery{T}, DataflowBlockOptions, CancellationToken)"/>
 	public static IReceivableSourceBlock<T> AsSourceBlock<T>(
 		this IMappedQuery<T> source,
 		CancellationToken cancellationToken = default)
@@ -131,8 +130,7 @@ public static partial class DataflowExtensions
 	/// the read ends. Each row is sent with <c>SendAsync</c>, which waits
 	/// while a bounded block is full, so no row is dropped; the rows wait in
 	/// an internal queue meanwhile, so your block does not limit memory.
-	/// A block has no way to ask for room: only a block that is already
-	/// finished is known before the command runs.
+	/// A block that is already finished stops the pass before the command runs.
 	/// When the block declines a row for good (completed or faulted), the
 	/// pass stops without an exception and returns the rows accepted so far.
 	/// </para>
@@ -206,11 +204,14 @@ public static partial class DataflowExtensions
 	/// you own, leaving the block open.
 	/// </summary>
 	/// <remarks>
-	/// Pulls <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>:
-	/// while the block is full, the reader and the connection stay open.
-	/// See that member for when to use it and what <paramref name="stallTimeout"/> does.
-	/// Otherwise it behaves as
-	/// <see cref="ToTargetBlock{T}(IMappedQuery{T}, ITargetBlock{T}, CancellationToken)"/>.
+	/// <para>
+	/// Pulls <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>: the reader and the connection are held for each row,
+	/// and while the block is full they stay held until it takes the row or <paramref name="stallTimeout"/> expires;
+	/// with <see cref="Timeout.InfiniteTimeSpan"/> nothing ends that wait.
+	/// To close the connection as soon as the rows are read, use
+	/// <see cref="ToTargetBlock{T}(IMappedQuery{T}, ITargetBlock{T}, CancellationToken)"/>, which this otherwise matches.
+	/// See <c>Stream</c> for when to use this and what <paramref name="stallTimeout"/> does.
+	/// </para>
 	/// </remarks>
 	/// <typeparam name="T">The type of each row.</typeparam>
 	/// <param name="source">The mapped query to read.</param>
@@ -243,11 +244,15 @@ public static partial class DataflowExtensions
 	/// <paramref name="complete"/> is <see langword="true"/>.
 	/// </summary>
 	/// <remarks>
-	/// Pulls <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>:
-	/// while the block is full, the reader and the connection stay open.
-	/// See that member for when to use it and what <paramref name="stallTimeout"/> does.
-	/// <paramref name="complete"/> works as for
+	/// <para>
+	/// Pulls <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>: the reader and the connection are held for each row,
+	/// and while the block is full they stay held until it takes the row or <paramref name="stallTimeout"/> expires;
+	/// with <see cref="Timeout.InfiniteTimeSpan"/> nothing ends that wait.
+	/// To close the connection as soon as the rows are read, use
 	/// <see cref="ToTargetBlock{T}(IMappedQuery{T}, ITargetBlock{T}, bool, CancellationToken)"/>.
+	/// See <c>Stream</c> for when to use this and what <paramref name="stallTimeout"/> does.
+	/// <paramref name="complete"/> works as for that member.
+	/// </para>
 	/// </remarks>
 	/// <typeparam name="T">The type of each row.</typeparam>
 	/// <param name="source">The mapped query to read.</param>

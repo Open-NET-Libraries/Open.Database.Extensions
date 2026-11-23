@@ -2,14 +2,18 @@ namespace Open.Database.Extensions.Synchronous;
 
 /// <summary>
 /// Blocking calls on a command or a query definition that has a command
-/// (<c>Command</c>, <c>StoredProcedure</c>, <c>Using(...)</c>): they hold the calling thread until the work is done.
-/// Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.
+/// (<c>Command</c>, <c>StoredProcedure</c>, <c>Using(...)</c>), which hold the calling thread until the work is done.
 /// </summary>
+/// <remarks>
+/// Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.
+/// A command that does not support blocking calls throws <see cref="NotSupportedException"/>; use the async call.
+/// </remarks>
 public static class SyncExpressiveExtensions
 {
 	/// <summary>
 	/// Executes the command and passes it to the handler.
 	/// </summary>
+	/// <typeparam name="TCommand">The type of command.</typeparam>
 	/// <param name="command">The command to execute.</param>
 	/// <param name="action">The function that uses the command.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>

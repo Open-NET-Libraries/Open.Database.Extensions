@@ -9,12 +9,12 @@ namespace Open.Database.Extensions;
 /// <remarks>
 /// A derivable expression is a chain of plain member accesses: <c>startDate</c>, <c>filter.AuthorId</c>, <c>post.Author.Id</c>,
 /// <c>this.Name</c>, <c>maybe?.X</c>, <c>maybe!.X</c>, <c>@class</c> (properties and fields look the same), with optional outer parentheses.
-/// Calls, indexers, operators, casts, literals and <c>nameof</c> are not derivable: a wrong name that silently binds is worse than an error that says to pass the name.
+/// Calls, indexers, operators, casts, literals and <c>nameof</c> are not derivable.
 /// A chain gives candidates, most specific first: <c>post.Author.Id</c> tries <c>postAuthorId</c>, <c>AuthorId</c>, then <c>Id</c>.
 /// A last member that carries a field prefix (<c>m_author</c>, <c>s_author</c>, <c>_author</c>) also offers its name without the prefix, right after the name as written.
-/// A candidate is matched to the real parameter names in four tiers, each candidate in its turn: exact, ignoring case, ignoring case and underscores, and,
-/// failing those, ignoring case and underscores after removing one common parameter prefix from the real name (<c>p_author</c>, <c>pAuthor</c>, <c>in_author</c>, <c>i_author</c>, <c>prm_author</c>, <c>par_author</c>, <c>v_author</c>).
 /// </remarks>
+// A wrong name that silently binds is worse than an error that says to pass the name, so only plain member chains are derived.
+// A candidate is matched to the real parameter names in four tiers, each candidate in its turn (see MatchBare).
 static class ParameterNames
 {
 	/// <summary>
@@ -51,13 +51,10 @@ static class ParameterNames
 			public NameSet.Entry? Entry { get; } = entry;
 		}
 
-		/// <summary>
-		/// Gets or sets the last resolution of this expression, so a repeat in the same set of names reads one field and takes no lock.
-		/// </summary>
-		/// <remarks>
-		/// Every call site that writes the same text shares the expression, and its calls usually run against one set of names.
-		/// A thread that loses a race only makes one more resolution.
-		/// </remarks>
+		/// <summary>Gets or sets the last resolution of this expression.</summary>
+		// A repeat in the same set of names reads one field and takes no lock.
+		// Every call site that writes the same text shares the expression, and its calls usually run against one set of names.
+		// A thread that loses a race only makes one more resolution.
 		public Resolution? Last
 		{
 			get => Volatile.Read(ref field);
@@ -68,12 +65,9 @@ static class ParameterNames
 		/// The last real name this expression resolved to in a SQL text, so a
 		/// repeat scan hands back the same string.
 		/// </summary>
-		/// <remarks>
-		/// The names are almost always the same.
-		/// It belongs to the expression, which the call site holds, not to any
-		/// text.
-		/// One slot; a thread that loses a race only makes one more string.
-		/// </remarks>
+		// The names are almost always the same.
+		// It belongs to the expression, which the call site holds, not to any text.
+		// One slot; a thread that loses a race only makes one more string.
 		string? _real;
 
 		/// <summary>Gets the string for a marker found by a scan: the one remembered when it is the same characters, else a new one, which is remembered.</summary>
@@ -92,11 +86,10 @@ static class ParameterNames
 	/// The facts of the derivable expressions, by the expression string itself.
 	/// </summary>
 	/// <remarks>
-	/// The text of an argument comes from <c>[CallerArgumentExpression]</c>, a
-	/// literal at the call site, so it is the same object on every call.
 	/// An entry goes when its string is released.
 	/// A text that is not derivable is not stored.
 	/// </remarks>
+	// The text of an argument comes from [CallerArgumentExpression], a literal at the call site, so it is the same object on every call.
 	static readonly ConditionalWeakTable<string, DerivedExpression> Described = new();
 
 	/// <summary>Gets the last member and the candidates of the expression, remembered on the string.</summary>
@@ -109,9 +102,10 @@ static class ParameterNames
 		return IsDerivable(expression) ? Described.GetValue(expression, static e => new DerivedExpression(e, LastMember(e), Candidates(e))) : null;
 	}
 
-	/// <summary>Determines whether the expression is a chain of plain member accesses a name can be derived from. Allocates nothing.</summary>
+	/// <summary>Determines whether the expression is a chain of plain member accesses a name can be derived from.</summary>
 	/// <param name="expression">The text of the argument.</param>
 	/// <returns><see langword="true"/> if a name can be derived from the expression; otherwise, <see langword="false"/>.</returns>
+	// Allocates nothing.
 	internal static bool IsDerivable(string? expression) => TryScan(expression, null, out _, out _);
 
 	/// <summary>Gets the last member of a derivable expression as written (<c>AuthorId</c> for <c>filter.AuthorId</c>).</summary>
@@ -125,8 +119,10 @@ static class ParameterNames
 
 	/// <summary>
 	/// Gets the candidate names of a derivable expression, most specific (longest) first, then the final member name as written.
-	/// When that member starts with a field prefix (<c>m_</c>, <c>s_</c> or <c>_</c>, in lower case, followed by a letter or a digit) its name without the prefix follows as the last candidate.
 	/// </summary>
+	/// <remarks>
+	/// When that member starts with a field prefix (<c>m_</c>, <c>s_</c> or <c>_</c>, in lower case, followed by a letter or a digit) its name without the prefix follows as the last candidate.
+	/// </remarks>
 	/// <param name="expression">The text of the argument.</param>
 	/// <returns>The candidates, most specific first.</returns>
 	/// <exception cref="ArgumentException">The expression is not derivable (callers check with <see cref="IsDerivable"/> first).</exception>
@@ -292,13 +288,13 @@ static class ParameterNames
 		return false;
 	}
 
-	/// <summary>
-	/// Finds the real parameter that a derived name stands for. The candidates of the expression are tried most specific first, so <c>post.Author.Id</c> finds <c>@author_id</c> before a bare <c>@id</c>;
-	/// within a candidate the match is exact, else ignoring case, else ignoring case and underscores, the same tiers columns use.
-	/// When a candidate matches in none of those three tiers, a fourth tier compares it with the real name after one common parameter prefix is removed
-	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c> or <c>v_</c> in any case, or a lone lower-case <c>p</c> before an upper-case letter), ignoring case and underscores:
-	/// <c>author</c> finds <c>@p_author</c> and <c>@pAuthor</c>, but <c>ages</c> never finds <c>@pages</c>. The four tiers run inside each candidate's turn.
-	/// </summary>
+	/// <summary>Finds the real parameter that a derived name stands for, trying the candidates most specific first.</summary>
+	/// <remarks>
+	/// For example <c>post.Author.Id</c> finds <c>@author_id</c> before a bare <c>@id</c>.
+	/// Within a candidate the match is exact, else ignoring case, else ignoring case and underscores, else ignoring case and underscores after one common parameter prefix is removed from the real name
+	/// (<c>p_</c>, <c>in_</c>, <c>i_</c>, <c>prm_</c>, <c>par_</c> or <c>v_</c> in any case, or a lone lower-case <c>p</c> before an upper-case letter):
+	/// <c>author</c> finds <c>@p_author</c> and <c>@pAuthor</c>, but <c>ages</c> never finds <c>@pages</c>.
+	/// </remarks>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
 	/// <param name="parameterNames">The real names as the provider reports them (a leading <c>@</c> is allowed).</param>
 	/// <param name="bareNames">The same names without a leading <c>@</c>.</param>
@@ -360,14 +356,11 @@ static class ParameterNames
 	/// <summary>
 	/// Gets the real names without a leading <c>@</c>.
 	/// </summary>
-	/// <remarks>
-	/// A set with none is returned as it is; otherwise one copy holds the bare
-	/// names, and a name without an <c>@</c> is the same string in it.
-	/// </remarks>
 	/// <param name="names">The real names.</param>
 	/// <returns>The names without a leading <c>@</c>.</returns>
 	internal static ImmutableArray<string> BareNames(ImmutableArray<string> names)
 	{
+		// A set with none is returned as it is; otherwise one copy holds the bare names, and a name without an @ is the same string in it.
 		string[]? bare = null;
 		for (int i = 0; i < names.Length; i++)
 		{
@@ -462,13 +455,14 @@ static class ParameterNames
 	}
 
 	/// <summary>
-	/// Finds the marker of a SQL text that the candidates stand for, scanning the text itself: the same answer as <see cref="MatchBare"/> over the tokens of <see cref="SqlTextParameters.Parse"/>
-	/// (the same candidates in the same order, the same four tiers, a marker repeated in another case being one name, as first written), and allocates nothing.
+	/// Finds the marker of a SQL text that the candidates stand for, scanning the text itself.
 	/// </summary>
 	/// <param name="text">The SQL text.</param>
 	/// <param name="candidates">The candidates from <see cref="Candidates"/>.</param>
 	/// <param name="real">The marker as the text spells it, with its <c>@</c>, when <see cref="ScanResult.Found"/>.</param>
 	/// <returns>How the scan ended.</returns>
+	// The same answer as MatchBare over the tokens of SqlTextParameters.Parse (the same candidates in the same order,
+	// the same four tiers, a marker repeated in another case being one name, as first written), and allocates nothing.
 	internal static ScanResult Scan(string text, ImmutableArray<string> candidates, out ReadOnlySpan<char> real)
 	{
 		foreach (string candidate in candidates)

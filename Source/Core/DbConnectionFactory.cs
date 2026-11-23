@@ -1,9 +1,10 @@
 ﻿namespace Open.Database.Extensions;
 
 /// <summary>
-/// A connection factory implementation backed by a factory function. Use <see cref="Create{TConnection}(Func{TConnection})"/> or the implicit conversion from <see cref="Func{TResult}"/> to build one.
+/// A connection factory implementation backed by a factory function.
 /// </summary>
 /// <remarks>
+/// Build one with <see cref="Create{TConnection}(Func{TConnection})"/> or the implicit conversion from a <c>Func&lt;IDbConnection&gt;</c>.
 /// Every call to <see cref="Create()"/> invokes the function and returns whatever it returns; the factory itself holds no connections and keeps no state. The caller of <see cref="Create()"/> owns the connection and disposes it.
 /// </remarks>
 /// <seealso cref="DbConnectionFactory{TConnection}"/>

@@ -1,7 +1,7 @@
 ﻿namespace Open.Database.Extensions;
 
 /// <summary>
-/// Core non-DB-specific extensions for acquiring and operating on different connection factories.
+/// Extension methods that create an <see cref="ExpressiveSqlCommand"/> or a <see cref="SqlCommand"/> from a SQL Server connection, transaction, connection factory, connection pool, or factory function.
 /// </summary>
 [Obsolete(SqlClientObsolete._message)]
 public static partial class SqlConnectionExtensions

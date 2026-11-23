@@ -36,7 +36,7 @@ public static partial class CommandExtensions
 	/// </summary>
 	/// <remarks>
 	/// A command with no connection gets the empty scope,
-	/// and the command reports the missing connection itself when it is executed, as it always has.
+	/// and the command reports the missing connection itself when it is executed.
 	/// </remarks>
 	/// <param name="command">The command whose connection to scope.</param>
 	/// <returns>The scope of the connection.</returns>
@@ -56,19 +56,10 @@ public static partial class CommandExtensions
 	/// Opens the command's connection if it is closed and executes the reader in one step.
 	/// </summary>
 	/// <remarks>
-	/// <para>
 	/// <see cref="CommandBehavior.CloseConnection"/> closes the connection when the reader is disposed.
 	/// When the provider fails to execute there is no reader,
 	/// so the connection that was opened here is closed here (never disposed).
 	/// A connection the caller had opened is left as it was.
-	/// A failure to close is ignored so that it cannot replace the exception being reported.
-	/// </para>
-	/// <para>
-	/// The two generic helpers are shared by the other packages
-	/// (SqlClient passes <c>SqlCommand</c> and <c>SqlDataReader</c> and keeps its exact reader type).
-	/// The execute delegate is passed in rather than a virtual call
-	/// so that it can be a static lambda: no closure, no cast and no continuation.
-	/// </para>
 	/// </remarks>
 	/// <typeparam name="TCommand">The type of the command.</typeparam>
 	/// <typeparam name="TReader">The type of the reader.</typeparam>
@@ -77,6 +68,8 @@ public static partial class CommandExtensions
 	/// <param name="execute">The function that executes the reader.</param>
 	/// <returns>The reader.</returns>
 	// The execute delegate is passed in rather than a virtual call so that it can be a static lambda: no closure, no cast and no continuation.
+	// The two generic helpers are shared by the other packages (SqlClient passes its own command and reader types).
+	// A failure to close is ignored so that it cannot replace the exception being reported.
 	internal static TReader OpenAndExecuteReader<TCommand, TReader>(TCommand command, CommandBehavior behavior, Func<TCommand, CommandBehavior, TReader> execute)
 		where TCommand : IDbCommand
 	{
@@ -121,9 +114,9 @@ public static partial class CommandExtensions
 
 	/// <summary>
 	/// Closes, never disposes, the command's connection.
-	/// A failure to close is ignored, so that it cannot replace the exception being reported.
 	/// </summary>
 	/// <param name="command">The command whose connection to close.</param>
+	// A failure to close is ignored, so that it cannot replace the exception being reported.
 	internal static void CloseOpened(IDbCommand command)
 	{
 		try
@@ -173,7 +166,7 @@ public static partial class CommandExtensions
 	/// otherwise it calls <see cref="IDbCommand.ExecuteReader(CommandBehavior)"/>.
 	/// </summary>
 	/// <remarks>
-	/// Unlike the other members, this one does not open the connection:
+	/// This member does not open the connection:
 	/// it must already be open, and the caller owns and disposes the reader.
 	/// </remarks>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='command']/*" />

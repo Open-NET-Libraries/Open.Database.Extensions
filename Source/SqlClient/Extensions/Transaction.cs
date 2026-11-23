@@ -61,7 +61,7 @@ public static partial class SqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <typeparam name="T">The value returned from the action.</typeparam>
 	/// <param name="connection">The connection to transact with.</param>
@@ -84,9 +84,7 @@ public static partial class SqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction before executing the action.
-	/// Commits if there are no exceptions, the 'Commit' value from the action is true, and the optional provided token is not cancelled.
-	/// Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, returns <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <returns>The value of the awaited action.</returns>
 	/// <inheritdoc cref="Synchronous.SyncSqlTransactionExtensions.ExecuteTransactionConditional(SqlConnection, Func{SqlTransaction, bool}, IsolationLevel, CancellationToken)"/>
@@ -107,7 +105,7 @@ public static partial class SqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <returns>The value of the awaited action.</returns>
 	/// <inheritdoc cref="Synchronous.SyncSqlTransactionExtensions.ExecuteTransaction{T}(SqlConnection, Func{SqlTransaction, T}, IsolationLevel, CancellationToken)"/>
@@ -128,7 +126,7 @@ public static partial class SqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the optional provided token is not cancelled.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <inheritdoc cref="Synchronous.SyncSqlTransactionExtensions.ExecuteTransaction(SqlConnection, Action{SqlTransaction}, IsolationLevel, CancellationToken)"/>
 	public static async ValueTask ExecuteTransactionAsync(
@@ -250,7 +248,7 @@ public static partial class SqlTransactionExtensions
 
 	#region No optional params
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <typeparam name="T">The value returned from the action.</typeparam>
 	/// <param name="connection">The connection to transact with.</param>
@@ -266,7 +264,7 @@ public static partial class SqlTransactionExtensions
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, returns <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <returns>The value of the awaited action.</returns>
 	/// <inheritdoc cref="Synchronous.SyncSqlTransactionExtensions.ExecuteTransactionConditional(SqlConnection, Func{SqlTransaction, bool}, IsolationLevel, CancellationToken)"/>
@@ -278,7 +276,7 @@ public static partial class SqlTransactionExtensions
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <returns>The value of the awaited action.</returns>
 	/// <inheritdoc cref="Synchronous.SyncSqlTransactionExtensions.ExecuteTransaction{T}(SqlConnection, Func{SqlTransaction, T}, IsolationLevel, CancellationToken)"/>
@@ -290,7 +288,7 @@ public static partial class SqlTransactionExtensions
 		=> connection.ExecuteTransactionAsync(action, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <inheritdoc cref="Synchronous.SyncSqlTransactionExtensions.ExecuteTransaction(SqlConnection, Action{SqlTransaction}, IsolationLevel, CancellationToken)"/>
 	public static ValueTask ExecuteTransactionAsync(
@@ -304,7 +302,7 @@ public static partial class SqlTransactionExtensions
 
 	#region Optional Token
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <typeparam name="T">The value returned from the action.</typeparam>
 	/// <param name="connection">The connection to transact with.</param>
@@ -320,7 +318,7 @@ public static partial class SqlTransactionExtensions
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the value from the action is true.  Otherwise rolls-back the transaction.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, returns <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <returns>The value of the awaited action.</returns>
 	/// <inheritdoc cref="Synchronous.SyncSqlTransactionExtensions.ExecuteTransactionConditional(SqlConnection, IsolationLevel, Func{SqlTransaction, bool}, CancellationToken)"/>

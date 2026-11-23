@@ -4,9 +4,10 @@ namespace Open.Database.Extensions.Core;
 /// <typeparam name="T">The type of a mapped row.</typeparam>
 internal interface IRowSource<T>
 {
-	/// <summary>Returns the mapper for a <see cref="DbDataReader"/> (virtual calls; the fast path).</summary>
+	/// <summary>Returns the mapper for a <see cref="DbDataReader"/>.</summary>
 	/// <param name="reader">The reader positioned on a result set.</param>
 	/// <returns>The delegate that maps the current row of <paramref name="reader"/>.</returns>
+	// The virtual-call mapper: the fast path.
 	Func<DbDataReader, T> Mapper(DbDataReader reader);
 
 	/// <summary>Returns the mapper for any other <see cref="IDataRecord"/>.</summary>
@@ -15,7 +16,7 @@ internal interface IRowSource<T>
 	Func<IDataRecord, T> Mapper(IDataRecord reader);
 }
 
-/// <summary>Represents a caller-supplied projection (no reflection involved).</summary>
+/// <summary>Represents a caller-supplied projection.</summary>
 /// <typeparam name="T">The type of a mapped row.</typeparam>
 /// <param name="selector">The projection of a record to a row.</param>
 internal sealed class SelectorSource<T>(Func<IDataRecord, T> selector) : IRowSource<T>
@@ -23,14 +24,13 @@ internal sealed class SelectorSource<T>(Func<IDataRecord, T> selector) : IRowSou
 	/// <summary>
 	/// Determines whether <paramref name="obj"/> is a source of an equal projection.
 	/// </summary>
-	/// <remarks>
-	/// The sources are equal when the delegates are: a <see langword="static"/> lambda or a method group is, a capturing lambda is not (each call makes a new one).
-	/// This is for a caller that keys on a query (the memoize seam); it never runs on the path that reads rows.
-	/// </remarks>
 	/// <param name="obj">The object to compare with this source.</param>
 	/// <returns>
 	/// <see langword="true"/> if <paramref name="obj"/> is a <see cref="SelectorSource{T}"/> whose delegate equals this one; otherwise, <see langword="false"/>.
 	/// </returns>
+	// Equal when the delegates are: a static lambda or a method group is, a
+	// capturing lambda is not (each call makes a new one). Used by the memoize
+	// seam only, never on the path that reads rows.
 	public override bool Equals(object? obj) => obj is SelectorSource<T> other && selector.Equals(other.Selector);
 
 	/// <inheritdoc />
@@ -39,11 +39,10 @@ internal sealed class SelectorSource<T>(Func<IDataRecord, T> selector) : IRowSou
 	Func<IDataRecord, T> Selector => selector;
 
 	/// <summary>Returns the projection as the mapper for a <see cref="DbDataReader"/>.</summary>
-	/// <remarks>
-	/// A <c>Func&lt;IDataRecord, T&gt;</c> is a <c>Func&lt;DbDataReader, T&gt;</c> by contravariance: no wrapper delegate is needed.
-	/// </remarks>
 	/// <param name="reader">The reader, which is not used.</param>
 	/// <returns>The projection.</returns>
+	// A Func<IDataRecord, T> is a Func<DbDataReader, T> by contravariance: no
+	// wrapper delegate is needed.
 	public Func<DbDataReader, T> Mapper(DbDataReader reader) => selector;
 	/// <summary>Returns the projection as the mapper for an <see cref="IDataRecord"/>.</summary>
 	/// <param name="reader">The record, which is not used.</param>
@@ -51,8 +50,9 @@ internal sealed class SelectorSource<T>(Func<IDataRecord, T> selector) : IRowSou
 	public Func<IDataRecord, T> Mapper(IDataRecord reader) => selector;
 }
 
-/// <summary>Receives each mapped row. Implemented by structs so the read loops specialize and inline <see cref="Add"/>.</summary>
+/// <summary>Receives each mapped row.</summary>
 /// <typeparam name="T">The type of a mapped row.</typeparam>
+// Implemented by structs, so the read loops specialize and inline Add.
 internal interface IRowSink<in T>
 {
 	/// <summary>Receives one mapped row.</summary>
@@ -63,32 +63,19 @@ internal interface IRowSink<in T>
 /// <summary>
 /// Provides the read loops that turn a positioned reader into results.
 /// </summary>
-/// <remarks>
-/// <para>
-/// The loops call the mapper directly per row:
-/// no iterator, no LINQ, no per-row allocation other than the mapped objects themselves.
-/// Skipped rows are advanced without being mapped; a take limit stops reading as soon as it is satisfied.
-/// What happens to each row is the sink's business, so one loop serves every collection type.
-/// </para>
-/// <para>
-/// Two things hold for every loop here, and they are why the code looks the way it does:
-/// </para>
-/// <list type="bullet">
-/// <item>
-/// <description>
-/// The command has <em>already</em> run when a loop starts: the caller opened the reader (that is what executes the command, and what
-/// a <c>Take(0)</c> is still expected to do). A take of 0 therefore only means "read no rows": the loops return an empty result at once,
-/// without skipping or mapping anything, and the caller disposes the reader (and reads through later result sets) as for any other call.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// A reader that is not a <see cref="DbDataReader"/> (a bare <see cref="IDataReader"/>) takes the <see cref="Stream{T}"/> path:
-/// it has no virtual-call fast path, so one lazy loop reads it, and that loop makes the same take-0 decision, so the result is the same.
-/// </description>
-/// </item>
-/// </list>
-/// </remarks>
+// The loops call the mapper directly per row: no iterator, no LINQ, no per-row
+// allocation other than the mapped objects themselves. Skipped rows are advanced
+// without being mapped; a take limit stops reading as soon as it is satisfied.
+// What happens to each row is the sink's business, so one loop serves every
+// collection type.
+// The command has already run when a loop starts: the caller opened the reader
+// (that is what executes the command, and what a Take(0) is still expected to do).
+// A take of 0 therefore only means "read no rows": the loops return an empty
+// result at once, without skipping or mapping anything, and the caller disposes
+// the reader (and reads through later result sets) as for any other call.
+// A reader that is not a DbDataReader (a bare IDataReader) takes the Stream path:
+// it has no virtual-call fast path, so one lazy loop reads it, and that loop makes
+// the same take-0 decision, so the result is the same.
 internal static class RowReader
 {
 	#region Synchronous
@@ -115,14 +102,17 @@ internal static class RowReader
 		while (db.Read());
 	}
 
-/// <summary>
-/// Reads the rows into a <see cref="List{T}"/>.
-/// </summary>
-/// <remarks>
-/// The two hottest terminals (this one and <see cref="Synchronous.SyncMappedViewExtensions.ToArray{T}(MappedQuery{T})"/>) keep their own loops:
-/// with a tiny per-row projection the extra sink indirection of <c>Fill</c> is measurable (benchmarked),
-/// so the list and the array are written out directly.
-/// </remarks>
+	/// <summary>Reads the rows into a <see cref="List{T}"/>.</summary>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <param name="source">The mapping of the rows.</param>
+	/// <param name="reader">The reader positioned on a result set.</param>
+	/// <param name="skip">The number of rows to skip.</param>
+	/// <param name="take">The number of rows to read; 0 reads none.</param>
+	/// <param name="token">The token that cancels the read; only a reader that is not a <see cref="DbDataReader"/> observes it.</param>
+	/// <returns>The rows, in a new list.</returns>
+	// The two hottest terminals (this one and ToArray) keep their own loops:
+	// the sink indirection of Fill is measurable with a tiny projection
+	// (benchmarked), so the list and the array are written out directly.
 	public static List<T> ToList<T>(IRowSource<T> source, IDataReader reader, int skip, int take, CancellationToken token = default)
 	{
 		if (reader is not DbDataReader db)
@@ -142,26 +132,24 @@ internal static class RowReader
 		return list;
 	}
 
-/// <summary>
-/// Reads the rows into a chain of pooled arrays and makes the result from it: the one sync shape of the collecting terminals.
-/// </summary>
-/// <remarks>
-/// The arrays come from the pool of <paramref name="config"/> (the shared array pool by default).
-/// <paramref name="build"/> makes the result from the chain (the copy happens right after the last row),
-/// and the chain is disposed however the call ends.
-/// <paramref name="config"/> says, among other things, what <see cref="PoolClearing"/> decided for this call.
-/// </remarks>
-/// <typeparam name="T">The type of a mapped row.</typeparam>
-/// <typeparam name="TBuild">The struct that makes the result from the chain.</typeparam>
-/// <typeparam name="TResult">The type of the result.</typeparam>
-/// <param name="source">The mapping of the rows.</param>
-/// <param name="reader">The reader positioned on a result set.</param>
-/// <param name="skip">The number of rows to skip.</param>
-/// <param name="take">The number of rows to read; 0 reads none.</param>
-/// <param name="build">Makes the result from the chain.</param>
-/// <param name="config">The pool and the clearing rule of the chain.</param>
-/// <param name="token">The token that cancels the read.</param>
-/// <returns>The result <paramref name="build"/> made from the rows.</returns>
+	/// <summary>
+	/// Reads the rows into a chain of pooled arrays and makes the result from it right after the last row.
+	/// The chain is disposed however the call ends.
+	/// </summary>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <typeparam name="TBuild">The struct that makes the result from the chain.</typeparam>
+	/// <typeparam name="TResult">The type of the result.</typeparam>
+	/// <param name="source">The mapping of the rows.</param>
+	/// <param name="reader">The reader positioned on a result set.</param>
+	/// <param name="skip">The number of rows to skip.</param>
+	/// <param name="take">The number of rows to read; 0 reads none.</param>
+	/// <param name="build">Makes the result from the chain.</param>
+	/// <param name="config">The pool and the clearing rule of the chain.</param>
+	/// <param name="token">The token that cancels the read; only a reader that is not a <see cref="DbDataReader"/> observes it.</param>
+	/// <returns>The result <paramref name="build"/> made from the rows.</returns>
+	// The one sync shape of the collecting terminals. The arrays come from the
+	// pool of config (the shared array pool by default); config says what
+	// PoolClearing decided for this call.
 	public static TResult Collect<T, TBuild, TResult>(
 		IRowSource<T> source, IDataReader reader, int skip, int take,
 		TBuild build, ChunkConfig<T> config,
@@ -174,20 +162,18 @@ internal static class RowReader
 		return build.Build(chain);
 	}
 
-/// <summary>
-/// Reads the rows into an array.
-/// </summary>
-/// <remarks>
-/// Like <see cref="Synchronous.SyncMappedViewExtensions.ToList{T}(MappedQuery{T})"/>, it keeps its own loop rather than using <c>Fill</c>.
-/// </remarks>
-/// <typeparam name="T">The type of a mapped row.</typeparam>
-/// <param name="source">The mapping of the rows.</param>
-/// <param name="reader">The reader positioned on a result set.</param>
-/// <param name="skip">The number of rows to skip.</param>
-/// <param name="take">The number of rows to read; 0 reads none.</param>
-/// <param name="config">The pool and the clearing rule of the buffer.</param>
-/// <param name="token">The token that cancels the read.</param>
-/// <returns>The rows, in an array that is as long as their count.</returns>
+	/// <summary>
+	/// Reads the rows into an array.
+	/// </summary>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <param name="source">The mapping of the rows.</param>
+	/// <param name="reader">The reader positioned on a result set.</param>
+	/// <param name="skip">The number of rows to skip.</param>
+	/// <param name="take">The number of rows to read; 0 reads none.</param>
+	/// <param name="config">The pool and the clearing rule of the buffer.</param>
+	/// <param name="token">The token that cancels the read; only a reader that is not a <see cref="DbDataReader"/> observes it.</param>
+	/// <returns>The rows, in an array that is as long as their count.</returns>
+	// Keeps its own loop, like ToList, rather than using Fill.
 	public static T[] ToArray<T>(
 		IRowSource<T> source, IDataReader reader, int skip, int take,
 		ChunkConfig<T> config, CancellationToken token = default)
@@ -280,22 +266,22 @@ internal static class RowReader
 		return found;
 	}
 
-/// <summary>
-/// Returns a lazy stream of the mapped rows.
-/// </summary>
-/// <remarks>
-/// The reader must stay open while the stream is enumerated.
-/// With <paramref name="readThrough"/>, once the rows end (including no rows, a take limit or a skip past the end) the later result sets are read through,
-/// so a failure in one is thrown. An enumeration the caller abandons, or whose consumer throws, never reaches that point.
-/// </remarks>
-/// <typeparam name="T">The type of a mapped row.</typeparam>
-/// <param name="source">The mapping of the rows.</param>
-/// <param name="reader">The reader positioned on a result set.</param>
-/// <param name="skip">The number of rows to skip.</param>
-/// <param name="take">The number of rows to read; 0 reads none.</param>
-/// <param name="readThrough"><see langword="true"/> to read through the later result sets once the rows end; otherwise, <see langword="false"/>. The default is <see langword="false"/>.</param>
-/// <param name="token">The token that cancels the read.</param>
-/// <returns>A lazy sequence of the mapped rows.</returns>
+	/// <summary>
+	/// Returns a lazy stream of the mapped rows.
+	/// </summary>
+	/// <remarks>
+	/// The reader must stay open while the stream is enumerated, and an enumeration holds the connection for each row: for a buffered result use <see cref="ToList{T}"/>.
+	/// With <paramref name="readThrough"/>, once the rows end (including no rows, a take limit or a skip past the end) the later result sets are read through,
+	/// so a failure in one is thrown. An enumeration the caller abandons, or whose consumer throws, never reaches that point.
+	/// </remarks>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <param name="source">The mapping of the rows.</param>
+	/// <param name="reader">The reader positioned on a result set.</param>
+	/// <param name="skip">The number of rows to skip.</param>
+	/// <param name="take">The number of rows to read; 0 reads none.</param>
+	/// <param name="readThrough"><see langword="true"/> to read through the later result sets once the rows end; otherwise, <see langword="false"/>. The default is <see langword="false"/>.</param>
+	/// <param name="token">The token that cancels the read.</param>
+	/// <returns>A lazy sequence of the mapped rows.</returns>
 	public static IEnumerable<T> Stream<T>(IRowSource<T> source, IDataReader reader, int skip, int take, bool readThrough = false, CancellationToken token = default)
 	{
 		bool skipped = take != 0;
@@ -387,22 +373,21 @@ internal static class RowReader
 
 	#region Asynchronous
 
-/// <summary>
-/// Reads the rows into a sink.
-/// </summary>
-/// <remarks>
-/// The sink is passed and returned by value because <see langword="ref"/> parameters cannot cross an <see langword="await"/>.
-/// </remarks>
-/// <typeparam name="T">The type of a mapped row.</typeparam>
-/// <typeparam name="TSink">The struct that receives the rows.</typeparam>
-/// <param name="source">The mapping of the rows.</param>
-/// <param name="reader">The reader positioned on a result set.</param>
-/// <param name="skip">The number of rows to skip.</param>
-/// <param name="take">The number of rows to read; 0 reads none.</param>
-/// <param name="useReadAsync">See <see cref="ReadRowAsync"/>.</param>
-/// <param name="sink">The sink that receives the rows.</param>
-/// <param name="cancellationToken">The token that cancels the read.</param>
-/// <returns>A task whose result is the sink, holding the rows.</returns>
+	/// <summary>
+	/// Reads the rows into a sink.
+	/// </summary>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <typeparam name="TSink">The struct that receives the rows.</typeparam>
+	/// <param name="source">The mapping of the rows.</param>
+	/// <param name="reader">The reader positioned on a result set.</param>
+	/// <param name="skip">The number of rows to skip.</param>
+	/// <param name="take">The number of rows to read; 0 reads none.</param>
+	/// <param name="useReadAsync">See <see cref="ReadRowAsync"/>.</param>
+	/// <param name="sink">The sink that receives the rows.</param>
+	/// <param name="cancellationToken">The token that cancels the read.</param>
+	/// <returns>A task whose result is the sink, holding the rows.</returns>
+	// ref parameters cannot cross an await, so the sink is passed and returned
+	// by value.
 	public static async ValueTask<TSink> FillAsync<T, TSink>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, TSink sink, CancellationToken cancellationToken)
 		where TSink : struct, IRowSink<T>
@@ -425,35 +410,26 @@ internal static class RowReader
 		return sink;
 	}
 
-/// <summary>
-/// Reads the rows into a chain of pooled arrays and makes the result from it, for every collecting terminal.
-/// </summary>
-/// <remarks>
-/// <para>
-/// This is one async method for every collecting terminal (<c>ToList</c>, <c>ToArray</c>,
-/// <c>ToHashSet</c>, <c>ToDictionary</c>): the read loop and the build share a single
-/// state machine, so a read that really suspends boxes one machine, not a
-/// wrapper around another.
-/// </para>
-/// <para>
-/// The rows go into a chain of pooled arrays; <paramref name="build"/>
-/// (a struct, so what it carries rides in the machine, not in a delegate
-/// and a state object) makes the result from the chain right after the
-/// last row.
-/// </para>
-/// </remarks>
-/// <typeparam name="T">The type of a mapped row.</typeparam>
-/// <typeparam name="TBuild">The struct that makes the result from the chain.</typeparam>
-/// <typeparam name="TResult">The type of the result.</typeparam>
-/// <param name="source">The mapping of the rows.</param>
-/// <param name="reader">The reader positioned on a result set.</param>
-/// <param name="skip">The number of rows to skip.</param>
-/// <param name="take">The number of rows to read; 0 reads none.</param>
-/// <param name="useReadAsync">See <see cref="ReadRowAsync"/>.</param>
-/// <param name="build">Makes the result from the chain.</param>
-/// <param name="config">The pool and the clearing rule of the chain.</param>
-/// <param name="cancellationToken">The token that cancels the read.</param>
-/// <returns>A task whose result is what <paramref name="build"/> made from the rows.</returns>
+	/// <summary>
+	/// Reads the rows into a chain of pooled arrays and makes the result from it right after the last row, for every collecting terminal.
+	/// </summary>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <typeparam name="TBuild">The struct that makes the result from the chain.</typeparam>
+	/// <typeparam name="TResult">The type of the result.</typeparam>
+	/// <param name="source">The mapping of the rows.</param>
+	/// <param name="reader">The reader positioned on a result set.</param>
+	/// <param name="skip">The number of rows to skip.</param>
+	/// <param name="take">The number of rows to read; 0 reads none.</param>
+	/// <param name="useReadAsync">See <see cref="ReadRowAsync"/>.</param>
+	/// <param name="build">Makes the result from the chain.</param>
+	/// <param name="config">The pool and the clearing rule of the chain.</param>
+	/// <param name="cancellationToken">The token that cancels the read.</param>
+	/// <returns>A task whose result is what <paramref name="build"/> made from the rows.</returns>
+	// One async method for every collecting terminal (ToList, ToArray,
+	// ToHashSet, ToDictionary): the read loop and the build share a single
+	// state machine, so a read that really suspends boxes one machine, not a
+	// wrapper around another. build is a struct, so what it carries rides in
+	// the machine, not in a delegate and a state object.
 	public static async ValueTask<TResult> CollectAsync<T, TBuild, TResult>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync,
 		TBuild build, ChunkConfig<T> config,
@@ -501,22 +477,22 @@ internal static class RowReader
 		return (false, default);
 	}
 
-/// <summary>
-/// Returns a lazy async stream of the mapped rows.
-/// </summary>
-/// <remarks>
-/// The reader must stay open while the stream is enumerated.
-/// With <paramref name="readThrough"/>, once the rows end the later result sets are read through (see <see cref="Stream{T}"/>).
-/// </remarks>
-/// <typeparam name="T">The type of a mapped row.</typeparam>
-/// <param name="source">The mapping of the rows.</param>
-/// <param name="reader">The reader positioned on a result set.</param>
-/// <param name="skip">The number of rows to skip.</param>
-/// <param name="take">The number of rows to read; 0 reads none.</param>
-/// <param name="useReadAsync">See <see cref="ReadRowAsync"/>.</param>
-/// <param name="readThrough"><see langword="true"/> to read through the later result sets once the rows end; otherwise, <see langword="false"/>.</param>
-/// <param name="cancellationToken">The token that cancels the read.</param>
-/// <returns>A lazy asynchronous sequence of the mapped rows.</returns>
+	/// <summary>
+	/// Returns a lazy async stream of the mapped rows.
+	/// </summary>
+	/// <remarks>
+	/// The reader must stay open while the stream is enumerated, and an enumeration holds the connection for each row (with asynchronous reads, for as long as the consumer takes): for a buffered result use <see cref="CollectAsync{T, TBuild, TResult}"/>.
+	/// With <paramref name="readThrough"/>, once the rows end the later result sets are read through (see <see cref="Stream{T}"/>).
+	/// </remarks>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <param name="source">The mapping of the rows.</param>
+	/// <param name="reader">The reader positioned on a result set.</param>
+	/// <param name="skip">The number of rows to skip.</param>
+	/// <param name="take">The number of rows to read; 0 reads none.</param>
+	/// <param name="useReadAsync">See <see cref="ReadRowAsync"/>.</param>
+	/// <param name="readThrough"><see langword="true"/> to read through the later result sets once the rows end; otherwise, <see langword="false"/>.</param>
+	/// <param name="cancellationToken">The token that cancels the read.</param>
+	/// <returns>A lazy asynchronous sequence of the mapped rows.</returns>
 	public static async IAsyncEnumerable<T> StreamAsync<T>(
 		IRowSource<T> source, DbDataReader reader, int skip, int take, bool useReadAsync, bool readThrough,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -597,11 +573,11 @@ internal readonly struct ListSink<T>(List<T> list) : IRowSink<T>
 
 /// <summary>
 /// Makes the result of a collecting terminal from the rows in a chain.
-/// Implemented by structs so the collecting methods are specialized per
-/// result and carry no delegate or state object.
 /// </summary>
 /// <typeparam name="T">The type of a mapped row.</typeparam>
 /// <typeparam name="TResult">The type of the result.</typeparam>
+// Implemented by structs, so each collecting method is specialized per result
+// and carries no delegate or state object.
 internal interface IChainBuild<T, out TResult>
 {
 	TResult Build(ChunkChain<T> chain);
@@ -617,7 +593,8 @@ internal readonly struct ArrayBuild<T> : IChainBuild<T, T[]>
 	public T[] Build(ChunkChain<T> chain) => chain.ToArray();
 }
 
-/// <summary>The array of ToArray, wrapped (not copied) as an immutable array.</summary>
+/// <summary>The array of ToArray, as an immutable array.</summary>
+// Wrapped, not copied, where ImmutableCollectionsMarshal is available.
 internal readonly struct ImmutableArrayBuild<T> : IChainBuild<T, ImmutableArray<T>>
 {
 	public ImmutableArray<T> Build(ChunkChain<T> chain)
@@ -662,22 +639,16 @@ internal readonly struct DictionaryValueBuild<T, TKey, TValue>(
 }
 
 /// <summary>
-/// A pooled, growable buffer so an exact-size array can be produced without the garbage a growing list leaves behind.
+/// A pooled, growable buffer that makes an exact-size array.
 /// </summary>
-/// <remarks>
-/// <para>
-/// The arrays come from the pool of the <see cref="ChunkConfig{T}"/> (the shared array pool by default) and are as long as the pool makes them:
-/// the sink uses all of the array it holds and grows by renting one twice as long.
-/// A row is one array store.
-/// </para>
-/// <para>
-/// <see cref="ChunkConfig{T}.ClearOnReturn"/> is what <see cref="PoolClearing"/> decided:
-/// the rows that were written are cleared before an array goes back, and nothing else
-/// (an array it outgrew is released the same way, since the rows were copied out of it).
-/// </para>
-/// </remarks>
 /// <typeparam name="T">The type of a row.</typeparam>
 /// <param name="config">The pool and the clearing rule of the buffer.</param>
+// The arrays come from the pool of the ChunkConfig (the shared array pool by default)
+// and are as long as the pool makes them: the sink uses all of the array it holds and
+// grows by renting one twice as long. A row is one array store.
+// ChunkConfig.ClearOnReturn is what PoolClearing decided: the rows that were written
+// are cleared before an array goes back, and nothing else (an array it outgrew is
+// released the same way, since the rows were copied out of it).
 internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 {
 	T[]? _items;
@@ -697,14 +668,12 @@ internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 		AddSlow(item);
 	}
 
-/// <summary>
-/// Adds a row to a bigger array: rents it, copies the rows and releases the old array.
-/// </summary>
-/// <remarks>
-/// A rent that fails (or is refused) leaves the sink as it was:
-/// the array is kept only once the rent has succeeded.
-/// </remarks>
-/// <param name="item">The row to add.</param>
+	/// <summary>
+	/// Adds a row to a bigger array: rents it, copies the rows and releases the old array.
+	/// </summary>
+	/// <param name="item">The row to add.</param>
+	// A rent that fails (or is refused) leaves the sink as it was: the array is
+	// kept only once the rent has succeeded.
 	void AddSlow(T item)
 	{
 		T[]? old = _items;

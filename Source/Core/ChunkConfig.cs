@@ -6,22 +6,8 @@ namespace Open.Database.Extensions.Core;
 /// recycle bin.
 /// </summary>
 /// <remarks>
-/// <para>
-/// One immutable object per query shape, not per call: a query is given one
-/// when it is made (the default of the entry point, see Views) or by
-/// <c>UsePool</c>, so no call allocates it.
-/// Every part is provided by whoever builds it: nothing here defaults to a
-/// shared pool, and no terminal chooses one.
-/// A lease holds a reference to it, which is how a release knows its pool.
-/// </para>
-/// <para>
-/// Clearing is ours, and only of the rows that were written: when the
-/// whole array was used the pool does it (<c>Return(clearArray: true)</c>
-/// clears the same slots), otherwise the used part is cleared with a span
-/// and the array is returned without the flag.
-/// Whether that happens where the release happens or in the recycle bin is
-/// decided per chunk, by the bytes it holds (<see cref="DeferFromClearedBytes"/>).
-/// </para>
+/// Made once for each query, not for each call.
+/// Only the rows that were written are cleared.
 /// </remarks>
 /// <typeparam name="T">The type of each row.</typeparam>
 /// <param name="pool">The pool the arrays come from and go back to.</param>
@@ -36,6 +22,18 @@ namespace Open.Database.Extensions.Core;
 /// The bytes of rows (rows written times the size of a row) from which a chunk is
 /// cleared in the recycle bin (see <see cref="DeferFromClearedBytes"/>).
 /// </param>
+// One immutable object per query shape, not per call: a query is given one
+// when it is made (the default of the entry point) or by UsePool, so no call
+// allocates it.
+// Every part is provided by whoever builds it: nothing here defaults to a
+// shared pool, and no terminal chooses one.
+// A lease holds a reference to it, which is how a release knows its pool.
+// Clearing is ours, and only of the rows that were written: when the whole
+// array was used the pool does it (Return(clearArray: true) clears the same
+// slots), otherwise the used part is cleared with a span and the array is
+// returned without the flag.
+// Whether that happens where the release happens or in the recycle bin is
+// decided per chunk, by the bytes it holds (DeferFromClearedBytes).
 internal sealed class ChunkConfig<T>(
 	ArrayPool<T> pool,
 	bool? clearOnReturn,
@@ -44,27 +42,23 @@ internal sealed class ChunkConfig<T>(
 	int deferFromClearedBytes)
 {
 	/// <summary>
-	/// The bytes of rows (rows written times the size of a row: a pointer is 8 on 64-bit)
-	/// from which the rows of a chunk are cleared in the recycle bin instead of
-	/// where the chunk is released, for every kind of row.
+	/// The bytes of rows (rows written times the size of a row) from which the
+	/// rows of a chunk are cleared in the recycle bin instead of where the chunk
+	/// is released.
 	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// Measured (the recycle bin proof, paced so the bin never fills, .NET 10).
-	/// Clearing where the chunk is released costs the releasing thread about 8 to
-	/// 20 ns per KB (<c>int</c> rows: 154 ns at 16 KB, 526 ns at 64 KB, 1.8 microseconds at 256 KB;
-	/// rows of 80 bytes without references: 21 microseconds at 1.3 MB, 123 at 5.2 MB;
-	/// references: 508 ns at 32 KB, 2.0 microseconds at 128 KB, 9.9 at 512 KB).
-	/// Handing a chunk to the bin costs the releasing thread a flat 0.8 to 3 microseconds
-	/// whatever the size, and the bin's thread then pays the clear.
-	/// </para>
-	/// <para>
-	/// The two release costs meet at about 128 KB.
-	/// The rule is to hand off unless clearing in place is
-	/// certainly cheaper, and at 128 KB of references it is a tie.
-	/// Rows that hold no references are included: a large chunk of value rows is cleared in the bin too.
-	/// </para>
-	/// </remarks>
+	// Measured (the recycle bin proof, paced so the bin never fills, .NET 10).
+	// Clearing where the chunk is released costs the releasing thread about 8 to
+	// 20 ns per KB (int rows: 154 ns at 16 KB, 526 ns at 64 KB, 1.8 microseconds
+	// at 256 KB; rows of 80 bytes without references: 21 microseconds at 1.3 MB,
+	// 123 at 5.2 MB; references: 508 ns at 32 KB, 2.0 microseconds at 128 KB,
+	// 9.9 at 512 KB; a pointer is 8 bytes on 64-bit).
+	// Handing a chunk to the bin costs the releasing thread a flat 0.8 to 3
+	// microseconds whatever the size, and the bin's thread then pays the clear.
+	// The two release costs meet at about 128 KB.
+	// The rule is to hand off unless clearing in place is certainly cheaper, and
+	// at 128 KB of references it is a tie.
+	// Rows that hold no references are included: a large chunk of value rows is
+	// cleared in the bin too.
 	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter", Justification = "The threshold is one number for every T: it is a member of the config so that each call site names the same constant (ChunkConfig<T>.DefaultDeferFromClearedBytes).")]
 	public const int DefaultDeferFromClearedBytes = 131_072;
 
@@ -73,14 +67,13 @@ internal sealed class ChunkConfig<T>(
 
 	/// <summary>Gets whether the rows are cleared before an array goes back.</summary>
 	/// <remarks>
-	/// Resolved once, here, from what was asked (the constructor takes the raw
-	/// intent: <see langword="null"/> is the app-wide default,
-	/// <see langword="true"/> and <see langword="false"/> are what the caller
-	/// chose), and the floor is enforced here too, not trusted to the caller:
-	/// a row type that holds references is cleared whatever was asked
-	/// (<see cref="PoolClearing"/>), so such rows are never given
-	/// <see cref="ClearMode.None"/>.
+	/// A row type that holds references is always cleared, whatever was asked
+	/// (see <see cref="PoolClearing"/>).
 	/// </remarks>
+	// Resolved once, here, from what was asked (the constructor takes the raw
+	// intent: null is the app-wide default, true and false are what the caller
+	// chose), and the floor is enforced here too, not trusted to the caller:
+	// such rows are never given ClearMode.None.
 	public bool ClearOnReturn { get; } = PoolClearing.Resolve<T>(clearOnReturn);
 
 	/// <summary>Gets the chunk sizes of the collectors, buffers and streams.</summary>
@@ -135,9 +128,9 @@ internal sealed class ChunkConfig<T>(
 	/// <see cref="ClearMode.None"/>: only when nothing is to be cleared (no
 	/// clearing asked and no references to keep alive, see the constructor), or
 	/// no rows were written.
-	/// <see cref="ClearMode.Deferred"/>: a chunk of (rows written times the size of a
-	/// row) <see cref="DefaultDeferFromClearedBytes"/> or more, of any kind of row; everything
-	/// else that clears does it right away.
+	/// <see cref="ClearMode.Deferred"/>: a chunk of at least
+	/// <see cref="DeferFromClearedBytes"/> bytes of rows, of any kind of row;
+	/// everything else that clears does it right away.
 	/// </remarks>
 	/// <include file="Internals.docs.xml" path="docs/members[@name='used']/*" />
 	ClearMode ModeFor(int used)

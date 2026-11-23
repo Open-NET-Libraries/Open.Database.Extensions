@@ -1,5 +1,6 @@
 ﻿namespace Open.Database.Extensions;
 
+// Deliberately a DataException and not an InvalidOperationException: application code often catches that type as a business-rule failure and reports its message.
 /// <summary>
 /// The exception that is thrown when a column value cannot be mapped to the
 /// requested .NET type: a value that does not convert, an overflow, and so on.
@@ -10,9 +11,7 @@
 /// <see cref="Exception.InnerException"/>.
 /// </para>
 /// <para>
-/// This is a <see cref="DataException"/> and deliberately not an
-/// <see cref="InvalidOperationException"/>: application code often catches
-/// that type as a business-rule failure and reports its message.
+/// This is a <see cref="DataException"/>.
 /// </para>
 /// </remarks>
 /// <param name="message">The error message.</param>

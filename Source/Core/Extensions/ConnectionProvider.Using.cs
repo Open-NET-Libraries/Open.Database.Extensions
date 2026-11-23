@@ -3,7 +3,7 @@ namespace Open.Database.Extensions;
 public static partial class ConnectionExtensions
 {
 	/// <summary>
-	/// Creates a connection from the factory, invokes the action, and then disposes the connection. The connection is not opened by this method.
+	/// Creates a connection from the factory, invokes the action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='factory']/*" />
@@ -20,7 +20,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Creates a connection from the factory, invokes the action, and then disposes the connection. The connection is not opened by this method.
+	/// Creates a connection from the factory, invokes the action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='factory']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='using-disposed']/*" />
@@ -35,7 +35,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Creates a connection from the factory, invokes the action, and then disposes the connection. The connection is not opened by this method.
+	/// Creates a connection from the factory, invokes the action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
@@ -54,7 +54,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Creates a connection from the factory, invokes the action, and then disposes the connection. The connection is not opened by this method.
+	/// Creates a connection from the factory, invokes the action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='factory']/*" />
@@ -71,7 +71,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Takes a connection from the pool, invokes the action, and then gives the connection back to the pool. The connection is not opened by this method.
+	/// Takes a connection from the pool, invokes the action, and then gives the connection back to the pool.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='pool']/*" />
@@ -88,7 +88,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Takes a connection from the pool, invokes the action, and then gives the connection back to the pool. The connection is not opened by this method.
+	/// Takes a connection from the pool, invokes the action, and then gives the connection back to the pool.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='pool']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='using-given-back']/*" />
@@ -103,7 +103,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Takes a connection from the pool, invokes the action, and then gives the connection back to the pool. The connection is not opened by this method.
+	/// Takes a connection from the pool, invokes the action, and then gives the connection back to the pool.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
@@ -122,7 +122,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Takes a connection from the pool, invokes the action, and then gives the connection back to the pool. The connection is not opened by this method.
+	/// Takes a connection from the pool, invokes the action, and then gives the connection back to the pool.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='pool']/*" />
@@ -139,7 +139,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Invokes the function to create a connection, invokes the action, and then disposes the connection. The connection is not opened by this method.
+	/// Invokes the function to create a connection, invokes the action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
@@ -158,7 +158,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Invokes the function to create a connection, invokes the action, and then disposes the connection. The connection is not opened by this method.
+	/// Invokes the function to create a connection, invokes the action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='func']/*" />
@@ -175,7 +175,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Creates a connection from the factory, invokes the asynchronous action, and then disposes the connection. The connection is not opened by this method.
+	/// Creates a connection from the factory, invokes the asynchronous action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='factory-async']/*" />
@@ -192,7 +192,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Creates a connection from the factory, invokes the asynchronous action, and then disposes the connection. The connection is not opened by this method.
+	/// Creates a connection from the factory, invokes the asynchronous action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='factory-async']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-task']/*" />
@@ -208,7 +208,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Creates a connection from the factory, invokes the asynchronous action, and then disposes the connection. The connection is not opened by this method.
+	/// Creates a connection from the factory, invokes the asynchronous action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
@@ -227,7 +227,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Creates a connection from the factory, invokes the asynchronous action, and then disposes the connection. The connection is not opened by this method.
+	/// Creates a connection from the factory, invokes the asynchronous action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='factory-async']/*" />
@@ -245,7 +245,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously takes a connection from the pool, invokes the action, and then gives the connection back to the pool. The connection is not opened by this method.
+	/// Asynchronously takes a connection from the pool, invokes the action, and then gives the connection back to the pool.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='pool-async']/*" />
@@ -263,7 +263,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously takes a connection from the pool, invokes the action, and then gives the connection back to the pool. The connection is not opened by this method.
+	/// Asynchronously takes a connection from the pool, invokes the action, and then gives the connection back to the pool.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='pool-async']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='returns-task']/*" />
@@ -280,7 +280,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously takes a connection from the pool, invokes the action, and then gives the connection back to the pool. The connection is not opened by this method.
+	/// Asynchronously takes a connection from the pool, invokes the action, and then gives the connection back to the pool.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
@@ -300,7 +300,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously takes a connection from the pool, invokes the action, and then gives the connection back to the pool. The connection is not opened by this method.
+	/// Asynchronously takes a connection from the pool, invokes the action, and then gives the connection back to the pool.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='pool-async']/*" />
@@ -319,7 +319,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Invokes the function to create a connection, invokes the asynchronous action, and then disposes the connection. The connection is not opened by this method.
+	/// Invokes the function to create a connection, invokes the asynchronous action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
@@ -338,7 +338,7 @@ public static partial class ConnectionExtensions
 	}
 
 	/// <summary>
-	/// Invokes the function to create a connection, invokes the asynchronous action, and then disposes the connection. The connection is not opened by this method.
+	/// Invokes the function to create a connection, invokes the asynchronous action, and then disposes the connection.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='func-async']/*" />

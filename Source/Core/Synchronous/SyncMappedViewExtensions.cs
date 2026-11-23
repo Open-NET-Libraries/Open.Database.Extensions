@@ -1,12 +1,10 @@
 namespace Open.Database.Extensions.Synchronous;
 
 /// <summary>
-/// Blocking terminals on a mapped query or command view (<c>Map&lt;T&gt;()</c> on a command or a query definition, with or without <c>Skip</c> and <c>Take</c>):
-/// they hold the calling thread until the rows are read.
-/// Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.
+/// Blocking terminals on a mapped query or command view (<c>Map&lt;T&gt;()</c> on a command or a query definition, with or without <c>Skip</c> and <c>Take</c>), which hold the calling thread until the rows are read.
 /// </summary>
 /// <remarks>
-/// A view reads through its own fast path; these extensions only call it.
+/// Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.
 /// A reader or a <c>DataTable</c> view (<c>MappedReader&lt;T&gt;</c>, <c>MappedTable&lt;T&gt;</c>) keeps its own terminals.
 /// </remarks>
 public static class SyncMappedViewExtensions
@@ -66,8 +64,6 @@ public static class SyncMappedViewExtensions
 	/// <returns>The single row, or <see langword="default"/> if the query returns no rows.</returns>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='query-null']/*" />
 	/// <exception cref="InvalidOperationException">The query returns more than one row.</exception>
-	/// <remarks>
-	/// </remarks>
 	/// <seealso cref="MappedQuery{T}.SingleOrDefaultAsync(CancellationToken)"/>
 	/// <seealso cref="MappedQuery{T}.FirstOrDefault()"/>
 	public static T? SingleOrDefault<T>(this MappedQuery<T> query)
@@ -93,6 +89,7 @@ public static class SyncMappedViewExtensions
 	public static T First<T>(this MappedQuery<T> query)
 		=> query.First();
 
+	// The provider is not asked for a single row, because it could then hide the second one.
 	/// <summary>
 	/// Reads the only mapped row; throws if the query returns no rows or more than one.
 	/// </summary>
@@ -102,9 +99,6 @@ public static class SyncMappedViewExtensions
 	/// <exception cref="InvalidOperationException">The query returns no rows, or more than one row.</exception>
 	/// <remarks>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-row']/*" />
-	/// <para>
-	/// The provider is not asked for a single row, because it could then hide the second one.
-	/// </para>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='no-rows']/*" />
 	/// <para>
 	/// The more-than-one error is thrown at the second row, before the later result sets are read, so it is never replaced by a later failure.
@@ -173,11 +167,10 @@ public static class SyncMappedViewExtensions
 	/// <exception cref="ArgumentException">Two rows produce the same key.</exception>
 	/// <remarks>
 	/// <para>
-	/// Each selector is called once per row, key first. The built-in queries read every row first and build the dictionary right after the last one, so a duplicate key (or a <see langword="null"/> key) throws, and the selectors run, only after the whole read.
-	/// A duplicate key throws, as it does for <see cref="MappedQuery{T}.ToDictionary{TKey}(Func{T, TKey}, IEqualityComparer{TKey})"/> and for LINQ's <c>ToDictionary</c>.
-	/// </para>
-	/// <para>
-	/// The selectors run while the reader is open, so keep them quick and do not touch the connection from inside them.
+	/// Each selector is called once per row, key first.
+	/// The built-in queries read every row first and build the dictionary right after the last one, while the reader is still open:
+	/// a duplicate key (or a <see langword="null"/> key) throws, and the selectors run, only then, as it does for <see cref="MappedQuery{T}.ToDictionary{TKey}(Func{T, TKey}, IEqualityComparer{TKey})"/> and for LINQ's <c>ToDictionary</c>.
+	/// Keep the selectors quick and do not touch the connection from inside them.
 	/// </para>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>

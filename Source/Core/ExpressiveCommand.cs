@@ -1,7 +1,7 @@
 ﻿namespace Open.Database.Extensions;
 
 /// <summary>
-/// A deferred, fluent command for running SQL through any <see cref="IDbConnection"/>, <see cref="IDbTransaction"/>, connection factory, or connection pool. Nothing touches the database until an execute method is called.
+/// A deferred, fluent command for running SQL through any <see cref="IDbConnection"/>, <see cref="IDbTransaction"/>, connection factory, or connection pool; nothing runs until an execute method is called.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -14,7 +14,7 @@
 /// A command built on a single connection supports one execution at a time; overlapping executions throw <see cref="InvalidOperationException"/>. Commands built on a factory or pool use a separate connection for each execution.
 /// </para>
 /// <para>
-/// <c>ExecuteScalarAsync</c> and <c>ExecuteNonQueryAsync</c> are on <see cref="ExpressiveDbCommand"/> (a <see cref="System.Data.Common.DbConnection"/>).
+/// <c>ExecuteScalarAsync</c> and <c>ExecuteNonQueryAsync</c> are on <see cref="ExpressiveDbCommand"/>.
 /// </para>
 /// </remarks>
 /// <example>

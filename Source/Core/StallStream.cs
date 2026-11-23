@@ -2,13 +2,11 @@ using System.Threading.Channels;
 
 namespace Open.Database.Extensions.Core;
 
+// A write loop that waits for room in a full target is not pulling, so it cannot learn of an expiry from MoveNextAsync.
 /// <summary>
 /// Lets a sibling package learn that a <c>Stream</c> read stopped because the consumer made no pull in time.
 /// </summary>
-/// <remarks>
-/// A write loop that waits for room in a full target is not pulling, so it cannot learn of an expiry from <c>MoveNextAsync</c>.
-/// It checks the stream for this interface and waits with a token linked to <see cref="Expired"/>.
-/// </remarks>
+/// <remarks>A write loop that waits for room checks the stream for this interface and waits with a token linked to <see cref="Expired"/>.</remarks>
 internal interface IStallSignal
 {
 	/// <summary>
@@ -24,15 +22,14 @@ internal interface IStallSignal
 	TimeoutException ToException();
 }
 
+// The producer reads one row ahead and then waits for room in a channel of one. That wait is the stall, and it is measured on the producer's own side:
+// when it lasts stallTimeout the producer stops the read from inside its own handler, so the cleanup of the query runs on the thread that owns the reader.
+// Only the channel, the expiry and disposal flags and the cancellation sources are shared between the two sides.
 /// <summary>
 /// The rows of a query, one at a time, read by a producer that holds the reader while the consumer pulls.
 /// </summary>
 /// <remarks>
-/// The producer reads one row ahead of the consumer and then waits for room in a channel of one.
-/// That wait is the stall, and it is measured on the producer's own side: when it lasts <c>stallTimeout</c>
-/// the producer stops the read from inside its own handler, so the cleanup of the query runs on the thread that owns the reader.
-/// The consumer never touches the reader.
-/// Only the channel, the expiry and disposal flags and the cancellation sources are shared between the two sides.
+/// The producer reads one row ahead of the consumer, which never touches the reader.
 /// </remarks>
 internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 {

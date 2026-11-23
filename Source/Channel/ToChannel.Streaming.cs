@@ -9,11 +9,13 @@ public static partial class ChannelDbExtensions
 	/// you own, leaving the channel open.
 	/// </summary>
 	/// <remarks>
-	/// Pulls <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>:
-	/// while the channel is full, the reader and the connection stay open.
-	/// See that member for when to use it and what <paramref name="stallTimeout"/> does.
-	/// Otherwise it behaves as
-	/// <see cref="ToChannel{T}(IMappedQuery{T}, Channel{T}, CancellationToken)"/>.
+	/// Holds the reader and the connection open for each row: while the channel is full,
+	/// the next row is not pulled and the connection stays open until
+	/// <paramref name="stallTimeout"/> expires (never, with <see cref="Timeout.InfiniteTimeSpan"/>).
+	/// Use <see cref="ToChannel{T}(IMappedQuery{T}, Channel{T}, CancellationToken)"/>,
+	/// which frees the connection first, unless the rows must be pulled one at a time;
+	/// otherwise it behaves as that member.
+	/// See <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/> for the stall rules.
 	/// </remarks>
 	/// <typeparam name="T">The type of each row.</typeparam>
 	/// <param name="source">The mapped query to read.</param>
@@ -49,7 +51,6 @@ public static partial class ChannelDbExtensions
 	/// <see langword="true"/> to complete the channel when the pass ends,
 	/// with the exception that ended it if there was one.
 	/// </param>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="stallTimeout"/> is zero or negative and not <see cref="Timeout.InfiniteTimeSpan"/>.</exception>
 	/// <param name="source">The mapped query to read.</param>
 	/// <param name="channel">The channel to write to.</param>
 	/// <param name="stallTimeout">The longest the channel may make no room while the reader is held. Required; passed to <c>Stream</c>.

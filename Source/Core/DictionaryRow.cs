@@ -2,15 +2,14 @@ using System.Collections.ObjectModel;
 
 namespace Open.Database.Extensions;
 
+// One object?[] per row; the names live once in the result set's ColumnIndex, which builds its ignore-case map on the first miss of an exact name. A foreach over the row uses the struct Enumerator, so the row is not boxed.
 /// <summary>
 /// One row of a result set read without a model: the values of the row and, by name, the columns they came from.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Made by <c>AsDictionaryRows()</c>. It is a <see langword="readonly"/> <see langword="struct"/> over one
-/// <c>object?[]</c> (one slot for each column, <see cref="DBNull"/> read as <see langword="null"/>) and the column
-/// names of the result set it came from, which every row of that result set shares: reading a million rows builds
-/// the names once and no dictionary per row.
+/// Made by <c>AsDictionaryRows()</c>. Each column is one slot of the row, a database NULL reads as
+/// <see langword="null"/>, and every row of a result set shares the same column names.
 /// </para>
 /// <para>
 /// The dictionary side (<see cref="Count"/>, <see cref="Keys"/>, <see cref="Values"/>, the enumeration,
@@ -22,10 +21,10 @@ namespace Open.Database.Extensions;
 /// with the value <see langword="null"/>.
 /// </para>
 /// <para>
-/// Reading a value by position or by a name that matches exactly allocates nothing, and so do <see cref="Count"/> and <see cref="Keys"/>.
-/// The first name that does not match exactly builds the ignoring-case lookup of the result set, which every row of the set shares and which is built
-/// when it is first needed; a missing name in the string indexer throws <see cref="KeyNotFoundException"/>. <see cref="Values"/> and <see cref="ToDictionary"/> build a collection each time,
-/// and handing the row to an <see cref="IReadOnlyDictionary{TKey, TValue}"/> boxes it.
+/// <see cref="ToDictionary"/> and <see cref="Values"/> build a new collection on each call. To read one
+/// value by name, use the indexer or <see cref="TryGetValue(string, out object?)"/>.
+/// </para>
+/// <para>
 /// A result set with no rows gives no row, so no column names: an empty result exposes none.
 /// <c>default(DictionaryRow)</c> is an empty row.
 /// It is not a model: <c>Map&lt;DictionaryRow&gt;()</c> throws <see cref="InvalidOperationException"/>, and the message names <c>AsDictionaryRows()</c>.
@@ -131,7 +130,7 @@ public readonly struct DictionaryRow : IReadOnlyDictionary<string, object?>
 	}
 
 	/// <summary>Gets an enumerator over the distinct names and their values.</summary>
-	/// <returns>The enumerator, a struct: a <see langword="foreach"/> over the row allocates nothing.</returns>
+	/// <returns>The enumerator.</returns>
 	public Enumerator GetEnumerator() => new(_values, _index);
 
 	IEnumerator<KeyValuePair<string, object?>> IEnumerable<KeyValuePair<string, object?>>.GetEnumerator() => GetEnumerator();
@@ -175,13 +174,10 @@ public readonly struct DictionaryRow : IReadOnlyDictionary<string, object?>
 	}
 }
 
+// Cached only in the mapper of the result set it was built for, so ad hoc column lists cannot grow a cache; it lives as long as the query's rows. The ignore-case lookup is built on the first miss of an exact one.
 /// <summary>
 /// The column names of one result set, built once when its first row is read and shared by every row of that set.
 /// </summary>
-/// <remarks>
-/// Never cached anywhere but in the mapper of the result set it was built for, so ad hoc column lists cannot make
-/// anything grow: it lives as long as the query's rows do. The ignore-case lookup is built on the first miss of an exact one.
-/// </remarks>
 internal sealed class ColumnIndex
 {
 	readonly Dictionary<string, int> _exact;
@@ -210,7 +206,8 @@ internal sealed class ColumnIndex
 	/// <summary>Gets the distinct names (exact comparison), first column first.</summary>
 	public string[] Distinct { get; }
 
-	/// <summary>Gets the same names as a read-only collection, which is what the public <c>Keys</c> hands out: a cast cannot reach the array.</summary>
+	// A ReadOnlyCollection, so a cast cannot reach the array.
+	/// <summary>Gets the same names as a read-only collection, for the public <c>Keys</c>.</summary>
 	public ReadOnlyCollection<string> DistinctNames { get; }
 
 	/// <summary>Gets the position of the first column of each name in <see cref="Distinct"/>.</summary>

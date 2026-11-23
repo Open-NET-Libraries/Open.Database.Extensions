@@ -3,8 +3,7 @@ namespace Open.Database.Extensions.Core;
 internal static class ValueTaskHelpers
 {
 	/// <summary>
-	/// Completes a <see cref="ValueTask{TResult}"/> as a plain
-	/// <see cref="ValueTask"/>, without allocating when it has already finished.
+	/// Completes a <see cref="ValueTask{TResult}"/> as a plain <see cref="ValueTask"/>.
 	/// </summary>
 	/// <typeparam name="T">The type of the discarded result.</typeparam>
 	/// <param name="task">The task whose result is discarded.</param>
@@ -13,6 +12,7 @@ internal static class ValueTaskHelpers
 	/// </returns>
 	public static ValueTask Discard<T>(ValueTask<T> task)
 	{
+		// Allocates nothing when the task has completed successfully.
 		if (task.IsCompletedSuccessfully)
 		{
 			_ = task.Result;

@@ -6,34 +6,25 @@ namespace Open.Database.Extensions;
 /// The parameters of a call: one shared array of entries and how many of
 /// them this value sees.
 /// </summary>
-/// <remarks>
-/// <para>
-/// An entry is two slots. The first holds how the parameter is named: the
-/// name the caller wrote (a <see cref="string"/>), or that name found among the
-/// names the definition's text declares (a <c>NameSet.Entry</c>, held once per
-/// definition, so the spelling with or without the <c>@</c> is stored as the same
-/// thing), the argument's text
-/// resolved when the query runs (a <c>ParameterNames.DerivedExpression</c>),
-/// or a marker for the members of an object. The second holds the value,
-/// boxed once, a stand-in for a <see langword="null"/> that remembers its
-/// type, or the object whose members are the parameters.
-/// </para>
-/// <para>
-/// Adding a parameter writes the next entry in place and returns a new value
-/// that sees one more, so a chain of <c>AddParam</c> allocates the array once.
-/// An entry is claimed with one compare-and-swap on its first slot, so a value
-/// that is kept and added to twice cannot lose either: the second writer finds
-/// the slot taken and copies the entries it sees into an array of its own.
-/// Nothing a value sees is ever written again, so branches never see each
-/// other's entries: a kept call that several threads add to gives each of them
-/// its own values.
-/// </para>
-/// <para>
-/// The array is sized from the definition's parameter count, so a call of that
-/// many parameters allocates exactly one array. A call that is nothing but one
-/// <c>AddParams</c> holds that object itself and no array.
-/// </para>
-/// </remarks>
+// An entry is two slots. The first holds how the parameter is named: the name the
+// caller wrote (a string), or that name found among the names the definition's text
+// declares (a NameSet.Entry, held once per definition, so the spelling with or
+// without the @ is stored as the same thing), the argument's text resolved when the
+// query runs (a ParameterNames.DerivedExpression), or a marker for the members of an
+// object. The second holds the value, boxed once, a stand-in for a null that
+// remembers its type, or the object whose members are the parameters.
+//
+// Adding a parameter writes the next entry in place and returns a new value that
+// sees one more, so a chain of AddParam allocates the array once. An entry is
+// claimed with one compare-and-swap on its first slot, so a value that is kept and
+// added to twice cannot lose either: the second writer finds the slot taken and
+// copies the entries it sees into an array of its own. Nothing a value sees is ever
+// written again, so branches never see each other's entries: a kept call that
+// several threads add to gives each of them its own values.
+//
+// The array is sized from the definition's parameter count, so a call of that many
+// parameters allocates exactly one array. A call that is nothing but one AddParams
+// holds that object itself and no array.
 readonly struct ParamList
 {
 	/// <summary>
@@ -234,15 +225,13 @@ readonly struct ParamList
 	/// <summary>
 	/// Determines whether an entry claims a name with a name of its own.
 	/// </summary>
-	/// <remarks>
-	/// A name of its own is one written or derived, not a member of an
-	/// <c>AddParams</c> object: such a parameter wins over a member that
-	/// resolves to the same name, whichever was added first, as on a command.
-	/// </remarks>
 	/// <param name="name">The real name.</param>
 	/// <param name="names">The remembered names, or <see langword="null"/> when they are not known.</param>
 	/// <param name="definition">The query definition.</param>
 	/// <returns><see langword="true"/> if an entry claims the name; otherwise, <see langword="false"/>.</returns>
+	// A name of its own is one written or derived, not a member of an AddParams
+	// object: such a parameter wins over a member that resolves to the same
+	// name, whichever was added first, as on a command.
 	public bool Claims(string name, NameSet? names, DbQuery definition)
 	{
 		for (int i = 0; i < Count; i++)
@@ -374,10 +363,10 @@ readonly struct ParamList
 }
 
 /// <summary>
-/// Stands in for a <see langword="null"/> value and remembers its type, so a
-/// database null is sent with the type of its argument.
+/// Stands in for a <see langword="null"/> value and remembers its type.
 /// </summary>
 /// <param name="type">The type of the argument.</param>
+// Lets a database null be sent with the type of its argument.
 sealed class NullValue(Type type)
 {
 	/// <summary>Gets the type of the argument.</summary>

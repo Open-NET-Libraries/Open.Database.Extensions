@@ -15,7 +15,7 @@ public static partial class SqlCommandExtensions
 	#endregion
 
 	/// <summary>
-	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the handler. The reader is disposed afterwards.
+	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the handler.
 	/// </summary>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>
 	/// <param name="handler">The function that reads from the reader. Do not let the reader escape it.</param>
@@ -65,7 +65,7 @@ public static partial class SqlCommandExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the transform function, returning its result. The reader is disposed afterwards.
+	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the transform function, returning its result.
 	/// </summary>
 	/// <typeparam name="T">The type returned by the transform function.</typeparam>
 	/// <param name="command">The command to execute. Its connection is opened if needed and closed again if it was opened here; neither the command nor the connection is disposed.</param>

@@ -7,7 +7,6 @@ namespace Open.Database.Extensions;
 /// <summary>
 /// Represents a <see cref="DbQuery"/> bound to where its connections come
 /// from.
-/// A <see langword="struct"/>: binding allocates nothing.
 /// </summary>
 /// <remarks>
 /// Add the values with <c>AddParam</c> or <c>AddParams</c> and then
@@ -16,6 +15,7 @@ namespace Open.Database.Extensions;
 /// It is a reader the same way a command is, so the <c>Map</c>
 /// extensions on <see cref="IExecuteReader"/> apply to it.
 /// </remarks>
+// A struct: binding allocates nothing.
 public readonly struct DbQueryUsing
 	: IExecuteReaderAsync, IExecuteReaderSync, IEquatable<DbQueryUsing>
 {
@@ -49,12 +49,12 @@ public readonly struct DbQueryUsing
 	/// <see cref="int"/> is read from the first column), and returns the mapped query.
 	/// </summary>
 	/// <remarks>
-	/// The same as <see cref="CoreExtensions.Map{T}(IExecuteReader)"/>, written the same way, without boxing this value:
-	/// the query holds the call as it is.
+	/// The same as <see cref="CoreExtensions.Map{T}(IExecuteReader)"/>.
 	/// </remarks>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	// The query holds this value as it is; the value is not boxed.
 	public MappedQuery<T> Map<T>()
 		=> FirstColumn<T>.Instance is { } firstColumn
 		? new(Views.QueryCore(ToCall(), firstColumn))
@@ -62,9 +62,11 @@ public readonly struct DbQueryUsing
 
 	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped query.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="map">The map. A <see langword="null"/> map reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload).</param>
+	/// <param name="map">The map. A <see langword="null"/> map reads as <see cref="Map{T}()"/> does.</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	// A bare null does not compile here (it also fits the selector overload):
+	// write (RowMap<T>?)null.
 	public MappedQuery<T> Map<T>(RowMap<T>? map)
 		=> map is null
 		? Map<T>()
@@ -148,12 +150,10 @@ public readonly struct DbQueryUsing
 			.AddParam(name, value);
 
 	/// <summary>Adds an input parameter with a string value.</summary>
-	/// <remarks>
-	/// Compilers older than C# 13 ignore <c>OverloadResolutionPriority</c>,
-	/// so without this overload they would read the name as the value of
-	/// <see cref="AddParam{T}(T, string?)"/>.
-	/// </remarks>
 	/// <inheritdoc cref="AddParam{T}(string, T)"/>
+	// Compilers older than C# 13 ignore OverloadResolutionPriority, so without
+	// this overload they would read the name as the value of AddParam<T>(T,
+	// string?).
 	public DbQueryCall AddParam(string name, string? value)
 		=> new DbQueryCall(Definition, SourceOrThrow, default)
 			.AddParam(name, value);

@@ -14,7 +14,6 @@ internal static class CancellationTokens
 	/// </param>
 	/// <returns>
 	/// <see langword="default"/> when neither token can be canceled, the one that can when only one can (or when both are the same), and the linked source's token otherwise.
-	/// Only the last case allocates.
 	/// </returns>
 	[SuppressMessage("Design", "CA1068:CancellationToken parameters must come last")]
 	public static CancellationToken Combine(CancellationToken commandToken, CancellationToken callToken, out CancellationTokenSource? linked)
@@ -25,6 +24,7 @@ internal static class CancellationTokens
 		if (!commandToken.CanBeCanceled) return callToken;
 		if (!callToken.CanBeCanceled || commandToken == callToken) return commandToken;
 
+		// Only this case allocates a CancellationTokenSource.
 		linked = CancellationTokenSource.CreateLinkedTokenSource(commandToken, callToken);
 		return linked.Token;
 	}
@@ -35,13 +35,9 @@ internal static class CancellationTokens
 	/// if any, when the call ends however it ends.
 	/// </summary>
 	/// <remarks>
-	/// When no linked source is needed,
-	/// <paramref name="start"/> is returned as it is: no state machine,
-	/// no allocation, and a synchronous throw from it propagates synchronously.
-	/// On the linked path a synchronous throw
-	/// from <paramref name="start"/> becomes a faulted task.
-	/// Pass a <see langword="static"/> lambda and a state,
-	/// so a call with no token or one token allocates nothing.
+	/// When no linked source is needed, <paramref name="start"/> is returned as it is,
+	/// and a synchronous throw from it propagates synchronously.
+	/// On the linked path a synchronous throw from <paramref name="start"/> becomes a faulted task.
 	/// </remarks>
 	/// <typeparam name="TState">The type of the state.</typeparam>
 	/// <typeparam name="TResult">The type of the call's result.</typeparam>
@@ -67,6 +63,7 @@ internal static class CancellationTokens
 			commandToken,
 			callToken,
 			out CancellationTokenSource? linked);
+		// When no linked source is needed there is no state machine and no allocation; a static lambda with a state keeps it that way for a call with at most one token.
 		return linked is null
 			? start(state, token)
 			: Linked(linked, token, state, start);
