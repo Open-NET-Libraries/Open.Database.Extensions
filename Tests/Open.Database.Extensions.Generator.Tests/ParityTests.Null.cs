@@ -10,33 +10,9 @@ namespace Open.Database.Extensions.Generator.Tests;
 // null, as the runtime map gives it: parity. A member declared non-nullable is read with its typed getter alone, as a hand-written selector reads it:
 // a NULL there is exceptional, the provider's getter throws, and the generated reader reports the model and the row, the provider's exception inside.
 // The runtime map keeps the member's value instead (it does not throw): that difference is the decided rule for generated code, pinned here.
-// In a Debug build of the generated code, a [Conditional("DEBUG")] check before each such read throws the same ValueMappingException type itself,
-// with the member and the column named (PropertyName, ColumnName), instead of waiting for the provider's getter. These tests run in both configurations.
+// The same in every build: there is no Debug-only check, and no member or column is named.
 public partial class ParityTests
 {
-	/// <summary>
-	/// A NULL in a non-nullable member throws a ValueMappingException naming the model and the row, in Debug and in Release. Release: the provider's
-	/// exception of this type inside, no member or column. Debug: the member and the column named (PropertyName, ColumnName), no inner exception.
-	/// <paramref name="name"/> is the model as the generator names it (a plain type's name by default).
-	/// </summary>
-	static ValueMappingException NullThrows<TInner>(Exception? error, Type model, int row, string member, string column, string? name = null)
-		where TInner : Exception
-	{
-#if DEBUG
-		var e = Assert.IsType<ValueMappingException>(error);
-		Assert.Null(e.InnerException);
-		Assert.Equal(model, e.TargetType);
-		Assert.Equal(member, e.PropertyName);
-		Assert.Equal(column, e.ColumnName);
-		Assert.Equal(
-			$"A NULL was read into the non-nullable member {name ?? model.Name}.{member} (column '{column}') at row {row}. Declare the member nullable (int?, string?).",
-			e.Message);
-		return e;
-#else
-		return RowError<TInner>(error, model, row, name);
-#endif
-	}
-
 	// The non-nullable members of PlainPost, by column: each type the generator reads alone (Int32, DateTime, String, Decimal, Boolean, Guid, Double,
 	// Int64, an enum through Int32).
 	static readonly int[] NonNullablePostColumns = [0, 1, 2, 3, 5, 6, 7, 10, 11];
@@ -54,23 +30,21 @@ public partial class ParityTests
 		var start = Counts.Now();
 		foreach (int column in NonNullablePostColumns)
 		{
-			string member = PostColumns[column].Name;
-
 			// Identity (5): the members in their order; a NULL in the middle of a result set (the row before it is read).
 			var identity = new TableQuery(PostColumns, PostRows[0], PostRowWithNull(column), PostRows[2]);
-			NullThrows<InvalidCastException>(Catch(() => identity.Map<PlainPost>().ToList()), typeof(PlainPost), 1, member, member);
+			RowError<InvalidCastException>(Catch(() => identity.Map<PlainPost>().ToList()), typeof(PlainPost), 1);
 			// The runtime map keeps the member's value instead: no exception.
 			Assert.Equal(3, identity.Map(RowMap<PlainPost>.Default).ToList().Count);
 
 			// The same on a SequentialAccess reader: the getter is the one read of the cell.
 			var sequential = new TableQuery(PostColumns, PostRowWithNull(column)) { Sequential = true };
-			NullThrows<InvalidCastException>(Catch(() => sequential.Map<PlainPost>().ToList()), typeof(PlainPost), 0, member, member);
+			RowError<InvalidCastException>(Catch(() => sequential.Map<PlainPost>().ToList()), typeof(PlainPost), 0);
 
 			// Full (1): one column between the members.
 			Col[] shifted = [.. PostColumns[..1], Col.Of<string>("Unused"), .. PostColumns[1..]];
 			object?[] row = PostRowWithNull(column);
 			var full = new TableQuery(shifted, [.. row[..1], "u", .. row[1..]]);
-			NullThrows<InvalidCastException>(Catch(() => full.Map<PlainPost>().ToList()), typeof(PlainPost), 0, member, member);
+			RowError<InvalidCastException>(Catch(() => full.Map<PlainPost>().ToList()), typeof(PlainPost), 0);
 		}
 
 		Counts c = Counts.Now().Since(start);
@@ -83,14 +57,14 @@ public partial class ParityTests
 	{
 		// Guarded (2): members absent, columns out of order.
 		var guarded = new TableQuery([Col.Of<string>("Note"), Col.Of<int>("Id"), Col.Of<string>("Title")], ["n", 1, "t"], [null, null, "u"]);
-		NullThrows<InvalidCastException>(Catch(() => guarded.Map<PlainPost>().ToList()), typeof(PlainPost), 1, "Id", "Id");
+		RowError<InvalidCastException>(Catch(() => guarded.Map<PlainPost>().ToList()), typeof(PlainPost), 1);
 
 		// Converting (4): a long column into the int member.
 		var converting = new TableQuery(
 			[Col.Of<long>("Id"), Col.Of<string>("Title"), Col.Of<long>("Qty"), Col.Of<int>("State"), Col.Of<string>("Tag"), Col.Of<string>("Note")],
 			[1L, "one", 2L, 1, "t", "n"],
 			[null, "two", null, 2, "b", null]);
-		NullThrows<InvalidCastException>(Catch(() => converting.Map<PlainRecord>().ToList()), typeof(PlainRecord), 1, "Id", "Id");
+		RowError<InvalidCastException>(Catch(() => converting.Map<PlainRecord>().ToList()), typeof(PlainRecord), 1);
 	}
 
 	[Fact]
@@ -100,16 +74,16 @@ public partial class ParityTests
 		var record = new TableQuery(
 			[Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<int>("Qty"), Col.Of<int>("State"), Col.Of<string>("Tag"), Col.Of<string>("Note")],
 			[1, null, 2, 1, "t", "n"]);
-		NullThrows<InvalidCastException>(Catch(() => record.Map<PlainRecord>().ToList()), typeof(PlainRecord), 0, "Title", "Title");
+		RowError<InvalidCastException>(Catch(() => record.Map<PlainRecord>().ToList()), typeof(PlainRecord), 0);
 
 		// A required init-only member (int Id), and a settable one after the object initializer (decimal Price).
 		Col[] init = [Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<string>("Note"), Col.Of<decimal>("Price")];
-		NullThrows<InvalidCastException>(
-			Catch(() => new TableQuery(init, [null, "one", null, 1m]).Map<PlainInit>().ToList()), typeof(PlainInit), 0, "Id", "Id");
-		NullThrows<InvalidCastException>(
-			Catch(() => new TableQuery(init, [1, "one", null, 1m], [2, "two", null, null]).Map<PlainInit>().ToList()), typeof(PlainInit), 1, "Price", "Price");
-		NullThrows<InvalidCastException>(
-			Catch(() => new TableQuery(init, [1, "one", null, null]) { Sequential = true }.Map<PlainInit>().ToList()), typeof(PlainInit), 0, "Price", "Price");
+		RowError<InvalidCastException>(
+			Catch(() => new TableQuery(init, [null, "one", null, 1m]).Map<PlainInit>().ToList()), typeof(PlainInit), 0);
+		RowError<InvalidCastException>(
+			Catch(() => new TableQuery(init, [1, "one", null, 1m], [2, "two", null, null]).Map<PlainInit>().ToList()), typeof(PlainInit), 1);
+		RowError<InvalidCastException>(
+			Catch(() => new TableQuery(init, [1, "one", null, null]) { Sequential = true }.Map<PlainInit>().ToList()), typeof(PlainInit), 0);
 	}
 
 	[Fact]
@@ -150,29 +124,8 @@ public partial class ParityTests
 		Assert.Equal(1, c.Identity);
 
 		var nullTitle = new TableQuery(catalog, [3, Day, null, 0m, null, false, KeyB, 1.5, null, null, 0L, "c", null, null, "h", 2.5, null, null, 5L, null]);
-		NullThrows<InvalidCastException>(Catch(() => nullTitle.Map<GenRowT20>().ToList()), typeof(GenRowT20), 0, "Title", "Title");
+		RowError<InvalidCastException>(Catch(() => nullTitle.Map<GenRowT20>().ToList()), typeof(GenRowT20), 0);
 	}
-
-	[Fact]
-	public void A_null_gives_a_ValueMappingException_in_Debug_and_Release_with_the_member_only_in_Debug()
-	{
-		// The same type in both configurations, so a consumer's negative test passes in both. The Debug check is [Conditional("DEBUG")]: this
-		// project's Debug build compiles it into the generated code, its Release build does not (GeneratedIlTests: the Release IL is the same without it).
-		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title")], [1, "one"], [null, "two"]);
-		var e = Assert.IsType<ValueMappingException>(Catch(() => q.Map<PlainPost>().ToList()));
-		Assert.Equal(typeof(PlainPost), e.TargetType);
-		Assert.Contains("at row 1", e.Message, StringComparison.Ordinal);
-#if DEBUG
-		Assert.Equal("Id", e.PropertyName);
-		Assert.Equal("Id", e.ColumnName);
-		Assert.Null(e.InnerException); // Thrown by the check itself, and not wrapped a second time by the row's handler.
-#else
-		Assert.Equal("", e.PropertyName);
-		Assert.Equal("", e.ColumnName);
-		Assert.IsType<InvalidCastException>(e.InnerException);
-#endif
-	}
-
 
 	// ---- real providers: what a NULL in a non-nullable member does, end to end ----
 
@@ -199,7 +152,7 @@ public partial class ParityTests
 		// Microsoft.Data.Sqlite's getter throws InvalidOperationException on a NULL (ProviderNullTests): not classified (its other failures share
 		// the type), so the plain report. SQLite sorts NULL last in a descending order: the second row.
 		command.CommandText = "SELECT Id, Title, Qty, State, Tag, Note FROM post ORDER BY Id DESC";
-		NullThrows<InvalidOperationException>(Catch(() => dbCommand.Map<PlainRecord>().ToList()), typeof(PlainRecord), 1, "Id", "Id");
+		RowError<InvalidOperationException>(Catch(() => dbCommand.Map<PlainRecord>().ToList()), typeof(PlainRecord), 1);
 	}
 
 	[Fact]
@@ -216,8 +169,8 @@ public partial class ParityTests
 
 		// SqlClient's getter throws SqlNullValueException on a NULL (ProviderNullTests), in SequentialAccess too: the NULL message.
 		command.CommandText = "SELECT 1 AS Id, CAST(NULL AS nvarchar(10)) AS Title, 2 AS Qty, 1 AS State, N'a' AS Tag, N'n' AS Note";
-		NullThrows<SqlNullValueException>(Catch(() => dbCommand.Map<PlainRecord>().ToList()), typeof(PlainRecord), 0, "Title", "Title");
+		RowError<SqlNullValueException>(Catch(() => dbCommand.Map<PlainRecord>().ToList()), typeof(PlainRecord), 0);
 		using (SqlDataReader reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
-			NullThrows<SqlNullValueException>(Catch(() => reader.Map<PlainRecord>().ToList()), typeof(PlainRecord), 0, "Title", "Title");
+			RowError<SqlNullValueException>(Catch(() => reader.Map<PlainRecord>().ToList()), typeof(PlainRecord), 0);
 	}
 }

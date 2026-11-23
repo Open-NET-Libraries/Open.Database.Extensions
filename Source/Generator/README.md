@@ -19,8 +19,9 @@ The generated reader follows the runtime `RowMap<T>` rules. Anything it does not
   Neither can be detected without a check on every row, which this generator does not make; a per-result-set hook in Core would close both.
   Pinned by tests.
 - **Errors.** A failed row is a `ValueMappingException` naming the model type and the row (0-based, among the rows this query mapped), the exception inside;
-  a Release build names no member or column. A NULL in a member declared non-nullable throws (the provider's getter, or the cast of `DBNull`); the runtime map
-  keeps the member's value instead. In a Debug build the same NULL throws the same `ValueMappingException` type with `PropertyName` and `ColumnName` filled.
+  no member or column is named. A member declared non-nullable is read unchecked, with its typed getter: a NULL there throws (the provider's getter, or the cast
+  of `DBNull`), reported as that row's error; the runtime map keeps the member's value instead. A nullable member is tested with `IsDBNull` and gets null.
+  An opt-in attribute that checks every non-nullable member is planned.
 - Each query allocates the binder and its delegate, and one binding per result set; two evaluations of one call site are not equal queries.
 
 ## Use (in this repository)

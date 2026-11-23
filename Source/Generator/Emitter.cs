@@ -20,9 +20,8 @@ namespace Open.Database.Extensions.Generator;
 //   - NULL, by the member's type: a member declared non-nullable (a value type other than Nullable<T>, a reference annotated non-nullable) is read
 //     with its typed getter alone, as a hand-written selector reads it; a NULL there is exceptional: the provider's getter throws (ProviderNullTests)
 //     and the row's handler reports it. A nullable member (int?, string?, a reference in code with nullable annotations off, object) is tested
-//     with IsDBNull and gets null. (The runtime map keeps a non-nullable member's value on a NULL instead.) In a consumer's Debug build, a
-//     [Conditional("DEBUG")] call before each non-nullable read tests the cell and, on a NULL, throws the same ValueMappingException type directly,
-//     adding the member and the column (PropertyName, ColumnName) to the report: Debug and Release throw the same type for the same NULL.
+//     with IsDBNull and gets null. (The runtime map keeps a non-nullable member's value on a NULL instead.) There is no NULL check on a non-nullable
+//     member by default, in any build; an opt-in attribute that checks every non-nullable member is planned.
 //   - a layout the generated code does not serve is mapped by the runtime RowMap<T> (through its public, hidden ArrayMapper, the route to its
 //     object[] row reader), so the rows, and the exceptions, are the runtime's.
 static class Emitter
@@ -320,17 +319,11 @@ static class Emitter
 		}
 
 		// RowMap.Guard's filter: the provider's own failures and cancellation propagate untouched; everything else is attributed. A ValueMappingException
-		// is the report already (the Debug NULL check throws one), so it is not wrapped in a second.
+		// is the report already (a model's own setter or constructor may throw one), so it is not wrapped in a second.
 		public static bool Wraps(global::System.Exception ex)
 			=> ex is not global::System.Data.Common.DbException
 				&& ex is not global::System.OperationCanceledException
 				&& ex is not global::Open.Database.Extensions.ValueMappingException;
-
-		// The report of a NULL the Debug check found in a non-nullable member (cold): the member and the column are named. The same type as RowError.
-		public static global::System.Exception NullRead(global::System.Type model, string name, string member, string column, int row)
-			=> new global::Open.Database.Extensions.ValueMappingException(
-				$"A NULL was read into the non-nullable member {name}.{member} (column '{column}') at row {row}. Declare the member nullable (int?, string?).",
-				member, column, model);
 
 		// The report of a row the generated reader could not map (cold, no reader work): the model type and the row (0-based among the rows this map
 		// read), worded by the TYPE of the exception inside, which is kept: SqlClient's SqlNullValueException is a NULL read (ProviderNullTests);
@@ -547,17 +540,6 @@ static class Emitter
 		sb.AppendLine($"\t\tstatic global::System.Exception Fail(global::System.Exception ex, Bound b) => OdxMatch.RowError(ex, typeof({T}), {Str(m.Name)}, b.Rows - 1);");
 		sb.AppendLine();
 
-		// Debug builds only: [Conditional("DEBUG")] removes the call, its arguments included, from a consumer's Release build (GeneratedIlTests). In a
-		// Debug build it tests the cell before a non-nullable read and, on a NULL, throws the report with the member and the column named, built only then.
-		// The member is passed as a constant, so a cell that is not NULL costs one IsDBNull and no string work.
-		sb.AppendLine("\t\t[global::System.Diagnostics.Conditional(\"DEBUG\")]");
-		sb.AppendLine("\t\tstatic void NotNull(Bound b, int ordinal, string member)");
-		sb.AppendLine("\t\t{");
-		sb.AppendLine("\t\t\tif (b.Reader.IsDBNull(ordinal))");
-		sb.AppendLine($"\t\t\t\tthrow OdxMatch.NullRead(typeof({T}), {Str(m.Name)}, member, b.Layout.Names[ordinal], b.Rows - 1);");
-		sb.AppendLine("\t\t}");
-		sb.AppendLine();
-
 		EmitRead(sb, m, "ReadLiteral", styleB, ReadMode.Literal, literal);
 		EmitRead(sb, m, "ReadFull", styleB, ReadMode.Full, literal);
 		EmitRead(sb, m, "ReadGuarded", styleB, ReadMode.Guarded, literal);
@@ -765,16 +747,10 @@ static class Emitter
 	// A member its type declares non-nullable is read alone (a general read casts GetValue), as a hand-written selector reads it: no IsDBNull, since a
 	// NULL there is exceptional; the provider's typed getter throws on it (ProviderNullTests), or the cast of DBNull does, and the row's handler
 	// reports it. A nullable member is tested for NULL first and gets null.
-	// Before a non-nullable read, a call to the model's NotNull ([Conditional("DEBUG")]: compiled into the consumer's Debug builds only, a Release build
-	// has no trace of it, arguments included: GeneratedIlTests), which throws the report naming the member and the column at a NULL, even for a
-	// provider that would return a default silently. A nullable member never calls it.
 	static string Statement(SlotSpec s, string target, string read, bool general)
 	{
 		if (s.NonNullable)
-		{
-			string check = $"NotNull(b, {{O}}, {Str(s.Name)}); ";
-			return check + target + " = " + (general ? read.Replace("{0}", "r.GetValue({O})") : read) + ";";
-		}
+			return target + " = " + (general ? read.Replace("{0}", "r.GetValue({O})") : read) + ";";
 
 		if (general)
 		{

@@ -21,7 +21,7 @@ public sealed class ReportingPost
 // The NULL rule in the other layouts: constant declared ordinals (the decorated models), the init-only and required models, a NULL late in a long
 // result, a generic and a nested model's name, interface members, and several threads at once (the row counter and the shared layout cache).
 // In each: a NULL in a member declared non-nullable throws a ValueMappingException naming the model and the row on the generated path (the
-// provider's exception inside in Release; the member and the column named in Debug); the runtime map's behaviour on the same data is its own
+// provider's exception inside, no member or column named); the runtime map's behaviour on the same data is its own
 // expectation (it keeps the member's value, it does not throw), pinned beside it; a NULL in a nullable member gives null, as the runtime gives it.
 public partial class ParityTests
 {
@@ -45,7 +45,7 @@ public partial class ParityTests
 			if (DecoratedMembers[column] is not { } member) continue;
 
 			var q = new TableQuery(DecoratedColumns, PostRows[0], DecoratedRowWithNull(column), PostRows[2]);
-			NullThrows<InvalidCastException>(Catch(() => q.Map<DecoratedPost>().ToList()), typeof(DecoratedPost), 1, member, DecoratedColumns[column].Name);
+			RowError<InvalidCastException>(Catch(() => q.Map<DecoratedPost>().ToList()), typeof(DecoratedPost), 1);
 			reported++;
 
 			// The runtime map's own behaviour on this data: no exception, the member keeps its value.
@@ -97,13 +97,12 @@ public partial class ParityTests
 	{
 		// Id and Title are required init-only (read into locals, then an object initializer), Price is set after it; all at declared ordinals.
 		var start = Counts.Now();
-		string[] members = ["Id", "Title", "Note", "Price"];
 		foreach (int column in new[] { 0, 1, 3 })
 		{
 			object?[] row = [1, "one", "n", 2m];
 			row[column] = null;
 			var q = new TableQuery(DecoratedInitColumns, [2, "two", null, 1m], row);
-			NullThrows<InvalidCastException>(Catch(() => q.Map<DecoratedInit>().ToList()), typeof(DecoratedInit), 1, members[column], DecoratedInitColumns[column].Name);
+			RowError<InvalidCastException>(Catch(() => q.Map<DecoratedInit>().ToList()), typeof(DecoratedInit), 1);
 
 			// The runtime builds the row instead of throwing: what it gives is its own expectation (Price keeps its default).
 			var runtime = q.Map(RowMap<DecoratedInit>.Default).ToList();
@@ -138,7 +137,7 @@ public partial class ParityTests
 		Parity.SameRows(nullable.Map(RowMap<PlainInit>.Default).ToList(), nullable.Map<PlainInit>().ToList());
 
 		var title = new TableQuery(columns, [1, "one", null, 2m], [2, null, "n", 3m]);
-		NullThrows<InvalidCastException>(Catch(() => title.Map<PlainInit>().ToList()), typeof(PlainInit), 1, "Title", "Title");
+		RowError<InvalidCastException>(Catch(() => title.Map<PlainInit>().ToList()), typeof(PlainInit), 1);
 		Assert.Equal(2, title.Map(RowMap<PlainInit>.Default).ToList().Count); // The runtime builds it.
 	}
 
@@ -149,14 +148,14 @@ public partial class ParityTests
 		const int Rows = 3000, At = 2741;
 		object?[][] post = [.. Enumerable.Range(0, Rows).Select(i => i == At ? PostRowWithNull(0) : PostRows[i % 3])];
 		var identity = new TableQuery(PostColumns, post);
-		NullThrows<InvalidCastException>(Catch(() => identity.Map<PlainPost>().ToList()), typeof(PlainPost), At, "Id", "Id");
+		RowError<InvalidCastException>(Catch(() => identity.Map<PlainPost>().ToList()), typeof(PlainPost), At);
 
 		object?[][] decorated = [.. Enumerable.Range(0, Rows).Select(i => i == At ? DecoratedRowWithNull(2) : PostRows[i % 3])];
 		var literal = new TableQuery(DecoratedColumns, decorated);
-		NullThrows<InvalidCastException>(Catch(() => literal.Map<DecoratedPost>().ToList()), typeof(DecoratedPost), At, "Title", "title");
+		RowError<InvalidCastException>(Catch(() => literal.Map<DecoratedPost>().ToList()), typeof(DecoratedPost), At);
 
 		// Each execution counts from its own first row: the same query again reports the same row.
-		NullThrows<InvalidCastException>(Catch(() => identity.Map<PlainPost>().ToList()), typeof(PlainPost), At, "Id", "Id");
+		RowError<InvalidCastException>(Catch(() => identity.Map<PlainPost>().ToList()), typeof(PlainPost), At);
 	}
 
 	[Fact]
@@ -165,11 +164,11 @@ public partial class ParityTests
 		// TaggedPost<int> is "TaggedPost<Int32>" (not "TaggedPost`1", not "Int32>"); a nested model carries its outer type.
 		Col[] columns = [Col.Of<int>("Id"), Col.Of<string>("Title")];
 		var generic = new TableQuery(columns, [1, "one"], [2, null]);
-		NullThrows<InvalidCastException>(Catch(() => generic.Map<TaggedPost<int>>().ToList()), typeof(TaggedPost<int>), 1, "Title", "Title", "TaggedPost<Int32>");
+		RowError<InvalidCastException>(Catch(() => generic.Map<TaggedPost<int>>().ToList()), typeof(TaggedPost<int>), 1, "TaggedPost<Int32>");
 		Parity.SameRows(generic.Map(RowMap<TaggedPost<int>>.Default).ToList(), [new TaggedPost<int> { Id = 1, Title = "one" }, new TaggedPost<int> { Id = 2, Title = "untitled" }]);
 
 		var nested = new TableQuery(columns, [1, "one"], [2, null]);
-		NullThrows<InvalidCastException>(Catch(() => nested.Map<PostHolder.Inner>().ToList()), typeof(PostHolder.Inner), 1, "Title", "Title", "PostHolder.Inner");
+		RowError<InvalidCastException>(Catch(() => nested.Map<PostHolder.Inner>().ToList()), typeof(PostHolder.Inner), 1, "PostHolder.Inner");
 	}
 
 	[Fact]
@@ -181,7 +180,7 @@ public partial class ParityTests
 		var value = new TableQuery(columns, [1, "a", "x"], [2, null, "y"]);
 
 		var start = Counts.Now();
-		NullThrows<InvalidCastException>(Catch(() => value.Map<InterfacePost>().ToList()), typeof(InterfacePost), 1, "Value", "Value");
+		RowError<InvalidCastException>(Catch(() => value.Map<InterfacePost>().ToList()), typeof(InterfacePost), 1);
 		Counts c = Counts.Now().Since(start);
 		Served(c);
 
@@ -208,10 +207,10 @@ public partial class ParityTests
 	}
 
 	[Fact]
-	public void A_nullable_member_never_calls_the_Debug_check_and_a_NULL_there_gives_null_in_both_configurations()
+	public void A_NULL_in_a_nullable_member_gives_null_not_an_exception()
 	{
-		// Title is nullable: its NULL gives null, no exception in Debug or Release, and the rows are the runtime's. (GeneratedIlTests checks the
-		// generated file itself: no check before a tested read.)
+		// Title is nullable: its NULL gives null, no exception, and the rows are the runtime's. (GeneratedSourceTests checks the
+		// generated file itself: IsDBNull exactly for the nullable members.)
 		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title")], [1, "one"], [2, null], [3, null]);
 		var generated = q.Map<SkippedPost>().ToList();
 		Parity.SameRows(q.Map(RowMap<SkippedPost>.Default).ToList(), generated);
@@ -221,7 +220,7 @@ public partial class ParityTests
 	[Fact]
 	public void A_ValueMappingException_from_the_model_is_not_wrapped_a_second_time()
 	{
-		// The row's handler leaves a ValueMappingException as it is (the Debug check throws one): here a model's own setter does, in both configurations.
+		// The row's handler leaves a ValueMappingException as it is (a model's own setter or constructor may throw one): here a setter does.
 		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title")], [1, "one"]);
 		var e = Assert.IsType<ValueMappingException>(Catch(() => q.Map<ReportingPost>().ToList()));
 		Assert.Equal("from the setter", e.Message);
