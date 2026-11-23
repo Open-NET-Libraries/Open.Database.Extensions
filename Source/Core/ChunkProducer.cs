@@ -7,146 +7,108 @@ namespace Open.Database.Extensions.Core;
 /// <c>ToBufferedAsyncStream</c>).
 /// </summary>
 /// <remarks>
-/// <para>
-/// <em>What it does.</em>
-/// It runs the query through the same internal row-sink path as
-/// <c>ToArrayAsync</c> and <c>ToListAsync</c>
-/// (<c>MappedQueryCore.FillAsync</c> into an <c>IRowSink</c>, via
-/// <see cref="ChunkSink{T}"/>), so the connection, the read mode, Skip and
-/// Take and the read-through of later result sets are the ones every
-/// other terminal has, and there is no per-row enumerator.
-/// It copies each row into a buffer rented from the pool and hands each
-/// filled buffer to its target.
-/// The target decides what happens to the chunks: the buffer keeps them
-/// until it is disposed, the stream queues them for its one consumer.
-/// </para>
-/// <para>
-/// <em>Threads.</em>
-/// <see cref="Start"/> runs <c>RunAsync</c> once, on a thread of the
-/// ambient task scheduler (normally the thread pool; see below).
-/// It is the only code that writes rows or rents buffers.
-/// Everything else (readers, dispose) runs on callers' threads and talks
-/// to it only through the target and through <see cref="Cancel"/>.
-/// </para>
-/// <para>
-/// <em>Why each non-obvious construct is here.</em>
-/// </para>
-/// <list type="bullet">
-/// <item>
-/// <description>
-/// <c>Task.Factory.StartNew(..., TaskScheduler.Current).Unwrap()</c>, not
-/// <c>Task.Run</c>: the producer runs on the ambient scheduler (a design
-/// decision).
-/// <c>RunAsync</c> is <see langword="async"/>, so <c>StartNew</c> returns a
-/// <c>Task&lt;Task&gt;</c>, which is unwrapped.
-/// <see cref="TaskCreationOptions.DenyChildAttach"/> makes a child task that
-/// the read creates with <see cref="TaskCreationOptions.AttachedToParent"/>
-/// <em>not</em> attach to the producer's task (its completion would
-/// otherwise wait for the child).
-/// The producer's own task is detached because it is not created with
-/// <c>AttachedToParent</c>.
-/// Consequence: on a single-thread scheduler, the producer's first step
-/// (everything up to the first real <see langword="await"/>, which for a
-/// provider that completes synchronously can be the whole read) needs that
-/// thread.
-/// A caller that blocks that thread waiting for <c>Items.Result</c> can
-/// therefore deadlock; <see langword="await"/> it instead.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// The linked token source: the query runs on a token that fires when the
-/// caller's token fires <em>or</em> when the owner disposes, so a dispose
-/// cancels the database read itself and not only this loop.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// Both kinds of cancel end the same way here, but are reported
-/// differently: a cancel the owner asked for (the target is disposed) is
-/// swallowed; a cancel from the caller's token is reported to the target
-/// as an <see cref="OperationCanceledException"/> carrying the
-/// <em>caller's</em> token; any other failure is reported as it is.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// The rows read before a failure or a cancel are delivered first: the
-/// buffer that is still being filled is handed over (sealed) before
-/// <see cref="IChunkTarget{T}.Finish"/>.
-/// </description>
-/// </item>
-/// </list>
-/// <para>
-/// <em>Invariants.</em>
-/// </para>
-/// <list type="bullet">
-/// <item>
-/// <description>
-/// Every chunk is sealed into an <see cref="ArrayLease{T}"/> when it leaves
-/// the producer: the array, the rows written to it and what releasing it
-/// does (<see cref="ClearMode"/>: none, clear where it is released, or
-/// clear in the recycle bin; see <see cref="ChunkConfig{T}"/>).
-/// The lease is made before the attempt to publish it, so a chunk the
-/// target refuses, and the partial chunk sealed on a cancel or a fault, are
-/// cleared like any other: they hold rows.
-/// Only the rows that were written are cleared (a row is stored before the
-/// count moves, so a fault leaves nothing past it).
-/// Nothing on the consumer's side knows.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// The pool must give an array of at least the capacity asked for.
-/// <see cref="ChunkConfig{T}.Rent"/> checks it once per chunk: a pool that
-/// gives less breaks its contract, the array is given back and the read
-/// fails with an <see cref="InvalidOperationException"/> (it goes the
-/// normal fault path, so <c>Items</c> and the stream complete with it).
-/// It does not clamp: the O(1) indexer needs every chunk exactly its
-/// planned number of rows.
-/// A pool may give a longer array; only the planned rows are used.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// A buffer is owned by exactly one party at a time: the producer while it
-/// fills it, then the target (<see cref="IChunkTarget{T}.Publish"/> returned
-/// <see langword="true"/>), or the producer again if the target refused it
-/// (the target is disposed), in which case it releases it at once.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// Once the producer has started,
-/// <see cref="IChunkTarget{T}.Finish"/> is called exactly once, last,
-/// whatever happens: a failure of the final hand-over (a pool whose
-/// <c>Return</c> throws) is recorded as the read's error, so <c>Items</c>
-/// and the stream still complete.
-/// Nothing is written after it.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// The linked source is disposed when <c>RunAsync</c> ends, whatever
-/// happens.
-/// <see cref="Cancel"/> is safe at any time: once the read is over it does
-/// nothing, so a stream that ends normally does not touch the disposed
-/// source and throws no exception.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// The connection ODX opened is closed by the query when the read ends, not
-/// by this class.
-/// </description>
-/// </item>
-/// </list>
+/// Start it once; it runs on a thread of the ambient task scheduler.
+/// Each filled chunk goes to the target, or is released if the target refuses it,
+/// and the rows read before a failure or a cancel are delivered first.
+/// The target is finished last, exactly once (<see cref="IChunkTarget{T}.Finish"/>),
+/// with the read's error if there was one: a cancel the owner asked for (the target
+/// is disposed) is swallowed, and a cancel from the caller's token reaches the target
+/// as an <see cref="OperationCanceledException"/> carrying that token.
+/// A caller that blocks on the returned task while the scheduler has a single thread
+/// can deadlock: await it instead.
 /// </remarks>
 /// <typeparam name="T">The type of each row.</typeparam>
 /// <param name="query">The query to read.</param>
 /// <param name="target">Receives each filled chunk, and the end of the read.</param>
 /// <param name="config">Rents, seals and releases the pooled chunks.</param>
 /// <param name="caller">The caller's cancellation token.</param>
+// What it does.
+// It runs the query through the same internal row-sink path as
+// ToArrayAsync and ToListAsync
+// (MappedQueryCore.FillAsync into an IRowSink, via
+// ChunkSink<T>), so the connection, the read mode, Skip and
+// Take and the read-through of later result sets are the ones every
+// other terminal has, and there is no per-row enumerator.
+// It copies each row into a buffer rented from the pool and hands each
+// filled buffer to its target.
+// The target decides what happens to the chunks: the buffer keeps them
+// until it is disposed, the stream queues them for its one consumer.
+//
+// Threads.
+// Start runs RunAsync once, on a thread of the
+// ambient task scheduler (normally the thread pool; see below).
+// It is the only code that writes rows or rents buffers.
+// Everything else (readers, dispose) runs on callers' threads and talks
+// to it only through the target and through Cancel.
+//
+// Why each non-obvious construct is here.
+//
+// - Task.Factory.StartNew(..., TaskScheduler.Current).Unwrap(), not
+//   Task.Run: the producer runs on the ambient scheduler (a design
+//   decision).
+//   RunAsync is async, so StartNew returns a
+//   Task<Task>, which is unwrapped.
+//   TaskCreationOptions.DenyChildAttach makes a child task that
+//   the read creates with TaskCreationOptions.AttachedToParent
+//   not attach to the producer's task (its completion would
+//   otherwise wait for the child).
+//   The producer's own task is detached because it is not created with
+//   AttachedToParent.
+//   Consequence: on a single-thread scheduler, the producer's first step
+//   (everything up to the first real await, which for a
+//   provider that completes synchronously can be the whole read) needs that
+//   thread.
+//   A caller that blocks that thread waiting for Items.Result can
+//   therefore deadlock; await it instead.
+// - The linked token source: the query runs on a token that fires when the
+//   caller's token fires or when the owner disposes, so a dispose
+//   cancels the database read itself and not only this loop.
+// - Both kinds of cancel end the same way here, but are reported
+//   differently: a cancel the owner asked for (the target is disposed) is
+//   swallowed; a cancel from the caller's token is reported to the target
+//   as an OperationCanceledException carrying the
+//   caller's token; any other failure is reported as it is.
+// - The rows read before a failure or a cancel are delivered first: the
+//   buffer that is still being filled is handed over (sealed) before
+//   IChunkTarget<T>.Finish.
+//
+// Invariants.
+//
+// - Every chunk is sealed into an ArrayLease<T> when it leaves
+//   the producer: the array, the rows written to it and what releasing it
+//   does (ClearMode: none, clear where it is released, or
+//   clear in the recycle bin; see ChunkConfig<T>).
+//   The lease is made before the attempt to publish it, so a chunk the
+//   target refuses, and the partial chunk sealed on a cancel or a fault, are
+//   cleared like any other: they hold rows.
+//   Only the rows that were written are cleared (a row is stored before the
+//   count moves, so a fault leaves nothing past it).
+//   Nothing on the consumer's side knows.
+// - The pool must give an array of at least the capacity asked for.
+//   ChunkConfig<T>.Rent checks it once per chunk: a pool that
+//   gives less breaks its contract, the array is given back and the read
+//   fails with an InvalidOperationException (it goes the
+//   normal fault path, so Items and the stream complete with it).
+//   It does not clamp: the O(1) indexer needs every chunk exactly its
+//   planned number of rows.
+//   A pool may give a longer array; only the planned rows are used.
+// - A buffer is owned by exactly one party at a time: the producer while it
+//   fills it, then the target (IChunkTarget<T>.Publish returned
+//   true), or the producer again if the target refused it
+//   (the target is disposed), in which case it releases it at once.
+// - Once the producer has started,
+//   IChunkTarget<T>.Finish is called exactly once, last,
+//   whatever happens: a failure of the final hand-over (a pool whose
+//   Return throws) is recorded as the read's error, so Items
+//   and the stream still complete.
+//   Nothing is written after it.
+// - The linked source is disposed when RunAsync ends, whatever
+//   happens.
+//   Cancel is safe at any time: once the read is over it does
+//   nothing, so a stream that ends normally does not touch the disposed
+//   source and throws no exception.
+// - The connection ODX opened is closed by the query when the read ends, not
+//   by this class.
 internal sealed class ChunkProducer<T>(
 	MappedQueryCore<T> query,
 	IChunkTarget<T> target,
@@ -216,12 +178,11 @@ internal sealed class ChunkProducer<T>(
 
 	/// <summary>Cancels the query. Never throws.</summary>
 	/// <remarks>
-	/// Does nothing once the read is over. A provider's cancel callback
-	/// may throw (the source then throws an
-	/// <see cref="AggregateException"/>), and in a narrow race the source
-	/// may be disposed already: the owner asked for the cancel, so
-	/// neither matters to it.
+	/// Does nothing once the read is over.
 	/// </remarks>
+	// A provider's cancel callback may throw (the source then throws an
+	// AggregateException), and in a narrow race the source may be disposed
+	// already: the owner asked for the cancel, so neither matters to it.
 	public void Cancel()
 	{
 		if (Volatile.Read(ref _ended) != 0) return;
@@ -284,11 +245,9 @@ internal sealed class ChunkProducer<T>(
 
 	/// <summary>Stores one row, from the read loop, in the current buffer.</summary>
 	/// <param name="row">The mapped row.</param>
-	/// <remarks>
-	/// It goes straight into the buffer's array through <see cref="ChunkSink{T}"/>:
-	/// no enumerator and no allocation, the same loop that <c>ToArrayAsync</c>
-	/// uses, with the buffer's bounds held in two fields.
-	/// </remarks>
+	// It goes straight into the buffer's array through ChunkSink<T>: no
+	// enumerator and no allocation, the same loop that ToArrayAsync uses, with
+	// the buffer's bounds held in two fields.
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public void Add(T row)
 	{
@@ -316,13 +275,6 @@ internal sealed class ChunkProducer<T>(
 	}
 
 	/// <summary>Hands the full buffer on and rents the next one.</summary>
-	/// <remarks>
-	/// The token is checked once per chunk (the read loop looks at it per row
-	/// in the default read mode, and the provider does in the async read
-	/// mode): a cancel that a provider ignores still ends the read here, at
-	/// the next chunk.
-	/// The chunk being filled is sealed and delivered, as for every cancel.
-	/// </remarks>
 	/// <exception cref="OperationCanceledException">
 	/// The token was cancelled, or the target refused the full chunk.
 	/// </exception>
@@ -331,7 +283,11 @@ internal sealed class ChunkProducer<T>(
 	/// </exception>
 	void Advance()
 	{
-		// Once per chunk: see the remarks.
+		// Once per chunk: the read loop looks at the token per row in the
+		// default read mode, and the provider does in the async read mode, so a
+		// cancel that a provider ignores still ends the read here, at the next
+		// chunk. The chunk being filled is sealed and delivered, as for every
+		// cancel.
 		_linked.Token.ThrowIfCancellationRequested();
 
 		if (_array is not null)

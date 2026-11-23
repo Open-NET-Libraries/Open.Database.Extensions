@@ -67,10 +67,8 @@ internal static class ChannelPump
 	/// <summary>
 	/// Writes rows from a position of a chunk until the writer has no room.
 	/// </summary>
-	/// <remarks>
-	/// The only code that holds a span: nothing can await while it lives.
-	/// </remarks>
 	/// <returns>The position of the first row not written.</returns>
+	// The only code that holds a span: nothing can await while it lives.
 	internal static int TryWriteFrom<T>(
 		ChannelWriter<T> writer,
 		ReadOnlyMemory<T> chunk,
@@ -150,13 +148,13 @@ internal readonly struct ChunkFeed<T>(
 /// <remarks>
 /// The next row is pulled only after the current one was written, so a
 /// full target holds the reader and the connection open.
-/// The stall timeout is Core's: this feed only learns of an expiry
-/// while it waits for room, because a loop that is not pulling cannot
-/// see it in <c>MoveNextAsync</c>.
 /// </remarks>
 internal readonly struct RowFeed<T>(IAsyncEnumerable<T> rows)
 	: IFeed<T>
 {
+	// The stall timeout is Core's: this feed only learns of an expiry
+	// while it waits for room, because a loop that is not pulling cannot
+	// see it in MoveNextAsync.
 	public async ValueTask<long> WriteAsync(
 		ChannelWriter<T> writer,
 		CancellationToken cancellationToken)

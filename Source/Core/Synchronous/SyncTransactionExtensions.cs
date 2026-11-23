@@ -9,9 +9,8 @@ namespace Open.Database.Extensions.Synchronous;
 public static class SyncTransactionExtensions
 {
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Begins a transaction on the connection, invokes the action, and commits it when the action's <c>Commit</c> value is <see langword="true"/>,
+	/// unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="../Extensions/Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="../Extensions/Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -61,9 +60,8 @@ public static class SyncTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, returns <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Begins a transaction on the connection, invokes the action, and commits it when the action returns <see langword="true"/>,
+	/// unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="../Extensions/Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
 	/// <param name="conditionalAction">
@@ -90,9 +88,8 @@ public static class SyncTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Begins a transaction on the connection, invokes the action, and commits it
+	/// unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="../Extensions/Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="../Extensions/Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -117,9 +114,8 @@ public static class SyncTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Begins a transaction on the connection, invokes the action, and commits it
+	/// unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="../Extensions/Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
 	/// <param name="action">The handler to execute while the transaction is pending.</param>

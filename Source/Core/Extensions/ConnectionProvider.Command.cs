@@ -1,9 +1,7 @@
 ﻿namespace Open.Database.Extensions;
 
 /// <summary>
-/// Extension methods on connections, transactions, connection factories and connection pools. They start an expressive command
-/// (<c>Command</c>, <c>StoredProcedure</c>) and provide helpers to create commands, ensure a connection is open, and run work on a
-/// connection (<c>Open</c>, <c>Using</c>).
+/// Extension methods on connections, transactions, connection factories and connection pools that start an expressive command, create commands, ensure a connection is open, and run work on a connection.
 /// </summary>
 /// <remarks>
 /// <para>

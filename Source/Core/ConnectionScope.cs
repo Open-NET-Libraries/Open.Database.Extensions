@@ -21,6 +21,7 @@ enum ScopeEnd : byte
 	Give,
 }
 
+// A readonly struct cannot remember that it was disposed, so a copy cannot be guarded.
 /// <summary>
 /// A connection that was opened if it needed to be, the state it was found in, and what
 /// to do with it when the scope is disposed.
@@ -75,15 +76,12 @@ enum ScopeEnd : byte
 /// </para>
 /// <para>
 /// A connection that was broken is closed and opened again, so a scope that closes it closes it
-/// again afterwards; the broken state is not restored. <see cref="DisposeAsync"/> calls
-/// <c>CloseAsync</c> for a <see cref="DbConnection"/> where the target has it (not netstandard2.0,
-/// where it closes synchronously).
+/// again afterwards; the broken state is not restored.
 /// </para>
 /// <para>
-/// Dispose the value you were given exactly once, and do not copy it: a readonly struct
-/// cannot remember that it was disposed, so a second dispose of a copy disposes a factory's
-/// connection again, gives a pool's connection back again, or closes a connection that someone
-/// opened in between. Deconstruct a scope you hold, never the call itself:
+/// Dispose the value you were given exactly once, and do not copy it: a second dispose of a copy
+/// disposes a factory's connection again, gives a pool's connection back again, or closes a connection
+/// that someone opened in between. Deconstruct a scope you hold, never the call itself:
 /// <c>var (c, s) = connection.EnsureOpenScope();</c> drops the scope, and the connection it opened
 /// stays open.
 /// </para>
@@ -197,9 +195,8 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 
 	/// <summary>
 	/// As <see cref="Dispose"/>, asynchronously where the connection can: <c>DisposeAsync</c> for a
-	/// factory's connection that has one, and <c>CloseAsync</c> for a caller's
-	/// <see cref="DbConnection"/> (on netstandard2.0, which has no <c>CloseAsync</c>, it calls
-	/// <c>Close</c>). Giving a connection back to a pool is synchronous.
+	/// factory's connection that has one, and <c>CloseAsync</c> for a caller's <see cref="DbConnection"/>.
+	/// Giving a connection back to a pool is synchronous.
 	/// </summary>
 	/// <returns>A task that represents the asynchronous dispose operation.</returns>
 	public ValueTask DisposeAsync()
@@ -261,8 +258,10 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 			? ConnectionExtensions.ReaderBehavior(PriorState, behavior)
 			: behavior;
 
+	// A struct: the IAsyncDisposable ConfigureAwait extension would box it, so the compiler picks this instance method,
+	// which allocates nothing. It holds no library setting; it exists only for that.
 	/// <summary>
-	/// Configures how the disposal of this scope is awaited by <see langword="await"/> <see langword="using"/>, without boxing the scope.
+	/// Configures how <see langword="await"/> <see langword="using"/> awaits the disposal of this scope.
 	/// </summary>
 	/// <remarks>
 	/// Library code takes the scope first, then hands it to <see langword="await"/> <see langword="using"/> on its own line:
@@ -270,10 +269,7 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 	/// var scope = await connection.EnsureOpenScopeAsync(cancellationToken).ConfigureAwait(false);
 	/// await using var disposal = scope.ConfigureAwait(false);
 	/// </code>
-	/// The scope is a struct, so the <see cref="IAsyncDisposable"/> extension of the same name would box
-	/// it; this instance method is chosen instead, and allocates nothing. It exists only for that:
-	/// it holds no library setting, and the library never returns to a caller's context (it always passes
-	/// <see langword="false"/>). Whether to return to a context is the caller's choice at their own call site,
+	/// The library never returns to a caller's context; whether to is the caller's choice at their own call site,
 	/// as with <see cref="Task.ConfigureAwait(bool)"/>.
 	/// </remarks>
 	/// <param name="continueOnCapturedContext">
@@ -285,16 +281,15 @@ public readonly struct ConnectionScope<TConnection> : IDisposable, IAsyncDisposa
 		=> new(this, continueOnCapturedContext);
 }
 
+// A struct: the BCL IAsyncDisposable.ConfigureAwait extension would box the scope, so the scope's own ConfigureAwait returns this type.
+// It holds no library setting; it exists so that await using the scope allocates nothing.
 /// <summary>
 /// A <see cref="ConnectionScope{TConnection}"/> whose disposal is awaited as configured by
-/// <see cref="ConnectionScope{TConnection}.ConfigureAwait(bool)"/>. It exists only so that
-/// <see langword="await"/> <see langword="using"/> of the scope allocates nothing.
+/// <see cref="ConnectionScope{TConnection}.ConfigureAwait(bool)"/>.
 /// </summary>
 /// <remarks>
-/// The scope is a struct, and the BCL <c>IAsyncDisposable.ConfigureAwait</c> extension would box it; this
-/// type is what the scope's own <c>ConfigureAwait</c> returns instead. It holds no library setting, and the
-/// library never returns to a caller's context: ODX always passes <see langword="false"/>, and whether to
-/// return to a context is the caller's choice at their own call site, as with <see cref="Task.ConfigureAwait(bool)"/>.
+/// The library never returns to a caller's context; whether to is the caller's choice at their own call site,
+/// as with <see cref="Task.ConfigureAwait(bool)"/>.
 /// </remarks>
 /// <typeparam name="TConnection">The type of the connection, as the caller holds it.</typeparam>
 public readonly struct ConfiguredConnectionScope<TConnection>

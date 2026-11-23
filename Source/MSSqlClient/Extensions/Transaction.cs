@@ -1,21 +1,17 @@
 ﻿namespace Open.Database.Extensions;
 
 // Keep it in sync with Source/Core/Extensions/Transaction.cs; only the type names and the TFM seams differ.
+// A copy of the TransactionExtensions methods for DbConnection with the types replaced by their Sql versions,
+// so that the SqlTransaction type flows through to the action rather than a plain transaction.
 
 /// <summary>
 /// Provides Microsoft.Data.SqlClient specific extension methods that run work in a database transaction on a <see cref="SqlConnection"/>.
 /// </summary>
-/// <remarks>
-/// These are a copy of the <see cref="TransactionExtensions"/> methods for <see cref="System.Data.Common.DbConnection"/>, with the types replaced by their Sql versions.
-/// The copy exists so that the <see cref="SqlTransaction"/> type is propagated through the type flow: the action receives a <see cref="SqlTransaction"/>, not a plain transaction.
-/// </remarks>
 [SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "Overload for easier consumption.")]
 public static partial class SqlTransactionExtensions
 {
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -83,9 +79,7 @@ public static partial class SqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -119,9 +113,7 @@ public static partial class SqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, returns <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws, returns <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
 	/// <param name="conditionalAction">
@@ -154,9 +146,7 @@ public static partial class SqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -187,9 +177,7 @@ public static partial class SqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
 	/// <param name="action">The asynchronous handler to execute while the transaction is pending.</param>
@@ -217,30 +205,18 @@ public static partial class SqlTransactionExtensions
 
 	#region Restoring the connection
 
+	// By the time this runs the transaction has already been disposed: that ordering matters because some providers
+	// (for example Microsoft.Data.Sqlite and MySqlConnector) only roll back an uncommitted transaction on dispose
+	// while the connection is still open.
+	// A failure to close is deliberately ignored. By then the transaction has already been committed or rolled back,
+	// so it must neither turn a completed operation into an error nor replace the exception of a failed one.
+	// Only a connection that was already Open belongs to the caller. One that was Closed, or Broken and therefore
+	// repaired by EnsureOpen, is a connection this operation opened, so it is closed again here.
 	/// <summary>
-	/// Closes (never disposes) a connection that was not open when the operation began,
-	/// so the caller's connection is left the way it was found.
+	/// Closes (never disposes) a connection that this operation opened, so the caller's connection is left the way it was found.
 	/// </summary>
 	/// <param name="connection">The connection the operation ran on.</param>
 	/// <param name="priorState">The state the connection was in before the operation opened it.</param>
-	/// <remarks>
-	/// <para>
-	/// By the time this runs the transaction has already been disposed: that ordering matters
-	/// because some providers (for example Microsoft.Data.Sqlite and MySqlConnector) only roll back
-	/// an uncommitted transaction on dispose while the connection is still open.
-	/// </para>
-	/// <para>
-	/// A failure to close is deliberately ignored. By then the transaction has already been committed
-	/// or rolled back, so it must neither turn a completed operation into an error nor replace the
-	/// exception of a failed one.
-	/// </para>
-	/// <para>
-	/// Only a connection that was already <see cref="ConnectionState.Open"/> belongs to the caller.
-	/// One that was closed, or broken and therefore repaired by
-	/// <see cref="ConnectionExtensions.EnsureOpen(IDbConnection)"/>, is a connection this operation
-	/// opened, so it is closed again here.
-	/// </para>
-	/// </remarks>
 	internal static void RestoreConnection(SqlConnection connection, ConnectionState priorState)
 	{
 		if ((priorState & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open)
@@ -257,9 +233,9 @@ public static partial class SqlTransactionExtensions
 	}
 
 #if NET472
+	// The .NET Framework target has no CloseAsync, so it closes synchronously.
 	/// <summary>
 	/// Closes the connection as <see cref="RestoreConnection(SqlConnection, ConnectionState)"/> does.
-	/// The .NET Framework target has no <c>CloseAsync</c>, so it closes synchronously.
 	/// </summary>
 	/// <inheritdoc cref="RestoreConnection(SqlConnection, ConnectionState)"/>
 	static ValueTask RestoreConnectionAsync(SqlConnection connection, ConnectionState priorState)

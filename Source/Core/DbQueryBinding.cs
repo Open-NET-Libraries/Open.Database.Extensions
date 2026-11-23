@@ -110,7 +110,6 @@ static class DbQueryBinding
 	/// Adds the members of the values as parameters.
 	/// </summary>
 	/// <remarks>
-	/// The members of the values are found once per type.
 	/// When the real names are known a member the command does not take is
 	/// not sent, and a member whose name another parameter claims (one written
 	/// or derived, added before or after) is left to that parameter.
@@ -124,6 +123,7 @@ static class DbQueryBinding
 	/// <param name="index">The names the command is looked up in, or <see langword="null"/>.</param>
 	/// <param name="whole">The entries of the whole call.</param>
 	/// <param name="seen">Which names of <paramref name="index"/> the command already has.</param>
+	// The members of the values are found once per type.
 	public static void BindMembers<T>(
 		DbCommand command,
 		T value,
@@ -248,14 +248,12 @@ static class DbQueryBinding
 	/// <summary>
 	/// Adds a parameter to the command.
 	/// </summary>
-	/// <remarks>
-	/// A NULL carries no type, so it is sent with the type of its argument,
-	/// as the command builders do.
-	/// </remarks>
 	/// <param name="command">The command to add the parameter to.</param>
 	/// <param name="name">The name of the parameter.</param>
 	/// <param name="value">The value of the parameter.</param>
 	/// <param name="clrType">The CLR type of the argument.</param>
+	// A NULL carries no type, so it is sent with the type of its argument, as
+	// the command builders do.
 	static void Append(
 		DbCommand command,
 		string name,

@@ -10,9 +10,7 @@ namespace Open.Database.Extensions.Synchronous;
 public static class SyncSqlTransactionExtensions
 {
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -62,9 +60,7 @@ public static class SyncSqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, returns <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws, returns <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
 	/// <param name="conditionalAction">
@@ -91,9 +87,7 @@ public static class SyncSqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -118,9 +112,7 @@ public static class SyncSqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='tx-common']/*" />
 	/// <param name="action">The handler to execute while the transaction is pending.</param>

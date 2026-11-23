@@ -45,14 +45,10 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// Gets the <c>@name</c> markers of a text definition, found once when it
 	/// is made; <see langword="null"/> for a procedure.
 	/// </summary>
-	/// <remarks>
-	/// A definition is a <see langword="static"/> field, so a call that
-	/// derives names scans nothing.
-	/// A procedure's names are remembered per source
-	/// (<c>ProcedureNameCache</c>).
-	/// A set with no names means "not known": each argument is sent as
-	/// written.
-	/// </remarks>
+	// A definition is a static field, so a call that derives names scans
+	// nothing. A procedure's names are remembered per source
+	// (ProcedureNameCache). A set with no names means "not known": each
+	// argument is sent as written.
 	internal NameSet? TextNames { get; }
 
 	/// <summary>
@@ -62,10 +58,10 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// It holds the real name of each member in member order
 	/// (<see langword="null"/>: the command does not take it).
-	/// Up to four are kept, newest first: values types used in turn cost nothing
-	/// once matched, and a definition used with more values types, or on more
-	/// sets of names, matches the oldest again when it returns.
 	/// </remarks>
+	// Up to four are kept, newest first: values types used in turn cost nothing
+	// once matched, and a definition used with more values types, or on more
+	// sets of names, matches the oldest again when it returns.
 	internal sealed class MemberMatch(Type type, NameSet names, string?[] resolved, NameSet.Entry?[] entries)
 	{
 		public Type Type { get; } = type;
@@ -133,9 +129,6 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	internal int Timeout { get; }
 
 	/// <summary>Defines a query from SQL text.</summary>
-	/// <remarks>
-	/// The <c>@name</c> markers of the text are found once, here.
-	/// </remarks>
 	/// <param name="sql">The SQL text.</param>
 	/// <returns>The definition.</returns>
 	/// <exception cref="ArgumentNullException">
@@ -144,6 +137,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <exception cref="ArgumentException">
 	/// <paramref name="sql"/> is empty or white space.
 	/// </exception>
+	// The @name markers of the text are found once, here.
 	public static DbQuery Text(string sql)
 		=> new(
 			Checked(sql, nameof(sql)),
@@ -198,11 +192,11 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// The result is immutable and has no connection yet, so it can be held in a static field;
 	/// give it a source with <c>Using</c> and read it with a terminal.
-	/// A single value such as <see cref="int"/> or <see cref="string"/> is read from the first column.
-	/// Any other type is read through <see cref="RowMap{T}.Default"/>, shared, so its compiled reader is built once.
 	/// </remarks>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
 	/// <returns>The mapped definition.</returns>
+	// Any other type is read through RowMap<T>.Default, shared, so its compiled
+	// reader is built once.
 	public MappedDbQuery<T> Map<T>()
 		=> FirstColumn<T>.Instance is { } firstColumn
 		? new(this, firstColumn)
@@ -210,8 +204,11 @@ public sealed class DbQuery : IEquatable<DbQuery>
 
 	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped definition.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload and does not compile).</param>
-	/// <returns>The mapped definition. It keeps <paramref name="map"/>, so its compiled reader is shared by every call.</returns>
+	/// <param name="map">The map. <see langword="null"/> reads as <see cref="Map{T}()"/> does.</param>
+	/// <returns>The mapped definition.</returns>
+	// A bare null does not compile here (it also fits the selector overload):
+	// write (RowMap<T>?)null. The definition keeps map, so its compiled reader
+	// is shared by every call.
 	public MappedDbQuery<T> Map<T>(RowMap<T>? map)
 		=> map is null ? Map<T>() : new(this, map);
 
@@ -253,7 +250,7 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// <remarks>
 	/// The values are then given in one call, which the compiler checks:
 	/// <c>.Using(db).AddParams(new(AuthorId: authorId, Day: day))</c>.
-	/// A class object that already exists (for example a deserialized request) is added with <c>AddParams</c> on the untyped definition, which allocates no more.
+	/// A class object that already exists (for example a deserialized request) is added with <c>AddParams</c> on the untyped definition.
 	/// </remarks>
 	/// <typeparam name="TParams">The type of the values.</typeparam>
 	/// <returns>The typed definition.</returns>
@@ -281,6 +278,10 @@ public sealed class DbQuery : IEquatable<DbQuery>
 	/// Binds the query to a transaction, which runs it on the
 	/// transaction's connection.
 	/// </summary>
+	/// <remarks>
+	/// The transaction must not be completed, and its connection must be open, when a terminal runs; otherwise the run throws <see cref="InvalidOperationException"/>.
+	/// The query never opens, closes or gives back the transaction's connection.
+	/// </remarks>
 	/// <param name="transaction">The transaction to run in.</param>
 	/// <returns>The query, bound.</returns>
 	/// <exception cref="ArgumentNullException">
@@ -384,8 +385,10 @@ public sealed class DbQuery<TParams>
 
 	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped definition.</summary>
 	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="map">The map. <see langword="null"/> reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload and does not compile).</param>
+	/// <param name="map">The map. <see langword="null"/> reads as <see cref="Map{T}()"/> does.</param>
 	/// <returns>The mapped definition, whose parameters are the struct.</returns>
+	// A bare null does not compile here (it also fits the selector overload):
+	// write (RowMap<T>?)null.
 	public MappedDbQuery<TParams, T> Map<T>(RowMap<T>? map)
 		=> new(_definition.Map(map));
 

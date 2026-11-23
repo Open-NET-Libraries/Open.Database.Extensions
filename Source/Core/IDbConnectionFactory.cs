@@ -10,14 +10,14 @@
 /// <see cref="IDbConnectionPool"/>, which is how the expressive commands consume it.
 /// </para>
 /// <para>
-/// A factory is the usual connection source: the provider's own connection pool does the pooling behind each
-/// connection it creates, so there is nothing for ODX to pool.
+/// A factory is the usual connection source.
 /// A custom <see cref="IDbConnectionPool"/> is only for a pooling scheme of your own.
 /// </para>
 /// </remarks>
 /// <seealso cref="IDbConnectionFactory{TConnection}"/>
 /// <seealso cref="DbConnectionFactory"/>
 /// <seealso cref="IDbConnectionPool"/>
+// The provider's own connection pool does the pooling behind each connection a factory creates, so there is nothing for ODX to pool.
 public interface IDbConnectionFactory
 {
 	/// <summary>

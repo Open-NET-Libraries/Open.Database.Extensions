@@ -1,8 +1,7 @@
 namespace Open.Database.Extensions.Synchronous;
 
-/// <summary>
-/// Blocking extensions on an <see cref="IExecuteReader"/>. Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.
-/// </summary>
+/// <summary>Blocking extensions on an <see cref="IExecuteReader"/>, which hold the calling thread until the work is done.</summary>
+/// <remarks>Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.</remarks>
 public static class SyncExecuteReaderExtensions
 {
 	/// <summary>
@@ -23,8 +22,10 @@ public static class SyncExecuteReaderExtensions
 
 	/// <summary>
 	/// Loads each result set of the command into its own <see cref="DataTable"/>.
-	/// Calls <see cref="IDataReader.NextResult"/> to check for more results.
 	/// </summary>
+	/// <remarks>
+	/// It calls <see cref="IDataReader.NextResult"/> to check for more results.
+	/// </remarks>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='command']/*" />
 	/// <returns>The resultant list of tables.</returns>
 	/// <include file="../Mapped.docs.xml" path="docs/members[@name='null-command']/*" />

@@ -22,7 +22,7 @@ namespace Open.Database.Extensions;
 /// </para>
 /// <para>
 /// A type with no public parameterless constructor is built through its one public constructor (a positional record, a record struct, a class with one constructor), and each parameter is fed like a property.
-/// A parameter and a public property whose names differ only in case are one member, fed once, through the constructor, and a pair names it by the property's name or by the parameter's, ignoring case.
+/// A parameter and a public property whose names differ only in case are one member, fed once, through the constructor, and a pair names it by the property's name (exactly) or by the parameter's name (ignoring case).
 /// A parameter no column feeds, or a <see langword="null"/> column ignores, receives its declared default value, else <see langword="default"/>; so does a parameter the type declares non-nullable when the cell is NULL.
 /// </para>
 /// <para>
@@ -52,7 +52,6 @@ namespace Open.Database.Extensions;
 /// A NULL never overwrites a member the C# type declares non-nullable: a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type with nullable annotations on (<c>string</c>, not <c>string?</c>).
 /// A property of such a type keeps the value its constructor or initializer gave it, else its default; a constructor parameter receives its declared default value, else <see langword="default"/>.
 /// Anything else receives <see langword="null"/>: <see cref="Nullable{T}"/>, a reference type declared nullable (<c>string?</c>, or <c>[AllowNull]</c> on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter.
-/// The annotations are read from the assembly the model is declared in, once per model type.
 /// </para>
 /// <para>
 /// A member that declares its column is a hard instruction, and a result that does not say the same throws.
@@ -64,7 +63,7 @@ namespace Open.Database.Extensions;
 /// <item><description><c>[NotMapped]</c> leaves the member out: no column feeds it, whatever its name, unless a pair names it.</description></item>
 /// </list>
 /// <para>
-/// These are checked once per result set, when the row reader is built, never per row, and a result set that fails is checked again the next time it comes back.
+/// These are checked once per result set, when the row reader is built, and a result set that fails is checked again the next time it comes back.
 /// A <c>[NotMapped]</c> member that is also <c>[Column]</c>, required, or set by a constructor parameter, two members that declare the same ordinal or name, and a declaration with an empty name or a negative ordinal are a type error (<see cref="InvalidOperationException"/>).
 /// A pair that names a declared member overrides its declarations for that map:
 /// it reads the pair's column, a <see langword="null"/> column leaves it unread, and a <c>[NotMapped]</c> member it names is mapped; its own <c>Name</c> and <c>Order</c> checks do not apply.
@@ -75,15 +74,15 @@ namespace Open.Database.Extensions;
 /// A column that needs a trim, a parse or a format on its way to a member has a converter:
 /// <c>map.Convert&lt;long, string&gt;(nameof(Order.Number), n =&gt; n.ToString("D6"))</c> returns a new map (this one is unchanged)
 /// in which the member receives what the delegate makes of its column, and every other member still maps by name.
-/// The delegate is called inside the compiled row reader, on the value read with the typed getter when the column is a <c>TColumn</c> (nothing is boxed),
-/// else read the way <c>Map&lt;int&gt;()</c> reads a single value: an integer converts only within the range of <c>TColumn</c>, else the row throws <see cref="ValueMappingException"/>.
+/// The delegate receives the column's own value when the column is a <c>TColumn</c>,
+/// else the value read the way <c>Map&lt;int&gt;()</c> reads a single value: an integer converts only within the range of <c>TColumn</c>, else the row throws <see cref="ValueMappingException"/>.
 /// </para>
 /// <para>
 /// A converter is not called for a NULL cell, and the member follows the NULL rules above:
 /// <see langword="null"/> for a nullable member, its own value (a property) or its declared default (a constructor parameter) for a non-nullable one.
 /// A converter that must see NULL names a <see cref="Nullable{T}"/> as <c>TColumn</c> (<c>int?</c>, <c>DateTime?</c>): it is called with <see langword="null"/>,
 /// and what it returns is the member's value, a non-nullable member's included.
-/// A reference type never receives <see langword="null"/> (<c>string?</c> says nothing at run time, where the annotation does not exist), so a converter of text sees only text.
+/// A converter of a reference-type column (text included) is never called with <see langword="null"/>, whatever its parameter is annotated as.
 /// A converter is not a pair: a map enumerates the pairs it was declared with and the columns <c>Convert</c> was given, never the delegates.
 /// </para>
 /// </remarks>
@@ -106,8 +105,9 @@ namespace Open.Database.Extensions;
 [CollectionBuilder(typeof(RowMap), nameof(RowMap.Create))]
 public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRowSource<T>
 {
+	// One pair, so that new(...) compiles as a single argument.
 	/// <summary>
-	/// Initializes a new instance of the <see cref="RowMap{T}"/> class from one (property name, column name) pair, so <c>new RowMap&lt;T&gt;(new("A", "b"))</c> compiles.
+	/// Initializes a new instance of the <see cref="RowMap{T}"/> class from one (property name, column name) pair.
 	/// </summary>
 	/// <remarks>
 	/// <include file="RowMapping.docs.xml" path="docs/members[@name='declare-once']/*" />
@@ -297,7 +297,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// That also makes a map a collection-expression target:
 	/// each slot a pair named, in slot order, with the column the pair gave it (<see langword="null"/>: an ignored slot).
 	/// A slot no pair named is not yielded, so <c>new RowMap&lt;T&gt;(map)</c> builds an equivalent map for a map of the model's own members;
-	/// a factory map's pairs do not hold its function, so that constructor throws for one (<c>GetMappingSpan</c>),
+	/// a factory map's pairs do not hold its function, so that constructor throws for one,
 	/// and <c>[.. map]</c> gives a member map (see <see cref="From(Delegate, ReadOnlySpan{KeyValuePair{string, string?}})"/>).
 	/// </remarks>
 	/// <returns>An enumerator over the (property name, column name) pairs.</returns>
@@ -331,7 +331,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <typeparam name="TColumn">The type the column is read as and the delegate receives: the column's own type, else any type a single value can be read as (<c>Map&lt;TColumn&gt;()</c>); an integer converts only within its range.</typeparam>
 	/// <typeparam name="TMember">The type the delegate returns: the member's type, or one assignable to it.</typeparam>
 	/// <param name="member">The name of the property (exactly), or of the constructor parameter (ignoring case), that receives the converted value.</param>
-	/// <param name="convert">Makes the value of the member of the value of the column. It runs once per row, inside the compiled row reader.</param>
+	/// <param name="convert">Makes the value of the member of the value of the column. It runs once per row.</param>
 	/// <returns>The new map.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="member"/> or <paramref name="convert"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">The member is unknown or unsettable, has a converter already, is mapped to <see langword="null"/> (it reads no column), or <typeparamref name="TMember"/> cannot be assigned to it.</exception>
@@ -361,7 +361,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <typeparam name="TMember">The type the delegate returns: the member's type, or one assignable to it.</typeparam>
 	/// <param name="member">The name of the property (exactly), or of the constructor parameter (ignoring case), that receives the converted value.</param>
 	/// <param name="column">The name of the column the member reads.</param>
-	/// <param name="convert">Makes the value of the member of the value of the column. It runs once per row, inside the compiled row reader.</param>
+	/// <param name="convert">Makes the value of the member of the value of the column. It runs once per row.</param>
 	/// <returns>The new map.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="member"/>, <paramref name="column"/> or <paramref name="convert"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">The member is unknown or unsettable, is mapped by a pair or has a converter already, <paramref name="column"/> is empty or is read by another member, or <typeparamref name="TMember"/> cannot be assigned to the member.</exception>
@@ -442,30 +442,23 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	// The compiled, cached readers of a layout are described on Layout.
 
+	// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.
+	// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
 	/// <summary>The number of layouts a map keeps readers for before its cache is cleared.</summary>
-	/// <remarks>
-	/// The per-layout reader cache is bounded so dynamically generated column lists cannot grow memory forever.
-	/// Real applications use a handful of layouts; when the bound is hit the cache is simply cleared and refills.
-	/// </remarks>
 	const int MaxLayouts = 128;
 
 	// The statics below are one immutable copy per model type: see TypeShape.
 
+	// Never throws: an unmappable T holds its error, so no static initializer here can fail with it.
+	// The per-model-type statics (TypeShape, ModelSlots, ModelSlotIndex, Default) are one immutable copy per T, built once.
+	// Any cache of compiled readers keyed by model type lives as long and costs a lookup per call; a static on the generic type is the cheapest place for it.
+	// Nothing that does not depend on T belongs here.
 	/// <summary>
-	/// Whether <typeparamref name="T"/> can be mapped at all, judged from its shape.
+	/// Holds the shape of <typeparamref name="T"/>: why it cannot be mapped, if it cannot, and the constructor it is built through.
 	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// It never throws (an unmappable <typeparamref name="T"/> holds its error), so no static initializer here can fail with it.
-	/// </para>
-	/// <para>
-	/// The per-model-type statics (<c>TypeShape</c>, <c>ModelSlots</c>, <c>ModelSlotIndex</c>, <see cref="Default"/>) are one immutable copy per <typeparamref name="T"/>, built once.
-	/// Any cache of compiled readers keyed by model type lives as long and costs a lookup per call; a static on the generic type is the cheapest place for it.
-	/// Nothing that does not depend on <typeparamref name="T"/> belongs here.
-	/// </para>
-	/// </remarks>
 	static readonly Shape TypeShape = Shape.Of(typeof(T));
 
+	// Nullable annotations are read from the assembly the model is declared in, once per model type.
 	/// <summary>
 	/// Holds the slots of <typeparamref name="T"/> and what its members declare, built once.
 	/// </summary>
@@ -488,12 +481,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// </summary>
 	static readonly string? TypeError = TypeShape.Error ?? Model.Error;
 
+	// Only then does a result set pay the checks of Match for it (once per layout, never per row).
 	/// <summary>
 	/// Whether any member declares a column or an ordinal.
 	/// </summary>
-	/// <remarks>
-	/// Only then does a result set pay the checks of <c>Match</c> for it (once per layout, never per row).
-	/// </remarks>
 	static readonly bool HasDecorators = Model.Decorated;
 
 	/// <summary>
@@ -658,10 +649,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// </remarks>
 	static bool MustHaveColumn(PropertyInfo property) => !TypeShape.SetsRequiredMembers && Shape.IsRequired(property);
 
+	// Static initializers run in textual order; each must follow what it uses.
 	/// <summary>The index of <see cref="ModelSlots"/> by name.</summary>
-	/// <remarks>
-	/// Static initializers run in textual order; each must follow what it uses.
-	/// </remarks>
 	static readonly FrozenDictionary<string, int> ModelSlotIndex = BuildSlotIndex(ModelSlots);
 
 	static FrozenDictionary<string, int> BuildSlotIndex(ImmutableArray<Slot> slots)
@@ -673,7 +662,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	/// <summary>Gets the map for the model's default mapping (property name == column name), used when no map is passed.</summary>
 	/// <value>The default map of <typeparamref name="T"/>.</value>
-	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped: it is an interface, an abstract class, a delegate, a single value such as <see cref="int"/> or <see cref="string"/>, a dictionary or a dynamic object, a type with two or more public constructors and none without parameters, a class with no public constructor, a type with a <c>required</c> public field, unless its constructor is marked <c>[SetsRequiredMembers]</c>, or a type whose <c>[Column]</c> and <c>[NotMapped]</c> declarations cannot all be honoured (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
 	public static RowMap<T> Default
 	{
 		// Null when T cannot be mapped, so reading Default throws instead of a static initializer failing.
@@ -719,7 +708,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// Aligned with the slots: the converter the value of a slot goes through on its way from its column (<c>Convert</c>), or <see langword="null"/> for a slot with none.
 	/// </summary>
 	/// <remarks>
-	/// The array itself is <see langword="null"/> for a map nothing was converted in, so such a map pays nothing for it.
+	/// The array itself is <see langword="null"/> for a map nothing was converted in.
 	/// </remarks>
 	readonly Converter?[]? _converters;
 
@@ -743,12 +732,12 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		}
 	}
 
+	// The same match, so the pipelines that pick columns before mapping them agree with Map<T>() on which column feeds which property.
 	/// <summary>
 	/// Finds the columns of the record that feed a property, as their ordinals in ascending order and, aligned with them, their actual names in the record.
 	/// </summary>
 	/// <remarks>
-	/// It is the same match (<c>Match</c>) a row read uses,
-	/// so the pipelines that pick columns before mapping them agree with <c>Map&lt;T&gt;()</c> on which column feeds which property.
+	/// It is the same match (<c>Match</c>) a row read uses.
 	/// </remarks>
 	/// <param name="record">The record whose columns are matched.</param>
 	/// <param name="ordinals">The ordinals of the columns that feed a property, in ascending order.</param>
@@ -780,9 +769,6 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// Returns the property each result column feeds (<see langword="null"/>: the column is ignored).
 	/// </summary>
 	/// <remarks>
-	/// <para>
-	/// It never runs per row; it is linear in the columns plus the properties.
-	/// </para>
 	/// <para>
 	/// A column a member declares by ordinal (<c>[Column(Order = n)]</c>) is that member's before any tier runs, so none gives it away; a column that is not its throws.
 	/// </para>
@@ -861,7 +847,6 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// its <c>[Column]</c> name, else the member's own name, exactly or ignoring case and never ignoring underscores
 	/// (an undecorated member is matched loosely; a declared one is not).
 	/// It is that member's from then on.
-	/// It runs once per layout; nothing here is per row.
 	/// </remarks>
 	/// <param name="names">The names of the columns of the result.</param>
 	/// <param name="feeds">The property each column feeds; set for the claimed columns.</param>
@@ -913,7 +898,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// </summary>
 	/// <remarks>
 	/// A property that declares its column (<c>[Column(Name)]</c>) or is <c>[NotMapped]</c> is left out too.
-	/// It returns <see langword="null"/> when there is none, so nothing is built for a result set whose properties are all settled.
+	/// It returns <see langword="null"/> when there is none.
 	/// </remarks>
 	Dictionary<string, int>? NameIndex(bool[] filled)
 	{
@@ -934,12 +919,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		return index;
 	}
 
+	// No stripped copy of a name is ever made: the hash and the comparison walk the characters.
 	/// <summary>
 	/// Compares names ignoring case and ignoring every <c>_</c> in either name.
 	/// </summary>
-	/// <remarks>
-	/// No stripped copy of a name is ever made: the hash and the comparison walk the characters.
-	/// </remarks>
 	sealed class IgnoreCaseAndUnderscores : IEqualityComparer<string>
 	{
 		public bool Equals(string? x, string? y)
@@ -1035,7 +1018,6 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <remarks>
 	/// Each mapped slot is compared with the slots before it (the first reader of a column is the one that gets it).
 	/// Only what the map names is held to account: the model's own by-name twins are <c>Map&lt;T&gt;()</c>'s business.
-	/// The check is quadratic in the slot count and runs once per map.
 	/// </remarks>
 	void RejectSharedColumns(string?[] columns, bool[] named, string paramName)
 	{
@@ -1119,19 +1101,16 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		return layout;
 	}
 
+	// After the first query of a given shape no reflection, expression building or compilation happens again.
+	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
+	// Skipping a NULL costs one IsDBNull per such cell on the typed path, a single read of the cell on the general path.
+	// Which reference types are declared non-nullable is read once per model type, when the slots are built (NullAnnotations).
 	/// <summary>
 	/// Represents one result-set layout (the column names and types) and the compiled readers for it.
 	/// </summary>
 	/// <remarks>
-	/// The map holds the validated column table and the compiled, cached, typed row readers (one per result-set layout: column names and column types),
-	/// so after the first query of a given shape no reflection, expression building or compilation happens again.
-	/// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
-	/// The member's declared type decides what a NULL does:
-	/// <see cref="Nullable{T}"/>, a reference type declared nullable and a reference type in a context without nullable annotations receive <see langword="null"/>;
-	/// a member the C# type declares non-nullable (a value type, an enum included, or a reference type with nullable annotations on) is skipped,
-	/// so a property keeps what its constructor or initializer gave it (else its default) and a constructor parameter gets its fallback:
-	/// one <c>IsDBNull</c> per such cell on the typed path, a single read of the cell on the general path.
-	/// Which reference types are declared non-nullable is read once per model type, when the slots are built (<c>NullAnnotations</c>).
+	/// The map holds the validated column table and the compiled typed row readers for one result-set layout (column names and column types).
+	/// A member the C# type declares non-nullable is skipped on NULL, so a property keeps what its constructor or initializer gave it (else its default), and a constructor parameter gets its fallback.
 	/// </remarks>
 	sealed class Layout
 	{
@@ -1165,12 +1144,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			return h;
 		}
 
+		// The same check is written twice on purpose: this runs on every query, and virtual calls on DbDataReader beat the interface calls the IDataRecord overload must make.
 		/// <summary>
 		/// Returns whether the reader has this layout.
 		/// </summary>
-		/// <remarks>
-		/// The same check is written twice on purpose: this runs on every query, and virtual calls on <see cref="DbDataReader"/> beat the interface calls the <see cref="IDataRecord"/> overload must make.
-		/// </remarks>
 		public bool Matches(DbDataReader r)
 		{
 			string[] names = Names;
@@ -1205,9 +1182,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	/// <summary>The layout of the <c>object[]</c> rows most recently used.</summary>
 	/// <remarks>
-	/// Rows that were already copied out of a reader as <c>object[]</c> (boxed values)
-	/// are mapped by a compiled, cached per-column-list delegate too,
-	/// rather than rebuilding lookups and property setters per query.
+	/// Rows already copied out of a reader as <c>object[]</c> are mapped by a compiled, cached delegate per column list.
 	/// </remarks>
 	ArrayLayout? _lastArray;
 	/// <summary>Every layout of the <c>object[]</c> rows seen so far, by hash of the column names.</summary>
@@ -1464,23 +1439,15 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			ex);
 	}
 
+	// Built from the same helpers (TypedGetters, TryConvert, ConvertValue) as the single-column reader, so the two agree for every provider tested; the parity matrix checks it.
 	/// <summary>
 	/// Converts the scalar of a command (<c>ExecuteScalar&lt;T&gt;</c>, <c>ExecuteReturn&lt;T&gt;</c>):
 	/// a value that has arrived boxed, converted as column 0 of <c>Map&lt;T&gt;()</c> is.
 	/// </summary>
 	/// <remarks>
-	/// <para>
 	/// NULL, <see cref="DBNull"/> and no row are <c>default(T)</c>;
 	/// a value that is already a <typeparamref name="T"/> is returned as it is;
-	/// any other value takes the conversion <c>Map&lt;T&gt;()</c> gives a column of that
-	/// type (a checked integer conversion, a widening to a fractional type,
-	/// else <c>ConvertValue</c>), chosen by the runtime type of the value,
-	/// which is the type the reader reports for the column.
-	/// </para>
-	/// <para>
-	/// It is built from the same helpers (<c>TypedGetters</c>, <c>TryConvert</c>, <c>ConvertValue</c>),
-	/// the same ones the single-column reader uses; the two agree for every provider tested, which the parity matrix checks.
-	/// </para>
+	/// any other value is converted the way <c>Map&lt;T&gt;()</c> converts a column of its type.
 	/// </remarks>
 	/// <param name="value">The scalar as it arrived.</param>
 	/// <returns>The value as a <typeparamref name="T"/>.</returns>
@@ -1542,23 +1509,18 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		return static value => ConvertValue<T>(value);
 	}
 
+	// A model built as it always was (a class with a public parameterless constructor, a struct with no constructor of its own)
+	// is built as new T(), then for each column that maps to a property, item.Property = <cell>.
+	// A model built through a constructor reads every fed cell, in column order, into a typed local,
+	// then calls new T(arguments), then sets the properties no parameter covers.
+	// Only how a cell is read differs (a live reader vs buffered object[] rows).
+	//
+	// isNull gives, for a property that must keep its value on NULL, the test that the cell is NULL,
+	// which wraps the assignment as if (!isNull) item.Property = <cell>;
+	// it may leave the raw cell in cell, which readCell then converts.
 	/// <summary>
 	/// Builds the compiled row reader that both mappers share.
 	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// A model built as it always was (a class with a public parameterless constructor, a struct with no constructor of its own)
-	/// is built as <c>new T()</c>, then for each column that maps to a property, <c>item.Property = &lt;cell&gt;</c>.
-	/// A model built through a constructor reads every fed cell, in column order, into a typed local,
-	/// then calls <c>new T(arguments)</c>, then sets the properties no parameter covers.
-	/// Only how a cell is read differs (a live reader vs buffered <c>object[]</c> rows).
-	/// </para>
-	/// <para>
-	/// <c>isNull</c> gives, for a property that must keep its value on NULL, the test that the cell is NULL,
-	/// which wraps the assignment as <c>if (!isNull) item.Property = &lt;cell&gt;</c>;
-	/// it may leave the raw cell in <c>cell</c>, which <c>readCell</c> then converts.
-	/// </para>
-	/// </remarks>
 	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, Slot, Expression> readCell,
 		Func<int, Slot, Expression?> isNull, ParameterExpression? cell = null)
 	{
@@ -1608,13 +1570,13 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		}
 	}
 
+	// The factory is held once by the compiled row reader, and calling it allocates nothing
+	// (FactoryMapTests.TheFactoryRoute_AllocatesNothingPerRow_BeyondTheConstructorRoute).
+	// The factory is a constant of the expression tree, as a converter's delegate is.
 	/// <summary>
 	/// Builds the call of the factory with the arguments.
 	/// </summary>
 	/// <remarks>
-	/// The factory is a constant of the expression tree, as a converter's delegate is:
-	/// held once by the compiled row reader, and calling it allocates nothing
-	/// (<c>FactoryMapTests.TheFactoryRoute_AllocatesNothingPerRow_BeyondTheConstructorRoute</c>).
 	/// What it returns is a <typeparamref name="T"/>, or a type assignable to <typeparamref name="T"/> (checked when the map is built).
 	/// </remarks>
 	static Expression CallFactory(Delegate factory, Expression[] arguments)
@@ -1651,15 +1613,13 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		return statements;
 	}
 
+	// A constructor needs its arguments before anything can be set, and a SequentialAccess reader allows each cell to be read once, in ascending order:
+	// so every fed cell is read, in column order, into a typed local (nothing is boxed on the typed path),
+	// the constructor is called with the locals (the fallback for a parameter no column feeds, and for a NULL into a member the type declares non-nullable),
+	// and then the properties the constructor does not cover are set from their locals, a NULL skipping one the type declares non-nullable.
 	/// <summary>
 	/// Builds the statements of a model created through a constructor.
 	/// </summary>
-	/// <remarks>
-	/// A constructor needs its arguments before anything can be set, and a <c>SequentialAccess</c> reader allows each cell to be read once, in ascending order:
-	/// so every fed cell is read, in column order, into a typed local (nothing is boxed on the typed path),
-	/// the constructor is called with the locals (the fallback for a parameter no column feeds, and for a NULL into a member the type declares non-nullable),
-	/// and then the properties the constructor does not cover are set from their locals, a NULL skipping one the type declares non-nullable.
-	/// </remarks>
 	List<Expression> BindConstructor(int parameterCount, Func<Expression[], Expression> create, ParameterExpression item, ParameterExpression index, Binding?[] bindings, string[] names, Slot?[] feeds,
 		Func<int, Slot, Expression> readCell, Func<int, Slot, Expression?> isNull, List<ParameterExpression> locals)
 	{
@@ -1827,7 +1787,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// Direct typed conversions exist only where they cannot silently change the value:
 	/// integer to integer or enum is range-checked (it throws on overflow),
 	/// and integers and floating point widen to a fractional type.
-	/// Three more are the exact call the general path makes, without boxing the result:
+	/// Three more are the conversions the general path makes:
 	/// an integer to <see cref="bool"/> (not zero),
 	/// text to <see cref="DateTime"/> and text to <see cref="decimal"/> (parsed with the invariant culture).
 	/// Anything else (fractional to integer, which must round, other text, and so on) takes the general path.
@@ -1995,13 +1955,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	#endregion
 }
 
+// Not in RowMap<T>: a static field there is created once per model type, and this does not depend on the model type.
 /// <summary>
 /// Holds the typed getter of each type a column can be read as without boxing.
 /// </summary>
-/// <remarks>
-/// It does not depend on the model type, so it lives here, not in <see cref="RowMap{T}"/>,
-/// where a static field is created once per model type.
-/// </remarks>
 static class TypedGetters
 {
 	internal static readonly FrozenDictionary<Type, string> ByType = new Dictionary<Type, string>()
@@ -2021,17 +1978,15 @@ static class TypedGetters
 	}.ToFrozenDictionary();
 }
 
+// The cache is keyed by the column's reported type alone, so there is no name matching to pay for.
 /// <summary>
 /// The row source of a single-value model type (<c>Shape.IsScalar</c>):
 /// column 0 of every row, read as a property of type <typeparamref name="T"/> is,
 /// whatever the column is named, other columns ignored.
 /// </summary>
 /// <remarks>
-/// There is one instance per <typeparamref name="T"/> (<see langword="null"/> for any other <typeparamref name="T"/>, so <c>Map&lt;T&gt;()</c> branches on it).
-/// Like a property, the reader is chosen once per result set,
-/// from the column's reported type;
-/// the cache is keyed by that type alone,
-/// so there is no name matching to pay for.
+/// There is one instance per <typeparamref name="T"/> (<see langword="null"/> for any other <typeparamref name="T"/>).
+/// Like a property, the reader is chosen once per result set, from the column's reported type.
 /// </remarks>
 /// <typeparam name="T">The type of the single value.</typeparam>
 internal sealed class FirstColumn<T> : IRowSource<T>
@@ -2071,19 +2026,15 @@ internal sealed class FirstColumn<T> : IRowSource<T>
 	}
 }
 
+// Slots are held once per model type in an ImmutableArray in place of PropertyInfo,
+// so the matcher and the compiled readers see only a name, the type a value must become and where it goes.
+// A slot does not depend on the model type either.
 /// <summary>
 /// Represents what one column can feed: a constructor parameter, or a settable public instance property of the model.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Slots are held once per model type in an <see cref="ImmutableArray{T}"/> in place of <see cref="PropertyInfo"/>,
-/// so the matcher and the compiled readers see only a name, the type a value must become and where it goes.
-/// It does not depend on the model type either.
-/// </para>
-/// <para>
 /// A slot fed through the constructor has a <c>Position</c> and no <c>Setter</c>;
 /// a parameter and a property of the same name (ignoring case) are one such slot, so the property is never set again.
-/// </para>
 /// </remarks>
 sealed class Slot
 {
@@ -2139,7 +2090,6 @@ sealed class Slot
 	/// A NULL is not a value for a member the C# type declares non-nullable:
 	/// a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type declared non-nullable (<c>NullAnnotations</c>).
 	/// A property then keeps what the constructor or its initializer gave it, and a constructor parameter gets its fallback.
-	/// It is decided once per model type, here, never per row.
 	/// </remarks>
 	static bool KeepsOnNull(Type type, bool nonNullableReference)
 		=> type.IsValueType ? Nullable.GetUnderlyingType(type) is null : nonNullableReference;
@@ -2195,13 +2145,13 @@ sealed class Slot
 	/// </summary>
 	public readonly bool Required;
 
+	// ParameterInfo reports a null default for DateTime d = default (and .NET Framework throws FormatException reading it),
+	// and the underlying integer for a nullable enum.
 	/// <summary>
 	/// Returns the expression of what the constructor receives for a parameter no column feeds.
 	/// </summary>
 	/// <remarks>
-	/// <see cref="ParameterInfo"/> reports a <see langword="null"/> default for <c>DateTime d = default</c> (and .NET Framework throws <see cref="FormatException"/> reading it),
-	/// and the underlying integer for a nullable enum,
-	/// so a <see langword="null"/> stands for <c>default(TParam)</c>, and an enum is converted back.
+	/// A <see langword="null"/> default stands for <c>default(TParam)</c>, and an enum default is converted back to the enum.
 	/// </remarks>
 	public static Expression FallbackOf(ParameterInfo parameter)
 	{
@@ -2241,20 +2191,17 @@ sealed class Converter(
 	Type column,
 	Type member)
 {
-	/// <summary>The column as a slot of the type the delegate receives, so the readers read it and judge its NULL as they do a member of that type.</summary>
-	/// <remarks>
-	/// A NULL is a value only for a <see cref="Nullable{T}"/>:
-	/// a reference type is declared non-nullable here, as its annotations do not exist at run time
-	/// (a <c>Func&lt;string?, int&gt;</c> is a <c>Func&lt;string, int&gt;</c>).
-	/// </remarks>
+	// A reference type is declared non-nullable here, as its annotations do not exist at run time
+	// (a Func<string?, int> is a Func<string, int>).
+	/// <summary>The column as a slot of the type the delegate receives, so a NULL is given to the delegate only for a <see cref="Nullable{T}"/>.</summary>
 	public readonly Slot Column = new(column, true);
 
+	// The delegate is a constant of the expression tree: it is held once by the compiled row reader, and calling it allocates nothing.
 	/// <summary>
 	/// Returns the call of the delegate, typed as the delegate was declared and converted to the type of the slot when that is not the one the delegate returns.
 	/// </summary>
 	/// <remarks>
 	/// A delegate converted by variance keeps its own type.
-	/// The delegate is a constant of the expression tree: it is held once by the compiled row reader, and calling it allocates nothing.
 	/// </remarks>
 	public Expression Invoke(Expression value, Type slotType)
 	{
@@ -2263,29 +2210,19 @@ sealed class Converter(
 	}
 }
 
+// The compiler records nullable annotations in metadata:
+// NullableAttribute on a member (or a parameter) whose annotation differs from its context,
+// else NullableContextAttribute on the nearest enclosing method or type that has one.
+// Flag 1 is not-null, 2 is nullable, 0 or none is oblivious (nullable annotations off): only 1 counts.
+// The attributes are read as data, by full name, so this works on every target
+// (NullabilityInfoContext does not exist on netstandard) and no attribute type is referenced.
+// A property marked [AllowNull] (on the property or on its setter's value parameter) says null may be written to it, so it is nullable.
+// A member whose declared type is a type parameter (T Value in Box<T>) is not judged: it is as oblivious as it was.
+// This runs once per model type, when the slots are built, never per row.
 /// <summary>
 /// Decides whether a property or a constructor parameter is a reference type the C# source declares non-nullable,
 /// which is when a NULL must not overwrite it (<c>Slot.KeepsValueOnNull</c>).
 /// </summary>
-/// <remarks>
-/// <para>
-/// The compiler records nullable annotations in metadata:
-/// <c>NullableAttribute</c> on a member (or a parameter) whose annotation differs from its context,
-/// else <c>NullableContextAttribute</c> on the nearest enclosing method or type that has one.
-/// Flag 1 is not-null, 2 is nullable, 0 or none is oblivious (nullable annotations off): only 1 counts.
-/// </para>
-/// <para>
-/// It reads those attributes as data, by full name, so it works on every target
-/// (<c>NullabilityInfoContext</c> does not exist on netstandard) and no attribute type is referenced.
-/// </para>
-/// <para>
-/// A property marked <c>[AllowNull]</c> (on the property or on its setter's value parameter) says <see langword="null"/> may be written to it, so it is nullable.
-/// A member whose declared type is a type parameter (<c>T Value</c> in <c>Box&lt;T&gt;</c>) is not judged: it is as oblivious as it was.
-/// </para>
-/// <para>
-/// This runs once per model type, when the slots are built, never per row.
-/// </para>
-/// </remarks>
 static class NullAnnotations
 {
 	const string NullableAttributeName = "System.Runtime.CompilerServices.NullableAttribute";
@@ -2395,18 +2332,14 @@ static class NullAnnotations
 	}
 }
 
+// They are read as data by the full name of the attributes (a consumer's own copy counts, and no package is needed).
+// This runs once per model type, when the slots are built, never per row.
 /// <summary>
 /// Represents what a model property declares for the map.
 /// </summary>
 /// <remarks>
-/// <para>
 /// The declarations are <c>[Column(Name)]</c> and <c>[Column(Order = n)]</c>
 /// (<c>System.ComponentModel.DataAnnotations.Schema.ColumnAttribute</c>; <c>TypeName</c> is ignored) and <c>[NotMapped]</c>.
-/// </para>
-/// <para>
-/// They are read as data by the full name of the attributes (a consumer's own copy counts, and no package is needed).
-/// This runs once per model type, when the slots are built, never per row.
-/// </para>
 /// </remarks>
 /// <param name="column">The name the column attribute gives, or <see langword="null"/> for none.</param>
 /// <param name="order">The ordinal the column attribute gives, or -1 for none.</param>
@@ -2439,7 +2372,8 @@ readonly struct Decoration(string? column, int order, bool hasColumnAttribute, b
 	/// </remarks>
 	public string? Invalid => invalid;
 
-	/// <summary>Gets a member that declares nothing (the default value of the struct would claim ordinal 0).</summary>
+	// The default value of the struct is not this one: it would claim ordinal 0.
+	/// <summary>Gets a <see cref="Decoration"/> that declares nothing.</summary>
 	public static Decoration None => new(null, -1, false, false, null);
 
 	/// <summary>
@@ -2488,30 +2422,20 @@ readonly struct Decoration(string? column, int order, bool hasColumnAttribute, b
 	}
 }
 
+// Reflection runs once per model type and never throws: the reason is held as the message of the exception RowMap<T> raises.
+// It does not depend on the model type, so it is not generic.
+// Both attributes are matched by full name, so a consumer's own copy counts and the library names no type that netstandard lacks.
 /// <summary>
 /// Decides whether a model type can be mapped at all, and how it is built, once per model type from its shape.
 /// </summary>
 /// <remarks>
-/// <para>
-/// A type that cannot be mapped fails at the call, not at the first row.
-/// Reflection runs once and never throws: the reason is held as the message of the <see cref="InvalidOperationException"/> that <see cref="RowMap{T}"/> raises where every entry point passes
-/// (its constructor and <see cref="RowMap{T}.Default"/>).
-/// It does not depend on the model type, so it is not generic.
-/// </para>
-/// <para>
+/// A type that cannot be mapped fails at the call, not at the first row: <see cref="RowMap{T}.Default"/> and the constructors throw the reason.
 /// The constructor is chosen from the type alone, never from the columns, so a type is built the same way whatever the query:
 /// a class with a public parameterless constructor, or a struct with no public constructor, is built as it always was (<c>new T()</c>, then its settable properties);
 /// any other type is built through its one public constructor.
 /// Two or more public constructors and none without parameters is an error, and so is a class with none.
-/// </para>
-/// <para>
-/// A <see langword="required"/> property is mapped, and must be fed by a column in every result shape (<c>RowMap&lt;T&gt;.RequireColumns</c>),
-/// unless the constructor the model is built through is marked <c>[SetsRequiredMembers]</c>: it promises to set them, so nothing is enforced.
-/// A <see langword="required"/> public field cannot be set (fields are not mapped), so it is a type-shape error here.
-/// </para>
-/// <para>
-/// Both attributes are matched by full name, so a consumer's own copy counts and the library names no type that netstandard lacks.
-/// </para>
+/// A <see langword="required"/> property must be fed by a column in every result shape, unless the constructor is marked <c>[SetsRequiredMembers]</c>, which sets them.
+/// A <see langword="required"/> public field cannot be set (fields are not mapped), so it is a type error.
 /// </remarks>
 sealed class Shape
 {
@@ -2569,13 +2493,11 @@ sealed class Shape
 	/// </summary>
 	/// <remarks>
 	/// <see cref="Nullable{T}"/> of these is one too.
-	/// <c>DateOnly</c> and <c>TimeOnly</c> are matched by name,
-	/// so every target framework agrees
-	/// (the netstandard builds cannot name them).
 	/// </remarks>
 	internal static bool IsScalar(Type type)
 	{
 		type = Nullable.GetUnderlyingType(type) ?? type;
+		// DateOnly and TimeOnly are matched by name, so every target framework agrees (the netstandard builds cannot name them).
 		return type.IsPrimitive || type.IsEnum
 			|| type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(DateTimeOffset)
 			|| type == typeof(TimeSpan)
@@ -2616,8 +2538,7 @@ sealed class Shape
 	/// Chooses the constructor a model is built through, and returns the reason there is none, or <see langword="null"/>.
 	/// </summary>
 	/// <remarks>
-	/// The constructor is none (<see langword="null"/>) when a public parameterless constructor exists or when a struct has no public constructor
-	/// (a struct always can be created, as its default value, whatever non-public constructors it declares), else the one public constructor.
+	/// The constructor is none (<see langword="null"/>) when a public parameterless constructor exists or when a struct has no public constructor, else the one public constructor.
 	/// <see cref="Type.GetConstructors()"/> lists the public instance constructors only, and never the implicit parameterless one of a struct.
 	/// </remarks>
 	static string? Choose(Type type, string name, out ConstructorInfo? constructor, out bool setsRequiredMembers)
@@ -2631,6 +2552,7 @@ sealed class Shape
 			return null;
 		}
 
+		// A struct always can be created, as its default value, whatever non-public constructors it declares.
 		if (type.IsValueType && constructors.Length == 0) return null;
 		if (constructors.Length == 0) return $"'{name}' cannot be mapped: it has no public constructor.";
 

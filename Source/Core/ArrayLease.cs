@@ -14,15 +14,16 @@ internal enum ClearMode : byte
 	None,
 
 	/// <summary>
-	/// The rows are cleared where the release happens, then the array
-	/// goes back (small chunks: cheaper than a hand-off).
+	/// The rows are cleared where the release happens, then the array goes back.
 	/// </summary>
+	// Small chunks: cheaper than a hand-off.
 	Immediate,
 
 	/// <summary>
-	/// The array is handed to the recycle bin, which clears the rows and
-	/// gives the array back off the releasing thread (large chunks).
+	/// The array is handed to the recycle bin, which clears the rows and gives
+	/// the array back off the releasing thread.
 	/// </summary>
+	// Large chunks.
 	Deferred,
 }
 
@@ -30,25 +31,22 @@ internal enum ClearMode : byte
 /// A pooled array and the number of rows written to it, released once.
 /// </summary>
 /// <remarks>
-/// <para>
-/// A readonly struct, so it costs no allocation: the array, how many of its
-/// slots hold rows, the configuration it came from (the pool it goes back
-/// to) and what to do with the rows on release. There is no interface and
-/// no owner object. The array may be longer than the rows: only
-/// <see cref="Used"/> slots are ever read or cleared.
-/// </para>
-/// <para>
-/// A lease is released exactly once, by the one party that holds it last
-/// (the holder keeps the once-only guard: a struct cannot set itself to <see langword="null"/>).
-/// Releasing a copy twice would return the array twice, which hands the
-/// same array to two renters.
-/// </para>
+/// The array may be longer than the rows: only <see cref="Used"/> slots are read
+/// or cleared.
+/// Release the lease exactly once, by the party that holds it last: a copy shares
+/// the array, so releasing two copies returns the array twice and hands the same
+/// array to two renters.
 /// </remarks>
 /// <typeparam name="T">The type of each row.</typeparam>
 /// <param name="array">The pooled array.</param>
 /// <param name="used">How many slots, from the start, hold rows.</param>
 /// <param name="config">The configuration the array came from (its pool).</param>
 /// <param name="mode">What to do with the rows on release.</param>
+// A readonly struct, so it costs no allocation: the array, how many of its
+// slots hold rows, the configuration it came from (the pool it goes back
+// to) and what to do with the rows on release. There is no interface and
+// no owner object.
+// The holder keeps the once-only guard: a struct cannot set itself to null.
 internal readonly struct ArrayLease<T>(
 	T[] array,
 	int used,
@@ -74,10 +72,8 @@ internal readonly struct ArrayLease<T>(
 	/// they are to be (see <see cref="ClearMode"/>).
 	/// </summary>
 	/// <remarks>
-	/// A full recycle bin does not lose the array: it is cleared and returned
-	/// right here, as an immediate release is.
-	/// A pool whose <c>Return</c> throws, throws from an immediate or a plain
-	/// release, and from a deferred one that the bin refused.
+	/// A pool whose <c>Return</c> throws, throws from the release, except from a
+	/// deferred one that the recycle bin took.
 	/// </remarks>
 	public void Release()
 	{
@@ -110,8 +106,9 @@ internal readonly struct ArrayLease<T>(
 	}
 }
 
-/// <summary>The one cached runner per row type: no allocation per post.</summary>
+/// <summary>The one runner of each row type.</summary>
 /// <include file="Internals.docs.xml" path="docs/members[@name='row']/*" />
+// One cached instance for each row type: no allocation per post.
 internal sealed class ChunkRunner<T> : RecycleBin.IRunner
 {
 	/// <summary>The one runner of this <typeparamref name="T"/>.</summary>

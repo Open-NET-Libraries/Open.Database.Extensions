@@ -3,8 +3,7 @@ namespace Open.Database.Extensions;
 public static partial class CoreExtensions
 {
 	/// <summary>
-	/// Reads each row of a query without a model, as an array of its values, and returns a deferred
-	/// <see cref="MappedQuery{T}"/> of <see cref="object"/> arrays.
+	/// Reads each row of a query without a model, as an array of its values.
 	/// </summary>
 	/// <remarks>
 	/// <para>
@@ -12,7 +11,7 @@ public static partial class CoreExtensions
 	/// <c>AsyncReads()</c> and <c>UsePool</c> are the ones <c>Map&lt;T&gt;()</c> has, and a later result set is read through
 	/// the same way.
 	/// Each row is one new <c>object?[]</c> with a slot for each column (a database NULL is <see langword="null"/>).
-	/// The row arrays belong to the caller; only the buffers that hold the rows are pooled, and those are cleared when they go back (their slots hold references).
+	/// The row arrays belong to the caller; only the buffers that hold the rows are pooled, and those are cleared when they go back.
 	/// The columns are read once, in order, so a provider may stream a row.
 	/// The result carries no column names: use <see cref="AsDictionaryRows(IExecuteReader)"/> when you need them.
 	/// </para>
@@ -37,8 +36,16 @@ public static partial class CoreExtensions
 		return new(Views.CommandCore(command, ObjectArraySource.Instance));
 	}
 
-	/// <inheritdoc cref="AsObjectArrays(IExecuteReader)"/>
+	/// <summary>Reads each row of a reader without a model, as an array of its values.</summary>
+	/// <remarks>
+	/// <para>
+	/// Each row is one new <c>object?[]</c> with a slot for each column (a database NULL is <see langword="null"/>), and belongs to the caller.
+	/// The result carries no column names: use <see cref="AsDictionaryRows(IDataReader)"/> when you need them.
+	/// </para>
+	/// </remarks>
 	/// <param name="reader">The reader the caller owns, positioned on the result set to read; it is never read through.</param>
+	/// <returns>The deferred view; nothing runs until a terminal does.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
 	public static MappedReader<object?[]> AsObjectArrays(this IDataReader reader)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -47,8 +54,16 @@ public static partial class CoreExtensions
 		return new(Views.ReaderCore(reader, ObjectArraySource.Instance));
 	}
 
-	/// <inheritdoc cref="AsObjectArrays(IExecuteReader)"/>
+	/// <summary>Reads each row of a table without a model, as an array of its values.</summary>
+	/// <remarks>
+	/// <para>
+	/// Each row is one new <c>object?[]</c> with a slot for each column (a database NULL is <see langword="null"/>), and belongs to the caller.
+	/// The result carries no column names: use <see cref="AsDictionaryRows(DataTable)"/> when you need them.
+	/// </para>
+	/// </remarks>
 	/// <param name="table">The table to read.</param>
+	/// <returns>The deferred view; nothing runs until a terminal does.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="table"/> is <see langword="null"/>.</exception>
 	public static MappedTable<object?[]> AsObjectArrays(this DataTable table)
 	{
 		if (table is null) throw new ArgumentNullException(nameof(table));
@@ -58,14 +73,13 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Reads each row of a query without a model, as a <see cref="DictionaryRow"/> (the values and the column names),
-	/// and returns a deferred <see cref="MappedQuery{T}"/> of them.
+	/// Reads each row of a query without a model, as a <see cref="DictionaryRow"/> (the values and the column names).
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// The same as <see cref="AsObjectArrays(IExecuteReader)"/>, with the names: a <see cref="DictionaryRow"/> is a
-	/// struct over the row's values and one list of column names that every row of the result set shares, so there is no
-	/// dictionary for each row. Use <see cref="DictionaryRow.ToDictionary"/> for a copy the caller owns.
+	/// The same as <see cref="AsObjectArrays(IExecuteReader)"/>, with the names.
+	/// A <see cref="DictionaryRow"/> holds the row's values; the column names are shared by every row of the result set.
+	/// Use <see cref="DictionaryRow.ToDictionary"/> for a copy the caller owns.
 	/// A result set with no rows gives no rows, so no names.
 	/// </para>
 	/// </remarks>
@@ -89,8 +103,17 @@ public static partial class CoreExtensions
 		return new(Views.CommandCore(command, DictionaryRowSource.Instance));
 	}
 
-	/// <inheritdoc cref="AsDictionaryRows(IExecuteReader)"/>
+	/// <summary>Reads each row of a reader without a model, as a <see cref="DictionaryRow"/> (the values and the column names).</summary>
+	/// <remarks>
+	/// <para>
+	/// The same as <see cref="AsObjectArrays(IDataReader)"/>, with the names.
+	/// A <see cref="DictionaryRow"/> holds the row's values; the column names are shared by every row of the result set.
+	/// Use <see cref="DictionaryRow.ToDictionary"/> for a copy the caller owns.
+	/// </para>
+	/// </remarks>
 	/// <param name="reader">The reader the caller owns, positioned on the result set to read; it is never read through.</param>
+	/// <returns>The deferred view; nothing runs until a terminal does.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="reader"/> is <see langword="null"/>.</exception>
 	public static MappedReader<DictionaryRow> AsDictionaryRows(this IDataReader reader)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -99,8 +122,17 @@ public static partial class CoreExtensions
 		return new(Views.ReaderCore(reader, DictionaryRowSource.Instance));
 	}
 
-	/// <inheritdoc cref="AsDictionaryRows(IExecuteReader)"/>
+	/// <summary>Reads each row of a table without a model, as a <see cref="DictionaryRow"/> (the values and the column names).</summary>
+	/// <remarks>
+	/// <para>
+	/// The same as <see cref="AsObjectArrays(DataTable)"/>, with the names.
+	/// A <see cref="DictionaryRow"/> holds the row's values; the column names are shared by every row of the result set.
+	/// Use <see cref="DictionaryRow.ToDictionary"/> for a copy the caller owns.
+	/// </para>
+	/// </remarks>
 	/// <param name="table">The table to read.</param>
+	/// <returns>The deferred view; nothing runs until a terminal does.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="table"/> is <see langword="null"/>.</exception>
 	public static MappedTable<DictionaryRow> AsDictionaryRows(this DataTable table)
 	{
 		if (table is null) throw new ArgumentNullException(nameof(table));

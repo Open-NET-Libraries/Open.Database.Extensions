@@ -118,7 +118,7 @@ public static partial class DataRecordExtensions
 	/// Lazily looks up the ordinal of each requested column.
 	/// </summary>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
-	/// <param name="columnNames">The requested column names. The lookup uses <see cref="IDataRecord.GetOrdinal(string)"/>, which tries a case-sensitive match before a case-insensitive one.</param>
+	/// <param name="columnNames">The requested column names, looked up with <see cref="IDataRecord.GetOrdinal(string)"/>, which falls back to a case-insensitive match.</param>
 	/// <returns>An enumerable of mappings, in the order requested. Each name is the column's actual name in the record, which can differ in casing from the requested name.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>. It is thrown by the call, not while the result is enumerated.</exception>
 	/// <exception cref="IndexOutOfRangeException">A requested column does not exist. It is thrown while the result is enumerated.</exception>
@@ -253,7 +253,7 @@ public static partial class DataRecordExtensions
 	/// </summary>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
 	/// <param name="firstOrdinal">The first ordinal to read.</param>
-	/// <param name="remainingOrdinals">The remaining ordinals to read, in order.</param>
+	/// <param name="remainingOrdinals">The remaining ordinals to read, in order. <see langword="null"/> reads only <paramref name="firstOrdinal"/>.</param>
 	/// <returns>An enumerable of values matching the ordinals requested. The values are read from the record as the enumerable is enumerated.</returns>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
 	/// <exception cref="IndexOutOfRangeException">An ordinal is not a valid column index for the record. It is thrown while the result is enumerated.</exception>
@@ -280,13 +280,7 @@ public static partial class DataRecordExtensions
 	/// <param name="sort"><see langword="true"/> to return the mappings in the record's column order; <see langword="false"/> to return them in the requested order.</param>
 	/// <returns>An enumerable of (name, ordinal) mappings, where each name is the column's actual name in the record.</returns>
 	/// <remarks>
-	/// <para>
 	/// Use <see cref="OrdinalMapping(IDataRecord, IEnumerable{string})"/> or <see cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/> instead when a missing column should be an error.
-	/// </para>
-	/// <para>
-	/// Names are compared with an <see cref="StringComparer.OrdinalIgnoreCase"/> comparer,
-	/// so no upper-cased copy of every requested and every actual column name is allocated.
-	/// </para>
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">A requested name is <see langword="null"/>, empty, or white space. It can be thrown when the result is enumerated rather than when this method is called.</exception>
@@ -295,7 +289,7 @@ public static partial class DataRecordExtensions
 		if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
 		Contract.EndContractBlock();
 
-		// Compared with StringComparer.OrdinalIgnoreCase (see the remarks).
+		// Compared with StringComparer.OrdinalIgnoreCase, so no upper-cased copy of a requested or an actual name is allocated.
 		IEnumerable<string> requestedNames = ValidateColumnNames(columnNames);
 		// OrdinalMapping throws ArgumentNullException for a null record.
 		IEnumerable<(string Name, int Ordinal)> actual = record.OrdinalMapping();

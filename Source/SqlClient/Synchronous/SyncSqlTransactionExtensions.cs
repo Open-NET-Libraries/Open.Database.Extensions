@@ -10,10 +10,10 @@ namespace Open.Database.Extensions.Synchronous;
 [Obsolete(SqlClientObsolete._message)]
 public static class SyncSqlTransactionExtensions
 {
+	// Disposing the transaction is the standard ADO.NET way to roll back; the .NET documentation for DbTransaction.Dispose notes this is provider specific.
+	// The transaction is always disposed before the connection is closed, as some providers only roll back on dispose while the connection is still open.
 	/// <summary>
-	/// Begins a transaction before executing the action.
-	/// Commits if there are no exceptions, the 'Commit' value from the action is true and the optional cancellation token has not been cancelled.
-	/// Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <remarks>
 	/// <para>
@@ -24,10 +24,7 @@ public static class SyncSqlTransactionExtensions
 	/// To keep a connection open across several operations, open it before calling.
 	/// </para>
 	/// <para>
-	/// A transaction that is not committed is rolled back by disposing it, which is the standard ADO.NET pattern.
-	/// The .NET documentation for <see cref="System.Data.Common.DbTransaction.Dispose()"/> notes that this is provider specific.
-	/// The transaction is always disposed before the connection is closed,
-	/// as some providers only roll back on dispose while the connection is still open.
+	/// A transaction that is not committed is rolled back when it is disposed.
 	/// The action should not commit or roll back the transaction itself; completion is handled here.
 	/// </para>
 	/// </remarks>
@@ -74,9 +71,7 @@ public static class SyncSqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction before executing the action.
-	/// Commits if there are no exceptions, the conditional action returns true, and the optional cancellation token is not cancelled.
-	/// Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws, returns <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <param name="connection">The connection to transact with.</param>
 	/// <param name="conditionalAction">The handler to execute while a transaction is pending. Returning true signals to commit the transaction.</param>
@@ -98,9 +93,7 @@ public static class SyncSqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction before executing the action.
-	/// Commits if there are no exceptions and the optional provided token is not cancelled.
-	/// Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <typeparam name="T">The value returned from the action.</typeparam>
 	/// <param name="connection">The connection to transact with.</param>
@@ -123,9 +116,7 @@ public static class SyncSqlTransactionExtensions
 	}
 
 	/// <summary>
-	/// Begins a transaction before executing the action.
-	/// Commits if there are no exceptions and the optional provided token is not cancelled.
-	/// Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <param name="connection">The connection to transact with.</param>
 	/// <param name="action">The handler to execute while a transaction is pending.</param>
@@ -178,7 +169,7 @@ public static class SyncSqlTransactionExtensions
 		=> connection.ExecuteTransaction(action, IsolationLevel.Unspecified, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <typeparam name="T">The value returned from the action.</typeparam>
 	/// <param name="connection">The connection to transact with.</param>
@@ -194,7 +185,7 @@ public static class SyncSqlTransactionExtensions
 		=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws, returns <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <inheritdoc cref="ExecuteTransactionConditional(SqlConnection, Func{SqlTransaction, bool}, IsolationLevel, CancellationToken)"/>
 	public static bool ExecuteTransactionConditional(
@@ -205,7 +196,7 @@ public static class SyncSqlTransactionExtensions
 		=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <inheritdoc cref="ExecuteTransaction{T}(SqlConnection, Func{SqlTransaction, T}, IsolationLevel, CancellationToken)"/>
 	public static T ExecuteTransaction<T>(
@@ -216,7 +207,7 @@ public static class SyncSqlTransactionExtensions
 		=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <inheritdoc cref="ExecuteTransaction(SqlConnection, Action{SqlTransaction}, IsolationLevel, CancellationToken)"/>
 	public static void ExecuteTransaction(
@@ -227,7 +218,7 @@ public static class SyncSqlTransactionExtensions
 		=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and 'Commit' value from the action is true.  Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws, its <c>Commit</c> value is <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <typeparam name="T">The value returned from the action.</typeparam>
 	/// <param name="connection">The connection to transact with.</param>
@@ -243,7 +234,7 @@ public static class SyncSqlTransactionExtensions
 		=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions and the conditional action returns true.  Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws, returns <see langword="false"/>, or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <param name="connection">The connection to transact with.</param>
 	/// <param name="isolationLevel">The isolation level for the transaction.</param>
@@ -258,7 +249,7 @@ public static class SyncSqlTransactionExtensions
 		=> connection.ExecuteTransactionConditional(conditionalAction, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <typeparam name="T">The value returned from the action.</typeparam>
 	/// <param name="connection">The connection to transact with.</param>
@@ -274,7 +265,7 @@ public static class SyncSqlTransactionExtensions
 		=> connection.ExecuteTransaction(action, isolationLevel, cancellationToken);
 
 	/// <summary>
-	/// Begins a transaction before executing the action.  Commits if there are no exceptions.  Otherwise rolls-back the transaction.
+	/// Runs the action in a transaction on the connection, committing it unless the action throws or <paramref name="cancellationToken"/> is canceled.
 	/// </summary>
 	/// <param name="connection">The connection to transact with.</param>
 	/// <param name="isolationLevel">The isolation level for the transaction.</param>

@@ -9,32 +9,23 @@ namespace Open.Database.Extensions.Core;
 /// configuration object, taken by the chain, the buffer and the stream.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The shipped values are <see cref="Default"/>; taking the sizes as an object
-/// lets a test or a benchmark give a call other sizes without changing
-/// anything global.
-/// </para>
-/// <para>
-/// <em>What the arithmetic allows.</em>
-/// Every buffer chunk is twice the one before it: the first has
-/// <see cref="FirstRows"/> rows, the next <c>2 * FirstRows</c>, and so on.
-/// That is what keeps the <see cref="PooledArray{T}"/> indexer O(1): the chunk
-/// of row <c>i</c> is <c>floor(log2(i / FirstRows + 1))</c>, found with a shift
-/// and a log, and the chunk starts at <c>FirstRows * (2^k - 1)</c>.
-/// So <see cref="FirstRows"/> must be a power of two.
-/// The stream stops doubling at <see cref="StreamMaxRows"/> (also a power of
-/// two, not below <see cref="FirstRows"/>); a buffer never stops doubling,
-/// because its indexer arithmetic is the doubling.
-/// A value that does not fit is ignored and the default is used, so a wrong
-/// value cannot corrupt a read.
-/// </para>
-/// <para>
-/// The chain that <c>ToArrayAsync</c> and <c>ToListAsync</c> collect rows in
-/// (see <see cref="ChunkChain{T}"/>) has no consumer working beside the read,
-/// so its schedule is its own: the first chunk, the shift (1 doubles, 2
-/// quadruples) and the largest chunk.
-/// </para>
+/// The shipped values are <see cref="Default"/>.
+/// A value that does not fit is replaced by its default (a stream maximum is never below the first chunk),
+/// so a wrong value cannot corrupt a read.
 /// </remarks>
+// Taking the sizes as an object lets a test or a benchmark give a call other
+// sizes without changing anything global.
+// What the arithmetic allows: every buffer chunk is twice the one before it:
+// the first has FirstRows rows, the next 2 * FirstRows, and so on. That is
+// what keeps the PooledArray<T> indexer O(1): the chunk of row i is
+// floor(log2(i / FirstRows + 1)), found with a shift and a log, and the chunk
+// starts at FirstRows * (2^k - 1). So FirstRows must be a power of two.
+// The stream stops doubling at StreamMaxRows (also a power of two, not below
+// FirstRows); a buffer never stops doubling, because its indexer arithmetic is
+// the doubling.
+// The chain that ToArrayAsync and ToListAsync collect rows in (ChunkChain<T>)
+// has no consumer working beside the read, so its schedule is its own: the
+// first chunk, the shift (1 doubles, 2 quadruples) and the largest chunk.
 internal sealed class ChunkSizes
 {
 	const int DefaultFirstRows = 16;

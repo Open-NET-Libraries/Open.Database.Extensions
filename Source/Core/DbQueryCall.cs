@@ -11,9 +11,6 @@ namespace Open.Database.Extensions;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The values of a call and of every call made from it by adding values are
-/// kept in one array sized from the definition, so a chain of <c>AddParam</c>
-/// allocates one array, not one object per value.
 /// A call that is kept and added to twice does not interfere with itself: the
 /// second addition works on a copy.
 /// A value that is an object, and the object of <c>AddParams</c>, is read when the query runs.
@@ -22,6 +19,9 @@ namespace Open.Database.Extensions;
 /// Map it with <c>Map&lt;T&gt;()</c>, then run a terminal. Nothing touches the database before that.
 /// </para>
 /// </remarks>
+// The values of a call and of every call made from it by adding values are kept
+// in one array sized from the definition, so a chain of AddParam allocates one
+// array, not one object per value.
 public readonly struct DbQueryCall
 	: IExecuteReaderAsync, IExecuteReaderSync, IEquatable<DbQueryCall>
 {
@@ -84,27 +84,16 @@ public readonly struct DbQueryCall
 			SourceCore,
 			Params.AddDerived(Definition, CheckedExpression(expression), value));
 
-	/// <summary>
-	/// Maps each row to a <typeparamref name="T"/> by column name (a single value such as
-	/// <see cref="int"/> is read from the first column), and returns the mapped query.
-	/// </summary>
-	/// <remarks>
-	/// The same as <see cref="CoreExtensions.Map{T}(IExecuteReader)"/>, written the same way, without boxing this value:
-	/// the query holds the call as it is.
-	/// </remarks>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <returns>The mapped query, to be read with a terminal.</returns>
-	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	/// <inheritdoc cref="DbQueryUsing.Map{T}()"/>
+	// The query holds this call as it is; the value is not boxed.
 	public MappedQuery<T> Map<T>()
 		=> FirstColumn<T>.Instance is { } firstColumn
 		? new(Views.QueryCore(Bound(), firstColumn))
 		: new(Views.QueryCore(Bound(), RowMap<T>.Default));
 
-	/// <summary>Maps each row to a <typeparamref name="T"/> with a map the caller declared, and returns the mapped query.</summary>
-	/// <typeparam name="T">The type each row is mapped to.</typeparam>
-	/// <param name="map">The map. A <see langword="null"/> map reads exactly as <see cref="Map{T}()"/> does (write it typed, <c>(RowMap&lt;T&gt;?)null</c>: a bare <see langword="null"/> also fits the selector overload).</param>
-	/// <returns>The mapped query, to be read with a terminal.</returns>
-	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	/// <inheritdoc cref="DbQueryUsing.Map{T}(RowMap{T})"/>
+	// A bare null does not compile here (it also fits the selector overload):
+	// write (RowMap<T>?)null.
 	public MappedQuery<T> Map<T>(RowMap<T>? map)
 		=> map is null
 		? Map<T>()
@@ -124,17 +113,11 @@ public readonly struct DbQueryCall
 		return new(Views.QueryCore(Bound(), new SelectorSource<T>(selector)));
 	}
 
-	/// <summary>Reads each row without a model, as an array of its values.</summary>
-	/// <remarks>The same as <see cref="CoreExtensions.AsObjectArrays(IExecuteReader)"/>.</remarks>
-	/// <returns>The mapped query, to be read with a terminal.</returns>
-	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	/// <inheritdoc cref="DbQueryUsing.AsObjectArrays()"/>
 	public MappedQuery<object?[]> AsObjectArrays()
 		=> new(Views.QueryCore(Bound(), ObjectArraySource.Instance));
 
-	/// <summary>Reads each row without a model, as a <see cref="DictionaryRow"/>.</summary>
-	/// <remarks>The same as <see cref="CoreExtensions.AsDictionaryRows(IExecuteReader)"/>.</remarks>
-	/// <returns>The mapped query, to be read with a terminal.</returns>
-	/// <exception cref="InvalidOperationException">This is a <see langword="default"/> value, which is bound to nothing.</exception>
+	/// <inheritdoc cref="DbQueryUsing.AsDictionaryRows()"/>
 	public MappedQuery<DictionaryRow> AsDictionaryRows()
 		=> new(Views.QueryCore(Bound(), DictionaryRowSource.Instance));
 
@@ -161,13 +144,11 @@ public readonly struct DbQueryCall
 	/// Checks the text of the argument of <c>AddParam(value)</c>, which the
 	/// compiler supplies.
 	/// </summary>
-	/// <remarks>
-	/// The facts of an expression are worked out once per text.
-	/// The name it stands for is settled when the query runs.
-	/// </remarks>
 	/// <param name="expression">The text of the argument.</param>
 	/// <returns>The facts of the expression.</returns>
 	/// <exception cref="ArgumentException">A name cannot be derived from the expression.</exception>
+	// The facts of an expression are worked out once per text. The name it
+	// stands for is settled when the query runs.
 	[SuppressMessage(
 		"Usage",
 		"CA2208:Instantiate argument exceptions correctly")]
@@ -280,10 +261,8 @@ public readonly struct DbQueryCall
 			transform,
 			behavior);
 
-	/// <summary>
-	/// Runs the query without the interface, so a query that holds this value
-	/// does not box it.
-	/// </summary>
+	/// <summary>Runs the query with the given state.</summary>
+	// Called without the interface, so a holder of this value does not box it.
 	internal TResult Run<TState, TResult>(
 		TState state,
 		Func<IDataReader, TState, TResult> transform,

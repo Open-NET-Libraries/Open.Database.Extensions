@@ -1,8 +1,7 @@
 namespace Open.Database.Extensions.Synchronous;
 
-/// <summary>
-/// Blocking extensions on an <see cref="IDbCommand"/>: they hold the calling thread until the work is done. Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.
-/// </summary>
+/// <summary>Blocking extensions on an <see cref="IDbCommand"/>, which hold the calling thread until the work is done.</summary>
+/// <remarks>Add <c>using Open.Database.Extensions.Synchronous;</c> to use them.</remarks>
 public static class SyncCommandExtensions
 {
 	/// <summary>

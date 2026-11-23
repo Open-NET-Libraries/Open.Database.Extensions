@@ -3,10 +3,8 @@ namespace Open.Database.Extensions.Core;
 /// <summary>
 /// Reads a row without a model: one slot for each column, <see cref="DBNull"/> read as <see langword="null"/>.
 /// </summary>
-/// <remarks>
-/// <see cref="IDataRecord.GetValues(object[])"/> reads each column once, in order, so a provider may stream the row
-/// (the read mode of a generated mapping applies: SequentialAccess).
-/// </remarks>
+// GetValues reads each column once, in order, so a provider may stream the row
+// (the read mode of a generated mapping applies: SequentialAccess).
 static class ObjectRow
 {
 	/// <summary>Reads the current row of a record.</summary>
@@ -28,7 +26,8 @@ static class ObjectRow
 	}
 }
 
-/// <summary>The source of <c>AsObjectArrays()</c>: the same static delegate for every result set.</summary>
+/// <summary>The source of <c>AsObjectArrays()</c>.</summary>
+// The same static delegate serves every result set.
 sealed class ObjectArraySource : IRowSource<object?[]>
 {
 	public static readonly ObjectArraySource Instance = new();
@@ -44,10 +43,9 @@ sealed class ObjectArraySource : IRowSource<object?[]>
 	public Func<IDataRecord, object?[]> Mapper(IDataRecord reader) => Read;
 }
 
-/// <summary>
-/// The source of <c>AsDictionaryRows()</c>: the column names are read once for each result set, when its mapper is
-/// made, and every row of the set shares them.
-/// </summary>
+/// <summary>The source of <c>AsDictionaryRows()</c>.</summary>
+// The column names are read once for each result set, when its mapper is made,
+// and every row of the set shares them.
 sealed class DictionaryRowSource : IRowSource<DictionaryRow>
 {
 	public static readonly DictionaryRowSource Instance = new();

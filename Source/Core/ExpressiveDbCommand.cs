@@ -1,14 +1,15 @@
 ﻿namespace Open.Database.Extensions;
 
+// Unlike ExpressiveCommand, the callbacks need no casts to reach the asynchronous ADO.NET APIs.
 /// <summary>
-/// A deferred, fluent command for running SQL through any <see cref="DbConnection"/>, <see cref="DbTransaction"/>, connection factory, or connection pool. Unlike <see cref="ExpressiveCommand"/>, it exposes the <see cref="DbCommand"/> and <see cref="DbDataReader"/> types to the callbacks, so the provider-agnostic asynchronous ADO.NET APIs are available without casting.
+/// A deferred, fluent command for running SQL through any <see cref="DbConnection"/>, <see cref="DbTransaction"/>, connection factory, or connection pool, whose callbacks receive the <see cref="DbCommand"/> and <see cref="DbDataReader"/>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Create one with the <c>Command</c> and <c>StoredProcedure</c> extension methods in <see cref="ConnectionExtensions"/>, add parameters with <c>AddParam</c>, optionally set a timeout and cancellation token, then run it with one of the execute methods.
 /// </para>
 /// <para>
-/// Connections follow the same "get in, get out" model as <see cref="ExpressiveCommand"/>: each execution takes a connection, opens it only if needed, runs the command, and releases the connection. A connection supplied directly is closed again only if this execution opened it and is never disposed; a connection from a factory is disposed, and one from a pool is given back.
+/// Connection ownership is as for <see cref="ExpressiveCommand"/>: a connection supplied directly is closed again only if this execution opened it and is never disposed; one from a factory is disposed, and one from a pool is given back.
 /// </para>
 /// </remarks>
 /// <example>
@@ -109,11 +110,19 @@ public class ExpressiveDbCommand : ExpressiveDbCommandBase<DbConnection, DbComma
 	{
 	}
 
+	// The failure is not wrapped, so a retry policy still sees the provider's exception.
 	/// <summary>
 	/// Gets the parameter names a stored procedure declares through the ADO.NET schema collection <c>ProcedureParameters</c>, so parameters added with <c>AddParam(value)</c> find their real names on any provider that supports it (SQL Server does).
 	/// </summary>
-	/// <remarks>A name with a database part (<c>otherdb.dbo.proc</c>) is not looked up, because the lookup runs in the connection's current database; a name that exists in more than one schema (when no schema is given) is not known either, and neither is anything from a provider that does not implement the collection:
-	/// in each case the last member of each argument is used as written. A failure of the lookup is thrown as it is (a <see cref="DbException"/> stays one, so a retry policy still sees it), with the procedure's name added to <see cref="Exception.Data"/> under the key <c>Procedure</c>.</remarks>
+	/// <remarks>
+	/// <para>
+	/// A name with a database part (<c>otherdb.dbo.proc</c>) is not looked up, because the lookup runs in the connection's current database; a name that exists in more than one schema (when no schema is given) is not known either, and neither is anything from a provider that does not implement the collection:
+	/// in each case the last member of each argument is used as written.
+	/// </para>
+	/// <para>
+	/// A failure of the lookup is thrown as it is, a <see cref="DbException"/> staying one, with the procedure's name added to <see cref="Exception.Data"/> under the key <c>Procedure</c>.
+	/// </para>
+	/// </remarks>
 	/// <inheritdoc />
 	protected override ImmutableArray<string> GetProcedureParameterNames(DbConnection connection, string procedure)
 		=> ProcedureSchemaNames.Get(connection, procedure);

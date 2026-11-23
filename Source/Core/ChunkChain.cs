@@ -7,53 +7,35 @@ namespace Open.Database.Extensions.Core;
 /// written into a chain of pooled arrays that are never moved once written.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Absorbing the read costs one store per row and no growth copy.
-/// When the read is over (and the connection is released) the chain is
-/// copied once into a result of exactly the right size, then its arrays go
-/// back to the pool.
-/// </para>
-/// <para>
-/// The chain is read on the caller's own flow: there is no producer task
-/// (that is the job of <c>ToAsyncBuffer</c>, and it is for a different
-/// purpose: a consumer that works while the read is still running).
-/// </para>
-/// <para>
-/// Chunk sizes start at the configuration's collect-first value and grow by
-/// its collect-shift per chunk up to its collect-max
-/// (<see cref="ChunkSizes"/>); they are what the chain <em>asks</em> for.
-/// A pool may give a longer array (the shared array pool rounds up to a
-/// power of two), and the chain uses all of it, so the last chunk is the
-/// only one that is not full and the only one whose tail is never written,
-/// read or cleared.
-/// </para>
-/// <para>
-/// The chain object is reused: one spare is kept per <typeparamref name="T"/>,
-/// taken by <see cref="Rent"/> and parked again by <see cref="Dispose"/>, so a
-/// small result allocates nothing for it.
-/// A chain is rented by one call, used by that call alone, and disposed once,
-/// by a <see langword="using"/> declaration (the chain is
-/// <see cref="IDisposable"/>): after that it belongs to the spare slot, and
-/// no reference to it is used again.
-/// </para>
-/// <para>
-/// What the chain holds is arrays: the hot write is one array store.
-/// The number of rows in each is known (every array is full but the last),
-/// so nothing needs an array's true length except the write itself.
-/// </para>
-/// <para>
+/// Rows are written into pooled arrays that are never moved once written.
+/// When the read is over, the chain is copied once into a result of the right
+/// size and its arrays go back to the pool.
+/// Rent it with <see cref="Rent"/>, use it on the one call that rented it, and
+/// dispose it once, with a <see langword="using"/> declaration; after that it
+/// must not be used.
 /// The arrays come from, and go back to, the pool of the call's
-/// <see cref="ChunkConfig{T}"/> (the shared array pool, or the
-/// <see cref="ArrayPool{T}"/> a caller passed to <c>UsePool</c>).
-/// Clearing is decided once per call (<see cref="PoolClearing"/>: the floor
-/// for row types that hold references, then the query's explicit choice,
-/// then the app-wide switch) and only the rows that were written are
-/// cleared: <see cref="Dispose"/> seals each array with its row count
-/// (<see cref="ArrayLease{T}"/>) and releases it, and the lease knows
-/// whether that clears where it runs or in the recycle bin.
-/// </para>
+/// <see cref="ChunkConfig{T}"/>; only the rows that were written are cleared.
 /// </remarks>
 /// <include file="Internals.docs.xml" path="docs/members[@name='row']/*" />
+// The read runs on the caller's own flow: there is no producer task (that is
+// the job of ToAsyncBuffer, for a consumer that works while the read is
+// still running).
+// Absorbing the read costs one store per row and no growth copy.
+// Chunk sizes start at the configuration's collect-first value and grow by
+// its collect-shift per chunk up to its collect-max (ChunkSizes); they are
+// what the chain asks for. A pool may give a longer array (the shared array
+// pool rounds up to a power of two) and the chain uses all of it, so the last
+// chunk is the only one that is not full and the only one whose tail is never
+// written, read or cleared.
+// One spare chain is kept per T, taken by Rent and parked again by Dispose,
+// so a small result allocates nothing for the chain.
+// Every array is full but the last, so nothing needs an array's true length
+// except the write itself.
+// Clearing is decided once per call (PoolClearing: the floor for row types
+// that hold references, then the query's explicit choice, then the app-wide
+// switch); Dispose seals each array with its row count (ArrayLease) and
+// releases it, and the lease knows whether that clears where it runs or in
+// the recycle bin.
 internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 {
 	/// <summary>The one spare chain of this <typeparamref name="T"/>.</summary>
@@ -193,13 +175,8 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>
-	/// Adds the rows to a new hash set sized to them, so that it does not
-	/// regrow (duplicates are dropped, as a hash set does).
+	/// Adds the rows to a new hash set; duplicate rows are dropped, as a hash set drops them.
 	/// </summary>
-	/// <remarks>
-	/// Where no <see cref="HashSet{T}"/> constructor takes a capacity
-	/// (netstandard2.0), the set is created empty and grows as usual.
-	/// </remarks>
 	/// <param name="comparer">
 	/// The equality comparer, or <see langword="null"/> for the default.
 	/// </param>
@@ -224,8 +201,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>
-	/// Adds the rows to a new dictionary sized to them, so that it does not
-	/// regrow, keyed by <paramref name="keySelector"/>.
+	/// Adds the rows to a new dictionary, keyed by <paramref name="keySelector"/>.
 	/// </summary>
 	/// <typeparam name="TKey">The type of the key.</typeparam>
 	/// <param name="keySelector">Gets the key of a row.</param>
@@ -242,6 +218,7 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 		IEqualityComparer<TKey>? comparer)
 		where TKey : notnull
 	{
+		// Sized to the rows so that it does not regrow.
 		Dictionary<TKey, T> dictionary = new(Count, comparer);
 		for (int i = 0; i < _chunkCount; ++i)
 		{
@@ -305,17 +282,14 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>
-	/// Gives every array back (see the remarks of the type) and parks the
-	/// chain as the spare.
+	/// Gives every array back to the pool and parks the chain as the spare.
 	/// </summary>
 	/// <remarks>
-	/// Call it once, from the <see langword="finally"/> of the call that
-	/// rented the chain, which a <see langword="using"/> declaration on the
-	/// rented chain does (a second call, before the chain is rented again,
-	/// does nothing).
+	/// Called by the using declaration that rents the chain. A second call, before
+	/// the chain is rented again, does nothing.
 	/// <include file="Internals.docs.xml" path="docs/members[@name='release-all']/*" />
-	/// Public only because the interface requires it: the class is internal.
 	/// </remarks>
+	// Public only because the interface requires it: the class is internal.
 	public void Dispose()
 	{
 		if (_parked) return;
@@ -353,10 +327,8 @@ internal sealed class ChunkChain<T> : ICollection<T>, IDisposable
 	}
 
 	/// <summary>Gets the number of rows added.</summary>
-	/// <remarks>
-	/// The chain is an <see cref="ICollection{T}"/> only so that a collection
-	/// constructor can be given the exact count; nothing else about it is a collection.
-	/// </remarks>
+	// The chain is an ICollection<T> only so that a collection constructor can
+	// be given the exact count; nothing else about it is a collection.
 	int ICollection<T>.Count => Count;
 
 	bool ICollection<T>.IsReadOnly => true;

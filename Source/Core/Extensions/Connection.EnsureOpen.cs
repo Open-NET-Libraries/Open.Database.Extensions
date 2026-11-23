@@ -11,15 +11,8 @@ public static partial class ConnectionExtensions
 	/// <see langword="true"/> if the connection is closed, still connecting, or broken;
 	/// otherwise, <see langword="false"/>.
 	/// </returns>
-	/// <remarks>
-	/// <see cref="ConnectionState"/> is a <see cref="FlagsAttribute">[Flags]</see>
-	/// enum: <see cref="ConnectionState.Closed"/> = 0, <see cref="ConnectionState.Open"/> = 1,
-	/// <see cref="ConnectionState.Connecting"/> = 2, <see cref="ConnectionState.Executing"/> = 4,
-	/// <see cref="ConnectionState.Fetching"/> = 8, <see cref="ConnectionState.Broken"/> = 16.
-	/// An open connection that is busy is <c>Open | Executing</c> or <c>Open | Fetching</c>,
-	/// which is why the <see cref="ConnectionState.Open"/> <em>bit</em> is tested and the state is never compared for equality.
-	/// <see cref="ConnectionState.Closed"/> is zero, so it has no bit: it is found as "the Open bit is not set".
-	/// </remarks>
+	// ConnectionState is a [Flags] enum: Closed is zero and has no bit, so the Open bit is tested and the state is never compared for equality;
+	// a busy open connection is Open | Executing or Open | Fetching.
 	internal static bool NeedsOpen(ConnectionState state)
 		// Open bit not set: the connection is closed (or still connecting), so it has to be opened.
 		=> (state & ConnectionState.Open) == 0
@@ -34,10 +27,7 @@ public static partial class ConnectionExtensions
 	/// <returns>
 	/// <see langword="true"/> if the connection is broken; otherwise, <see langword="false"/>.
 	/// </returns>
-	/// <remarks>
-	/// Kept in one place so that the check that closes a broken connection first
-	/// and the one that decides it needs opening cannot disagree.
-	/// </remarks>
+	// Kept in one place so that the check that closes a broken connection first and the one that decides it needs opening cannot disagree.
 	static bool IsBroken(ConnectionState state)
 		=> (state & ConnectionState.Broken) != 0;
 
@@ -158,16 +148,15 @@ public static partial class ConnectionExtensions
 	/// </summary>
 	/// <remarks>
 	/// The same rule as <see cref="EnsureOpen(IDbConnection)"/>, which returns the prior state
-	/// for a caller that wants to do the closing itself; the scope does it, without a
-	/// <see langword="try"/>/<see langword="finally"/>. It is safe to call on a connection that is already open.
-	/// You already hold the connection, so the scope is usually only there to be disposed:
-	/// <c>using var _ = connection.EnsureOpenScope();</c>. Prefer
-	/// <see cref="EnsureOpenScopeAsync{TConnection}(TConnection, CancellationToken)"/>.
+	/// for a caller that does the closing itself; the scope does the closing when it is disposed.
+	/// It is safe to call on a connection that is already open.
+	/// Prefer <see cref="EnsureOpenScopeAsync{TConnection}(TConnection, CancellationToken)"/>.
 	/// </remarks>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <param name="connection">The connection to open.</param>
 	/// <returns>The connection and the state it was found in; <see cref="ConnectionScope{TConnection}.Dispose"/> closes it again if the scope opened it.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
+	// The caller needs no try/finally: disposing the scope does the close.
 	public static ConnectionScope<TConnection> EnsureOpenScope<TConnection>(this TConnection connection)
 		where TConnection : IDbConnection
 		=> new(connection, connection.EnsureOpen());
@@ -181,21 +170,20 @@ public static partial class ConnectionExtensions
 	/// <code language="csharp">
 	/// await using var _ = await connection.EnsureOpenScopeAsync(cancellationToken);
 	/// </code>
-	/// You already hold the connection, so the scope is usually only there to be disposed; keep it
-	/// (<c>var scope = ...</c>, then <c>var (sql, was) = scope;</c>) when you also want the state the
+	/// The scope is usually only there to be disposed; keep it
+	/// (<c>var scope = ...</c>, then <c>var (conn, priorState) = scope;</c>) when you also want the state the
 	/// connection was found in. The same rule as <see cref="EnsureOpenAsync(DbConnection, CancellationToken)"/>,
-	/// which returns the prior state for a caller that wants to do the closing itself. It opens with
-	/// <see cref="DbConnection.OpenAsync(CancellationToken)"/> when the connection is a
-	/// <see cref="DbConnection"/>, and always awaits with <c>ConfigureAwait(false)</c>.
-	/// The scope's <see cref="ConnectionScope{TConnection}.DisposeAsync"/> closes with <c>CloseAsync</c>
-	/// where the target has it (not netstandard2.0, which closes synchronously). If the token
-	/// is canceled the connection it opened is closed again and no scope is returned.
+	/// which returns the prior state for a caller that does the closing itself.
+	/// A connection that is not a <see cref="DbConnection"/> is opened synchronously.
+	/// Always awaits with <c>ConfigureAwait(false)</c>.
+	/// If the token is canceled the connection it opened is closed again and no scope is returned.
 	/// </remarks>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tconnection']/*" />
 	/// <param name="connection">The connection to open.</param>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='cancel-open']/*" />
 	/// <returns>The connection and the state it was found in; <see cref="ConnectionScope{TConnection}.DisposeAsync"/> closes it again if the scope opened it.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>. The exception is reported through the returned task.</exception>
+	// Opens with DbConnection.OpenAsync for a DbConnection. The scope's DisposeAsync uses CloseAsync where the target has it; netstandard2.0 closes synchronously.
 	public static async ValueTask<ConnectionScope<TConnection>> EnsureOpenScopeAsync<TConnection>(
 		this TConnection connection,
 		CancellationToken cancellationToken = default)

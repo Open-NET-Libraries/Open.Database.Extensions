@@ -1,8 +1,7 @@
 ﻿namespace Open.Database.Extensions;
 
 /// <summary>
-/// Extension methods on connections, transactions, connection factories, connection pools and factory functions.
-/// They start an <see cref="ExpressiveSqlCommand"/> (<c>Command</c>, <c>StoredProcedure</c>) and create <see cref="SqlCommand"/> instances.
+/// Extension methods that create an <see cref="ExpressiveSqlCommand"/> or a <see cref="SqlCommand"/> from a connection, transaction, connection factory, connection pool, or factory function.
 /// </summary>
 /// <remarks>
 /// <para>

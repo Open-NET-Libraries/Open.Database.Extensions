@@ -1,7 +1,7 @@
 ﻿namespace Open.Database.Extensions;
 
 /// <summary>
-/// Core non-DB-specific extensions for building a command and retrieving data using best practices.
+/// Core extensions, not specific to a database provider, for building a command and retrieving data.
 /// </summary>
 public static partial class CoreExtensions
 {

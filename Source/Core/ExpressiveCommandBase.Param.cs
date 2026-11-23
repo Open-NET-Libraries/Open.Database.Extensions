@@ -7,9 +7,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		where TDbType : struct
 		where TThis : ExpressiveCommandBase<TConnection, TCommand, TReader, TDbType, TThis>
 {
+	// TDbType lets provider enums such as SqlDbType stand in for DbType.
 	/// <summary>
 	/// A parameter to be created on the database command each time the expressive command executes.
-	/// <typeparamref name="TDbType"/> accommodates the difference between <see cref="DbType"/> and provider-specific enums such as <c>SqlDbType</c>.
 	/// </summary>
 	/// <remarks>
 	/// For <see cref="ParameterDirection.Input"/> and <see cref="ParameterDirection.InputOutput"/> parameters, a <see langword="null"/> value is stored as <see cref="DBNull.Value"/> so the parameter is sent as a database null. For output and return-value parameters the value is stored as given.
@@ -118,8 +118,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 			=> new(member, value, member, fromObject: true, clrType);
 
 		/// <summary>
-		/// Makes the same parameter once its real name is known: no longer
-		/// waiting for a name, but still knowing the CLR type of the argument.
+		/// Makes the same parameter under its real name, keeping the CLR type of the argument.
 		/// </summary>
 		/// <param name="name">The real name.</param>
 		/// <returns>The parameter under its real name.</returns>
@@ -151,9 +150,12 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		public object? Value { get; }
 
 		/// <summary>
-		/// Gets the database type the caller gave, or <see langword="null"/> if the provider is to infer it from the value. (A NULL made by a typed <c>AddParam</c> overload reports <see langword="null"/> here and is still sent with the database type of its argument.)
+		/// Gets the database type the caller gave, or <see langword="null"/> if the provider is to infer it from the value.
 		/// </summary>
 		/// <value>The database type of the parameter, or <see langword="null"/> if the provider is to infer it from the value.</value>
+		/// <remarks>
+		/// A NULL made by a typed <c>AddParam</c> overload reports <see langword="null"/> here and is still sent with the database type of its argument.
+		/// </remarks>
 		public TDbType? Type { get; }
 
 		/// <summary>

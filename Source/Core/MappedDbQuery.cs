@@ -11,8 +11,6 @@ namespace Open.Database.Extensions;
 /// <para>
 /// It is immutable, so a static field holds it:
 /// <c>static readonly MappedDbQuery&lt;Post&gt; ByAuthor = DbQuery.Procedure("ByAuthor").Map&lt;Post&gt;();</c>.
-/// The map (and the compiled reader it caches) lives with the definition, so there is no separate
-/// <see cref="RowMap{T}"/> field to declare.
 /// </para>
 /// <para>
 /// From here the order is the caller's.
@@ -106,7 +104,7 @@ public sealed class MappedDbQuery<T>
 		=> View(Query.Using(connection).ToCall());
 
 	/// <summary>Reads the query inside a transaction the caller owns.</summary>
-	/// <param name="transaction">The transaction. Its connection is used, and left open.</param>
+	/// <param name="transaction">The transaction. Its connection must be open when a terminal runs; it is used and left open.</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="transaction"/> is <see langword="null"/>.</exception>
 	public MappedQuery<T> Using(DbTransaction transaction)
@@ -135,7 +133,7 @@ public sealed class MappedDbQuery<T>
 
 	/// <summary>Adds a named parameter before the source is known.</summary>
 	/// <remarks>
-	/// For the lightest call, declare the values with <see cref="DbQuery.Params{TParams}"/> and a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
+	/// For fewer allocations, declare the values with <see cref="DbQuery.Params{TParams}"/> and a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
 	/// </remarks>
 	/// <typeparam name="TValue">The type of the value.</typeparam>
 	/// <param name="name">The name of the parameter, with or without its prefix.</param>
@@ -154,6 +152,7 @@ public sealed class MappedDbQuery<T>
 	/// <param name="value">The value.</param>
 	/// <param name="expression">The text of the argument, filled in by the compiler.</param>
 	/// <returns>The parameters so far, to be given a source with <c>Using</c>.</returns>
+	/// <exception cref="ArgumentException">A name cannot be derived from the argument.</exception>
 	[OverloadResolutionPriority(-1)]
 	public UnboundCall<T> AddParam<TValue>(
 		TValue value,
@@ -162,7 +161,7 @@ public sealed class MappedDbQuery<T>
 
 	/// <summary>Adds the members of an object as parameters, before the source is known.</summary>
 	/// <remarks>
-	/// For the lightest call, use a typed <see cref="DbQuery.Params{TParams}"/> definition with a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
+	/// For fewer allocations, use a typed <see cref="DbQuery.Params{TParams}"/> definition with a <see langword="readonly"/> <see langword="record"/> <see langword="struct"/>.
 	/// </remarks>
 	/// <typeparam name="TValues">The type of the object.</typeparam>
 	/// <param name="values">The object whose members are the parameters.</param>
@@ -308,7 +307,7 @@ public readonly struct UnboundCall<T>
 		=> new(Definition, _list.AddMembers(Definition.Query, values));
 
 	/// <summary>Gives the parameters a connection the caller owns.</summary>
-	/// <param name="connection">The connection.</param>
+	/// <param name="connection">The connection. It is opened if it is not open, and closed again if the query opened it.</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">This is <see langword="default"/>.</exception>
@@ -317,7 +316,7 @@ public readonly struct UnboundCall<T>
 		=> Bind(Definition.Query.Using(connection));
 
 	/// <summary>Gives the parameters a transaction the caller owns.</summary>
-	/// <param name="transaction">The transaction.</param>
+	/// <param name="transaction">The transaction. Its connection must be open when a terminal runs; it is used and left open.</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="transaction"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">This is <see langword="default"/>.</exception>
@@ -327,7 +326,7 @@ public readonly struct UnboundCall<T>
 
 	/// <summary>Gives the parameters a connection taken from a pool.</summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="pool">The pool.</param>
+	/// <param name="pool">The pool. A connection is taken for the call and given back when it ends.</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="pool"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">This is <see langword="default"/>.</exception>
@@ -338,7 +337,7 @@ public readonly struct UnboundCall<T>
 
 	/// <summary>Gives the parameters a connection made by a factory.</summary>
 	/// <typeparam name="TConnection">The connection type.</typeparam>
-	/// <param name="factory">The factory.</param>
+	/// <param name="factory">The factory. A connection is made for the call and disposed when it ends.</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="factory"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">This is <see langword="default"/>.</exception>
@@ -399,8 +398,7 @@ public readonly struct UnboundCall<TParams, T>
 }
 
 /// <summary>
-/// Adds parameters to a <see cref="MappedQuery{T}"/> that <c>Using</c> made from a <see cref="MappedDbQuery{T}"/>,
-/// so <c>ByAuthor.Using(source).AddParam("authorId", id)</c> reads the same as the other order.
+/// Adds parameters to a <see cref="MappedQuery{T}"/> made from a <see cref="DbQuery"/> definition.
 /// </summary>
 /// <remarks>
 /// Each call returns a new query over the command with the parameter added and keeps every option of the

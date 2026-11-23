@@ -5,10 +5,7 @@ namespace Open.Database.Extensions;
 public static partial class CoreExtensions
 {
 	/// <summary>
-	/// Opts an expressive command out of the read-through, before <c>Map</c>:
-	/// <c>command.SingleResult().Map&lt;Post&gt;().ToListAsync(cancellationToken)</c>.
-	/// The query reads only the first result set and stops,
-	/// so a failure in a later statement is not seen.
+	/// Opts an expressive command out of the read-through, so that the query reads only the first result set.
 	/// </summary>
 	/// <remarks>
 	/// <para>
@@ -21,6 +18,9 @@ public static partial class CoreExtensions
 	/// (and <see cref="CommandBehavior.SingleRow"/> too for <c>FirstOrDefault</c> when nothing is skipped),
 	/// which lets the provider stop early.
 	/// It asserts nothing: it does not check that there is only one result set.
+	/// </para>
+	/// <para>
+	/// Call it before <c>Map</c>, as in <c>command.SingleResult().Map&lt;Post&gt;().ToListAsync(cancellationToken)</c>.
 	/// </para>
 	/// <para>
 	/// <c>command.SingleResult().Map&lt;T&gt;()</c> is exactly
@@ -56,10 +56,7 @@ public static partial class CoreExtensions
 	}
 
 	/// <summary>
-	/// Opts a command out of the read-through, before <c>Map</c>:
-	/// <c>command.SingleResult().Map&lt;Post&gt;().ToListAsync(cancellationToken)</c>.
-	/// The query reads only the first result set and stops,
-	/// so a failure in a later statement is not seen.
+	/// Opts a command out of the read-through, so that the query reads only the first result set.
 	/// </summary>
 	/// <remarks>
 	/// <para>
@@ -69,6 +66,9 @@ public static partial class CoreExtensions
 	/// so a failure in a later statement is thrown as the provider raised it.
 	/// This is the one explicit opt-out of that.
 	/// It asserts nothing: it does not check that there is only one result set.
+	/// </para>
+	/// <para>
+	/// Call it before <c>Map</c>, as in <c>command.SingleResult().Map&lt;Post&gt;().ToListAsync(cancellationToken)</c>.
 	/// </para>
 	/// <para>
 	/// <c>command.SingleResult().Map&lt;T&gt;()</c> is exactly
@@ -105,18 +105,15 @@ public static partial class CoreExtensions
 	}
 }
 
+// Map unwraps it and runs the query against the command itself with the core's singleResult flag set (Views.QueryCore),
+// so nothing here runs on that path. Used on its own it still carries the flag, so the name holds either way.
 /// <summary>
 /// What <c>command.SingleResult()</c> returns for an expressive command:
 /// the flag, carried to the <c>Map</c> that follows.
 /// </summary>
 /// <remarks>
-/// <c>Map</c> unwraps it and runs the query against the command itself with
-/// the core's <c>singleResult</c> flag set
-/// (see <see cref="Views.QueryCore{T}(IExecuteReader, IRowSource{T})"/>),
-/// so nothing here runs on that path.
 /// Used as an <see cref="IExecuteReader"/> on its own it is the command with
-/// <see cref="CommandBehavior.SingleResult"/> added to each behavior, so the
-/// name holds either way.
+/// <see cref="CommandBehavior.SingleResult"/> added to each behavior.
 /// </remarks>
 /// <param name="command">The command to read from.</param>
 sealed class SingleResultReader(IExecuteReader command)
@@ -190,7 +187,7 @@ sealed class SingleResultReader(IExecuteReader command)
 
 /// <summary>
 /// What <c>command.SingleResult()</c> returns for a raw command:
-/// every member forwards to the caller's command.
+/// the caller's command, with the flag carried to the <c>Map</c> that follows.
 /// </summary>
 /// <remarks>
 /// <c>Map</c> unwraps it as it does <see cref="SingleResultReader"/>

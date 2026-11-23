@@ -1,13 +1,14 @@
 namespace Open.Database.Extensions;
 
+// Another provider's :name, $1 or ? is not recognised: no token means "not known".
+// A local variable cannot be told from a parameter, so it is a token like any other.
 /// <summary>
 /// Finds the <c>@name</c> parameter markers in a SQL text, so a command of <see cref="CommandType.Text"/> can match an argument's derived name against the names its text uses.
 /// </summary>
 /// <remarks>
-/// Only <c>@</c> is recognised (another provider's <c>:name</c>, <c>$1</c> or <c>?</c> is not: no token means "not known"). A marker inside a single-quoted string, a double-quoted or
-/// <c>[bracketed]</c> identifier, a <c>--</c> line comment or a <c>/* */</c> block comment (not nested) is skipped, and so is a <c>@@system</c> variable. A local variable
-/// cannot be told from a parameter, so it is a token like any other. A name is a letter or an underscore, then letters, digits, <c>_</c>, <c>$</c> and <c>#</c>; the same
-/// name in another case is the same parameter, so it is returned once, as it first appeared.
+/// Only <c>@</c> markers are recognised.
+/// A marker inside a single-quoted string, a double-quoted or <c>[bracketed]</c> identifier, a <c>--</c> line comment or a <c>/* */</c> block comment (not nested) is skipped, and so is a <c>@@system</c> variable.
+/// A name is a letter or an underscore, then letters, digits, <c>_</c>, <c>$</c> and <c>#</c>; the same name in another case is the same parameter, so it is returned once, as it first appeared.
 /// </remarks>
 static class SqlTextParameters
 {
@@ -33,9 +34,8 @@ static class SqlTextParameters
 	}
 
 	/// <summary>
-	/// Finds the next marker of the text at or after <paramref name="position"/>, without allocating: <paramref name="start"/> is the index of its <c>@</c>,
-	/// <paramref name="stop"/> the index after its last character, and <paramref name="position"/> moves to <paramref name="stop"/>.
-	/// <see cref="Parse"/> is built on this, so the markers a scan sees are exactly the tokens a parse makes (a repeat, in any case, is another marker here and one token there).
+	/// Finds the next marker of the text at or after <paramref name="position"/>: <paramref name="start"/> is the index of its <c>@</c>,
+	/// <paramref name="stop"/> the index after its last character.
 	/// </summary>
 	/// <param name="text">The SQL text.</param>
 	/// <param name="position">Where to start looking; moves to <paramref name="stop"/> when a marker is found, otherwise to the end of the text.</param>
@@ -44,6 +44,8 @@ static class SqlTextParameters
 	/// <returns><see langword="true"/> if a marker was found; <see langword="false"/> when the text has no more markers.</returns>
 	internal static bool NextMarker(ReadOnlySpan<char> text, ref int position, out int start, out int stop)
 	{
+		// It allocates nothing. Parse is built on this, so the markers a scan sees are exactly the tokens a parse makes
+		// (a repeat, in any case, is another marker here and one token there).
 		int i = position;
 		while (i < text.Length)
 		{

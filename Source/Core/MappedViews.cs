@@ -260,14 +260,12 @@ public static partial class CoreExtensions
 /// Builds the core a view runs over.
 /// </summary>
 /// <remarks>
-/// A caller's reader is read from where it stands and is never read through,
-/// so it takes the single-result path of the core, which never calls
-/// <see cref="IDataReader.NextResult"/>.
-/// A command takes the same path as an expressive command.
-/// A command that came through <c>SingleResult()</c> is unwrapped here:
-/// the query runs against the command itself with the core's
-/// <c>singleResult</c> flag set.
+/// A caller's reader is never read through: <see cref="IDataReader.NextResult"/> is never called on it.
+/// A command that came through <c>SingleResult()</c> is unwrapped here.
 /// </remarks>
+// A caller's reader is read from where it stands, so it takes the single-result path of the core.
+// A command takes the same path as an expressive command; one that came through SingleResult() runs
+// against the command itself with the core's singleResult flag set.
 static class Views
 {
 	internal static MappedQueryCore<T> QueryCore<T>(
@@ -330,12 +328,6 @@ static class Views
 	/// <summary>
 	/// Makes a query core: the one door every query is made through.
 	/// </summary>
-	/// <remarks>
-	/// It is the one place a default pool configuration is chosen: when the query
-	/// is made, before any terminal runs.
-	/// Everything after this (a terminal, <c>UsePool</c>, a collector) uses the
-	/// query's own configuration and never picks one.
-	/// </remarks>
 	/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 	/// <param name="command">The command the rows are read from.</param>
 	/// <param name="call">The call, when the query is made from a <see cref="DbQuery"/> definition; then <paramref name="command"/> is <see langword="null"/>.</param>
@@ -343,6 +335,8 @@ static class Views
 	/// <param name="singleResult"><see langword="true"/> to stop after the first result set and not read through the later ones; otherwise, <see langword="false"/>.</param>
 	/// <param name="asyncReads"><see langword="true"/> to read the rows of an asynchronous terminal with <c>ReadAsync</c>; otherwise, <see langword="false"/>.</param>
 	/// <returns>The new query core, with the default configuration for <typeparamref name="T"/>.</returns>
+	// The one place a default pool configuration is chosen: when the query is made, before any terminal runs.
+	// Everything after this (a terminal, UsePool, a collector) uses the query's own configuration and never picks one.
 	static MappedQueryCore<T> NewCore<T>(
 		IExecuteReader? command,
 		DbQueryCall call,
@@ -363,9 +357,6 @@ static class Views
 	/// Holds the shared array pool, the shipped sizes and the default bin, per
 	/// row type.
 	/// </summary>
-	/// <remarks>
-	/// Private to <see cref="Views"/>: nothing else can ask for it.
-	/// </remarks>
 	/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
 	static class Defaults<T>
 	{
@@ -648,22 +639,48 @@ public readonly record struct MappedReader<T>
 	public MappedQueryWithTake<T> Take(int count)
 		=> new(_core.WithTake(count));
 
-	/// <inheritdoc />
+	/// <summary>Passes the rows of the current result set to the handler.</summary>
+	/// <remarks>
+	/// The rows are read from the reader as the handler enumerates them, and the reader is in use until the handler returns.
+	/// For rows held in memory use <see cref="ToList"/>.
+	/// </remarks>
+	/// <param name="handler">Receives the rows, which are read as it enumerates them.</param>
 	public void Read(Action<IEnumerable<T>> handler)
 		=> _core.Read(handler);
 
-	/// <inheritdoc />
+	/// <summary>Passes the rows of the current result set to the handler and returns its result.</summary>
+	/// <remarks>
+	/// The rows are read from the reader as the handler enumerates them, and the reader is in use until the handler returns.
+	/// For rows held in memory use <see cref="ToList"/>.
+	/// </remarks>
+	/// <typeparam name="TResult">The type the handler returns.</typeparam>
+	/// <param name="handler">Receives the rows, which are read as it enumerates them.</param>
+	/// <returns>The value the handler returns.</returns>
 	public TResult Read<TResult>(
 		Func<IEnumerable<T>, TResult> handler)
 		=> _core.Read(handler);
 
-	/// <inheritdoc />
+	/// <summary>Passes the rows of the current result set to the asynchronous handler.</summary>
+	/// <remarks>
+	/// The rows are read from the reader as the handler enumerates them, and the reader is in use until the handler completes.
+	/// For rows held in memory use <see cref="ToListAsync"/>.
+	/// </remarks>
+	/// <param name="handler">Receives the rows, which are read as it enumerates them.</param>
+	/// <param name="cancellationToken">The token that cancels the read.</param>
 	public ValueTask ReadAsync(
 		Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler,
 		CancellationToken cancellationToken)
 		=> _core.ReadAsync(handler, cancellationToken);
 
-	/// <inheritdoc />
+	/// <summary>Passes the rows of the current result set to the asynchronous handler and returns its result.</summary>
+	/// <remarks>
+	/// The rows are read from the reader as the handler enumerates them, and the reader is in use until the handler completes.
+	/// For rows held in memory use <see cref="ToListAsync"/>.
+	/// </remarks>
+	/// <typeparam name="TResult">The type the handler returns.</typeparam>
+	/// <param name="handler">Receives the rows, which are read as it enumerates them.</param>
+	/// <param name="cancellationToken">The token that cancels the read.</param>
+	/// <returns>The value the handler returns.</returns>
 	public ValueTask<TResult> ReadAsync<TResult>(
 		Func<
 			IAsyncEnumerable<T>,
@@ -1034,22 +1051,32 @@ public readonly record struct MappedTable<T>
 	public MappedQueryWithTake<T> Take(int count)
 		=> new(_core.WithTake(count));
 
-	/// <inheritdoc />
+	/// <summary>Passes the rows of the table to the handler.</summary>
+	/// <param name="handler">Receives the rows, which are read as it enumerates them.</param>
 	public void Read(Action<IEnumerable<T>> handler)
 		=> _core.Read(handler);
 
-	/// <inheritdoc />
+	/// <summary>Passes the rows of the table to the handler and returns its result.</summary>
+	/// <typeparam name="TResult">The type the handler returns.</typeparam>
+	/// <param name="handler">Receives the rows, which are read as it enumerates them.</param>
+	/// <returns>The value the handler returns.</returns>
 	public TResult Read<TResult>(
 		Func<IEnumerable<T>, TResult> handler)
 		=> _core.Read(handler);
 
-	/// <inheritdoc />
+	/// <summary>Passes the rows of the table to the asynchronous handler.</summary>
+	/// <param name="handler">Receives the rows, which are read as it enumerates them.</param>
+	/// <param name="cancellationToken">The token that cancels the read.</param>
 	public ValueTask ReadAsync(
 		Func<IAsyncEnumerable<T>, CancellationToken, ValueTask> handler,
 		CancellationToken cancellationToken)
 		=> _core.ReadAsync(handler, cancellationToken);
 
-	/// <inheritdoc />
+	/// <summary>Passes the rows of the table to the asynchronous handler and returns its result.</summary>
+	/// <typeparam name="TResult">The type the handler returns.</typeparam>
+	/// <param name="handler">Receives the rows, which are read as it enumerates them.</param>
+	/// <param name="cancellationToken">The token that cancels the read.</param>
+	/// <returns>The value the handler returns.</returns>
 	public ValueTask<TResult> ReadAsync<TResult>(
 		Func<
 			IAsyncEnumerable<T>,

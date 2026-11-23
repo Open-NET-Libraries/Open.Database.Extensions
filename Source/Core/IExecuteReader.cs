@@ -4,6 +4,9 @@
 /// Represents an expressive command that runs a data reader and hands it to
 /// a function of the caller.
 /// </summary>
+/// <remarks>
+/// The data reader is disposed when the function returns, and a connection the command opened is closed or given back then, so do not keep the reader.
+/// </remarks>
 /// <seealso cref="IExecuteCommand"/>
 public interface IExecuteReader
 {

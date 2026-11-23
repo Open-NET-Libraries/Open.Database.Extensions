@@ -1,8 +1,5 @@
 ﻿namespace Open.Database.Extensions;
 
-/// <summary>
-/// Extensions for SqlConnections.
-/// </summary>
 public static partial class SqlConnectionExtensions
 {
 	const string EmptyOrWhiteSpace = "Command is empty or whitespace.";

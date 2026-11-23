@@ -7,6 +7,8 @@ public static partial class SqlCommandExtensions
 {
 	#region Open and execute the reader
 
+	// Core's shared helpers close a connection that was opened here when the provider fails to execute.
+	// The execute delegate is a static lambda, so there is no closure.
 	/// <summary>
 	/// Asynchronously opens the command's connection if it is closed and executes the reader, in one step.
 	/// </summary>
@@ -14,10 +16,6 @@ public static partial class SqlCommandExtensions
 	/// <param name="behavior">The behavior to run the reader with. <see cref="CommandBehavior.CloseConnection"/> is added when the connection was opened here.</param>
 	/// <param name="cancellationToken">A token that can cancel opening the connection and executing the command.</param>
 	/// <returns>A task whose result is the reader.</returns>
-	/// <remarks>
-	/// Core's shared helpers close a connection that was opened here when the provider fails to execute.
-	/// The execute delegates are static lambdas, so there is no closure.
-	/// </remarks>
 	static ValueTask<SqlDataReader> OpenAndExecuteReaderAsync(this SqlCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
 		=> CommandExtensions.OpenAndExecuteReaderAsync(command, behavior, static (c, b, ct) => c.ExecuteReaderAsync(b, ct), cancellationToken);
 	#endregion
@@ -30,7 +28,6 @@ public static partial class SqlCommandExtensions
 
 	/// <summary>
 	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the handler.
-	/// The reader is disposed afterwards.
 	/// </summary>
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='reader-command']/*" />
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='reader-handler']/*" />
@@ -66,7 +63,6 @@ public static partial class SqlCommandExtensions
 
 	/// <summary>
 	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to a synchronous handler.
-	/// The reader is disposed afterwards.
 	/// </summary>
 	/// <returns>A task that represents the asynchronous operation. It completes after <paramref name="handler"/> has completed and the reader has been disposed.</returns>
 	/// <inheritdoc cref="ExecuteReaderAsync(SqlCommand, Func{SqlDataReader, ValueTask}, CommandBehavior, CancellationToken)" path="/*[not(self::summary) and not(self::returns)]"/>
@@ -96,7 +92,6 @@ public static partial class SqlCommandExtensions
 
 	/// <summary>
 	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to the transform function, returning its result.
-	/// The reader is disposed afterwards.
 	/// </summary>
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='transform-T']/*" />
 	/// <include file="MSSqlClient.docs.xml" path="docs/members[@name='reader-command']/*" />
@@ -133,7 +128,6 @@ public static partial class SqlCommandExtensions
 
 	/// <summary>
 	/// Asynchronously executes the command and passes the <see cref="SqlDataReader"/> to an asynchronous transform function, returning its result.
-	/// The reader is disposed afterwards.
 	/// </summary>
 	/// <returns>A task that represents the asynchronous operation; its result is the value produced by <paramref name="transform"/>.</returns>
 	/// <inheritdoc cref="ExecuteReaderAsync{T}(SqlCommand, Func{SqlDataReader, T}, CommandBehavior, CancellationToken)" path="/*[not(self::summary) and not(self::returns)]"/>

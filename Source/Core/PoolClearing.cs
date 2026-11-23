@@ -32,11 +32,6 @@ namespace Open.Database.Extensions.Core;
 /// </list>
 /// <para>
 /// The switch is the AppContext setting named by <see cref="SwitchName"/>.
-/// It is read once, into a <see langword="static"/> <see langword="readonly"/> field, so a query that never asks
-/// pays nothing for it.
-/// Tests do not change it: the decision is a pure method
-/// (<c>Resolve</c> with the switch as an argument), and
-/// the reading is a method of its own (<see cref="ReadSwitch"/>).
 /// </para>
 /// </remarks>
 internal static class PoolClearing
@@ -46,6 +41,8 @@ internal static class PoolClearing
 		= "Open.Database.Extensions.ClearPooledArrays";
 
 	/// <summary>The cached value of the switch.</summary>
+	// Read once: a query that never asks pays nothing for it.
+	// Tests do not change it: they call Resolve with the switch as an argument, not ReadSwitch.
 	public static readonly bool All = ReadSwitch();
 
 	/// <summary>
@@ -95,14 +92,10 @@ internal static class PoolClearing
 	/// <summary>
 	/// The floor: whether a row type is, or contains, a reference.
 	/// </summary>
-	/// <remarks>
-	/// The per-type value is a JIT constant on the shipped runtimes; where the
-	/// helper is absent (netstandard2.0) every type is treated as holding
-	/// references.
-	/// </remarks>
 	/// <include file="Internals.docs.xml" path="docs/members[@name='row']/*" />
 	static class Holds<T>
 	{
+		// A JIT constant on the shipped runtimes; netstandard2.0 treats every type as holding references.
 #if NETSTANDARD2_0
 		public const bool References = true;
 #else

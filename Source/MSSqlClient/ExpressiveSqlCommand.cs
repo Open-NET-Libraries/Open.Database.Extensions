@@ -3,11 +3,11 @@
 namespace Open.Database.Extensions;
 
 /// <summary>
-/// A deferred, fluent command for running SQL through a <see cref="SqlConnection"/>, <see cref="SqlTransaction"/>, connection factory, or connection pool, with parameters typed by <see cref="SqlDbType"/>. Nothing touches the database until an execute method is called.
+/// A deferred, fluent command for running SQL through a <see cref="SqlConnection"/>, <see cref="SqlTransaction"/>, connection factory, or connection pool, with parameters typed by <see cref="SqlDbType"/>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Create one with the <c>Command</c> and <c>StoredProcedure</c> extension methods in <see cref="SqlConnectionExtensions"/>, add parameters with <c>AddParam</c>, optionally set a timeout and cancellation token, then run it with one of the execute methods (for example <c>ExecuteNonQuery</c>, <c>ExecuteScalar</c>, <c>ExecuteReader</c>, or <c>Map&lt;T&gt;()</c>).
+/// Nothing touches the database until an execute method is called. Create one with the <c>Command</c> and <c>StoredProcedure</c> extension methods in <see cref="SqlConnectionExtensions"/>, add parameters with <c>AddParam</c>, optionally set a timeout and cancellation token, then run it with one of the execute methods (for example <c>ExecuteNonQuery</c>, <c>ExecuteScalar</c>, <c>ExecuteReader</c>, or <c>Map&lt;T&gt;()</c>).
 /// </para>
 /// <para>
 /// Connections follow the same "get in, get out" model as <see cref="ExpressiveDbCommand"/>: each execution takes a connection, opens it only if needed, runs the command, and releases the connection. A connection supplied directly is closed again only if this execution opened it and is never disposed; a connection from a factory is disposed, and one from a pool is given back.
@@ -97,18 +97,13 @@ public class ExpressiveSqlCommand : ExpressiveDbCommandBase<SqlConnection, SqlCo
 	{
 	}
 
+	// The database type of this command is SqlDbType, so without this overload a DbType argument would be taken as the value of the parameter.
+	// The direction has no default on purpose: this overload hides the inherited AddParam overloads wherever it applies, and a literal 0 converts to any enum, which would turn AddParam("@count", 0) into a parameter with no value.
 	/// <summary>
 	/// Adds a parameter of a <see cref="DbType"/> with no value, for example an output parameter: <c>AddParam("@id", DbType.Int32, ParameterDirection.Output)</c>.
 	/// </summary>
 	/// <remarks>
-	/// <para>
-	/// The database type of this command is <see cref="SqlDbType"/>, so without this overload a <see cref="DbType"/> argument would be taken as the <em>value</em> of the parameter.
-	/// It is converted to the <see cref="SqlDbType"/> that the provider maps it to.
-	/// </para>
-	/// <para>
-	/// The direction has no default on purpose: this overload is declared on the command, so it hides the inherited ones wherever it applies, and a literal <c>0</c> converts to any enum, which would turn <c>AddParam("@count", 0)</c> into a parameter with no value.
 	/// A constant <c>0</c> with a direction (<c>AddParam("@n", 0, ParameterDirection.InputOutput)</c>) binds to this overload as a <see cref="DbType"/>: write <c>(object)0</c> or use a variable.
-	/// </para>
 	/// </remarks>
 	/// <param name="name">The name of the parameter.</param>
 	/// <param name="type">The database type of the parameter.</param>

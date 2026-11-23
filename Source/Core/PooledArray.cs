@@ -11,12 +11,7 @@ namespace Open.Database.Extensions;
 /// <para>
 /// It is also a read-only <see cref="ICollection{T}"/>
 /// (explicitly: <c>Add</c>, <c>Clear</c> and <c>Remove</c> throw
-/// <see cref="NotSupportedException"/>),
-/// so LINQ's <c>ToArray</c> and <c>ToList</c> and the
-/// <see cref="List{T}"/> constructor know its count and copy it
-/// with one pass per array instead of enumerating.
-/// The buffer itself is not a collection,
-/// because it may still be filling.
+/// <see cref="NotSupportedException"/>).
 /// </para>
 /// <para>
 /// It is valid until it is disposed. Disposing it disposes the
@@ -34,19 +29,15 @@ namespace Open.Database.Extensions;
 /// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 /// </remarks>
 /// <include file="Internals.docs.xml" path="docs/members[@name='row']/*" />
+// LINQ and List<T> use the count and copy per array. The buffer itself is not a collection, because it may still be filling.
 public sealed class PooledArray<T>
 	: IReadOnlyList<T>, ICollection<T>, IDisposable
 {
 	/// <summary>The buffer this view came from, which owns the arrays.</summary>
-	/// <remarks>
-	/// The view holds a snapshot of the buffer's array leases, taken once when
-	/// the read completed, and the row count.
-	/// It owns nothing: the buffer does, and every member first asks the buffer
-	/// whether it is disposed (<c>ThrowIfDisposed</c>), so the view never reads
-	/// an array that went back to the pool.
-	/// (It is not safe against <em>another</em> thread disposing while a member
-	/// runs; the public docs say so.)
-	/// </remarks>
+	// The view holds a snapshot of the buffer's array leases, taken once when the read completed, and the row count.
+	// It owns nothing: the buffer does, and every member first asks the buffer whether it is disposed (ThrowIfDisposed),
+	// so the view never reads an array that went back to the pool.
+	// It is not safe against another thread disposing while a member runs; the public docs say so.
 	readonly PooledBuffer<T> _owner;
 
 	/// <summary>Per chunk: the pooled array and how many of its slots hold rows.</summary>
@@ -54,20 +45,16 @@ public sealed class PooledArray<T>
 	readonly int _count;
 
 	/// <summary>The rows of the first chunk (a power of two).</summary>
-	/// <remarks>
-	/// <para>
-	/// <em>Why the indexer is O(1).</em>
-	/// The producer rents arrays of F, 2F, 4F ... rows (<c>FirstRows &lt;&lt; k</c>;
-	/// F is 16 by default, so 16, 32, 64 ...) and every array but the last is
-	/// full, so array <c>k</c> starts at row <c>F * (2^k - 1)</c>.
-	/// Row <c>i</c> is therefore in array <c>k = floor(log2(i / F + 1))</c>, at
-	/// offset <c>i - (F * 2^k - F)</c>: one shift-and-log, no search.
-	/// That relies on every non-last chunk holding exactly its planned number
-	/// of rows, which the producer guarantees (each lease's <c>Used</c> is that
-	/// number), even for a pool that hands out longer arrays than it was asked
-	/// for.
-	/// </para>
-	/// </remarks>
+	// Why the indexer is O(1).
+	// The producer rents arrays of F, 2F, 4F ... rows (FirstRows << k;
+	// F is 16 by default, so 16, 32, 64 ...) and every array but the last is
+	// full, so array k starts at row F * (2^k - 1).
+	// Row i is therefore in array k = floor(log2(i / F + 1)), at
+	// offset i - (F * 2^k - F): one shift-and-log, no search.
+	// That relies on every non-last chunk holding exactly its planned number
+	// of rows, which the producer guarantees (each lease's Used is that
+	// number), even for a pool that hands out longer arrays than it was asked
+	// for.
 	readonly int _first;
 	/// <summary>The base 2 logarithm of the rows of the first chunk.</summary>
 	/// <remarks>The indexer finds a row's chunk with a shift.</remarks>
@@ -113,7 +100,7 @@ public sealed class PooledArray<T>
 		}
 	}
 
-	/// <summary>Gets the row at the specified index, in O(1).</summary>
+	/// <summary>Gets the row at the specified index.</summary>
 	/// <param name="index">The zero-based index of the row.</param>
 	/// <value>The row at <paramref name="index"/>.</value>
 	/// <exception cref="ArgumentOutOfRangeException">
@@ -165,7 +152,7 @@ public sealed class PooledArray<T>
 
 	/// <summary>
 	/// Copies every row, in order, into a new array of exactly
-	/// <see cref="Count"/> rows: one copy per chunk, nothing grown.
+	/// <see cref="Count"/> rows.
 	/// </summary>
 	/// <returns>
 	/// The rows in a new array; it does not depend on this view, which
@@ -186,10 +173,7 @@ public sealed class PooledArray<T>
 		return result;
 	}
 
-	/// <summary>
-	/// Copies every row, in order, into a new list sized to the rows:
-	/// one copy per chunk, nothing grown.
-	/// </summary>
+	/// <summary>Copies every row, in order, into a new list sized to the rows.</summary>
 	/// <returns>
 	/// The rows in a new list; it does not depend on this view, which
 	/// can be disposed afterwards.
@@ -214,17 +198,15 @@ public sealed class PooledArray<T>
 
 	/// <summary>Enumerates the rows in order.</summary>
 	/// <remarks>
-	/// <see langword="foreach"/> binds to this method: the enumerator is a struct
-	/// (like <see cref="List{T}.Enumerator"/>), so walking the rows
-	/// allocates nothing and costs no interface call.
 	/// It checks that the array is not disposed once per
 	/// <c>MoveNext</c>, so an enumeration in progress throws
 	/// <see cref="ObjectDisposedException"/> as soon as the array is
 	/// disposed, even when no row is left.
-	/// Through <see cref="IEnumerable{T}"/> the same enumerator is boxed.
 	/// </remarks>
 	/// <returns>An enumerator over the rows.</returns>
 	/// <include file="Internals.docs.xml" path="docs/members[@name='array-disposed']/*" />
+	// foreach binds to this method: the enumerator is a struct (like List<T>.Enumerator), so walking the rows
+	// allocates nothing and costs no interface call. Through IEnumerable<T> the same enumerator is boxed.
 	public Enumerator GetEnumerator()
 	{
 		_owner.ThrowIfDisposed();
@@ -395,10 +377,6 @@ public sealed class PooledArray<T>
 	}
 
 	/// <summary>Copies every row, in order, into an array.</summary>
-	/// <remarks>
-	/// What <see cref="List{T}"/>, <c>ToArray</c> and <c>ToList</c> call: one
-	/// copy per array.
-	/// </remarks>
 	/// <param name="array">The destination.</param>
 	/// <param name="arrayIndex">The zero-based index in <paramref name="array"/> to start at.</param>
 	/// <exception cref="ArgumentNullException">
@@ -411,6 +389,7 @@ public sealed class PooledArray<T>
 	/// The destination is too small.
 	/// </exception>
 	/// <include file="Internals.docs.xml" path="docs/members[@name='array-disposed']/*" />
+	// What List<T>, ToArray and ToList call: one copy per array.
 	void ICollection<T>.CopyTo(T[] array, int arrayIndex)
 	{
 		int count = Count;

@@ -69,7 +69,7 @@ public static partial class TransactionExtensions
 	/// Creates a <see cref="DbCommand"/> on the transaction's connection, enlisted in the transaction, with the command type, text, and timeout already set.
 	/// </summary>
 	/// <returns>A new <see cref="DbCommand"/> that the caller owns and disposes. Its <see cref="DbCommand.Transaction"/> is <paramref name="transaction"/>.</returns>
-	/// <inheritdoc cref="CreateCommand(IDbTransaction, CommandType, string, int)"/>
+	/// <inheritdoc cref="CreateCommand(IDbTransaction, CommandType, string, int)" path="/*[not(self::summary) and not(self::returns)]"/>
 	public static DbCommand CreateCommand(this DbTransaction transaction,
 		CommandType type, string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 	{
@@ -97,7 +97,7 @@ public static partial class TransactionExtensions
 	/// Creates a text <see cref="DbCommand"/> on the transaction's connection, enlisted in the transaction.
 	/// </summary>
 	/// <returns>A new <see cref="DbCommand"/> that the caller owns and disposes. Its <see cref="DbCommand.Transaction"/> is <paramref name="transaction"/>.</returns>
-	/// <inheritdoc cref="CreateTextCommand(IDbTransaction, string, int)"/>
+	/// <inheritdoc cref="CreateTextCommand(IDbTransaction, string, int)" path="/*[not(self::summary) and not(self::returns)]"/>
 	public static DbCommand CreateTextCommand(this DbTransaction transaction,
 		string commandText, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		=> transaction.CreateCommand(CommandType.Text, commandText, secondsTimeout);
@@ -106,7 +106,7 @@ public static partial class TransactionExtensions
 	/// Creates a stored procedure <see cref="DbCommand"/> on the transaction's connection, enlisted in the transaction.
 	/// </summary>
 	/// <returns>A new <see cref="DbCommand"/> that the caller owns and disposes. Its <see cref="DbCommand.Transaction"/> is <paramref name="transaction"/>.</returns>
-	/// <inheritdoc cref="CreateStoredProcedureCommand(IDbTransaction, string, int)"/>
+	/// <inheritdoc cref="CreateStoredProcedureCommand(IDbTransaction, string, int)" path="/*[not(self::summary) and not(self::returns)]"/>
 	public static DbCommand CreateStoredProcedureCommand(this DbTransaction transaction,
 		string procedureName, int secondsTimeout = CommandTimeout.DEFAULT_SECONDS)
 		=> transaction.CreateCommand(CommandType.StoredProcedure, procedureName, secondsTimeout);

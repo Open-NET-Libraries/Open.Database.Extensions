@@ -113,12 +113,13 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// Reads the rows of an async terminal with <c>ReadAsync</c> instead of <c>Read</c>, for this command.
 	/// </summary>
 	/// <remarks>
-	/// By default every terminal, async ones included, executes asynchronously and reads the rows with <c>Read</c>, the fastest and lightest way, also for large values.
-	/// This opts in to <c>ReadAsync</c> (the getters stay synchronous, and the later result sets are read through with <c>NextResultAsync</c>) for this command only.
-	/// A selector map (<c>Map(Func)</c>) on one very large value reads slower and uses more memory this way.
+	/// By default every terminal, async ones included, executes asynchronously and reads the rows with <c>Read</c>.
+	/// This opts in to <c>ReadAsync</c> for this command only: the getters stay synchronous,
+	/// and the later result sets are read through with <c>NextResultAsync</c>.
 	/// It changes nothing on a synchronous terminal. The same call is available on the mapped views (<see cref="MappedQuery{T}.AsyncReads"/>), in any order with <c>Skip</c>, <c>Take</c> and <c>SingleResult</c>.
 	/// </remarks>
 	/// <returns>The same command.</returns>
+	// Read is the lightest path, also for large values; a selector map on one very large value reads slower and uses more memory with ReadAsync.
 	public TThis AsyncReads()
 	{
 		EnsureOptions().AsyncReads = true;
@@ -126,12 +127,9 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	}
 
 	/// <summary>
-	/// Gets whether <see cref="AsyncReads"/> was called.
+	/// Gets whether rows are read with <c>ReadAsync</c>, as set by <see cref="AsyncReads"/>.
 	/// </summary>
-	/// <remarks>
-	/// The interface member is read by the views and by Channel (removed with
-	/// the interface).
-	/// </remarks>
+	// Read by the mapped views and by Channel.
 	bool UsesAsyncReads => _options?.AsyncReads ?? false;
 
 	/// <inheritdoc />

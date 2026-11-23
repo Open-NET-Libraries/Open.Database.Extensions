@@ -12,6 +12,8 @@ internal static class BlockPump
 	/// <summary>
 	/// Writes the rows of a feed to a block.
 	/// </summary>
+	/// <typeparam name="T">The type of each row.</typeparam>
+	/// <typeparam name="TFeed">The feed that supplies the rows.</typeparam>
 	/// <param name="feed">Where the rows come from.</param>
 	/// <param name="target">Where the rows are sent.</param>
 	/// <param name="complete">
@@ -121,15 +123,14 @@ internal readonly struct ChunkFeed<T>(
 	}
 }
 
+// The stall timeout is Core's: this feed only learns of an expiry while it waits for the target,
+// because a loop that is not pulling cannot see it in MoveNextAsync.
 /// <summary>
 /// The streaming feed: Core's <c>Stream</c>, one row at a time.
 /// </summary>
 /// <remarks>
 /// The next row is pulled only after the current one was accepted, so a
 /// full target holds the reader and the connection open.
-/// The stall timeout is Core's: this feed only learns of an expiry
-/// while it waits for the target, because a loop that is not pulling
-/// cannot see it in <c>MoveNextAsync</c>.
 /// </remarks>
 internal readonly struct RowFeed<T>(IAsyncEnumerable<T> rows)
 	: IFeed<T>

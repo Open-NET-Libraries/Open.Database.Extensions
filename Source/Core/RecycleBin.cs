@@ -2,6 +2,21 @@ using System.Threading.Channels;
 
 namespace Open.Database.Extensions.Core;
 
+// Threshold: a chunk of 128 KB or more of rows (value rows included) is cleared here (spike 4e); a smaller one is cleared where it is released.
+// The only work the bin ever runs is ours and bounded (clear the rows of one array, then give it back). The default path with no clearing, and small chunks, never touch it.
+// How it works:
+// - One Channel of struct work items (a runner, an array, the number of rows, the configuration), bounded by the capacity, with one reader.
+//   A post is a struct written into the queue: no delegate, no closure, no allocation once the queue has grown.
+//   The runner is one cached object per row type (ChunkRunner<T>); it does the same ChunkConfig<T>.ClearAndReturn that the immediate release does.
+// - One always-on loop (an async method, no task per item), started once by the first post: it waits for work, drains the available batch with TryRead,
+//   runs each item in its own try/catch (an item that throws, such as a pool whose Return throws, costs only that item), and yields once per batch
+//   so it does not hog a pool thread. There is no idle exit: a parked await holds no thread.
+// - The loop is started with the caller's ExecutionContext suppressed: it lives for the process (the default bin), so a captured context
+//   (an AsyncLocal, a logging scope, an Activity) of whoever posted first would otherwise stay alive and visible to every later item.
+// What it cannot guard against: a caller's custom pool whose Return blocks forever stalls the single loop; up to the capacity of dirty arrays
+// then queue up, and every later one is cleared and returned by the caller. There is no per-item timeout: synchronous work cannot be cancelled anyway.
+// The default bin's loop is also a process-lifetime root: in a host with collectible AssemblyLoadContexts it pins the context that started it until the process ends.
+// A refused post is counted (Overflowed): a bin that overflows often means clearing cannot keep up with the posts, which is what the inline fallback is for.
 /// <summary>
 /// The recycle bin: where a large chunk is cleared and its array returned
 /// when clearing applies, so the clear and the return are off the read path.
@@ -10,90 +25,32 @@ namespace Open.Database.Extensions.Core;
 /// <para>
 /// Rows that hold references are always cleared; other rows are cleared when <c>UsePool</c> or
 /// the app-wide switch asks for it.
-/// A chunk of 128 KB or more of rows (value rows included) is cleared here, where a smaller one is
-/// cleared where it is released.
-/// The bin is internal only: nothing outside <see cref="ArrayLease{T}"/> can
-/// feed it, and the only work it ever runs is ours and bounded (clear the
-/// rows of one array, then give it back).
-/// It is lazy: no loop exists until the first post (the default path, with no
-/// clearing, and small chunks never touch it).
+/// A large chunk is cleared here; a smaller one is cleared where it is released.
+/// The bin is internal only: nothing outside <see cref="ArrayLease{T}"/> can feed it.
+/// It is lazy: no loop exists until the first post.
 /// </para>
-/// <para><em>How it works.</em></para>
+/// <para>What a post can say (the caller decides what to do):</para>
 /// <list type="bullet">
 /// <item>
 /// <description>
-/// One <see cref="System.Threading.Channels.Channel{T}"/> of struct work items
-/// (a runner, an array, the number of rows, the configuration), bounded
-/// (the capacity), with one reader.
-/// A post is a struct written into the queue: no delegate, no closure, no
-/// allocation once the queue has grown.
-/// The runner is one cached object per row type (<c>ChunkRunner&lt;T&gt;</c>);
-/// it does the same <see cref="ChunkConfig{T}.ClearAndReturn"/> that the
-/// immediate release does.
+/// <see cref="PostResult.Posted"/>: the bin will run the work.
 /// </description>
 /// </item>
 /// <item>
 /// <description>
-/// One always-on loop (an <see langword="async"/> method, no task per item), started once by
-/// the first post: it waits for work, drains the available batch with
-/// <c>TryRead</c>, runs each item in its own <see langword="try"/>/<see langword="catch"/>
-/// (an item that throws, such as a pool whose <c>Return</c> throws, costs only
-/// that item), and yields once per batch so it does not hog a pool thread.
-/// There is no idle exit: a parked <see langword="await"/> holds no thread.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// The loop is started with the caller's
-/// <see cref="ExecutionContext"/> suppressed: it lives for the process (the
-/// default bin), so a captured context (an <c>AsyncLocal</c>, a logging
-/// scope, an <c>Activity</c>) of whoever posted first would otherwise stay
-/// alive and visible to every later item.
-/// </description>
-/// </item>
-/// </list>
-/// <para>
-/// <em>What a post can say</em> (the caller decides what to do):
-/// </para>
-/// <list type="bullet">
-/// <item>
-/// <description>
-/// <see cref="PostResult.Posted"/>: the bin will run it.
-/// </description>
-/// </item>
-/// <item>
-/// <description>
-/// <see cref="PostResult.Full"/>: the bin cannot take it (saturated, or
-/// anything went wrong posting).
+/// <see cref="PostResult.Full"/>: the bin cannot take it.
 /// The caller clears and returns the array itself, right away
-/// (<see cref="ArrayLease{T}.Release"/>): a dirty array is never returned to a
-/// pool, and none is left to the garbage collector with its rows.
-/// No consumer ever waits on the bin.
-/// Refusals are counted (<see cref="Overflowed"/>): a bin that overflows
-/// often means clearing cannot keep up with the posts, which is what the
-/// inline fallback is for.
-/// <see cref="Post"/> never throws.
+/// (<see cref="ArrayLease{T}.Release"/>), so a dirty array never reaches a pool.
+/// No consumer ever waits on the bin, and <see cref="Post"/> never throws.
 /// </description>
 /// </item>
 /// </list>
-/// <para>
-/// <em>What it cannot guard against.</em>
-/// A caller's custom pool whose <c>Return</c> blocks forever stalls the
-/// single loop; up to the capacity of dirty arrays then queue up, and every
-/// later one is cleared and returned by the caller.
-/// There is no per-item timeout: synchronous work cannot be cancelled anyway.
-/// The default bin's loop is also a process-lifetime root: in a host with
-/// collectible <c>AssemblyLoadContext</c>s it pins the context that started
-/// it until the process ends.
-/// </para>
 /// </remarks>
 /// <param name="capacity">The most work items the queue holds.</param>
 internal class RecycleBin(int capacity = RecycleBin.DefaultCapacity)
 {
-	/// <summary>
-	/// A count, not bytes: far above any healthy backlog. Reaching it means
-	/// something is wrong, and the rest is cleared by the callers.
-	/// </summary>
+	// A count, not bytes: far above any healthy backlog. Reaching it means something is wrong, and the rest is cleared by the callers.
+	/// <summary>The most work items the default bin queues.</summary>
 	public const int DefaultCapacity = 10_240;
 
 	/// <summary>What a post says to the caller.</summary>
@@ -222,16 +179,12 @@ internal class RecycleBin(int capacity = RecycleBin.DefaultCapacity)
 	}
 
 	/// <summary>Runs every posted item, one after the other, for ever.</summary>
-	/// <remarks>
-	/// The channel is never completed, so this never ends by itself.
-	/// There is no outer guard: nothing here can throw (each item has its own
-	/// catch), and if the loop ever did die, posts would be accepted up to the
-	/// capacity and then refused (cleared inline), and a dirty array still
-	/// never reaches a pool.
-	/// </remarks>
+	/// <remarks>The channel is never completed, so this never ends by itself.</remarks>
 	/// <returns>A task that represents the asynchronous operation.</returns>
 	async Task DrainAsync()
 	{
+		// There is no outer guard: nothing here can throw (each item has its own catch), and if the loop ever did die,
+		// posts would be accepted up to the capacity and then refused (cleared inline), and a dirty array still never reaches a pool.
 		ChannelReader<Work> reader = _work.Reader;
 
 		// The channel is never completed: see the remarks.

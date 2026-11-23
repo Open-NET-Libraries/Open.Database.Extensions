@@ -2,11 +2,12 @@ using System.Linq.Expressions;
 
 namespace Open.Database.Extensions;
 
+// An unloaded type takes its entry with it. The getters take the object, so no reflection runs after the first time a type is seen.
 /// <summary>
 /// The public instance properties and fields of a runtime type and a compiled getter for each, built once per type, for <c>AddParams(object)</c> when the argument is typed <see cref="object"/>
 /// and the static type has no members of its own. The members are found the way <see cref="ParamSource{T}"/> finds them.
 /// </summary>
-/// <remarks>One immutable entry per type, kept for as long as the type is alive (so a type that is unloaded takes its entry with it); the getters take the object, so no reflection runs after the first time a type is seen.</remarks>
+/// <remarks>One immutable entry per type, kept as long as the type is alive.</remarks>
 sealed class RuntimeParamSource
 {
 	static readonly ConditionalWeakTable<Type, RuntimeParamSource> Cache = new();

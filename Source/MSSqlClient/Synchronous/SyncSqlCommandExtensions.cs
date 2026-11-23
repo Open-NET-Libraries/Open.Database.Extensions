@@ -13,7 +13,6 @@ public static class SyncSqlCommandExtensions
 
 	/// <summary>
 	/// Executes the command and passes the <see cref="SqlDataReader"/> to the handler.
-	/// The reader is disposed afterwards.
 	/// </summary>
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='reader-command']/*" />
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='reader-handler']/*" />
@@ -32,7 +31,6 @@ public static class SyncSqlCommandExtensions
 
 	/// <summary>
 	/// Executes the command and passes the <see cref="SqlDataReader"/> to the transform function, returning its result.
-	/// The reader is disposed afterwards.
 	/// </summary>
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='transform-T']/*" />
 	/// <include file="../Extensions/MSSqlClient.docs.xml" path="docs/members[@name='reader-command']/*" />

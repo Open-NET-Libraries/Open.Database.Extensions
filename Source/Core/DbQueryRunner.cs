@@ -9,10 +9,8 @@ namespace Open.Database.Extensions;
 /// A run takes the connection, opens it if it is not open, builds one
 /// <see cref="DbCommand"/> with the bound parameters, runs the caller's
 /// function on the reader, and releases the connection.
-/// A connection that was closed when taken is closed again (never disposed
-/// unless it came from a factory); one that was open stays open.
-/// The connection is opened before the command is created, as some providers
-/// need.
+/// A connection of the caller's is closed again if the run opened it, and stays open if it was open;
+/// one from a factory is disposed and one from a pool is given back (see <see cref="Lease"/>).
 /// </remarks>
 static class DbQueryRunner
 {
@@ -29,8 +27,7 @@ static class DbQueryRunner
 	/// <remarks>
 	/// <see cref="Dispose"/> settles what is owed, so a run is
 	/// <c>using Lease lease = Lease.Open(...)</c>.
-	/// It wraps a <c>ConnectionScope</c>, so it ends the way the source calls
-	/// for:
+	/// It ends the way the source calls for:
 	/// <list type="bullet">
 	/// <item>a connection of the caller's is closed again if the run opened it, and is never disposed;</item>
 	/// <item>a connection from a factory is disposed;</item>
@@ -39,6 +36,7 @@ static class DbQueryRunner
 	/// </list>
 	/// All of this holds when the run throws.
 	/// </remarks>
+	// It wraps a ConnectionScope.
 	public readonly struct Lease : IDisposable
 	{
 		readonly ConnectionScope<DbConnection> _scope;
@@ -119,12 +117,10 @@ static class DbQueryRunner
 		/// <summary>
 		/// Opens the connection if it needs to be.
 		/// </summary>
-		/// <remarks>
-		/// Done after the supplied type is known to be right: a source that
-		/// gave the wrong kind of connection never has it opened.
-		/// </remarks>
 		/// <param name="taken">What the source supplied.</param>
 		/// <returns>The scope that settles the connection when the run ends.</returns>
+		// Done after the supplied type is known to be right: a source that gave
+		// the wrong kind of connection never has it opened.
 		static ConnectionScope<DbConnection> Open(Taken taken)
 			=> taken.End == ScopeEnd.Close
 				? taken.Connection.EnsureOpenScope()
@@ -236,16 +232,16 @@ static class DbQueryRunner
 		/// <summary>
 		/// Gets the scope's own awaitable, for <see langword="await"/> <see langword="using"/>.
 		/// </summary>
-		/// <remarks>
-		/// It exists only so that this struct is not boxed (it holds no
-		/// setting; the library never returns to a context).
-		/// </remarks>
 		/// <param name="continueOnCapturedContext">The value passed on to the scope's own <c>ConfigureAwait</c>.</param>
 		/// <returns>The configured scope.</returns>
+		// Exists so that this struct is not boxed (it holds no setting; the
+		// library never returns to a context).
 		public ConfiguredConnectionScope<DbConnection> ConfigureAwait(
 			bool continueOnCapturedContext)
 			=> _scope.ConfigureAwait(continueOnCapturedContext);
 	}
+	// The connection is opened before the command is created, as some providers
+	// need.
 	static DbCommand Make(
 		DbConnection connection,
 		DbTransaction? transaction,
@@ -295,14 +291,12 @@ static class DbQueryRunner
 	/// <summary>
 	/// Makes the key a procedure's names are remembered under.
 	/// </summary>
-	/// <remarks>
-	/// The server and the database are part of the key: one connection can be
-	/// switched to another database, and one factory can hand out connections
-	/// to different servers.
-	/// </remarks>
 	/// <param name="connection">The connection of the run.</param>
 	/// <param name="definition">The query definition.</param>
 	/// <returns>The key.</returns>
+	// The server and the database are part of the key: one connection can be
+	// switched to another database, and one factory can hand out connections to
+	// different servers.
 	static ProcedureKey KeyOf(DbConnection connection, DbQuery definition)
 		=> new(connection.DataSource, connection.Database, definition.CommandText);
 
@@ -319,18 +313,18 @@ static class DbQueryRunner
 	/// Finds the real names that the derived parameters are matched to.
 	/// </summary>
 	/// <remarks>
-	/// The same rules as a command (<c>ExpressiveCommandBase</c>): a text
-	/// definition has the <c>@name</c> markers it found when it was made; a
-	/// procedure's names are remembered per source
-	/// (<c>ProcedureNameCache</c>) for five minutes, and are read again once
-	/// when they do not fit what is asked of them, so a hit costs no schema
-	/// lookup.
+	/// A text definition has the <c>@name</c> markers it found when it was made;
+	/// a procedure's names are remembered per source and read again once when they
+	/// do not fit what is asked of them.
 	/// </remarks>
 	/// <param name="definition">The query definition.</param>
 	/// <param name="source">The connection, transaction, pool or factory.</param>
 	/// <param name="connection">The connection of the run.</param>
 	/// <param name="call">The call whose parameters are matched.</param>
 	/// <returns>The set of names, or <see langword="null"/> when they are not known.</returns>
+	// The same rules as a command (ExpressiveCommandBase). A procedure's names
+	// are remembered per source (ProcedureNameCache) for five minutes, so a hit
+	// costs no schema lookup.
 	static NameSet? Resolve(
 		DbQuery definition,
 		object source,
@@ -358,17 +352,15 @@ static class DbQueryRunner
 	/// Asynchronously finds the real names that the derived parameters are
 	/// matched to. See <see cref="Resolve"/>.
 	/// </summary>
-	/// <remarks>
-	/// Not an <see langword="async"/> method itself: when the names are
-	/// remembered (the usual case) it finishes without a state machine; only
-	/// reading them is asynchronous.
-	/// </remarks>
 	/// <param name="definition">The query definition.</param>
 	/// <param name="source">The connection, transaction, pool or factory.</param>
 	/// <param name="connection">The connection of the run.</param>
 	/// <param name="call">The call whose parameters are matched.</param>
 	/// <param name="cancellationToken">The token that governs the call.</param>
 	/// <returns>A task that represents the asynchronous operation; its result is the set of names, or <see langword="null"/> when they are not known.</returns>
+	// Not an async method itself: when the names are remembered (the usual
+	// case) it finishes without a state machine; only reading them is
+	// asynchronous.
 	static ValueTask<NameSet?> ResolveAsync(
 		DbQuery definition,
 		object source,

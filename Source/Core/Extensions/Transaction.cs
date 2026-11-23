@@ -4,9 +4,7 @@
 public static partial class TransactionExtensions
 {
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously begins a transaction on the connection, invokes the action, and commits or rolls back the transaction.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -21,6 +19,10 @@ public static partial class TransactionExtensions
 	/// Its <c>Commit</c> value is <see langword="true"/> if the transaction was committed.
 	/// </returns>
 	/// <remarks>
+	/// <para>
+	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
+	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// </para>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-async-para']/*" />
 	/// </remarks>
@@ -72,9 +74,7 @@ public static partial class TransactionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously begins a transaction on the connection, invokes the action, and commits or rolls back the transaction.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -88,6 +88,10 @@ public static partial class TransactionExtensions
 	/// Its <c>Commit</c> value is <see langword="true"/> if the transaction was committed.
 	/// </returns>
 	/// <remarks>
+	/// <para>
+	/// The transaction is committed if the action does not throw, its <c>Commit</c> value is <see langword="true"/>,
+	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// </para>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-async-para']/*" />
 	/// </remarks>
@@ -108,9 +112,7 @@ public static partial class TransactionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw, returns <see langword="true"/>,
-	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously begins a transaction on the connection, invokes the action, and commits or rolls back the transaction.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
 	/// <param name="conditionalAction">
@@ -122,6 +124,10 @@ public static partial class TransactionExtensions
 	/// <see langword="true"/> if the transaction was committed; otherwise, <see langword="false"/>.
 	/// </returns>
 	/// <remarks>
+	/// <para>
+	/// The transaction is committed if the action does not throw, returns <see langword="true"/>,
+	/// and <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// </para>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-async-para']/*" />
 	/// </remarks>
@@ -159,9 +165,7 @@ public static partial class TransactionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously begins a transaction on the connection, invokes the action, and commits or rolls back the transaction.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tresult']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
@@ -171,6 +175,10 @@ public static partial class TransactionExtensions
 	/// returned by <paramref name="action"/>.
 	/// </returns>
 	/// <remarks>
+	/// <para>
+	/// The transaction is committed if the action does not throw and
+	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// </para>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-async-para']/*" />
 	/// </remarks>
@@ -192,14 +200,16 @@ public static partial class TransactionExtensions
 	}
 
 	/// <summary>
-	/// Asynchronously begins a transaction on the connection and invokes the action.
-	/// The transaction is committed if the action does not throw and
-	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// Asynchronously begins a transaction on the connection, invokes the action, and commits or rolls back the transaction.
 	/// </summary>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-common']/*" />
 	/// <param name="action">The asynchronous handler to execute while the transaction is pending.</param>
 	/// <returns>A task that represents the asynchronous operation.</returns>
 	/// <remarks>
+	/// <para>
+	/// The transaction is committed if the action does not throw and
+	/// <paramref name="cancellationToken"/> has not been canceled; otherwise it is rolled back.
+	/// </para>
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-paras']/*" />
 	/// <include file="Connections.docs.xml" path="docs/members[@name='tx-async-para']/*" />
 	/// </remarks>
@@ -247,23 +257,18 @@ public static partial class TransactionExtensions
 	/// <param name="connection">The connection the operation ran on.</param>
 	/// <param name="priorState">The state the connection was in before the operation opened it.</param>
 	/// <remarks>
-	/// <para>
-	/// By the time this runs the transaction has already been disposed: that ordering matters
-	/// because some providers (for example Microsoft.Data.Sqlite and MySqlConnector) only roll back
-	/// an uncommitted transaction on dispose while the connection is still open.
-	/// </para>
-	/// <para>
-	/// A failure to close is deliberately ignored. By then the transaction has already been committed
-	/// or rolled back, so it must neither turn a completed operation into an error nor replace the
-	/// exception of a failed one.
-	/// </para>
-	/// <para>
 	/// Only a connection that was already <see cref="ConnectionState.Open"/> belongs to the caller.
 	/// One that was closed, or broken and therefore repaired by
 	/// <see cref="ConnectionExtensions.EnsureOpen(IDbConnection)"/>, is a connection this operation
 	/// opened, so it is closed again here.
-	/// </para>
+	/// A failure to close is ignored.
 	/// </remarks>
+	// The transaction has already been disposed by the time this runs: some providers
+	// (for example Microsoft.Data.Sqlite and MySqlConnector) only roll back an uncommitted
+	// transaction on dispose while the connection is still open.
+	// A failure to close is deliberately ignored. By then the transaction has already been committed
+	// or rolled back, so it must neither turn a completed operation into an error nor replace the
+	// exception of a failed one.
 	internal static void RestoreConnection(DbConnection connection, ConnectionState priorState)
 	{
 		if ((priorState & (ConnectionState.Open | ConnectionState.Broken)) == ConnectionState.Open)
@@ -282,9 +287,9 @@ public static partial class TransactionExtensions
 #if NETSTANDARD2_0
 	/// <summary>
 	/// Closes the connection as <see cref="RestoreConnection(DbConnection, ConnectionState)"/> does.
-	/// netstandard2.0 has no <c>CloseAsync</c>, so it closes synchronously.
 	/// </summary>
 	/// <inheritdoc cref="RestoreConnection(DbConnection, ConnectionState)"/>
+	// netstandard2.0 has no CloseAsync, so it closes synchronously.
 	static ValueTask RestoreConnectionAsync(DbConnection connection, ConnectionState priorState)
 	{
 		RestoreConnection(connection, priorState);
@@ -320,7 +325,7 @@ public static partial class TransactionExtensions
 	// They carry the lowest priority so that a bare `default` argument, which has always bound to IsolationLevel,
 	// keeps doing so. A real CancellationToken can only match these, so it is unaffected.
 
-	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, CancellationToken, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>
+	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, CancellationToken, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)" path="/*[not(self::param[@name='isolationLevel'])]"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 		this DbConnection connection,
@@ -328,7 +333,7 @@ public static partial class TransactionExtensions
 		CancellationToken cancellationToken)
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
 
-	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)"/>
+	/// <inheritdoc cref="ExecuteTransactionConditionalAsync{T}(DbConnection, Func{DbTransaction, ValueTask{ValueTuple{bool, T}}}, IsolationLevel, CancellationToken)" path="/*[not(self::param[@name='isolationLevel'])]"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<(bool Commit, T Value)> ExecuteTransactionConditionalAsync<T>(
 		this DbConnection connection,
@@ -336,7 +341,7 @@ public static partial class TransactionExtensions
 		CancellationToken cancellationToken)
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
 
-	/// <inheritdoc cref="ExecuteTransactionConditionalAsync(DbConnection, Func{DbTransaction, ValueTask{bool}}, IsolationLevel, CancellationToken)"/>
+	/// <inheritdoc cref="ExecuteTransactionConditionalAsync(DbConnection, Func{DbTransaction, ValueTask{bool}}, IsolationLevel, CancellationToken)" path="/*[not(self::param[@name='isolationLevel'])]"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<bool> ExecuteTransactionConditionalAsync(
 		this DbConnection connection,
@@ -344,7 +349,7 @@ public static partial class TransactionExtensions
 		CancellationToken cancellationToken)
 		=> connection.ExecuteTransactionConditionalAsync(conditionalAction, IsolationLevel.Unspecified, cancellationToken);
 
-	/// <inheritdoc cref="ExecuteTransactionAsync{T}(DbConnection, Func{DbTransaction, ValueTask{T}}, IsolationLevel, CancellationToken)"/>
+	/// <inheritdoc cref="ExecuteTransactionAsync{T}(DbConnection, Func{DbTransaction, ValueTask{T}}, IsolationLevel, CancellationToken)" path="/*[not(self::param[@name='isolationLevel'])]"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask<T> ExecuteTransactionAsync<T>(
 		this DbConnection connection,
@@ -352,7 +357,7 @@ public static partial class TransactionExtensions
 		CancellationToken cancellationToken)
 		=> connection.ExecuteTransactionAsync(action, IsolationLevel.Unspecified, cancellationToken);
 
-	/// <inheritdoc cref="ExecuteTransactionAsync(DbConnection, Func{DbTransaction, ValueTask}, IsolationLevel, CancellationToken)"/>
+	/// <inheritdoc cref="ExecuteTransactionAsync(DbConnection, Func{DbTransaction, ValueTask}, IsolationLevel, CancellationToken)" path="/*[not(self::param[@name='isolationLevel'])]"/>
 	[OverloadResolutionPriority(-1)]
 	public static ValueTask ExecuteTransactionAsync(
 		this DbConnection connection,

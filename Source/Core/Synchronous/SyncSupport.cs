@@ -1,9 +1,6 @@
 namespace Open.Database.Extensions.Synchronous;
 
-/// <summary>
-/// Reaches the blocking side of a command the library made.
-/// A command from outside the library has none: the call says so and points to the async call.
-/// </summary>
+/// <summary>Reaches the blocking side of a command the library made; a command from outside the library has none.</summary>
 static class SyncSupport
 {
 	/// <summary>Gets the blocking side of a command that reads rows.</summary>
