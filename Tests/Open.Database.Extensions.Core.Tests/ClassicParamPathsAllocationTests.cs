@@ -80,7 +80,6 @@ public static class ClassicParamPathsAllocationTests
 	}
 #endif
 
-	// What the chain adds to the command: the bytes of the whole chain less those of the command with no parameters.
 	[Fact]
 	public static void EachWayOfAddingParameters_CostsWhatItHolds()
 	{
@@ -110,11 +109,9 @@ public static class ClassicParamPathsAllocationTests
 
 		Report($"classic chain: none {none1} / {none5}; written {bare1} / {bare5}; with prefix {at1} / {at5}; derived {derived1} / {derived5}; existing object {existing1} / {existing5}; struct {struct1} / {struct5}");
 
-		// The spelling makes no difference.
 		Near(bare1, at1);
 		Near(bare5, at5);
 
-		// One array holds the list, sized from the text: five values cost five slots, not the 4 then 8 of the default growth.
 		foreach (long bytes in new[] { bare1, at1, derived1, existing1, struct1 }) Near(One, bytes);
 		foreach (long bytes in new[] { bare5, at5, derived5, existing5, struct5 }) Near(Five, bytes);
 #endif
@@ -133,7 +130,6 @@ public static class ClassicParamPathsAllocationTests
 		c.Open();
 		int p0 = 1, p1 = 2, p2 = 3, p3 = 4, p4 = 5;
 
-		// The literal is interned, so the cache that resolves the names holds.
 		long written = BytesPerCall(() => _ = c.Command("select @p0 + @p1 + @p2 + @p3 + @p4").AddParam("p0", p0).AddParam("p1", p1).AddParam("p2", p2).AddParam("p3", p3).AddParam("p4", p4).ExecuteScalar());
 		long prefixed = BytesPerCall(() => _ = c.Command("select @p0 + @p1 + @p2 + @p3 + @p4").AddParam("@p0", p0).AddParam("@p1", p1).AddParam("@p2", p2).AddParam("@p3", p3).AddParam("@p4", p4).ExecuteScalar());
 		long derived = BytesPerCall(() => _ = c.Command("select @p0 + @p1 + @p2 + @p3 + @p4").AddParam(p0).AddParam(p1).AddParam(p2).AddParam(p3).AddParam(p4).ExecuteScalar());
@@ -171,6 +167,33 @@ public static class ClassicParamPathsAllocationTests
 		string[] sent = command.Execute(static cmd => cmd.Parameters.Cast<SqliteParameter>().Select(static p => p.ParameterName).ToArray());
 
 		Assert.Equal(["@a", "other"], sent);
+	}
+
+	[Fact]
+	public static void TwoWrittenSpellingsOfOneName_AreRefused()
+	{
+		using var c = new SqliteConnection("Data Source=:memory:");
+		c.Open();
+
+		ExpressiveDbCommand command = c.Command("select @Id").AddParam("id", 1).AddParam("@Id", 2);
+
+		var ex = Assert.Throws<InvalidOperationException>(() => command.ExecuteScalar());
+
+		Assert.Contains("'@Id'", ex.Message);
+	}
+
+	[Fact]
+	public static void AWrittenName_NextToADerivedOne_IsSentUnderTheTextsOwnSpelling()
+	{
+		using var c = new SqliteConnection("Data Source=:memory:");
+		c.Open();
+		int id = 1;
+
+		ExpressiveDbCommand command = c.Command("select @Id, @name").AddParam(id).AddParam("NAME", "x");
+
+		string[] sent = command.Execute(static cmd => cmd.Parameters.Cast<SqliteParameter>().Select(static p => p.ParameterName).ToArray());
+
+		Assert.Equal(["@Id", "@name"], sent);
 	}
 
 	[Fact]
