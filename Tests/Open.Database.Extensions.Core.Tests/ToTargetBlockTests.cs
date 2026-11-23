@@ -139,7 +139,7 @@ public static class ToTargetBlockTests
 		Assert.False(block.Completion.IsCompleted);
 		Assert.True(block.Post(new(-1)));
 		await ChannelWait.Until(
-			() => tally.Connections[0].State == ConnectionState.Closed,
+			() => tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 	}
 

@@ -110,7 +110,7 @@ public static class ToChannelProduceTests
 
 		await ChannelWait.Until(
 			() => tally.Connections.Count == 1
-				&& tally.Connections[0].State == ConnectionState.Closed,
+				&& tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 		Assert.Equal(1, tally.Readers[0].Disposes);
 		GC.KeepAlive(channel);
@@ -157,7 +157,7 @@ public static class ToChannelProduceTests
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => readCount.Within());
 		await ChannelWait.Until(
-			() => tally.Connections[0].State == ConnectionState.Closed,
+			() => tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 	}
 
@@ -263,7 +263,7 @@ public static class ToChannelProduceTests
 
 		await ChannelWait.Until(
 			() => tally.Connections.Count == 1
-				&& tally.Connections[0].State == ConnectionState.Closed,
+				&& tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 		Assert.True(tally.Readers[0].Reads >= 300);
 

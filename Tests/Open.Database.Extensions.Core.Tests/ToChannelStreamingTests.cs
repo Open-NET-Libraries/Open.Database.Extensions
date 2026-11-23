@@ -113,7 +113,7 @@ public static class ToChannelStreamingTests
 
 		Assert.Contains(Short.ToString(), error.Message);
 		await ChannelWait.Until(
-			() => tally.Connections[0].State == ConnectionState.Closed,
+			() => tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 		Assert.Equal(1, tally.Readers[0].Disposes);
 	}
@@ -224,7 +224,7 @@ public static class ToChannelStreamingTests
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => task.Within());
 		await ChannelWait.Until(
-			() => tally.Connections[0].State == ConnectionState.Closed,
+			() => tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 	}
 
@@ -245,7 +245,7 @@ public static class ToChannelStreamingTests
 
 		Assert.InRange(await task.Within(), 2, 99_999);
 		await ChannelWait.Until(
-			() => tally.Connections[0].State == ConnectionState.Closed,
+			() => tally.Connections[0].ClosedAfterOpen,
 			"the connection to close");
 	}
 
