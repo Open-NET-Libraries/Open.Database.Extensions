@@ -187,7 +187,7 @@ public static class ClassicParamPathsAllocationTests
 	{
 		using var c = new SqliteConnection("Data Source=:memory:");
 		c.Open();
-		int id = 1;
+		const int id = 1;
 
 		ExpressiveDbCommand command = c.Command("select @Id, @name").AddParam(id).AddParam("NAME", "x");
 
