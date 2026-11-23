@@ -284,13 +284,6 @@ public static class RequiredMemberTests
 
 	static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
-	static async Task<List<T>> Drain<T>(ChannelReader<T> reader, CancellationToken ct)
-	{
-		var items = new List<T>();
-		await foreach (T item in reader.ReadAllAsync(ct).ConfigureAwait(false)) items.Add(item);
-		return items;
-	}
-
 	static async Task<List<T>> Received<T>(IReceivableSourceBlock<T> block, CancellationToken ct)
 	{
 		var items = new List<T>();

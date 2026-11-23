@@ -694,7 +694,7 @@ public static partial class SyntheticChecks
 	{
 		const int Rows = 100, Reps = 9;
 		const double DelayUs = 100;
-		double expectedAdd = Rows * DelayUs;
+		const double expectedAdd = Rows * DelayUs;
 		var table = SyntheticTable.Create(3, Rows);
 		var report = new Report();
 
@@ -744,7 +744,7 @@ public static partial class SyntheticChecks
 		{
 			double grew = inside - baseline, moved = after - baseline;
 			Console.WriteLine($"  {name}: inside grew by {grew:F0}us ({grew / expectedAdd:P0} of expected), after the close changed by {moved:F0}us ({moved / expectedAdd:P0})");
-			report.Check(grew >= 0.8 * expectedAdd && grew <= 1.5 * expectedAdd + 1000, $"{name}: a delay inside the open reader grew reader-open time by {grew:F0}us, expected about {expectedAdd:F0}us");
+			report.Check(grew is >= 0.8 * expectedAdd and <= 1.5 * expectedAdd + 1000, $"{name}: a delay inside the open reader grew reader-open time by {grew:F0}us, expected about {expectedAdd:F0}us");
 			report.Check(Math.Abs(moved) <= 0.1 * expectedAdd, $"{name}: a delay after the close changed reader-open time by {moved:F0}us, expected about 0");
 		}
 
@@ -910,8 +910,8 @@ public static partial class SyntheticChecks
 		Judge("V7 Dapper V3 (unbuffered)", p => c => SyntheticDapper.V3(c, p), true);
 		Judge("V7 Dapper V6c (unbuffered)", p => c => SyntheticDapper.V6c(c, Width, p), true);
 		// V5 and V6d take no pace: the work is after the close. The harness hands them none, so the pair below is the same call twice (a stability check).
-		Judge("V5 sync (no pace taken)", static p => c => SyntheticVariantsB.V5(c), false);
-		Judge("V6d sync (no pace taken)", static p => c => SyntheticVariantsB.V6d(c, Width), false);
+		Judge("V5 sync (no pace taken)", static _ => c => SyntheticVariantsB.V5(c), false);
+		Judge("V6d sync (no pace taken)", static _ => c => SyntheticVariantsB.V6d(c, Width), false);
 		// Controls: the consumer pays the pace itself AFTER the close, once per item. Total grows, reader-open does not.
 		Judge("V5 + pace after close", p => c =>
 		{

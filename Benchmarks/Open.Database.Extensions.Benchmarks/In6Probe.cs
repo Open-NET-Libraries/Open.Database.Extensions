@@ -484,9 +484,8 @@ public static partial class In6Probe
 			{
 				results.Add(Measure(name, stats, operation, expectedRows, warmup, ops));
 			}
-			catch (Exception ex)
+			catch (Exception ex) when (failed is not null)
 			{
-				if (failed is null) throw;
 				failed(name, ex);
 			}
 		}
@@ -958,7 +957,7 @@ public static partial class In6Probe
 		}
 
 		const int Rows = 1000, Buffer = 100, RefillUs = 100, Warmup = 1, Ops = 5;
-		int boundaries = (Rows - 1) / Buffer;
+		const int boundaries = (Rows - 1) / Buffer;
 		var recorder = new SyntheticRecorder();
 		var table = SyntheticTable.Create(5, Rows);
 		var inner = new SyntheticConnection(table, new SyntheticOptions { BufferRows = Buffer, RefillCostUs = RefillUs, Recorder = recorder });
@@ -989,15 +988,15 @@ public static partial class In6Probe
 		{
 			if (r.Path == "EnableAsyncRead")
 			{
-				double expectedWait = boundaries * (double)RefillUs;
-				Check(r.WaitSumMedianUs >= 0.9 * expectedWait && r.WaitSumMedianUs <= (1.1 * expectedWait) + (boundaries * 300), $"{r.Path}: wait time sum {r.WaitSumMedianUs:F0} us per operation, expected about {expectedWait:F0} (boundaries x refill; tolerance -10% to +10% and 300 us per boundary)");
+				const double expectedWait = boundaries * (double)RefillUs;
+				Check(r.WaitSumMedianUs is >= 0.9 * expectedWait and <= (1.1 * expectedWait) + (boundaries * 300), $"{r.Path}: wait time sum {r.WaitSumMedianUs:F0} us per operation, expected about {expectedWait:F0} (boundaries x refill; tolerance -10% to +10% and 300 us per boundary)");
 				Check(r.WaitMaxUs is >= 0.9 * RefillUs and <= 5000, $"{r.Path}: longest single wait {r.WaitMaxUs:F0} us, expected from {0.9 * RefillUs:F0} us up to a few ms");
 				var spots = r.Positions;
 				Check(spots is { Total: > 0 } && spots.Total == boundaries * Ops && spots.Distinct == boundaries && spots.Operations == Ops, $"{r.Path}: {spots?.Total} incomplete reads recorded over {spots?.Operations} operations, expected {boundaries * Ops} over {Ops}");
 				bool rowsOk = spots is not null;
 				for (int k = 0; rowsOk && k < boundaries; k++) rowsOk = spots!.IndexAt(k) == (k + 1) * Buffer && spots.CountAt(k) == Ops;
 				Check(rowsOk, $"{r.Path}: recorded row indices are not 100, 200, ..., 900 each seen {Ops} times: {spots?.Format()}");
-				bool shape = spots is not null && spots.Bucket(0) == 0;
+				bool shape = spots?.Bucket(0) == 0;
 				for (int k = 1; shape && k < 10; k++) shape = spots!.Bucket(k) == Ops;
 				Check(shape, $"{r.Path}: histogram shape, expected bucket 0 empty and buckets 1 to 9 each {Ops} (one wait per operation at rows 100 to 900 of 1000): {spots?.Format()}");
 				Console.WriteLine($"  wait rows, {r.Path}: {spots?.Format()} (expected: 100(x{Ops}), 200(x{Ops}), ..., 900(x{Ops}) and a histogram of 0 followed by nine times {Ops})");
@@ -1020,7 +1019,7 @@ public static partial class In6Probe
 		// Where the time goes: a 500 us refill every 100 rows over 1000 rows. The sync Read waits INSIDE the call (about boundaries x refill);
 		// ReadAsync returns at once and the refill completes on another thread, so its inside time is small.
 		const int SlowRefillUs = 500;
-		double slowExpected = boundaries * (double)SlowRefillUs;
+		const double slowExpected = boundaries * (double)SlowRefillUs;
 		var slowRecorder = new SyntheticRecorder();
 		var slowTimed = new TimedConnection(new SyntheticConnection(SyntheticTable.Create(5, Rows), new SyntheticOptions { BufferRows = Buffer, RefillCostUs = SlowRefillUs, Recorder = slowRecorder }), stats);
 		foreach (var r in RunPaths<SynRow>(slowTimed, stats, SyntheticVariants.Sql, Rows, 1, 3))
@@ -1089,7 +1088,7 @@ public static partial class In6Probe
 			var spots = r.GetterPositions;
 			Check(r.GetterAsyncCalls == expectedCalls, $"{r.Path}: {r.GetterAsyncCalls} async getter calls per operation, expected {expectedCalls}");
 			Check(r.GetterAsyncIncomplete == boundaries && r.ReadAsyncIncomplete == 0, $"{r.Path}: {r.GetterAsyncIncomplete} incomplete async getters and {r.ReadAsyncIncomplete} incomplete ReadAsync per operation, expected {boundaries} and 0 (the boundary falls in the first getter of the row)");
-			Check(r.GetterWaitSumMedianUs >= 0.9 * slowExpected && r.GetterWaitSumMedianUs <= (1.1 * slowExpected) + (boundaries * 500), $"{r.Path}: async getter wait sum {r.GetterWaitSumMedianUs:F0} us per operation, expected about {slowExpected:F0}");
+			Check(r.GetterWaitSumMedianUs is >= 0.9 * slowExpected and <= (1.1 * slowExpected) + (boundaries * 500), $"{r.Path}: async getter wait sum {r.GetterWaitSumMedianUs:F0} us per operation, expected about {slowExpected:F0}");
 			bool shapeOk = spots is { Total: > 0 } && spots.Total == boundaries * GetterOps && spots.Distinct == boundaries && spots.Bucket(0) == 0;
 			for (int k = 0; shapeOk && k < boundaries; k++) shapeOk = spots!.IndexAt(k) == (k + 1) * Buffer && spots.CountAt(k) == GetterOps && spots.Bucket(k + 1) == GetterOps;
 			Check(shapeOk, $"{r.Path}: getter wait rows are not 100, 200, ..., 900 each seen {GetterOps} times: {spots?.Format()}");

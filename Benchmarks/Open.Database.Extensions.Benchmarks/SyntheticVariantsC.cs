@@ -281,11 +281,8 @@ public static partial class SyntheticVariantsC
 		{
 			var db = (DbDataReader)reader;
 			var list = new List<T>();
-			if (db.Read())
-			{
-				do list.Add(read(db));
-				while (db.Read());
-			}
+			while (db.Read())
+				list.Add(read(db));
 
 			while (db.NextResult()) { }
 			return list;
@@ -297,11 +294,8 @@ public static partial class SyntheticVariantsC
 		{
 			var db = (SyntheticReader)reader;
 			var list = new List<T>();
-			if (db.Read())
-			{
-				do list.Add(read(db));
-				while (db.Read());
-			}
+			while (db.Read())
+				list.Add(read(db));
 
 			while (db.NextResult()) { }
 			return list;
@@ -360,6 +354,7 @@ public static partial class SyntheticVariantsC
 		return list;
 	}
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1242:Do not pass non-read-only struct by read-only reference", Justification = "Cells is mutable on purpose (the plan sets it by its setters); it is read here through auto-property getters, which are readonly, so nothing is copied.")]
 	public static SynItem FromCells(in Cells c) => new()
 	{
 		Id = c.Id,

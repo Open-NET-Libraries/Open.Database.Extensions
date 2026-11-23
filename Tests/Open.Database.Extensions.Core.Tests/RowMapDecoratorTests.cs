@@ -38,6 +38,7 @@ public static class RowMapDecoratorTests
 		[property: Column(Order = 0)] int Id,
 		[property: Column(Name_Title, Order = 1)] string? Title);
 
+	[SuppressMessage("Roslynator", "RCS1213:Remove unused member declaration", Justification = "Used by the Column attribute of Positional.Title; the analyzer does not see a use in a primary-constructor attribute.")]
 	const string Name_Title = "headline";
 
 	public sealed class Skipped

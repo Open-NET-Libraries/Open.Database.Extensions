@@ -36,11 +36,7 @@ public static class RowMapFamilyTests
 
 	// ---- receivers ----
 	static IDataReader Reader() => FakeReader.Create(RowMapTests.Renamed, Rows);
-	static DbDataReader DbReader() => FakeReader.CreateDb(RowMapTests.Renamed, Rows);
 	static FakeExecuteReader Exec() => RowMapTests.Cmd(RowMapTests.Renamed, 2);
-
-	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
-	static AsyncCommand Async() => new(Exec());
 
 	static IDbCommand Command()
 	{
@@ -52,28 +48,7 @@ public static class RowMapFamilyTests
 		return command;
 	}
 
-	static FakeDbCommand DbCmd()
-	{
-		var connection = new FakeDbConnection();
-		connection.SetState(ConnectionState.Open);
-		return new FakeDbCommand(connection, () => FakeReader.CreateDb(RowMapTests.Renamed, Rows));
-	}
-
 	// ---- draining what each family produces ----
-	static async Task<List<Item>> Drain(ChannelReader<Item> reader)
-	{
-		var items = new List<Item>();
-		await foreach (Item item in reader.ReadAllAsync()) items.Add(item);
-		return items;
-	}
-
-	static async Task<List<Item>> ToWriter(Func<ChannelWriter<Item>, ValueTask<long>> run)
-	{
-		var channel = System.Threading.Channels.Channel.CreateUnbounded<Item>();
-		Assert.Equal(2, await run(channel.Writer));
-		return await Drain(channel.Reader);
-	}
-
 	static async Task<List<Item>> Receive(IReceivableSourceBlock<Item> block, int count = 2)
 	{
 		var items = new List<Item>();

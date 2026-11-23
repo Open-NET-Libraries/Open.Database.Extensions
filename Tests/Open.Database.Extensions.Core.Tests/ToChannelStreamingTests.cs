@@ -306,16 +306,16 @@ public static class ToChannelStreamingTests
 	public static void TheGuards_ThrowAtTheCall()
 	{
 		MappedQuery<ChannelRow> query = Read(Tally(1));
-		IMappedQuery<ChannelRow> none = null!;
+		IMappedQuery<ChannelRow> none = null;
 
 		Assert.Throws<ArgumentNullException>(
 			() => Drop(none.ToChannelHoldingConnection(Unbounded(), Long, Ct)));
 		Assert.Throws<ArgumentNullException>(
-			() => Drop(query.ToChannelHoldingConnection((Channel<ChannelRow>)null!, Long, Ct)));
+			() => Drop(query.ToChannelHoldingConnection(null, Long, Ct)));
 		Assert.Throws<ArgumentNullException>(
-			() => Drop(query.ToChannelHoldingConnection((ChannelWriter<ChannelRow>)null!, Long, Ct)));
+			() => Drop(query.ToChannelHoldingConnection((ChannelWriter<ChannelRow>)null, Long, Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(((IMappedQuery<ChannelRow>)default(MappedQuery<ChannelRow>))
+			() => Drop(default(MappedQuery<ChannelRow>)
 				.ToChannelHoldingConnection(Unbounded(), Long, Ct)));
 	}
 

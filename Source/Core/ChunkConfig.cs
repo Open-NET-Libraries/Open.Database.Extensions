@@ -65,6 +65,7 @@ internal sealed class ChunkConfig<T>(
 	/// Rows that hold no references are included: a large chunk of value rows is cleared in the bin too.
 	/// </para>
 	/// </remarks>
+	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter", Justification = "The threshold is one number for every T: it is a member of the config so that each call site names the same constant (ChunkConfig<T>.DefaultDeferFromClearedBytes).")]
 	public const int DefaultDeferFromClearedBytes = 131_072;
 
 	/// <summary>Gets the pool the arrays come from and go back to.</summary>

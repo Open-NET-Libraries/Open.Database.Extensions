@@ -121,8 +121,8 @@ public sealed class SynRow
 		return all[..width];
 	}
 
-	static object N<T>(T? value) where T : struct => value.HasValue ? value.Value : DBNull.Value;
-	static object N(string? value) => value is null ? DBNull.Value : value;
+	static object N<T>(T? value) where T : struct => (object?)value ?? DBNull.Value;
+	static object N(string? value) => value ?? (object)DBNull.Value;
 }
 
 /// <summary>

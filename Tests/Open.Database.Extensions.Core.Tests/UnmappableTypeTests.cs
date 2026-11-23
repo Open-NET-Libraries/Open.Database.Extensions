@@ -305,7 +305,6 @@ public static class UnmappableTypeTests
 	// ---- T14: an unmappable T throws at the call, with an EMPTY result, on each family of entry points ----
 
 	static IDataReader Reader() => FakeReader.Create(["Id"]);
-	static DbDataReader DbReader() => FakeReader.CreateDb(["Id"]);
 	static FakeExecuteReader Exec() => new(["Id"]);
 
 	static IDbCommand Command()
@@ -318,37 +317,6 @@ public static class UnmappableTypeTests
 		return command;
 	}
 
-	static FakeDbCommand DbCmd()
-	{
-		var connection = new FakeDbConnection();
-		connection.SetState(ConnectionState.Open);
-		return new FakeDbCommand(connection, () => FakeReader.CreateDb(["Id"]));
-	}
-
-	sealed class AsyncCommand(FakeExecuteReader inner) : IExecuteReaderAsync
-	{
-		public bool UseAsyncRead => false;
-		public CancellationToken CancellationToken => inner.CancellationToken;
-		public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReader(handler, behavior);
-		public T ExecuteReader<T>(Func<IDataReader, T> transform, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReader(transform, behavior);
-		public ValueTask ExecuteReaderAsync(Func<IDataReader, ValueTask> handler, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReaderAsync(handler, behavior);
-		public TResult ExecuteReader<TState, TResult>(TState state, Func<IDataReader, TState, TResult> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReader(reader => transform(reader, state), behavior);
-
-		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior, CancellationToken cancellationToken)
-			=> inner.ExecuteReaderAsync(state, transform, behavior, cancellationToken);
-
-		public ValueTask<TResult> ExecuteReaderAsync<TState, TResult>(TState state, Func<IDataReader, TState, ValueTask<TResult>> transform, CommandBehavior behavior = CommandBehavior.Default)
-			=> ExecuteReaderAsync(reader => transform(reader, state), behavior);
-
-		public ValueTask<T> ExecuteReaderAsync<T>(Func<IDataReader, ValueTask<T>> transform, CommandBehavior behavior = CommandBehavior.Default) => inner.ExecuteReaderAsync(transform, behavior);
-	}
-
-	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
-	static AsyncCommand Async() => new(Exec());
-
-	static Channel<T> Writer<T>() => System.Threading.Channels.Channel.CreateUnbounded<T>();
-
 	// A call that returns a reader reports a failure through its Completion, as documented; a call that returns a task reports it on the task.
 	// The call itself, when it fails before it returns anything.
 	static Task Run(Action call)
@@ -357,7 +325,6 @@ public static class UnmappableTypeTests
 		return Task.CompletedTask;
 	}
 
-	static async Task Done<T>(ChannelReader<T> reader) => await reader.Completion;
 	static async Task Done<T>(IReceivableSourceBlock<T> block) => await block.Completion;
 	static async Task Done<T>(ValueTask<T> task) => await task;
 
@@ -456,29 +423,11 @@ public static class UnmappableTypeTests
 		return command;
 	}
 
-	[SuppressMessage("Roslynator", "RCS1047:Non-asynchronous method name should not end with 'Async'")]
-	static AsyncCommand Async(Touched touched) => new(Exec(touched));
-
-	static FakeDbCommand DbCmd(Touched touched)
-	{
-		var connection = new FakeDbConnection(); // Closed: an execution would open it.
-		var command = new FakeDbCommand(connection, () => FakeReader.CreateDb(["Id"]));
-		touched.Count = () => command.Behaviors.Count + connection.OpenCalls;
-		return command;
-	}
-
 	static bool ReadsOrCloses(string name) => name is "Read" or "ReadAsync" or "NextResult" or "NextResultAsync" or "GetSchemaTable" or "GetSchemaTableAsync" or "Close" or "Dispose" or "DisposeAsync";
 
 	static IDataReader Reader(Touched touched)
 	{
 		IDataReader reader = Reader();
-		touched.Count = () => CountCalls(reader, ReadsOrCloses);
-		return reader;
-	}
-
-	static DbDataReader DbReader(Touched touched)
-	{
-		DbDataReader reader = DbReader();
 		touched.Count = () => CountCalls(reader, ReadsOrCloses);
 		return reader;
 	}

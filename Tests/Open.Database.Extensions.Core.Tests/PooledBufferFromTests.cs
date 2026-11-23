@@ -119,7 +119,9 @@ public static class PooledBufferFromTests
 		buffer.Dispose();
 
 		Assert.Throws<ObjectDisposedException>(() => rows.Count);
+#pragma warning disable RCS1021 // An expression body would bind to a Func overload of Throws, which xUnit refuses.
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
+#pragma warning restore RCS1021
 	}
 
 	[Fact]
@@ -169,7 +171,9 @@ public static class PooledBufferFromTests
 
 		Assert.Empty(rows);
 		Assert.Empty(rows.ToArray());
+#pragma warning disable RCS1021 // An expression body would bind to a Func overload of Throws, which xUnit refuses.
 		Assert.Throws<ObjectDisposedException>(() => { _ = buffer.Items; });
+#pragma warning restore RCS1021
 	}
 
 	[Fact]

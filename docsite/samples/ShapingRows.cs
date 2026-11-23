@@ -152,6 +152,7 @@ public static class ShapingMaps
 	// Check-only: a factory is not limited to 16 parameters.
 	public static RowMap<WideEnds> WideFactoryMap
 		=> field ??= RowMap<WideEnds>.From(
+#pragma warning disable RCS1163 // The factory takes one parameter per column on purpose: it shows that a factory is not limited to 16.
 			static (
 				int channel01,
 				int channel02,
@@ -171,6 +172,7 @@ public static class ShapingMaps
 				int channel16,
 				int channel17)
 				=> new WideEnds(channel01, channel17));
+#pragma warning restore RCS1163
 }
 
 public static class ShapingRows

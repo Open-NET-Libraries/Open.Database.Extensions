@@ -236,7 +236,7 @@ public static partial class S4Probe
 			}
 
 			master.ChangeDatabase(name);
-			string rows100 = "(select top (100) cast(row_number() over (order by (select null)) as int) as n from sys.all_objects) t";
+			const string rows100 = "(select top (100) cast(row_number() over (order by (select null)) as int) as n from sys.all_objects) t";
 			// REPLICATE of binary data returns varchar, not varbinary: the 1 KB random block goes through varchar(max) (binary to character without a style is a raw
 			// byte copy) and the result is converted back with CONVERT. REPLICATE of a (max) value yields a (max) value, so there is no 8000-byte truncation;
 			// datalength is verified after the inserts.

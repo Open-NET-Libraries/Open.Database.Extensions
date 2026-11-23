@@ -330,7 +330,7 @@ public static class DependencyInjectionSample
 					=> new SqliteConnection(Db.ConnectionString)));
 		services.AddTransient<PostService>();
 
-		using ServiceProvider provider = services.BuildServiceProvider();
+		await using ServiceProvider provider = services.BuildServiceProvider();
 		var service = provider.GetRequiredService<PostService>();
 		#endregion
 

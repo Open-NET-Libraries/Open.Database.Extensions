@@ -264,16 +264,16 @@ public static class ToChannelTargetTests
 		DbTally tally = Tally(1);
 		MappedQuery<ChannelRow> query = Read(tally);
 		Channel<ChannelRow> channel = Unbounded();
-		IMappedQuery<ChannelRow> none = null!;
+		IMappedQuery<ChannelRow> none = null;
 
 		Assert.Throws<ArgumentNullException>(
 			() => Drop(none.ToChannel(channel, Ct)));
 		Assert.Throws<ArgumentNullException>(
-			() => Drop(query.ToChannel((Channel<ChannelRow>)null!, Ct)));
+			() => Drop(query.ToChannel(null, Ct)));
 		Assert.Throws<ArgumentNullException>(
-			() => Drop(query.ToChannel((ChannelWriter<ChannelRow>)null!, Ct)));
+			() => Drop(query.ToChannel((ChannelWriter<ChannelRow>)null, Ct)));
 		Assert.Throws<InvalidOperationException>(
-			() => Drop(((IMappedQuery<ChannelRow>)default(MappedQuery<ChannelRow>))
+			() => Drop(default(MappedQuery<ChannelRow>)
 				.ToChannel(channel, Ct)));
 		Assert.Empty(tally.Connections);
 	}

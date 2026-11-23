@@ -42,7 +42,9 @@ public static class NullGuardDefectTests
 	public static void OpenAsync_NullConnection_IsRefusedByTheCall_NamingTheConnection()
 	{
 		var ex = Assert.Throws<ArgumentNullException>(
+#pragma warning disable RCS1021 // An expression body would bind to the Func<Task> overload of Throws, which xUnit refuses.
 			() => { _ = ((IDbConnection)null!).OpenAsync(TestContext.Current.CancellationToken).AsTask(); });
+#pragma warning restore RCS1021
 
 		Assert.Equal("connection", ex.ParamName);
 	}

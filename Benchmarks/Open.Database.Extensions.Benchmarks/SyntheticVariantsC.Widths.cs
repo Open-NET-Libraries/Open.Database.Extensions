@@ -1002,13 +1002,9 @@ public static partial class SyntheticVariantsC
 	internal static Cap Capture1(DbDataReader r)
 	{
 		var c0 = new Col<int>(false);
-		if (r.Read())
+		while (r.Read())
 		{
-			do
-			{
-				c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
-			}
-			while (r.Read());
+			c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
 		}
 
 		return new Cap
@@ -1023,15 +1019,11 @@ public static partial class SyntheticVariantsC
 		var c0 = new Col<int>(false);
 		var c1 = new Col<DateTime>(false);
 		var c2 = new Col<string?>(false);
-		if (r.Read())
+		while (r.Read())
 		{
-			do
-			{
-				c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
-				c1.Add(r.IsDBNull(1) ? default : r.GetDateTime(1));
-				c2.Add(r.IsDBNull(2) ? null : r.GetString(2));
-			}
-			while (r.Read());
+			c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
+			c1.Add(r.IsDBNull(1) ? default : r.GetDateTime(1));
+			c2.Add(r.IsDBNull(2) ? null : r.GetString(2));
 		}
 
 		return new Cap
@@ -1050,18 +1042,14 @@ public static partial class SyntheticVariantsC
 		var c2 = new Col<string?>(false);
 		var c3 = new Col<decimal>(false);
 		var c4 = new Col<int>(true);
-		if (r.Read())
+		while (r.Read())
 		{
-			do
-			{
-				c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
-				c1.Add(r.IsDBNull(1) ? default : r.GetDateTime(1));
-				c2.Add(r.IsDBNull(2) ? null : r.GetString(2));
-				c3.Add(r.IsDBNull(3) ? default : r.GetDecimal(3));
-				if (r.IsDBNull(4)) c4.AddNull();
-				else c4.Add(r.GetInt32(4));
-			}
-			while (r.Read());
+			c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
+			c1.Add(r.IsDBNull(1) ? default : r.GetDateTime(1));
+			c2.Add(r.IsDBNull(2) ? null : r.GetString(2));
+			c3.Add(r.IsDBNull(3) ? default : r.GetDecimal(3));
+			if (r.IsDBNull(4)) c4.AddNull();
+			else c4.Add(r.GetInt32(4));
 		}
 
 		return new Cap
@@ -1087,23 +1075,19 @@ public static partial class SyntheticVariantsC
 		var c7 = new Col<double>(false);
 		var c8 = new Col<string?>(false);
 		var c9 = new Col<byte[]?>(false);
-		if (r.Read())
+		while (r.Read())
 		{
-			do
-			{
-				c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
-				c1.Add(r.IsDBNull(1) ? default : r.GetDateTime(1));
-				c2.Add(r.IsDBNull(2) ? null : r.GetString(2));
-				c3.Add(r.IsDBNull(3) ? default : r.GetDecimal(3));
-				if (r.IsDBNull(4)) c4.AddNull();
-				else c4.Add(r.GetInt32(4));
-				c5.Add(!r.IsDBNull(5) && r.GetBoolean(5));
-				c6.Add(r.IsDBNull(6) ? default : r.GetGuid(6));
-				c7.Add(r.IsDBNull(7) ? default : r.GetDouble(7));
-				c8.Add(r.IsDBNull(8) ? null : r.GetString(8));
-				c9.Add(ConvertValue<byte[]?>(r.GetValue(9)));
-			}
-			while (r.Read());
+			c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
+			c1.Add(r.IsDBNull(1) ? default : r.GetDateTime(1));
+			c2.Add(r.IsDBNull(2) ? null : r.GetString(2));
+			c3.Add(r.IsDBNull(3) ? default : r.GetDecimal(3));
+			if (r.IsDBNull(4)) c4.AddNull();
+			else c4.Add(r.GetInt32(4));
+			c5.Add(!r.IsDBNull(5) && r.GetBoolean(5));
+			c6.Add(r.IsDBNull(6) ? default : r.GetGuid(6));
+			c7.Add(r.IsDBNull(7) ? default : r.GetDouble(7));
+			c8.Add(r.IsDBNull(8) ? null : r.GetString(8));
+			c9.Add(ConvertValue<byte[]?>(r.GetValue(9)));
 		}
 
 		return new Cap
@@ -1144,37 +1128,33 @@ public static partial class SyntheticVariantsC
 		var c17 = new Col<Guid>(true);
 		var c18 = new Col<long>(false);
 		var c19 = new Col<string?>(false);
-		if (r.Read())
+		while (r.Read())
 		{
-			do
-			{
-				c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
-				c1.Add(r.IsDBNull(1) ? default : r.GetDateTime(1));
-				c2.Add(r.IsDBNull(2) ? null : r.GetString(2));
-				c3.Add(r.IsDBNull(3) ? default : r.GetDecimal(3));
-				if (r.IsDBNull(4)) c4.AddNull();
-				else c4.Add(r.GetInt32(4));
-				c5.Add(!r.IsDBNull(5) && r.GetBoolean(5));
-				c6.Add(r.IsDBNull(6) ? default : r.GetGuid(6));
-				c7.Add(r.IsDBNull(7) ? default : r.GetDouble(7));
-				c8.Add(r.IsDBNull(8) ? null : r.GetString(8));
-				c9.Add(ConvertValue<byte[]?>(r.GetValue(9)));
-				c10.Add(r.IsDBNull(10) ? default : r.GetInt64(10));
-				c11.Add(r.IsDBNull(11) ? null : r.GetString(11));
-				if (r.IsDBNull(12)) c12.AddNull();
-				else c12.Add(r.GetDecimal(12));
-				if (r.IsDBNull(13)) c13.AddNull();
-				else c13.Add(r.GetDateTime(13));
-				c14.Add(r.IsDBNull(14) ? null : r.GetString(14));
-				c15.Add(r.IsDBNull(15) ? default : r.GetDouble(15));
-				if (r.IsDBNull(16)) c16.AddNull();
-				else c16.Add(r.GetBoolean(16));
-				if (r.IsDBNull(17)) c17.AddNull();
-				else c17.Add(r.GetGuid(17));
-				c18.Add(r.IsDBNull(18) ? default : r.GetInt64(18));
-				c19.Add(r.IsDBNull(19) ? null : r.GetString(19));
-			}
-			while (r.Read());
+			c0.Add(r.IsDBNull(0) ? default : r.GetInt32(0));
+			c1.Add(r.IsDBNull(1) ? default : r.GetDateTime(1));
+			c2.Add(r.IsDBNull(2) ? null : r.GetString(2));
+			c3.Add(r.IsDBNull(3) ? default : r.GetDecimal(3));
+			if (r.IsDBNull(4)) c4.AddNull();
+			else c4.Add(r.GetInt32(4));
+			c5.Add(!r.IsDBNull(5) && r.GetBoolean(5));
+			c6.Add(r.IsDBNull(6) ? default : r.GetGuid(6));
+			c7.Add(r.IsDBNull(7) ? default : r.GetDouble(7));
+			c8.Add(r.IsDBNull(8) ? null : r.GetString(8));
+			c9.Add(ConvertValue<byte[]?>(r.GetValue(9)));
+			c10.Add(r.IsDBNull(10) ? default : r.GetInt64(10));
+			c11.Add(r.IsDBNull(11) ? null : r.GetString(11));
+			if (r.IsDBNull(12)) c12.AddNull();
+			else c12.Add(r.GetDecimal(12));
+			if (r.IsDBNull(13)) c13.AddNull();
+			else c13.Add(r.GetDateTime(13));
+			c14.Add(r.IsDBNull(14) ? null : r.GetString(14));
+			c15.Add(r.IsDBNull(15) ? default : r.GetDouble(15));
+			if (r.IsDBNull(16)) c16.AddNull();
+			else c16.Add(r.GetBoolean(16));
+			if (r.IsDBNull(17)) c17.AddNull();
+			else c17.Add(r.GetGuid(17));
+			c18.Add(r.IsDBNull(18) ? default : r.GetInt64(18));
+			c19.Add(r.IsDBNull(19) ? null : r.GetString(19));
 		}
 
 		return new Cap

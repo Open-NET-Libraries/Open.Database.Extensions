@@ -454,7 +454,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10k(DbConnection connection, string sql, int width)
 		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
 		{
-			var db = reader;
+			var db = (DbDataReader)reader;
 			var list = w switch
 			{
 				1 => SynRowGenerated.LoopKn1(db),
@@ -472,7 +472,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10kri(DbConnection connection, string sql, int width)
 		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
 		{
-			var db = reader;
+			var db = (DbDataReader)reader;
 			var list = w switch
 			{
 				1 => SynRowGenerated.LoopKi1(db),
@@ -490,7 +490,7 @@ public static class GeneratorShaped
 	public static List<SynRow> V10kL(DbConnection connection, string sql, int width)
 		=> connection.Command(sql).ExecuteReader(width, static (reader, w) =>
 		{
-			var db = reader;
+			var db = (DbDataReader)reader;
 			var list = w switch
 			{
 				1 => SynRowGenerated.ReadAllK1(db),
