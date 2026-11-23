@@ -1,8 +1,18 @@
 # Release notes
 
-Version 11 is `11.0.0-rc.12`. For moving a 10.x codebase, read [Coming from earlier versions](whats-new-11.md) first; this page lists each release.
+Version 11 is `11.0.0-rc.13`. For moving a 10.x codebase, read [Coming from earlier versions](whats-new-11.md) first; this page lists each release.
 
 ## Version 11 release candidates
+
+### Changes since rc.12
+
+The [migration guide](whats-new-11.md) lists each removal with what to call instead.
+
+- **One way per job: the second ways are removed, with no `[Obsolete]` step.** The command shortcut terminals `ToListAsync<T>`, `ToArrayAsync<T>`, `ToImmutableArrayAsync<T>`, `ToHashSetAsync<T>`, `FirstAsync<T>`, `FirstOrDefaultAsync<T>`, `SingleAsync<T>` and `SingleOrDefaultAsync<T>` on a command are gone: call `command.Map<T>().ToListAsync(cancellationToken)` and its siblings. `AsAsyncEnumerable(n, params others)` is gone: pass `[n, ..others]` to the `IEnumerable<int>` overloads. `GetMatchingOrdinals` is gone: `MatchingOrdinals(names, sort).ToArray()`. `ConnectionFactoryToPoolAdapter` is internal: `AsPool()` returns `IDbConnectionPool` (or `IDbConnectionPool<TConnection>`).
+- **Channel and Dataflow are rebuilt over `Map<T>()`** and are published with the final 11.0.0, not in a release candidate. Their extensions on readers, commands and `IExecuteReader` are removed: call `Map<T>()` first, then `ToChannelReader`, `ToChannel`, `ToTargetBlock` or `AsSourceBlock`. Channel no longer depends on `Open.ChannelExtensions`.
+- **Classic command parameters.** A command built with `Command(...)` on a literal text sizes its parameter list from the `@names` the text declares, and sends an input parameter written without its `@` (or in another case) under the text's own spelling, as a `DbQuery` does. An output, input-output or return-value parameter keeps the name it was added with, so `Parameters["id"]` reads it back. Two spellings of one declared name are sent as written.
+- **The raw reader's `ToListAsync(Func<IDataRecord, ValueTask<T>>)` collects into pooled chunks** and copies once into a list of exactly the number of rows, as the mapped terminals do, instead of growing a list.
+- **Docs.** New pages: a controller with no service layer, and the same with minimal APIs. The XML documentation of Core and MSSqlClient says what a caller needs and what a streaming member costs; every docsite page, README and sample is cut to what a reader needs, and the README performance figures come from the recorded data.
 
 ### Changes since rc.11
 
