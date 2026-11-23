@@ -170,6 +170,22 @@ public static class ClassicParamPathsAllocationTests
 	}
 
 	[Fact]
+	public static void AnOutputParameter_IsSentUnderTheNameItWasAddedWith()
+	{
+		// SQLite takes input parameters only; the tracking provider takes any direction.
+		var tally = new DbTally();
+		TrackedConnection c = tally.NewOpenConnection();
+
+		ExpressiveDbCommand command = c.Command("select @Id, @Name")
+			.AddParam("id", null, ParameterDirection.Output)
+			.AddParam("name", "x");
+
+		string[] sent = command.Execute(static cmd => cmd.Parameters.Cast<System.Data.Common.DbParameter>().Select(static p => p.ParameterName).ToArray());
+
+		Assert.Equal(["id", "@Name"], sent);
+	}
+
+	[Fact]
 	public static void TwoWrittenSpellingsOfOneName_AreSentAsWritten()
 	{
 		using var c = new SqliteConnection("Data Source=:memory:");
