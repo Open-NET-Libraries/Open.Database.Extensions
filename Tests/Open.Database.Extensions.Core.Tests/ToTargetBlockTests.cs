@@ -126,7 +126,7 @@ public static class ToTargetBlockTests
 	[Fact]
 	public static async Task ACancel_UnderKeepOpen_FaultsTheTask_AndLeavesTheBlockAlone()
 	{
-		using CancellationTokenSource cts = CancellationTokenSource
+		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 		DbTally tally = Tally(
 			100_000,
@@ -146,7 +146,7 @@ public static class ToTargetBlockTests
 	[Fact]
 	public static async Task ACancel_UnderComplete_FaultsTheBlockWithIt()
 	{
-		using CancellationTokenSource cts = CancellationTokenSource
+		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 		DbTally tally = Tally(
 			100_000,

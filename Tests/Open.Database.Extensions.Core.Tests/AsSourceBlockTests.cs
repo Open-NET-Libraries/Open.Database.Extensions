@@ -72,7 +72,7 @@ public static class AsSourceBlockTests
 	[Fact]
 	public static async Task ACancel_FaultsTheBlockWithIt_NotACleanEnd()
 	{
-		using CancellationTokenSource cts = CancellationTokenSource
+		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 		DbTally tally = Tally(
 			100_000,

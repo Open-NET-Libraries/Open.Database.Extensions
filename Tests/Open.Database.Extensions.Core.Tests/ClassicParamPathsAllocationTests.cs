@@ -87,7 +87,7 @@ public static class ClassicParamPathsAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using var c = new SqliteConnection("Data Source=:memory:");
-		string p0 = Value, p1 = Value, p2 = Value, p3 = Value, p4 = Value;
+		const string p0 = Value, p1 = Value, p2 = Value, p3 = Value, p4 = Value;
 		var s1 = new S1(Value);
 		var s5 = new S5(Value, Value, Value, Value, Value);
 		var e1 = new Existing1();
@@ -128,7 +128,7 @@ public static class ClassicParamPathsAllocationTests
 #else
 		using var c = new SqliteConnection("Data Source=:memory:");
 		c.Open();
-		int p0 = 1, p1 = 2, p2 = 3, p3 = 4, p4 = 5;
+		const int p0 = 1, p1 = 2, p2 = 3, p3 = 4, p4 = 5;
 
 		long written = BytesPerCall(() => _ = c.Command("select @p0 + @p1 + @p2 + @p3 + @p4").AddParam("p0", p0).AddParam("p1", p1).AddParam("p2", p2).AddParam("p3", p3).AddParam("p4", p4).ExecuteScalar());
 		long prefixed = BytesPerCall(() => _ = c.Command("select @p0 + @p1 + @p2 + @p3 + @p4").AddParam("@p0", p0).AddParam("@p1", p1).AddParam("@p2", p2).AddParam("@p3", p3).AddParam("@p4", p4).ExecuteScalar());

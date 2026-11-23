@@ -209,7 +209,7 @@ public static class ToChannelStreamingTests
 	{
 		DbTally tally = Tally(50);
 		Channel<ChannelRow> channel = Bounded(1);
-		using CancellationTokenSource cts = CancellationTokenSource
+		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 
 		Task<long> task = Read(tally)

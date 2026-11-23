@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Open.Database.Extensions.Core;
+using System.Diagnostics;
 
 namespace Open.Database.Extensions;
 
@@ -141,7 +141,7 @@ internal readonly struct RowFeed<T>(IAsyncEnumerable<T> rows)
 	{
 		// Finite timeouts only: the plain path has no signal that can fire,
 		// so it waits on the caller's token and creates nothing.
-		IStallSignal? signal = rows as IStallSignal;
+		var signal = rows as IStallSignal;
 		using CancellationTokenSource? link
 			= signal?.Expired.CanBeCanceled is true
 				? CancellationTokenSource.CreateLinkedTokenSource(

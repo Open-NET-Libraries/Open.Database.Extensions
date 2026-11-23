@@ -19,7 +19,7 @@ public static class ToChannelProduceTests
 	{
 		DbTally tally = Tally(40);
 
-		ChannelReader<ChannelRow> reader = View(view, tally)
+		var reader = View(view, tally)
 			.ToChannelReader(Ct);
 
 		(List<int> rows, Exception? error) = await ChannelWait.Collect(reader);
@@ -35,7 +35,7 @@ public static class ToChannelProduceTests
 	{
 		DbTally tally = Tally(12);
 
-		Channel<ChannelRow> channel = View(view, tally).ToChannel(Ct);
+		var channel = View(view, tally).ToChannel(Ct);
 
 		(List<int> rows, Exception? error) = await ChannelWait.Collect(channel.Reader);
 		await channel.Reader.Completion.Within();
@@ -61,7 +61,7 @@ public static class ToChannelProduceTests
 	{
 		DbTally tally = Tally(25);
 
-		Channel<ChannelRow> channel = Read(tally)
+		var channel = Read(tally)
 			.ToChannel(out Task<long> readCount, Ct);
 
 		Assert.Equal(25, await readCount.Within());
@@ -77,7 +77,7 @@ public static class ToChannelProduceTests
 
 		(List<int> a, Exception? _) = await ChannelWait.Collect(
 			Read(tally).ToChannelReader(true, Ct));
-		Channel<ChannelRow> channel = Read(tally)
+		var channel = Read(tally)
 			.ToChannel(out Task<long> count, true, Ct);
 		(List<int> b, Exception? _) = await ChannelWait.Collect(channel.Reader);
 
@@ -91,7 +91,7 @@ public static class ToChannelProduceTests
 	{
 		DbTally tally = Tally(10);
 
-		Channel<ChannelRow> channel = Read(tally)
+		var channel = Read(tally)
 			.ToChannel(out Task<long> readCount, Ct);
 
 		// Nobody reads, yet the read runs to the end and the channel is closed.
@@ -106,7 +106,7 @@ public static class ToChannelProduceTests
 		DbTally tally = Tally(500);
 
 		// The consumer never reads a row.
-		Channel<ChannelRow> channel = Read(tally).ToChannel(Ct);
+		var channel = Read(tally).ToChannel(Ct);
 
 		await ChannelWait.Until(
 			() => tally.Connections.Count == 1
@@ -121,7 +121,7 @@ public static class ToChannelProduceTests
 	{
 		DbTally tally = Tally(20, failOnRead: 9);
 
-		Channel<ChannelRow> channel = Read(tally)
+		var channel = Read(tally)
 			.ToChannel(out Task<long> readCount, Ct);
 
 		(List<int> rows, Exception? error) = await ChannelWait.Collect(channel.Reader);
@@ -138,13 +138,13 @@ public static class ToChannelProduceTests
 	[Fact]
 	public static async Task ACancel_CompletesTheChannelWithIt_NotACleanEnd()
 	{
-		using CancellationTokenSource cts = CancellationTokenSource
+		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 		DbTally tally = Tally(
 			100_000,
 			onRead: n => { if (n == 50) cts.Cancel(); });
 
-		Channel<ChannelRow> channel = Read(tally)
+		var channel = Read(tally)
 			.ToChannel(out Task<long> readCount, cts.Token);
 
 		(List<int> _, Exception? error) = await ChannelWait.Collect(channel.Reader);

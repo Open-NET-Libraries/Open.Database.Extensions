@@ -196,7 +196,7 @@ public static class ToTargetBlockStreamingTests
 	{
 		DbTally tally = Tally(50);
 		BufferBlock<ChannelRow> block = NewBounded(1);
-		using CancellationTokenSource cts = CancellationTokenSource
+		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 
 		Task<long> task = Read(tally)

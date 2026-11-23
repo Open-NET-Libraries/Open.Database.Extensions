@@ -251,8 +251,8 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		int p0 = VA;
-		long p1 = VB;
+		const int p0 = VA;
+		const long p1 = VB;
 		long classic = Bytes(() => Q2.Using(c).AddParam(p0).AddParam(p1).Map<Row>().ToListAsync());
 		long after = Bytes(() => M2.Using(c).AddParam(p0).AddParam(p1).ToListAsync());
 		long before = Bytes(() => M2.AddParam(p0).AddParam(p1).Using(c).ToListAsync());
@@ -291,7 +291,7 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		string s = VC;
+		const string s = VC;
 
 		long using0 = BytesPerCall(() => Sink(M2.Using(c)));
 		long after1 = BytesPerCall(() => Sink(M1.Using(c).AddParam("p0", s)));
@@ -328,8 +328,8 @@ public static class DbQueryAllocationTests
 		Assert.Skip("Release only.");
 #else
 		using DbConnection c = NewConnection();
-		int i = VA;
-		long l = VB;
+		const int i = VA;
+		const long l = VB;
 
 		long oneInt = BytesPerCall(() => Sink(M1.Using(c).AddParam("p0", i)));
 		long intAndLong = BytesPerCall(() => Sink(M2.Using(c).AddParam("p0", i).AddParam("p1", l)));

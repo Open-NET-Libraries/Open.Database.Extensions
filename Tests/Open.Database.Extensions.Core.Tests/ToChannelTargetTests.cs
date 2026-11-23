@@ -162,7 +162,7 @@ public static class ToChannelTargetTests
 	[Fact]
 	public static async Task ACancel_UnderKeepOpen_FaultsTheTask_AndLeavesTheChannelAlone()
 	{
-		using CancellationTokenSource cts = CancellationTokenSource
+		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 		DbTally tally = Tally(
 			100_000,
@@ -182,7 +182,7 @@ public static class ToChannelTargetTests
 	[Fact]
 	public static async Task ACancel_UnderComplete_CompletesTheChannelWithIt()
 	{
-		using CancellationTokenSource cts = CancellationTokenSource
+		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 		DbTally tally = Tally(
 			100_000,
