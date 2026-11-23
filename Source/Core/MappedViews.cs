@@ -358,7 +358,7 @@ static class Views
 	/// row type.
 	/// </summary>
 	/// <include file="Mapped.docs.xml" path="docs/members[@name='row-type']/*" />
-	static class Defaults<T>
+	public static class Defaults<T>
 	{
 		/// <summary>
 		/// The default configuration for the row type.
