@@ -166,14 +166,40 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)" path="/*[not(self::param) and not(self::remarks)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// The token is passed to <c>ReadAsync</c>, so the provider
+	/// cancels the read itself.
+	/// A cancel throws, and rows already handed out stay handed out.
+	/// A cancel during the handler of a row throws at the next read,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// </para>
+	/// </remarks>
 	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='handler']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
 	public static ValueTask ForEachAsync(this DbDataReader reader, Func<IDataRecord, ValueTask> handler, CancellationToken cancellationToken)
 		=> ForEachAsync(reader, handler, true, cancellationToken);
 
-	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <inheritdoc cref="ForEachAsync(DbDataReader, Action{IDataRecord}, bool, CancellationToken)" path="/*[not(self::param) and not(self::remarks)]"/>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// The token is passed to <c>ReadAsync</c>, so the provider
+	/// cancels the read itself.
+	/// A cancel throws, and rows already handed out stay handed out.
+	/// A cancel during the handler of a row throws at the next read,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// </para>
+	/// </remarks>
 	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='handler']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken-required']/*" />
@@ -214,13 +240,18 @@ public static class DataReaderExtensions
 		} while (reader.Read());
 	}
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, IEnumerable{int}, ArrayPool{object}?)"/>
+	/// <summary>Internal extension for getting an object array of records.</summary>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	internal static IEnumerable<object[]> AsEnumerable(this IDataReader reader)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
 			: AsEnumerableCore(reader);
 
-	/// <inheritdoc cref="AsEnumerable(IDataReader, IEnumerable{int}, ArrayPool{object}?)"/>
+	/// <summary>Internal extension for getting an object array of records.</summary>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	internal static IEnumerable<object[]> AsEnumerable(this IDataReader reader, ArrayPool<object>? arrayPool)
 		=> reader is null
 			? throw new ArgumentNullException(nameof(reader))
@@ -320,9 +351,13 @@ public static class DataReaderExtensions
 
 	/// <inheritdoc cref="Select{T}(IDataReader, Func{IDataRecord, T}, CancellationToken)" path="/*[not(self::param) and not(self::remarks) and not(self::exception)]"/>
 	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
 	/// The iteration is deferred: nothing is read until the result is enumerated.
 	/// Rows already handed out stay handed out.
 	/// To stop early, stop enumerating.
+	/// </para>
 	/// </remarks>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='transform']/*" />
@@ -348,6 +383,9 @@ public static class DataReaderExtensions
 	/// Lazily transforms each remaining record of an <see cref="IDataReader"/> through a function.
 	/// </summary>
 	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
 	/// The iteration is deferred: nothing is read,
 	/// and a canceled token does not throw,
 	/// until the result is enumerated.
@@ -360,6 +398,7 @@ public static class DataReaderExtensions
 	/// and a cancel after that is not an error.
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception, stop enumerating.
+	/// </para>
 	/// </remarks>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
@@ -447,7 +486,8 @@ public static class DataReaderExtensions
 
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception) and not(self::remarks)]"/>
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception) and not(self::remarks) and not(self::returns)]"/>
+	/// <returns>An asynchronous enumerable of arrays, one for each record, holding the values of every column.</returns>
 	/// <remarks>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
@@ -470,7 +510,8 @@ public static class DataReaderExtensions
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-enumerate']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='arrayPool']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
-	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception)]"/>
+	/// <inheritdoc cref="AsAsyncEnumerable(DbDataReader, IEnumerable{int}, ArrayPool{object?}, CancellationToken)" path="/*[not(self::param) and not(self::exception) and not(self::returns)]"/>
+	/// <returns>An asynchronous enumerable of arrays, one for each record, holding the values of every column.</returns>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-reader']/*" />
 	public static IAsyncEnumerable<object[]> AsAsyncEnumerable(
 		this DbDataReader reader,
@@ -623,10 +664,12 @@ public static class DataReaderExtensions
 	/// Asynchronously and lazily transforms each remaining record of a <see cref="DbDataReader"/> through a function.
 	/// </summary>
 	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
 	/// The iteration is deferred until the result is enumerated.
 	/// The token is passed to <c>ReadAsync</c>,
-	/// so the provider cancels the read itself
-	/// (a plain <see cref="IDataReader"/> is checked before each <c>Read</c>).
+	/// so the provider cancels the read itself.
 	/// A cancel throws from the enumeration.
 	/// A cancel while a row is being yielded or transformed
 	/// throws at the next read, even if that row was the last.
@@ -634,6 +677,7 @@ public static class DataReaderExtensions
 	/// and a cancel after that is not an error.
 	/// Rows already handed out stay handed out.
 	/// To stop early without an exception, leave the loop.
+	/// </para>
 	/// </remarks>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='transform-T']/*" />
 	/// <param name="reader">The <see cref="DbDataReader"/> to iterate.</param>
@@ -670,7 +714,22 @@ public static class DataReaderExtensions
 		}
 	}
 
-	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, CancellationToken)" path="/*[not(self::param)]"/>
+	/// <summary>
+	/// Asynchronously and lazily transforms each remaining record of an <see cref="IDataReader"/> through an asynchronous function;
+	/// the reader's connection is held while each row is processed.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// The iteration is deferred until the result is enumerated.
+	/// A <see cref="DbDataReader"/> is read with <c>ReadAsync</c>, so the provider cancels the read itself;
+	/// any other reader is checked before each <c>Read</c>.
+	/// A cancel throws from the enumeration, and rows already handed out stay handed out.
+	/// To stop early without an exception, leave the loop.
+	/// </para>
+	/// </remarks>
+	/// <inheritdoc cref="SelectAsync{T}(DbDataReader, Func{IDataRecord, T}, CancellationToken)" path="/*[not(self::param) and not(self::summary) and not(self::remarks)]"/>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
 	/// <param name="transform">
 	/// The asynchronous function to transform each <see cref="IDataRecord"/> into a result.
@@ -731,18 +790,17 @@ public static class DataReaderExtensions
 		if (transform is null) throw new ArgumentNullException(nameof(transform));
 		Contract.EndContractBlock();
 
-		var list = new List<T>();
-		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false)) list.Add(await transform(reader).ConfigureAwait(false));
-		return list;
+		// The rows go into pooled chunks and are copied once into a list of exactly their number, as the mapped terminals do.
+		using var chain = ChunkChain<T>.Rent(Views.Defaults<T>.Config);
+		while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false)) chain.Add(await transform(reader).ConfigureAwait(false));
+		return chain.ToList();
 	}
 
 	/// <summary>
 	/// Loads the current result set of an <see cref="IDataReader"/> into a <see cref="DataTable"/>.
-	/// The reader stays open and is left on that result set, so <see cref="IDataReader.NextResult"/> moves to the next one.
 	/// </summary>
 	/// <remarks>
-	/// <see cref="DataTable.Load(IDataReader)"/> asks the reader for the next result set and closes it after the last one.
-	/// A forwarder makes both a no-op, so the caller's <c>NextResult</c> still decides where the reader goes.
+	/// The reader stays open and is left on that result set, so <see cref="IDataReader.NextResult"/> moves to the next one.
 	/// </remarks>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='reader-iterate']/*" />
 	/// <returns>A <see cref="DataTable"/> that holds the result set.</returns>
@@ -753,7 +811,8 @@ public static class DataReaderExtensions
 		Contract.EndContractBlock();
 
 		var table = new DataTable();
-		// The forwarder keeps Load from moving or closing the reader.
+		// DataTable.Load asks the reader for the next result set and closes it after the last one.
+		// The forwarder makes both a no-op, so the caller's NextResult still decides where the reader goes.
 		table.Load(new SingleResultSetReader(reader));
 		return table;
 	}
@@ -784,15 +843,11 @@ public static class DataReaderExtensions
 	/// <summary>
 	/// Hands <see cref="DataTable.Load(IDataReader)"/> one result set of a reader without letting it move the real reader.
 	/// </summary>
-	/// <remarks>
-	/// <c>Load</c> calls <c>NextResult</c> after the set and <c>Close</c> after the last one.
-	/// Here <c>NextResult</c> says there is no more
-	/// (returning <see langword="true"/> would make <c>Load</c> loop forever on a result set without columns)
-	/// and <c>Close</c> does nothing,
-	/// so the caller's <c>NextResult</c> and <c>Close</c> still work.
-	/// Everything else goes to the real reader.
-	/// </remarks>
 	/// <param name="reader">The reader to forward to.</param>
+	// Load calls NextResult after the set and Close after the last one.
+	// Here NextResult says there is no more (returning true would make Load loop forever on a result set without columns)
+	// and Close does nothing, so the caller's NextResult and Close still work.
+	// Everything else goes to the real reader.
 	private sealed class SingleResultSetReader(IDataReader reader) : IDataReader
 	{
 		public object this[int i] => reader[i];
@@ -880,9 +935,27 @@ public static class DataReaderExtensions
 		}
 	}
 
+	/// <summary>
+	/// Asynchronously iterates the remaining records of the current result set of a <see cref="DbDataReader"/> while a predicate returns <see langword="true"/>;
+	/// the reader's connection is held while each row is processed.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// The token is passed to <c>ReadAsync</c>, so the provider
+	/// cancels the read itself.
+	/// A cancel throws, and rows already handed out stay handed out.
+	/// A cancel during the predicate of a row throws at the next read,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// To stop early, return <see langword="false"/> from the predicate:
+	/// that ends the iteration without an exception.
+	/// </para>
+	/// </remarks>
 	/// <returns>A task that represents the asynchronous iteration.</returns>
-	/// <inheritdoc
-	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"/>
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)" path="/*[not(self::summary) and not(self::remarks) and not(self::returns)]"/>
 	public static async ValueTask IterateWhileAsync(
 		this DbDataReader reader,
 		Func<IDataRecord, bool> predicate,
@@ -903,9 +976,28 @@ public static class DataReaderExtensions
 	/// <include file="Readers.docs.xml" path="docs/members[@name='useReadAsync-required']/*" />
 	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
 	/// <returns>A task that represents the asynchronous iteration.</returns>
-	/// <inheritdoc
-	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"
-	/// path="/*[not(self::param)]"/>
+	/// <summary>
+	/// Asynchronously iterates the remaining records of the current result set of a <see cref="DbDataReader"/> while a predicate returns <see langword="true"/>;
+	/// the reader's connection is held while each row is processed.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// The token is passed to <c>ReadAsync</c>, so the provider
+	/// cancels the read itself.
+	/// When <paramref name="useReadAsync"/>
+	/// is <see langword="false"/> it is checked before each <c>Read</c> instead.
+	/// A cancel throws, and rows already handed out stay handed out.
+	/// A cancel during the predicate of a row throws at the next read,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// To stop early, return <see langword="false"/> from the predicate:
+	/// that ends the iteration without an exception.
+	/// </para>
+	/// </remarks>
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)" path="/*[not(self::summary) and not(self::remarks) and not(self::param) and not(self::returns)]"/>
 	public static async ValueTask IterateWhileAsync(this DbDataReader reader, Func<IDataRecord, bool> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
@@ -940,9 +1032,27 @@ public static class DataReaderExtensions
 		}
 	}
 
+	/// <summary>
+	/// Asynchronously iterates the remaining records of the current result set of an <see cref="IDataReader"/> while an asynchronous predicate returns <see langword="true"/>;
+	/// the reader's connection is held while each row is processed.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// A <see cref="DbDataReader"/> is read with <c>ReadAsync</c>, so the provider cancels the read itself;
+	/// any other reader is checked before each <c>Read</c>, and a cancel throws before the read is made.
+	/// A cancel throws, and rows already handed out stay handed out.
+	/// A cancel during the predicate of a row throws at the next read,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// To stop early, return <see langword="false"/> from the predicate:
+	/// that ends the iteration without an exception.
+	/// </para>
+	/// </remarks>
 	/// <returns>A task that represents the asynchronous iteration.</returns>
-	/// <inheritdoc
-	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"/>
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)" path="/*[not(self::summary) and not(self::remarks) and not(self::returns)]"/>
 	public static async ValueTask IterateWhileAsync(
 		this IDataReader reader,
 		Func<IDataRecord, ValueTask<bool>> predicate,
@@ -981,9 +1091,26 @@ public static class DataReaderExtensions
 	/// </param>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='cancellationToken']/*" />
 	/// <returns>A task that represents the asynchronous iteration.</returns>
-	/// <inheritdoc
-	/// cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)"
-	/// path="/*[not(self::param)]"/>
+	/// <summary>
+	/// Asynchronously iterates the remaining records of the current result set of an <see cref="IDataReader"/> while an asynchronous predicate returns <see langword="true"/>;
+	/// the reader's connection is held while each row is processed.
+	/// </summary>
+	/// <remarks>
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held']/*" />
+	/// <include file="Readers.docs.xml" path="docs/members[@name='held-reader']/*" />
+	/// <para>
+	/// When <paramref name="useReadAsync"/> is <see langword="true"/>, a <see cref="DbDataReader"/> is read with <c>ReadAsync</c>,
+	/// so the provider cancels the read itself.
+	/// Otherwise the token is checked before each <c>Read</c>, and a cancel throws before the read is made.
+	/// A cancel during the predicate of a row throws at the next read,
+	/// even if that row was the last.
+	/// Once a read has returned no row the result is complete,
+	/// and a cancel after that is not an error.
+	/// To stop early, return <see langword="false"/> from the predicate:
+	/// that ends the iteration without an exception.
+	/// </para>
+	/// </remarks>
+	/// <inheritdoc cref="IterateWhile(IDataReader, Func{IDataRecord, bool}, CancellationToken)" path="/*[not(self::summary) and not(self::remarks) and not(self::param) and not(self::returns)]"/>
 	public static ValueTask IterateWhileAsync(this IDataReader reader, Func<IDataRecord, ValueTask<bool>> predicate, bool useReadAsync, CancellationToken cancellationToken = default)
 	{
 		if (reader is null) throw new ArgumentNullException(nameof(reader));
