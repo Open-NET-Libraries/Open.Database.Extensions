@@ -2,7 +2,7 @@
 
 | Approach | Connection held open | Whole call (error margin) | Memory allocated | Time against `Map<T>()` | Memory against `Map<T>()` |
 |---|---:|---:|---:|---:|---:|
-| Hand-written selector | 44.8 µs | 45.0 µs (±5.7%) | 227.4 KB | 0.53× | 1.00× |
-| Dapper.AOT | 63.4 µs | 63.6 µs (±6.1%) | 227.4 KB | 0.75× | 1.00× |
-| Map&lt;T&gt;() | 84.9 µs | 85.1 µs (±3.6%) | 227.4 KB | 1.00× | 1.00× |
-| Dapper Query&lt;T&gt; | 246.0 µs | 246.4 µs (±12.4%) | 548.1 KB | 2.90× | 2.41× |
+| Hand-written selector | 40.7 µs | 40.9 µs (±0.3%) | 227.4 KB | 0.53× | 1.00× |
+| Dapper.AOT | 54.4 µs | 54.5 µs (±0.2%) | 227.4 KB | 0.71× | 1.00× |
+| Map&lt;T&gt;() | 76.1 µs | 76.3 µs (±0.7%) | 227.4 KB | 1.00× | 1.00× |
+| Dapper Query&lt;T&gt; | 199.9 µs | 200.2 µs (±0.6%) | 548.1 KB | 2.63× | 2.41× |

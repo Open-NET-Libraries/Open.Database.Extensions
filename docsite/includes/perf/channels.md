@@ -2,9 +2,9 @@
 
 | Feature | Rows | Plain loop | ODX | ODX time against the loop | ODX memory against the loop |
 |---|---:|---:|---:|---:|---:|
-| ToChannel (drain a channel) | 1 | 1.3 µs | 3.1 µs | 2.4× | 2.20× |
-| ToChannel (drain a channel) | 100 | 36.0 µs | 45.0 µs | 1.24× | 1.09× |
-| ToChannel (drain a channel) | 1,000 | 284.0 µs | 359.0 µs | 1.26× | 1.01× |
-| Dataflow (BufferBlock) | 1 | 2.1 µs | 20.1 µs | 9.6× | 2.80× |
-| Dataflow (BufferBlock) | 100 | 19.6 µs | 39.3 µs | 2.0× | 1.15× |
-| Dataflow (BufferBlock) | 1,000 | 156.0 µs | 325.0 µs | 2.1× | 1.04× |
+| ToChannel (drain a channel) | 1 | 1.5 µs | 2.4 µs | 1.61× | 1.82× |
+| ToChannel (drain a channel) | 100 | 41.2 µs | 18.7 µs | 0.45× | 0.46× |
+| ToChannel (drain a channel) | 1,000 | 275.6 µs | 87.8 µs | 0.32× | 0.35× |
+| Dataflow (BufferBlock) | 1 | 1.9 µs | 4.8 µs | 2.56× | 1.84× |
+| Dataflow (BufferBlock) | 100 | 20.7 µs | 22.8 µs | 1.10× | 0.47× |
+| Dataflow (BufferBlock) | 1,000 | 132.0 µs | 95.4 µs | 0.72× | 0.36× |

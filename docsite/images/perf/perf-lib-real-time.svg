@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 470" role="img" aria-labelledby="lib-real-time-title lib-real-time-desc">
   <title id="lib-real-time-title">Real databases: time per call</title>
-  <desc id="lib-real-time-desc">Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; each bar is the mean of two runs, ranked best first inside each panel. Every bar starts at zero. SQL Server LocalDB: Hand-written selector 25.8 ms; Dapper.AOT 26.7 ms; Map&lt;T&gt;() 27.8 ms; Dapper Query&lt;T&gt; 30.1 ms. SQLite file: Hand-written selector 29.3 ms; Dapper.AOT 29.5 ms; Map&lt;T&gt;() 30.8 ms; Dapper Query&lt;T&gt; 34.3 ms.</desc>
+  <desc id="lib-real-time-desc">Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; each bar is the mean of two runs, ranked best first inside each panel. Every bar starts at zero. SQL Server LocalDB: Hand-written selector 24.6 ms; Dapper.AOT 26.0 ms; Map&lt;T&gt;() 26.1 ms; Dapper Query&lt;T&gt; 28.9 ms. SQLite file: Hand-written selector 26.0 ms; Map&lt;T&gt;() 27.7 ms; Dapper.AOT 28.5 ms; Dapper Query&lt;T&gt; 29.8 ms.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -68,83 +68,79 @@
   <text class="head" x="16" y="108">SQL Server LocalDB</text>
   <line class="grid" x1="196" y1="118" x2="196" y2="222"/>
   <text class="muted small mid" x="196" y="238">0</text>
-  <line class="grid" x1="269" y1="118" x2="269" y2="222"/>
-  <text class="muted small mid" x="269" y="238">10</text>
-  <line class="grid" x1="342" y1="118" x2="342" y2="222"/>
-  <text class="muted small mid" x="342" y="238">20</text>
-  <line class="grid" x1="415" y1="118" x2="415" y2="222"/>
-  <text class="muted small mid" x="415" y="238">30</text>
+  <line class="grid" x1="293.33" y1="118" x2="293.33" y2="222"/>
+  <text class="muted small mid" x="293.33" y="238">10</text>
+  <line class="grid" x1="390.67" y1="118" x2="390.67" y2="222"/>
+  <text class="muted small mid" x="390.67" y="238">20</text>
   <line class="grid" x1="488" y1="118" x2="488" y2="222"/>
-  <text class="muted small mid" x="488" y="238">40</text>
+  <text class="muted small mid" x="488" y="238">30</text>
   <g>
-    <title>Hand-written selector, SQL Server LocalDB, 20 columns, 10,000 rows: run a 27.6 ms, run b 24.0 ms.</title>
+    <title>Hand-written selector, SQL Server LocalDB, 20 columns, 10,000 rows: run a 24.6 ms, run b 24.6 ms.</title>
     <rect class="hit" x="0" y="118" width="560" height="26"/>
     <text class="name" x="186" y="135">Hand-written selector</text>
-    <path class="one" d="M196,123 h184.6 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-184.6 z"/>
-    <text class="val" x="390.6" y="135">25.8 ms</text>
+    <path class="one" d="M196,123 h235.29 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-235.29 z"/>
+    <text class="val" x="441.29" y="135">24.6 ms</text>
   </g>
   <g>
-    <title>Dapper.AOT, SQL Server LocalDB, 20 columns, 10,000 rows: run a 27.7 ms, run b 25.8 ms.</title>
+    <title>Dapper.AOT, SQL Server LocalDB, 20 columns, 10,000 rows: run a 25.9 ms, run b 26.1 ms.</title>
     <rect class="hit" x="0" y="144" width="560" height="26"/>
     <text class="name" x="186" y="161">Dapper.AOT</text>
-    <path class="select" d="M196,149 h191.2 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-191.2 z"/>
-    <text class="val" x="397.2" y="161">26.7 ms</text>
+    <path class="select" d="M196,149 h249.31 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-249.31 z"/>
+    <text class="val" x="455.31" y="161">26.0 ms</text>
   </g>
   <g>
-    <title>Map&lt;T&gt;(), SQL Server LocalDB, 20 columns, 10,000 rows: run a 30.1 ms, run b 25.6 ms.</title>
+    <title>Map&lt;T&gt;(), SQL Server LocalDB, 20 columns, 10,000 rows: run a 26.1 ms, run b 26.1 ms.</title>
     <rect class="hit" x="0" y="170" width="560" height="26"/>
     <text class="name" x="186" y="187">Map&lt;T&gt;()</text>
-    <path class="one" d="M196,175 h199.12 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-199.12 z"/>
-    <text class="val" x="405.12" y="187">27.8 ms</text>
+    <path class="one" d="M196,175 h250.04 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-250.04 z"/>
+    <text class="val" x="456.04" y="187">26.1 ms</text>
   </g>
   <g>
-    <title>Dapper Query&lt;T&gt;, SQL Server LocalDB, 20 columns, 10,000 rows: run a 31.5 ms, run b 28.8 ms.</title>
+    <title>Dapper Query&lt;T&gt;, SQL Server LocalDB, 20 columns, 10,000 rows: run a 29.0 ms, run b 28.8 ms.</title>
     <rect class="hit" x="0" y="196" width="560" height="26"/>
     <text class="name" x="186" y="213">Dapper Query&lt;T&gt;</text>
-    <path class="dapper" d="M196,201 h216.06 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-216.06 z"/>
-    <text class="val" x="422.06" y="213">30.1 ms</text>
+    <path class="dapper" d="M196,201 h277.54 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-277.54 z"/>
+    <text class="val" x="483.54" y="213">28.9 ms</text>
   </g>
   <line class="axis" x1="196" y1="118" x2="196" y2="222"/>
   <text class="head" x="16" y="274">SQLite file</text>
   <line class="grid" x1="196" y1="284" x2="196" y2="388"/>
   <text class="muted small mid" x="196" y="404">0</text>
-  <line class="grid" x1="269" y1="284" x2="269" y2="388"/>
-  <text class="muted small mid" x="269" y="404">10</text>
-  <line class="grid" x1="342" y1="284" x2="342" y2="388"/>
-  <text class="muted small mid" x="342" y="404">20</text>
-  <line class="grid" x1="415" y1="284" x2="415" y2="388"/>
-  <text class="muted small mid" x="415" y="404">30</text>
+  <line class="grid" x1="293.33" y1="284" x2="293.33" y2="388"/>
+  <text class="muted small mid" x="293.33" y="404">10</text>
+  <line class="grid" x1="390.67" y1="284" x2="390.67" y2="388"/>
+  <text class="muted small mid" x="390.67" y="404">20</text>
   <line class="grid" x1="488" y1="284" x2="488" y2="388"/>
-  <text class="muted small mid" x="488" y="404">40</text>
+  <text class="muted small mid" x="488" y="404">30</text>
   <g>
-    <title>Hand-written selector, SQLite file, 20 columns, 10,000 rows: run a 29.0 ms, run b 29.6 ms.</title>
+    <title>Hand-written selector, SQLite file, 20 columns, 10,000 rows: run a 25.8 ms, run b 26.1 ms.</title>
     <rect class="hit" x="0" y="284" width="560" height="26"/>
     <text class="name" x="186" y="301">Hand-written selector</text>
-    <path class="one" d="M196,289 h209.78 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-209.78 z"/>
-    <text class="val" x="415.78" y="301">29.3 ms</text>
+    <path class="one" d="M196,289 h248.92 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-248.92 z"/>
+    <text class="val" x="454.92" y="301">26.0 ms</text>
   </g>
   <g>
-    <title>Dapper.AOT, SQLite file, 20 columns, 10,000 rows: run a 30.5 ms, run b 28.6 ms.</title>
+    <title>Map&lt;T&gt;(), SQLite file, 20 columns, 10,000 rows: run a 27.6 ms, run b 27.7 ms.</title>
     <rect class="hit" x="0" y="310" width="560" height="26"/>
-    <text class="name" x="186" y="327">Dapper.AOT</text>
-    <path class="select" d="M196,315 h211.61 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-211.61 z"/>
-    <text class="val" x="417.61" y="327">29.5 ms</text>
+    <text class="name" x="186" y="327">Map&lt;T&gt;()</text>
+    <path class="one" d="M196,315 h265.37 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-265.37 z"/>
+    <text class="val" x="471.37" y="327">27.7 ms</text>
   </g>
   <g>
-    <title>Map&lt;T&gt;(), SQLite file, 20 columns, 10,000 rows: run a 28.7 ms, run b 33.0 ms.</title>
+    <title>Dapper.AOT, SQLite file, 20 columns, 10,000 rows: run a 28.4 ms, run b 28.6 ms.</title>
     <rect class="hit" x="0" y="336" width="560" height="26"/>
-    <text class="name" x="186" y="353">Map&lt;T&gt;()</text>
-    <path class="one" d="M196,341 h221.13 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-221.13 z"/>
-    <text class="val" x="427.13" y="353">30.8 ms</text>
+    <text class="name" x="186" y="353">Dapper.AOT</text>
+    <path class="select" d="M196,341 h273.69 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-273.69 z"/>
+    <text class="val" x="479.69" y="353">28.5 ms</text>
   </g>
   <g>
-    <title>Dapper Query&lt;T&gt;, SQLite file, 20 columns, 10,000 rows: run a 32.8 ms, run b 35.7 ms.</title>
+    <title>Dapper Query&lt;T&gt;, SQLite file, 20 columns, 10,000 rows: run a 29.8 ms, run b 29.9 ms.</title>
     <rect class="hit" x="0" y="362" width="560" height="26"/>
     <text class="name" x="186" y="379">Dapper Query&lt;T&gt;</text>
-    <path class="dapper" d="M196,367 h246.21 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-246.21 z"/>
-    <text class="val" x="452.21" y="379">34.3 ms</text>
+    <path class="dapper" d="M196,367 h286.3 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-286.3 z"/>
+    <text class="val" x="492.3" y="379">29.8 ms</text>
   </g>
   <line class="axis" x1="196" y1="284" x2="196" y2="388"/>
   <text class="muted small mid" x="342" y="420">milliseconds per call</text>
-  <text class="muted small" x="16" y="448">Build b5b0014, 2026-11-21, mean of 2 runs. Numbers: library-real.csv</text>
+  <text class="muted small" x="16" y="448">Build 6a770e8, 2026-11-23, mean of 2 runs. Numbers: library-real.csv</text>
 </svg>

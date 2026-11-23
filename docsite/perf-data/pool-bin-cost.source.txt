@@ -1,8 +1,10 @@
-Benchmark build: before f6942a7 and after b86608b (master with the flag false, where nothing was cleared, and an earlier build of the pooled-arrays change, merged later as 9a2fbf2, where reference rows are always cleared and large chunks go to the recycle bin)
-Run date: 2026-11-20
-Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10 (the same PC as the other data sets)
-Runtime: .NET 11.0.0
-Harness: BenchmarkDotNet 0.15.8, --inprocess, 5 warm-up and 12 measured iterations, one launch; the same benchmark file compiled against the two builds
-Benchmark: PoolBinCostBenchmarks, ToAsyncBuffer(...).Items (then dispose the items) and ToBufferedAsyncStream consumed whole, class rows (an int and a string), SQLite in memory, 1, 100 and 10,000 rows
+Benchmark build: after 6a770e8 (master, run 2026-11-23); before f6942a7 (master with the flag false, where nothing was cleared, run 2026-11-20)
+Run date: after 2026-11-23; before 2026-11-20
+Before columns: the before_* columns are from the earlier build f6942a7, run on 2026-11-20 (master with the flag false, where nothing was cleared); they were not re-measured and cannot be refreshed. The after_* columns are the run of 2026-11-23 on master 6a770e8 (the pooled-arrays change merged as 9a2fbf2 and later changes: reference rows are always cleared and large chunks go to the recycle bin); the earlier after column (build b86608b, 2026-11-20) is replaced. The two sides are therefore different builds on different days.
+Machine: AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores; Windows 10 (10.0.19045.6466/22H2/2022Update) (the same PC as the other data sets)
+Runtime: .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4; .NET SDK 11.0.100
+Harness: BenchmarkDotNet 0.15.8, InProcessEmitToolchain (--inprocess), WarmupCount=5, IterationCount=12, LaunchCount=1, one launch; the after run is one run of the whole class (all six benchmarks) through the benchmark guard (BelowNormal priority, affinity 0xFF0000, stopped on low free RAM or after 25 minutes), one heavy job at a time; the before side was one run per terminal and row count
+Benchmark: PoolBinCostBenchmarks, ToAsyncBuffer(...).Items (Buffer_Items: then dispose the items) and ToBufferedAsyncStream (Stream_Buffered) consumed whole, class rows (an int and a string), SQLite in memory, 1, 100 and 10,000 rows
 Columns: before_us and after_us = BenchmarkDotNet Mean; *_error_us = BenchmarkDotNet Error; *_allocated_kb = BenchmarkDotNet Allocated (KB = 1024 bytes)
-Source files (BenchmarkDotNet report CSVs, one pair per terminal and row count; the run folders are not in the repository): the pbB runs (before) and the pbA runs (after), named in the source_run column
+Source files (BenchmarkDotNet report CSVs; the run folders are not in the repository): the pbB runs (before, 2026-11-20, one pair per terminal and row count) and the pbA-all run (after, 2026-11-23, one run of the whole class), named in the source_run column; console log of the after run: bench-full/logs/pbA-all.log
+  pbA-all/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.PoolBinCostBenchmarks-report.csv

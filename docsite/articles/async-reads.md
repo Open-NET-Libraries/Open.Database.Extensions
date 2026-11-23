@@ -43,7 +43,7 @@ The figure has no numbers. It shows the two lanes described above.
 
 Three things were measured: CPU, memory, and wall time over a real link. Each has a benchmark page with the chart, the numbers and how they were made.
 
-- **CPU.** The synchronous read costs less. With nothing waiting, `ReadAsync()` for every row cost 6.5% more than the fully synchronous read (82.3 against 77.3 µs for 1,000 rows of 20 columns). [Sync reads against async reads](benchmarks/sync-vs-async.md).
+- **CPU.** The synchronous read costs less. With nothing waiting, `ReadAsync()` for every row cost 4.8% more than the fully synchronous read (80.0 against 76.3 µs for 1,000 rows of 20 columns). [Sync reads against async reads](benchmarks/sync-vs-async.md).
 - **Memory.** On `Map(Func)` over SQL Server, the default allocated about 42% less (9,713 against 16,812 KB). `Map<T>()` was equal. [Slow links and large values](benchmarks/slow-links-and-large-values.md#memory).
 - **Wall time on a real link.** The same: over a 5 ms, 100 Mbit link the link sets the time, and every read path took 537 to 541 ms for 10,000 rows. [Slow links and large values](benchmarks/slow-links-and-large-values.md#time-over-the-link).
 
@@ -81,11 +81,11 @@ On `Map(Func)`, +73% memory at equal time: 9,713 KB against 16,812 KB, and 538.3
 
 [!code-csharp[](../samples/AsyncReads.cs#asyncreads_func)]
 
-On `Map<T>()`, equal memory (+0.35%). CPU, with nothing waiting, is +1.8% against the default at width 20 (82.3 against 80.9 µs per 1,000 rows), on a synthetic provider where every `ReadAsync` completes at once. See [Slow links and large values](benchmarks/slow-links-and-large-values.md) and [Sync reads against async reads](benchmarks/sync-vs-async.md).
+On `Map<T>()`, equal memory (+0.02%, 219.2 against 219.1 KB per 1,000 rows). CPU, with nothing waiting, is +3.4% against the default at width 20 (80.0 against 77.4 µs per 1,000 rows), on a synthetic provider where every `ReadAsync` completes at once. See [Slow links and large values](benchmarks/slow-links-and-large-values.md) and [Sync reads against async reads](benchmarks/sync-vs-async.md).
 
 ### The busy-pool hazard
 
-Measured, synthetic, `Map<T>()` shape: with a read wait every 100 rows (20 µs) and 8 busy thread-pool items, 1,000 rows at width 20 took 11.2 ms with the opt-in against 0.28 ms with the default (40 times as long). This is a synthetic provider, one run, one width; do not generalize past that setup. See [Sync reads against async reads](benchmarks/sync-vs-async.md).
+Measured, synthetic, `Map<T>()` shape: with a read wait every 100 rows (20 µs) and 8 busy thread-pool items, 1,000 rows at width 20 took 2.23 ms with the opt-in against 0.28 ms with the default (8.0 times as long). This is a synthetic provider, one run, one width; do not generalize past that setup. See [Sync reads against async reads](benchmarks/sync-vs-async.md).
 
 On a real link it is UNMEASURED.
 

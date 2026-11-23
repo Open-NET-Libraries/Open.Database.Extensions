@@ -66,15 +66,28 @@ public sealed class PostsController(PostCommands commands)
 	[HttpGet("by-author/{author}")]
 	public Task<PooledArray<Post>> ByAuthorAsync(
 		int author)
-	{
-		PooledBuffer<Post> buffer = commands
+		=> commands
 			.ByAuthor(author)
-			.ToAsyncBuffer(HttpContext.RequestAborted);
+			.ToAsyncBuffer(HttpContext.RequestAborted)
+			// The framework disposes it after the response,
+			// and awaits the rows, then writes them.
+			.RegisterForDispose(Response);
+}
+#endregion
 
-		// The framework disposes it after the response.
-		Response.RegisterForDispose(buffer);
+#region nsl_register_for_dispose
+// In your app: the framework disposes the buffer after the
+// response, so the arrays go back to the pool.
+public static class PooledBufferHttpExtensions
+{
+	public static Task<PooledArray<T>> RegisterForDispose<T>(
+		this PooledBuffer<T> buffer,
+		HttpResponse response)
+	{
+		ArgumentNullException.ThrowIfNull(buffer);
+		ArgumentNullException.ThrowIfNull(response);
 
-		// The framework awaits the rows, then writes them.
+		response.RegisterForDispose(buffer);
 		return buffer.Items;
 	}
 }
@@ -124,11 +137,10 @@ public sealed class CachedPostsController(PostCommands commands)
 	public async Task<ActionResult<IReadOnlyList<Post>>> ByAuthorAsync(
 		int author)
 	{
-		PooledBuffer<Post> buffer = commands
+		PooledArray<Post> posts = await commands
 			.ByAuthor(author)
-			.ToAsyncBuffer(HttpContext.RequestAborted);
-		Response.RegisterForDispose(buffer);
-		PooledArray<Post> posts = await buffer.Items;
+			.ToAsyncBuffer(HttpContext.RequestAborted)
+			.RegisterForDispose(Response);
 
 		// First pass: a weak ETag of the values. A 304 carries it too.
 		EntityTagHeaderValue etag = new(ETagOf(posts), isWeak: true);

@@ -142,5 +142,5 @@
   </g>
   <line class="axis" x1="196" y1="284" x2="196" y2="388"/>
   <text class="muted small mid" x="342" y="420">megabytes allocated per call</text>
-  <text class="muted small" x="16" y="448">Build b5b0014, 2026-11-21, mean of 2 runs. Numbers: library-real.csv</text>
+  <text class="muted small" x="16" y="448">Build 6a770e8, 2026-11-23, mean of 2 runs. Numbers: library-real.csv</text>
 </svg>

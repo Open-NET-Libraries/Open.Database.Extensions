@@ -70,7 +70,7 @@ function Get-Words([string]$text, [int]$max) {
 
 # Family key -> CSS class, legend text, legend order.
 $famClass = @{ 'arr' = 'one'; 'alt' = 'grey'; 'p-none' = 'grey'; 'p-inline' = 'one'; 'p-bin' = 'select'; 'loop' = 'grey'; 'odx' = 'one'; 'rd-sync' = 'one'; 'rd-async' = 'select'; 'raw' = 'grey'; 'odx-one' = 'one'; 'odx-select' = 'select'; 'odx-raw' = 'grey'; 'reference' = 'grey'; 'dapper' = 'dapper'; 'dapper-aot' = 'select' }
-$famName = @{ 'arr' = 'Arrays from ArrayPool (the lease per chunk is what ODX uses)'; 'alt' = 'The alternatives measured'; 'p-none' = 'No clear'; 'p-inline' = 'Inline clear'; 'p-bin' = 'Post to the recycle bin'; 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: row class, then Select'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89'; 'dapper-aot' = 'Dapper.AOT 1.1.0' }
+$famName = @{ 'arr' = 'Arrays from ArrayPool (the lease per chunk is what ODX uses)'; 'alt' = 'The alternatives measured'; 'p-none' = 'No clear'; 'p-inline' = 'Inline clear'; 'p-bin' = 'Post to the recycle bin'; 'loop' = 'Plain loop (hand-written)'; 'odx' = 'ODX'; 'rd-sync' = 'ODX, sync read (the default)'; 'rd-async' = 'ODX with AsyncReads() (opt-in)'; 'raw' = 'Raw SqlClient, no ODX'; 'odx-one' = 'ODX: one object per row'; 'odx-select' = 'ODX: shaped to a domain object'; 'odx-raw' = 'ODX: raw object[] rows'; 'reference' = 'Hand loop on the provider reader (reference)'; 'dapper' = 'Dapper 2.1.89'; 'dapper-aot' = 'Dapper.AOT 1.1.0' }
 $famOrder = 'arr', 'alt', 'p-none', 'p-inline', 'p-bin', 'loop', 'odx', 'rd-sync', 'rd-async', 'raw', 'odx-one', 'odx-select', 'odx-raw', 'reference', 'dapper', 'dapper-aot'
 
 $css = @'
@@ -258,7 +258,7 @@ Write-Lf (Join-Path $ImageDir 'perf-synthetic-total.svg') (New-BarSvg 'syn-total
 Write-Lf (Join-Path $ImageDir 'perf-synthetic-memory.svg') (New-BarSvg 'syn-memory' 'Memory allocated per call' 'Smaller is better.' @(@{ Title = ''; Rows = (Get-SynRows 'allocated_kb') }) { param($v) (F $v 1) + ' KB' } 'kilobytes allocated per call' (Footer $synSrc 'synthetic-overhead') 'shared' 232 $synIntro)
 
 # ---------- 3. cost grows with columns: a line chart ----------
-$short = @{ 'V2' = 'Hand-written selector'; 'V1' = 'Map<T>()'; 'V3' = 'Row class + Select'; 'V0' = 'object[] rows'; 'V7_V1' = 'Dapper' }
+$short = @{ 'V2' = 'Hand-written selector'; 'V1' = 'Map<T>()'; 'V3' = 'Factory map'; 'V0' = 'object[] rows'; 'V7_V1' = 'Dapper' }
 $ids = @($swp | ForEach-Object { $_.variant_id } | Select-Object -Unique)
 $widths = @($swp | ForEach-Object { [int]$_.columns } | Select-Object -Unique | Sort-Object)
 $maxUs = ($swp | ForEach-Object { [double]$_.total_us } | Measure-Object -Maximum).Maximum
@@ -414,6 +414,7 @@ $pcpu = Read-Data 'pool-bin-cpu';      $pcpuSrc = Read-Source 'pool-bin-cpu'
 function Med([double[]]$v) { $s = @($v | Sort-Object); if ($s.Count % 2) { $s[[int](($s.Count - 1) / 2)] } else { ($s[$s.Count / 2 - 1] + $s[$s.Count / 2]) / 2 } }
 $pe = Read-Data 'pool-e2e';        $peSrc = Read-Source 'pool-e2e'
 $pbc = Read-Data 'pool-bin-cost';  $pbcSrc = Read-Source 'pool-bin-cost'
+$pbcostSrc = Read-Source 'pooled-buffer-cost'
 function Spike-Footer($src, [string]$csv) { "Pool spike, $($src.Date), mean of 12 iterations. Numbers: $csv.csv" }
 $shortArm = @{ 'A0' = 'Memory<T> chunks'; 'E1' = 'Arrays, lease per chunk'; 'E2' = 'Arrays, owner object'; 'E3' = 'Arrays, one store'; 'M1' = 'MemoryPool, span per row'; 'M2' = 'MemoryPool, span per chunk' }
 
@@ -447,7 +448,7 @@ $e2eRows = @($pe | Sort-Object { -[double]$_.rows }, terminal -Stable | ForEach-
   $gain = (1 - [double]$_.after_us / [double]$_.before_us) * 100
   [pscustomobject]@{ Name = "$($_.terminal), $(F ([double]$_.rows) 0) rows"; Fam = 'arr'; Value = $gain
     Detail = "$($_.terminal), $(F ([double]$_.rows) 0) rows: $(Format-Micro ([double]$_.before_us)) before, $(Format-Micro ([double]$_.after_us)) after, $(F $gain 1)% less time." } })
-Write-Lf (Join-Path $ImageDir 'perf-pool-e2e.svg') (New-BarSvg 'pool-e2e' 'The final design against the Memory chunks build' 'Longer is better. How much less time the call takes, in percent.' @(@{ Title = ''; Rows = $e2eRows }) { param($v) (F $v 1) + '%' } 'percent less time than the Memory<T> chunks build' "Builds 3c05c47 and d4b47b8, $($peSrc.Date), SQLite in memory, class rows. Numbers: pool-e2e.csv" 'shared' 250 'Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced.' 560)
+Write-Lf (Join-Path $ImageDir 'perf-pool-e2e.svg') (New-BarSvg 'pool-e2e' 'The final design against the Memory chunks build' 'Longer is better. How much less time the call takes, in percent.' @(@{ Title = ''; Rows = $e2eRows }) { param($v) (F $v 1) + '%' } 'percent less time than the Memory<T> chunks build' "Builds 3c05c47 (before) and 6a770e8 (after), runs: $($peSrc.Date), SQLite in memory, class rows. Numbers: pool-e2e.csv" 'shared' 250 'Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced.' 560)
 
 # ---------- the tables (markdown includes) ----------
 # Each file is one table, with no links (a page links to the CSV and the source file itself), so it reads the same
@@ -630,10 +631,10 @@ $t = @('| Data file | Used on | Build | Run date | Machine | Runtime |', '|---|-
 foreach ($p in @(
     @('library-synthetic', 'library comparison, the summary', $lsSrc),
     @('library-real', 'library comparison, real databases', $lrSrc),
-    @('synthetic-overhead', 'mapping variants (all variants, older build)', $synSrc),
+    @('synthetic-overhead', 'mapping variants (all variants)', $synSrc),
     @('width-sweep', 'cost per column', $swpSrc),
     @('map-cost', 'cost of building a map', $mapSrc),
-    @('real-providers', 'real databases (older build)', $rpSrc),
+    @('real-providers', 'real databases (five variants, two widths)', $rpSrc),
     @('sync-async', 'sync reads against async reads', $saSrc),
     @('link-time', 'slow links and large values', $ltSrc),
     @('link-memory', 'slow links and large values', $lmSrc),
@@ -647,7 +648,8 @@ foreach ($p in @(
     @('pool-bin-proof-e2e', 'pooling and clearing', $ppeSrc),
     @('pool-bin-cpu', 'pooling and clearing', $pcpuSrc),
     @('pool-e2e', 'pooling and clearing', $peSrc),
-    @('pool-bin-cost', 'pooling and clearing', $pbcSrc))) {
+    @('pool-bin-cost', 'pooling and clearing', $pbcSrc),
+    @('pooled-buffer-cost', 'async buffers and streams (what it costs)', $pbcostSrc))) {
   $bld = ($p[2].Build -split ' \(')[0]
   $t += "| ``$($p[0]).csv`` | $($p[1]) | ``$bld`` | $($p[2].Date) | $(M $p[2].Machine) | $(M $p[2].Runtime.Replace('[Host] : ', '')) |"
 }

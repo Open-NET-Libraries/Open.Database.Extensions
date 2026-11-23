@@ -1,13 +1,13 @@
 condition,buffer_refill_rows,refill_us,busy_pool_work_items,path,columns,rows,reader_open_us,allocated_kb,source_run
-"Neither",0,0,0,"Sync",20,1000,77.292,227.423,stageSA-SA1
-"Neither",0,0,0,"Async execute",20,1000,80.923,227.493,stageSA-SA1
-"Neither",0,0,0,"Async read",20,1000,82.344,227.539,stageSA-SA1
-"Busy thread pool",0,0,8,"Sync",20,1000,94.391,227.431,stageSA-SA2
-"Busy thread pool",0,0,8,"Async execute",20,1000,97.364,227.501,stageSA-SA2
-"Busy thread pool",0,0,8,"Async read",20,1000,102.367,227.549,stageSA-SA2
-"Buffer refills",100,20,0,"Sync",20,1000,257.851,227.425,stageSA-SA3
-"Buffer refills",100,20,0,"Async execute",20,1000,261.224,227.493,stageSA-SA3
-"Buffer refills",100,20,0,"Async read",20,1000,314.298,229.939,stageSA-SA3
-"Refills and busy pool",100,20,8,"Sync",20,1000,279.308,227.448,stageSA-SA4
-"Refills and busy pool",100,20,8,"Async execute",20,1000,278.968,227.52,stageSA-SA4
-"Refills and busy pool",100,20,8,"Async read",20,1000,11175.018,231.334,stageSA-SA4
+"Neither",0,0,0,"Sync",20,1000,76.321,227.422,stageSA-SA1
+"Neither",0,0,0,"Async execute",20,1000,77.366,219.149,stageSA-SA1
+"Neither",0,0,0,"Async read",20,1000,79.987,219.196,stageSA-SA1
+"Busy thread pool",0,0,8,"Sync",20,1000,95.615,227.442,stageSA-SA2
+"Busy thread pool",0,0,8,"Async execute",20,1000,95.602,219.17,stageSA-SA2
+"Busy thread pool",0,0,8,"Async read",20,1000,99.283,219.217,stageSA-SA2
+"Buffer refills",100,20,0,"Sync",20,1000,258.197,227.422,stageSA-SA3
+"Buffer refills",100,20,0,"Async execute",20,1000,262.395,219.151,stageSA-SA3
+"Buffer refills",100,20,0,"Async read",20,1000,285.849,221.674,stageSA-SA3
+"Refills and busy pool",100,20,8,"Sync",20,1000,274.887,227.481,stageSA-SA4
+"Refills and busy pool",100,20,8,"Async execute",20,1000,279.831,219.209,stageSA-SA4
+"Refills and busy pool",100,20,8,"Async read",20,1000,2227.441,222.189,stageSA-SA4

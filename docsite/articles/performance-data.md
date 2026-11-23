@@ -6,15 +6,16 @@ Every chart, and every table except the two marked "older run" (the everyday cal
 |---|---|---|
 | [library-synthetic.csv](../perf-data/library-synthetic.csv) | [source](../perf-data/library-synthetic.source.txt) | [Library comparison](benchmarks/library-comparison.md) |
 | [library-real.csv](../perf-data/library-real.csv) | [source](../perf-data/library-real.source.txt) | [Library comparison](benchmarks/library-comparison.md) |
-| [synthetic-overhead.csv](../perf-data/synthetic-overhead.csv) | [source](../perf-data/synthetic-overhead.source.txt) | [Every way of mapping](benchmarks/mapping-variants.md) (an older build) |
+| [synthetic-overhead.csv](../perf-data/synthetic-overhead.csv) | [source](../perf-data/synthetic-overhead.source.txt) | [Every way of mapping](benchmarks/mapping-variants.md) |
 | [width-sweep.csv](../perf-data/width-sweep.csv) | [source](../perf-data/width-sweep.source.txt) | [Cost per column](benchmarks/cost-per-column.md) |
 | [map-cost.csv](../perf-data/map-cost.csv) | [source](../perf-data/map-cost.source.txt) | [What building a map costs](benchmarks/map-cost.md) |
-| [real-providers.csv](../perf-data/real-providers.csv) | [source](../perf-data/real-providers.source.txt) | [On real databases](benchmarks/real-databases.md) (an older build) |
+| [real-providers.csv](../perf-data/real-providers.csv) | [source](../perf-data/real-providers.source.txt) | [On real databases](benchmarks/real-databases.md) |
 | [sync-async.csv](../perf-data/sync-async.csv) | [source](../perf-data/sync-async.source.txt) | [Sync reads against async reads](benchmarks/sync-vs-async.md) |
 | [link-time.csv](../perf-data/link-time.csv) | [source](../perf-data/link-time.source.txt) | [Slow links and large values](benchmarks/slow-links-and-large-values.md) |
 | [link-memory.csv](../perf-data/link-memory.csv) | [source](../perf-data/link-memory.source.txt) | [Slow links and large values](benchmarks/slow-links-and-large-values.md) |
 | [large-value.csv](../perf-data/large-value.csv) | [source](../perf-data/large-value.source.txt) | [Slow links and large values](benchmarks/slow-links-and-large-values.md) |
 | [channels.csv](../perf-data/channels.csv) | [source](../perf-data/channels.source.txt) | [Channels and Dataflow](benchmarks/pipelines.md) |
+| [pooled-buffer-cost.csv](../perf-data/pooled-buffer-cost.csv) | [source](../perf-data/pooled-buffer-cost.source.txt) | [What it costs](async-buffers.md#what-it-costs) |
 | [pool-store.csv](../perf-data/pool-store.csv), [pool-rent.csv](../perf-data/pool-rent.csv), [pool-bytes.csv](../perf-data/pool-bytes.csv) | [store](../perf-data/pool-store.source.txt), [rent](../perf-data/pool-rent.source.txt), [bytes](../perf-data/pool-bytes.source.txt) | [Pooling and clearing](benchmarks/pooling-and-clearing.md) |
 | [pool-e2e.csv](../perf-data/pool-e2e.csv), [pool-bin-cost.csv](../perf-data/pool-bin-cost.csv) | [e2e](../perf-data/pool-e2e.source.txt), [bin cost](../perf-data/pool-bin-cost.source.txt) | [Pooling and clearing](benchmarks/pooling-and-clearing.md) |
 | [pool-release-path.csv](../perf-data/pool-release-path.csv), [pool-clear-speed.csv](../perf-data/pool-clear-speed.csv), [pool-bin-proof-e2e.csv](../perf-data/pool-bin-proof-e2e.csv), [pool-bin-cpu.csv](../perf-data/pool-bin-cpu.csv) | [release path](../perf-data/pool-release-path.source.txt), [clear speed](../perf-data/pool-clear-speed.source.txt), [bin end to end](../perf-data/pool-bin-proof-e2e.source.txt), [bin CPU](../perf-data/pool-bin-cpu.source.txt) | [Pooling and clearing](benchmarks/pooling-and-clearing.md) |

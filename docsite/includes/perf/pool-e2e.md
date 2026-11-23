@@ -2,11 +2,11 @@
 
 | Call | Rows | Before | After | Change | Error margins | Memory before | Memory after |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `ToArrayAsync` | 100 | 39.1 µs | 37.8 µs | 3.4% less | ±0.3%, ±0.2% | 8.95 KB | 8.95 KB |
-| `ToAsyncBuffer_Items` | 100 | 68.4 µs | 66.2 µs | 3.2% less | ±2.1%, ±1.0% | 9.57 KB | 9.10 KB |
-| `ToAsyncBufferStream` | 100 | 79.5 µs | 76.8 µs | 3.3% less | ±0.8%, ±1.2% | 10.65 KB | 10.75 KB |
-| `ToListAsync` | 100 | 39.0 µs | 37.8 µs | 3.1% less | ±0.3%, ±0.5% | 8.98 KB | 8.98 KB |
-| `ToArrayAsync` | 10,000 | 3,373.2 µs | 3,211.2 µs | 4.8% less | ±0.4%, ±0.4% | 782.39 KB | 782.46 KB |
-| `ToAsyncBuffer_Items` | 10,000 | 3,371.2 µs | 3,272.8 µs | 2.9% less | ±0.5%, ±0.2% | 706.95 KB | 706.04 KB |
-| `ToAsyncBufferStream` | 10,000 | 3,427.6 µs | 3,354.5 µs | 2.1% less | ±0.2%, ±0.4% | 707.63 KB | 706.91 KB |
-| `ToListAsync` | 10,000 | 3,375.6 µs | 3,200.3 µs | 5.2% less | ±0.4%, ±0.5% | 782.44 KB | 782.49 KB |
+| `ToArrayAsync` | 100 | 39.1 µs | 38.4 µs | 1.7% less | ±0.3%, ±0.8% | 8.95 KB | 8.95 KB |
+| `ToAsyncBuffer_Items` | 100 | 68.4 µs | 56.5 µs | 17.5% less | ±2.1%, ±0.6% | 9.57 KB | 9.13 KB |
+| `ToAsyncBufferStream` | 100 | 79.5 µs | 61.2 µs | 23.0% less | ±0.8%, ±0.8% | 10.65 KB | 10.81 KB |
+| `ToListAsync` | 100 | 39.0 µs | 38.3 µs | 1.6% less | ±0.3%, ±0.9% | 8.98 KB | 8.98 KB |
+| `ToArrayAsync` | 10,000 | 3,373.2 µs | 3,289.3 µs | 2.5% less | ±0.4%, ±0.6% | 782.39 KB | 782.40 KB |
+| `ToAsyncBuffer_Items` | 10,000 | 3,371.2 µs | 3,306.3 µs | 1.9% less | ±0.5%, ±0.7% | 706.95 KB | 706.02 KB |
+| `ToAsyncBufferStream` | 10,000 | 3,427.6 µs | 3,319.8 µs | 3.1% less | ±0.2%, ±0.4% | 707.63 KB | 706.92 KB |
+| `ToListAsync` | 10,000 | 3,375.6 µs | 3,376.3 µs | 0.0% more | ±0.4%, ±0.9% | 782.44 KB | 782.42 KB |

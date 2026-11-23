@@ -92,4 +92,4 @@ Each row is sent with `SendAsync`, so a bounded block that is full makes the pas
 
 ## Honest limits
 
-- These are conveniences for pipelines, not speed-ups. In the published benchmarks, draining a channel or a `BufferBlock` is slower than reading rows in a plain loop; see [Channels and Dataflow against a plain loop](benchmarks/pipelines.md).
+- They cost more than a plain loop for one row (1.61 times for a channel, 2.56 times for a `BufferBlock`). At 1,000 rows `ToChannelReader(true)` took 0.32 times as long as a hand-written channel loop and `ToTargetBlock` 0.72 times; at 100 rows the channel took 0.45 times and the `BufferBlock` 1.10 times. See [Channels and Dataflow against a plain loop](benchmarks/pipelines.md).

@@ -44,12 +44,12 @@ $variants = [ordered]@{
   'V0b'    = @('odx-raw',    'object[] rows, objects later',   'GetValues into object[], typed objects built afterwards')
   'V1'     = @('odx-one',    'Map<T>(), the RowMap plan',      'The cached, compiled typed plan')
   'V2'     = @('odx-one',    'Map(selector), hand-written',    'A static Func<IDataRecord,T> with typed getters')
-  'V3'     = @('odx-select', 'Row class, inline Select',       'Two objects per row: a row class, then Select while the reader is open')
+  'V3'     = @('odx-select', 'Factory map, domain object',       'One object per row: a factory map straight to the domain object, built while the reader is open')
   'V4a'    = @('odx-one',    'Selector, reused row, Select',   'Caller recipe: fill one held row, project it')
   'V4b'    = @('odx-one',    'Selector, pooled row, Select',   'Caller recipe: rent a row, project it, return it')
   'V5'     = @('odx-select', 'Row class, close, then Select',  'Map<Row>().ToList(), then Select after the reader closes')
   'V6a'    = @('odx-one',    'Shaping inside the selector',    'Computed members built in the selector')
-  'V6c'    = @('odx-select', 'Row class, shaping in Select',   'Computed members built in an inline Select, reader open')
+  'V6c'    = @('odx-select', 'Factory map, shaping in the map', 'Computed members built inside the factory map, reader open')
   'V6d'    = @('odx-select', 'Row class, shaping after close', 'Computed members built after the reader closes')
   'V7'     = @('dapper',     'Dapper Query<T>',                'Dapper 2.1.89, buffered Query<Row> into a list')
   'V7_V1'  = @('dapper',     'Dapper Query<T>',                'Dapper 2.1.89, buffered Query<T>, the plain map')
@@ -144,7 +144,7 @@ foreach ($run in $syn) {
     if (-not $variants.Contains($id)) { throw "unknown variant $id" }
     $v = $variants[$id]
     $items += [pscustomobject]@{ Key = $id; Line = ('{0},{1},{2},{3},20,1000,{4},{5},{6},{7}' -f $id, (Quote $v[1]), $v[0], (Quote $v[2]),
-      (Format-Num ([double]::Parse($r.'ReaderOpen (us)', $inv)) 3), (Format-Num (ConvertTo-Microseconds $r.Mean) 3), (Format-Num (ConvertTo-Kilobytes $r.Allocated) 3), (Format-Num (ConvertTo-Microseconds $r.Error) 3), $run.Name) }
+      (Format-Num ([double]::Parse($r.'ReaderOpen (us)', $inv)) 3), (Format-Num (ConvertTo-Microseconds $r.Mean) 3), (Format-Num (ConvertTo-Kilobytes $r.Allocated) 3), $run.Name) }
   }
 }
 Assert-Unique $items 'a synthetic variant'

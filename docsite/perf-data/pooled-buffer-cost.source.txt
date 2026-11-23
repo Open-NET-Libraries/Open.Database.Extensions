@@ -1,0 +1,25 @@
+Benchmark build: 6a770e8 (master; the benchmark project compiled once, the guard runs)
+Run date: 2026-11-23
+Machine: AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores; Windows 10 (10.0.19045.6466/22H2/2022Update)
+Runtime: .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4; .NET SDK 11.0.100
+Harness: BenchmarkDotNet 0.15.8, InProcessEmitToolchain (--inprocess), WarmupCount=5, IterationCount=12, LaunchCount=1, one run each; run through the benchmark guard (BelowNormal priority, affinity 0xFF0000 = four physical cores, eight logical processors, stopped on low free RAM or after 25 minutes), one heavy job at a time
+Benchmark: PooledBufferCostBenchmarks on the synthetic provider (in process, no network), one column, 10,000 rows, class rows. Runs:
+  pbcost-A: simulated link (a refill every 100 rows, 50 us each), AsyncReads() on, all eight methods
+  pbcost-B: zero latency (no refill), AsyncReads() on, the buffer and ToArrayAsync only
+  pbcost-C: the same link as A, default Read() (AsyncReads off), the buffer and ToArrayAsync only
+Methods (the path and consumer columns):
+  chunk stream = ToAsyncBufferStream, the consumer works on each chunk after it is read: 1 SpinWait iteration per row (40 ns per row; the calibration printed in the log was 39.5 to 40.9 ns), 1 us of spinning per row, or a 20 us busy wait per 100 rows
+  no buffer = a plain read inside ExecuteReaderAsync with the hand-written selector, the same consumer working per row inside the read
+  buffer = ToAsyncBuffer(ct).Items awaited, the count checked, then DisposeAsync
+  ToArrayAsync = ToArrayAsync(ct), the count checked
+Columns: reader_open_us = the ReaderOpen (us) column, the time the reader was open, as printed; total_us and error_us = BenchmarkDotNet Mean and Error (half-width of the 99.9% confidence interval), converted from the printed ms to microseconds (ms x 1000) or kept where printed in microseconds; allocated_kb = BenchmarkDotNet Allocated, printed in MB with two decimals, converted at 1024 KB per MB and rounded (good to about 5 KB)
+Caveats:
+  1. The consumer in the chunk stream and no-buffer rows is a busy spin on the consumer thread, one SpinWait iteration per row for the 40 ns case. The 20 us wait is a spin as well, not an awaited timer wait, so the no-buffer 20 us row may read slightly low. There is no pure field-read consumer.
+  2. The no-buffer rows read with a hand-written selector in an ADO.NET loop, not through Map<T>(), because there is no public inline per-row handler. The chunk stream rows map with Map<T>(). The per-row mapping cost therefore differs between the two paths by the difference between ODX and a hand-written selector.
+  3. The refill timer busy-waits on one of the four physical cores (eight logical processors) the run used, so the overlap ran on about three cores.
+  4. The buffer always clears the references of class rows when it is disposed, and there is no switch to turn that off. total_us of the buffer row therefore includes that clear, which the older arms for this question did not do (they cleared nothing). reader_open_us does not include the dispose clear.
+  5. One run each, on four pinned physical cores (eight logical processors) and the state of the machine at the time; there is no repeat to show the variance between runs. error_us is within-run only.
+Source files (BenchmarkDotNet report CSVs, one per run; the run folders are not in the repository):
+  pbcost-A/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.PooledBufferCostBenchmarks-report.csv  (console log bench-full/logs/pbcost-A.log)
+  pbcost-B/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.PooledBufferCostBenchmarks-report.csv  (console log bench-full/logs/pbcost-B.log)
+  pbcost-C/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.PooledBufferCostBenchmarks-report.csv  (console log bench-full/logs/pbcost-C.log)

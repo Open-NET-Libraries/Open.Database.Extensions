@@ -1,17 +1,17 @@
 provider,run,variant_id,variant,family,description,columns,rows,total_us,error_us,allocated_kb,source_run
-"SQLite file",a,V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,10000,28660,2231,12810.24,bench4d-sqlite-a.log
-"SQLite file",a,V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,10000,28990,3028,12247.04,bench4d-sqlite-a.log
-"SQLite file",a,V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,32810,5335,15144.96,bench4d-sqlite-a.log
-"SQLite file",a,V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,10000,30520,1169,13025.28,bench4d-sqlite-a.log
-"SQLite file",b,V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,10000,33020,5124,12810.24,bench4d-sqlite-b.log
-"SQLite file",b,V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,10000,29580,5725,12247.04,bench4d-sqlite-b.log
-"SQLite file",b,V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,35740,5255,15144.96,bench4d-sqlite-b.log
-"SQLite file",b,V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,10000,28550,2904,13025.28,bench4d-sqlite-b.log
-"SQL Server LocalDB",a,V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,10000,30100,6220,9707.52,bench4d-sqlserver-a.log
-"SQL Server LocalDB",a,V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,10000,27640,2252,9707.52,bench4d-sqlserver-a.log
-"SQL Server LocalDB",a,V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,31480,3727,12564.48,bench4d-sqlserver-a.log
-"SQL Server LocalDB",a,V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,10000,27690,1019,9707.52,bench4d-sqlserver-a.log
-"SQL Server LocalDB",b,V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,10000,25550,1146,9707.52,bench4d-sqlserver-b.log
-"SQL Server LocalDB",b,V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,10000,24030,681,9707.52,bench4d-sqlserver-b.log
-"SQL Server LocalDB",b,V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,28810,1242,12564.48,bench4d-sqlserver-b.log
-"SQL Server LocalDB",b,V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,10000,25790,1854,9707.52,bench4d-sqlserver-b.log
+"SQLite file",a,V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,10000,27610,159,12810.24,bench4d-sqlite-a.log
+"SQLite file",a,V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,10000,25840,1423,12247.04,bench4d-sqlite-a.log
+"SQLite file",a,V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,29750,1290,15144.96,bench4d-sqlite-a.log
+"SQLite file",a,V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,10000,28450,680,13025.28,bench4d-sqlite-a.log
+"SQLite file",b,V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,10000,27740,171,12810.24,bench4d-sqlite-b.log
+"SQLite file",b,V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,10000,26130,1438,12247.04,bench4d-sqlite-b.log
+"SQLite file",b,V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,29900,1174,15144.96,bench4d-sqlite-b.log
+"SQLite file",b,V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,10000,28610,705,13025.28,bench4d-sqlite-b.log
+"SQL Server LocalDB",a,V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,10000,26130,645,9707.52,bench4d-sqlserver-a.log
+"SQL Server LocalDB",a,V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,10000,24580,696,9707.52,bench4d-sqlserver-a.log
+"SQL Server LocalDB",a,V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,29010,578,12564.48,bench4d-sqlserver-a.log
+"SQL Server LocalDB",a,V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,10000,25920,688,9707.52,bench4d-sqlserver-a.log
+"SQL Server LocalDB",b,V1,"Map<T>()",odx-one,"The cached, compiled typed plan",20,10000,26070,1020,9707.52,bench4d-sqlserver-b.log
+"SQL Server LocalDB",b,V2,"Hand-written selector",odx-one,"A static Func<IDataRecord,T> with typed getters, passed to Map",20,10000,24590,774,9707.52,bench4d-sqlserver-b.log
+"SQL Server LocalDB",b,V7,"Dapper Query<T>",dapper,"Dapper 2.1.89, buffered Query<Row> into a list",20,10000,28840,494,12564.48,bench4d-sqlserver-b.log
+"SQL Server LocalDB",b,V7a,"Dapper.AOT",dapper-aot,"Dapper.AOT 1.1.0, the same Query<Row> through its intercepted path",20,10000,26130,1030,9707.52,bench4d-sqlserver-b.log

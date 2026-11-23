@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 542" role="img" aria-labelledby="real-memory-title real-memory-desc">
   <title id="real-memory-title">Real databases: memory per call</title>
-  <desc id="real-memory-desc">Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; bars are ranked best first inside each panel. Every bar starts at zero. SQL Server LocalDB: Hand loop (reference) 9.48 MB; Map&lt;T&gt;() 9.48 MB; Map(selector), hand-written 9.48 MB; Row class, inline Select 11.54 MB; Dapper Query&lt;T&gt; 12.27 MB. SQLite file: Hand loop (reference) 11.96 MB; Map(selector), hand-written 11.96 MB; Map&lt;T&gt;() 14.11 MB; Dapper Query&lt;T&gt; 14.79 MB; Row class, inline Select 16.17 MB.</desc>
+  <desc id="real-memory-desc">Two panels on one scale, SQL Server LocalDB and a SQLite file, 20 columns and 10,000 rows; bars are ranked best first inside each panel. Every bar starts at zero. SQL Server LocalDB: Hand loop (reference) 9.48 MB; Map&lt;T&gt;() 9.48 MB; Factory map, domain object 9.48 MB; Map(selector), hand-written 9.48 MB; Dapper Query&lt;T&gt; 12.27 MB. SQLite file: Hand loop (reference) 11.96 MB; Map(selector), hand-written 11.96 MB; Map&lt;T&gt;() 12.51 MB; Factory map, domain object 12.51 MB; Dapper Query&lt;T&gt; 14.79 MB.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -62,7 +62,7 @@
   <rect class="one" x="16" y="62" width="12" height="12" rx="3"/>
   <text class="small" x="34" y="72">ODX: one object per row</text>
   <rect class="select" x="200" y="62" width="12" height="12" rx="3"/>
-  <text class="small" x="218" y="72">ODX: row class, then Select</text>
+  <text class="small" x="218" y="72">ODX: shaped to a domain object</text>
   <rect class="grey" x="16" y="82" width="12" height="12" rx="3"/>
   <text class="small" x="34" y="92">Hand loop on the provider reader (reference)</text>
   <rect class="dapper" x="339" y="82" width="12" height="12" rx="3"/>
@@ -70,97 +70,93 @@
   <text class="head" x="16" y="128">SQL Server LocalDB</text>
   <line class="grid" x1="196" y1="138" x2="196" y2="268"/>
   <text class="muted small mid" x="196" y="284">0</text>
-  <line class="grid" x1="269" y1="138" x2="269" y2="268"/>
-  <text class="muted small mid" x="269" y="284">5</text>
-  <line class="grid" x1="342" y1="138" x2="342" y2="268"/>
-  <text class="muted small mid" x="342" y="284">10</text>
-  <line class="grid" x1="415" y1="138" x2="415" y2="268"/>
-  <text class="muted small mid" x="415" y="284">15</text>
+  <line class="grid" x1="293.33" y1="138" x2="293.33" y2="268"/>
+  <text class="muted small mid" x="293.33" y="284">5</text>
+  <line class="grid" x1="390.67" y1="138" x2="390.67" y2="268"/>
+  <text class="muted small mid" x="390.67" y="284">10</text>
   <line class="grid" x1="488" y1="138" x2="488" y2="268"/>
-  <text class="muted small mid" x="488" y="284">20</text>
+  <text class="muted small mid" x="488" y="284">15</text>
   <g>
-    <title>Hand loop (reference): Typed getters written directly on the provider reader. SQL Server LocalDB, 20 columns, 10,000 rows: 25.6 ms per call, 9.48 MB allocated.</title>
+    <title>Hand loop (reference): Typed getters written directly on the provider reader. SQL Server LocalDB, 20 columns, 10,000 rows: 25.0 ms per call, 9.48 MB allocated.</title>
     <rect class="hit" x="0" y="138" width="560" height="26"/>
     <text class="name" x="186" y="155">Hand loop (reference)</text>
-    <path class="grey" d="M196,143 h134.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-134.42 z"/>
-    <text class="val" x="340.42" y="155">9.48 MB</text>
+    <path class="grey" d="M196,143 h180.56 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-180.56 z"/>
+    <text class="val" x="386.56" y="155">9.48 MB</text>
   </g>
   <g>
-    <title>Map&lt;T&gt;(): The cached, compiled typed plan. SQL Server LocalDB, 20 columns, 10,000 rows: 25.9 ms per call, 9.48 MB allocated.</title>
+    <title>Map&lt;T&gt;(): The cached, compiled typed plan. SQL Server LocalDB, 20 columns, 10,000 rows: 25.6 ms per call, 9.48 MB allocated.</title>
     <rect class="hit" x="0" y="164" width="560" height="26"/>
     <text class="name" x="186" y="181">Map&lt;T&gt;()</text>
-    <path class="one" d="M196,169 h134.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-134.42 z"/>
-    <text class="val" x="340.42" y="181">9.48 MB</text>
+    <path class="one" d="M196,169 h180.56 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-180.56 z"/>
+    <text class="val" x="386.56" y="181">9.48 MB</text>
   </g>
   <g>
-    <title>Map(selector), hand-written: A static Func&lt;IDataRecord,T&gt; with typed getters. SQL Server LocalDB, 20 columns, 10,000 rows: 25.2 ms per call, 9.48 MB allocated.</title>
+    <title>Factory map, domain object: One object per row: a factory map straight to the domain object, built while the reader is open. SQL Server LocalDB, 20 columns, 10,000 rows: 25.8 ms per call, 9.48 MB allocated.</title>
     <rect class="hit" x="0" y="190" width="560" height="26"/>
-    <text class="name" x="186" y="207">Map(selector), hand-written</text>
-    <path class="one" d="M196,195 h134.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-134.42 z"/>
-    <text class="val" x="340.42" y="207">9.48 MB</text>
+    <text class="name" x="186" y="207">Factory map, domain object</text>
+    <path class="select" d="M196,195 h180.56 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-180.56 z"/>
+    <text class="val" x="386.56" y="207">9.48 MB</text>
   </g>
   <g>
-    <title>Row class, inline Select: Two objects per row: a row class, then Select while the reader is open. SQL Server LocalDB, 20 columns, 10,000 rows: 27.2 ms per call, 11.54 MB allocated.</title>
+    <title>Map(selector), hand-written: A static Func&lt;IDataRecord,T&gt; with typed getters. SQL Server LocalDB, 20 columns, 10,000 rows: 25.5 ms per call, 9.48 MB allocated.</title>
     <rect class="hit" x="0" y="216" width="560" height="26"/>
-    <text class="name" x="186" y="233">Row class, inline Select</text>
-    <path class="select" d="M196,221 h164.5 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-164.5 z"/>
-    <text class="val" x="370.5" y="233">11.54 MB</text>
+    <text class="name" x="186" y="233">Map(selector), hand-written</text>
+    <path class="one" d="M196,221 h180.56 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-180.56 z"/>
+    <text class="val" x="386.56" y="233">9.48 MB</text>
   </g>
   <g>
-    <title>Dapper Query&lt;T&gt;: Dapper 2.1.89, buffered Query&lt;Row&gt; into a list. SQL Server LocalDB, 20 columns, 10,000 rows: 27.6 ms per call, 12.27 MB allocated.</title>
+    <title>Dapper Query&lt;T&gt;: Dapper 2.1.89, buffered Query&lt;Row&gt; into a list. SQL Server LocalDB, 20 columns, 10,000 rows: 29.4 ms per call, 12.27 MB allocated.</title>
     <rect class="hit" x="0" y="242" width="560" height="26"/>
     <text class="name" x="186" y="259">Dapper Query&lt;T&gt;</text>
-    <path class="dapper" d="M196,247 h175.1 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-175.1 z"/>
-    <text class="val" x="381.1" y="259">12.27 MB</text>
+    <path class="dapper" d="M196,247 h234.8 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-234.8 z"/>
+    <text class="val" x="440.8" y="259">12.27 MB</text>
   </g>
   <line class="axis" x1="196" y1="138" x2="196" y2="268"/>
   <text class="head" x="16" y="320">SQLite file</text>
   <line class="grid" x1="196" y1="330" x2="196" y2="460"/>
   <text class="muted small mid" x="196" y="476">0</text>
-  <line class="grid" x1="269" y1="330" x2="269" y2="460"/>
-  <text class="muted small mid" x="269" y="476">5</text>
-  <line class="grid" x1="342" y1="330" x2="342" y2="460"/>
-  <text class="muted small mid" x="342" y="476">10</text>
-  <line class="grid" x1="415" y1="330" x2="415" y2="460"/>
-  <text class="muted small mid" x="415" y="476">15</text>
+  <line class="grid" x1="293.33" y1="330" x2="293.33" y2="460"/>
+  <text class="muted small mid" x="293.33" y="476">5</text>
+  <line class="grid" x1="390.67" y1="330" x2="390.67" y2="460"/>
+  <text class="muted small mid" x="390.67" y="476">10</text>
   <line class="grid" x1="488" y1="330" x2="488" y2="460"/>
-  <text class="muted small mid" x="488" y="476">20</text>
+  <text class="muted small mid" x="488" y="476">15</text>
   <g>
-    <title>Hand loop (reference): Typed getters written directly on the provider reader. SQLite file, 20 columns, 10,000 rows: 25.9 ms per call, 11.96 MB allocated.</title>
+    <title>Hand loop (reference): Typed getters written directly on the provider reader. SQLite file, 20 columns, 10,000 rows: 25.8 ms per call, 11.96 MB allocated.</title>
     <rect class="hit" x="0" y="330" width="560" height="26"/>
     <text class="name" x="186" y="347">Hand loop (reference)</text>
-    <path class="grey" d="M196,335 h170.66 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-170.66 z"/>
-    <text class="val" x="376.66" y="347">11.96 MB</text>
+    <path class="grey" d="M196,335 h228.89 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-228.89 z"/>
+    <text class="val" x="434.89" y="347">11.96 MB</text>
   </g>
   <g>
-    <title>Map(selector), hand-written: A static Func&lt;IDataRecord,T&gt; with typed getters. SQLite file, 20 columns, 10,000 rows: 25.9 ms per call, 11.96 MB allocated.</title>
+    <title>Map(selector), hand-written: A static Func&lt;IDataRecord,T&gt; with typed getters. SQLite file, 20 columns, 10,000 rows: 26.6 ms per call, 11.96 MB allocated.</title>
     <rect class="hit" x="0" y="356" width="560" height="26"/>
     <text class="name" x="186" y="373">Map(selector), hand-written</text>
-    <path class="one" d="M196,361 h170.67 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-170.67 z"/>
-    <text class="val" x="376.67" y="373">11.96 MB</text>
+    <path class="one" d="M196,361 h228.89 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-228.89 z"/>
+    <text class="val" x="434.89" y="373">11.96 MB</text>
   </g>
   <g>
-    <title>Map&lt;T&gt;(): The cached, compiled typed plan. SQLite file, 20 columns, 10,000 rows: 31.3 ms per call, 14.11 MB allocated.</title>
+    <title>Map&lt;T&gt;(): The cached, compiled typed plan. SQLite file, 20 columns, 10,000 rows: 27.9 ms per call, 12.51 MB allocated.</title>
     <rect class="hit" x="0" y="382" width="560" height="26"/>
     <text class="name" x="186" y="399">Map&lt;T&gt;()</text>
-    <path class="one" d="M196,387 h202 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-202 z"/>
-    <text class="val" x="408" y="399">14.11 MB</text>
+    <path class="one" d="M196,387 h239.61 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-239.61 z"/>
+    <text class="val" x="445.61" y="399">12.51 MB</text>
   </g>
   <g>
-    <title>Dapper Query&lt;T&gt;: Dapper 2.1.89, buffered Query&lt;Row&gt; into a list. SQLite file, 20 columns, 10,000 rows: 29.8 ms per call, 14.79 MB allocated.</title>
+    <title>Factory map, domain object: One object per row: a factory map straight to the domain object, built while the reader is open. SQLite file, 20 columns, 10,000 rows: 28.1 ms per call, 12.51 MB allocated.</title>
     <rect class="hit" x="0" y="408" width="560" height="26"/>
-    <text class="name" x="186" y="425">Dapper Query&lt;T&gt;</text>
-    <path class="dapper" d="M196,413 h211.92 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-211.92 z"/>
-    <text class="val" x="417.92" y="425">14.79 MB</text>
+    <text class="name" x="186" y="425">Factory map, domain object</text>
+    <path class="select" d="M196,413 h239.61 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-239.61 z"/>
+    <text class="val" x="445.61" y="425">12.51 MB</text>
   </g>
   <g>
-    <title>Row class, inline Select: Two objects per row: a row class, then Select while the reader is open. SQLite file, 20 columns, 10,000 rows: 30.9 ms per call, 16.17 MB allocated.</title>
+    <title>Dapper Query&lt;T&gt;: Dapper 2.1.89, buffered Query&lt;Row&gt; into a list. SQLite file, 20 columns, 10,000 rows: 36.3 ms per call, 14.79 MB allocated.</title>
     <rect class="hit" x="0" y="434" width="560" height="26"/>
-    <text class="name" x="186" y="451">Row class, inline Select</text>
-    <path class="select" d="M196,439 h232.08 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-232.08 z"/>
-    <text class="val" x="438.08" y="451">16.17 MB</text>
+    <text class="name" x="186" y="451">Dapper Query&lt;T&gt;</text>
+    <path class="dapper" d="M196,439 h283.9 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-283.9 z"/>
+    <text class="val" x="489.9" y="451">14.79 MB</text>
   </g>
   <line class="axis" x1="196" y1="330" x2="196" y2="460"/>
   <text class="muted small mid" x="342" y="492">megabytes allocated per call</text>
-  <text class="muted small" x="16" y="520">Build fbb13d7, 2026-11-14, one run per case. Numbers: real-providers.csv</text>
+  <text class="muted small" x="16" y="520">Build 6a770e8, 2026-11-23, one run per case. Numbers: real-providers.csv</text>
 </svg>

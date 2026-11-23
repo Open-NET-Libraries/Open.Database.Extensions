@@ -2,8 +2,8 @@
 
 | Approach | 1 column | 3 columns | 5 columns | 10 columns | 20 columns | Cost of one more cell (ns) |
 |---|---:|---:|---:|---:|---:|---:|
-| Map(selector), hand-written | 10.7 | 11.9 | 16.8 | 31.2 | 47.0 | 1.91 |
-| Map&lt;T&gt;() | 12.4 | 18.3 | 25.2 | 49.1 | 81.7 | 3.65 |
-| Row class, inline Select | 28.3 | 32.4 | 41.4 | 67.2 | 106.7 | 4.12 |
-| object[] rows (baseline) | 9.5 | 20.0 | 35.9 | 75.7 | 178.5 | 8.90 |
-| Dapper Query&lt;T&gt; | 18.5 | 31.1 | 44.6 | 96.2 | 202.7 | 9.70 |
+| Map(selector), hand-written | 11.8 | 13.2 | 16.9 | 32.0 | 49.4 | 1.98 |
+| Map&lt;T&gt;() | 13.1 | 18.7 | 25.8 | 50.6 | 83.2 | 3.69 |
+| Factory map, domain object | 23.7 | 29.1 | 37.0 | 60.5 | 101.9 | 4.12 |
+| object[] rows (baseline) | 10.5 | 22.4 | 35.0 | 91.2 | 177.9 | 8.81 |
+| Dapper Query&lt;T&gt; | 19.4 | 31.0 | 43.9 | 99.7 | 199.9 | 9.50 |
