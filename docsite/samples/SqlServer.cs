@@ -66,8 +66,7 @@ public static class SqlServer
 
 		#region sql_server_return
 		// ExecuteReturnAsync<T>() adds the return-value parameter itself,
-		// runs the procedure and returns its value:
-		// T must be the type the provider returns
+		// runs the procedure and returns its value converted to T
 		// (a SQL Server procedure returns an int, its RETURN code).
 		int returned = await connectionFactory
 			.StoredProcedure("[dbo].[TouchPosts]")

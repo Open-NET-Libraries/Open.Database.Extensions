@@ -66,7 +66,7 @@ static class TrimRoots
 
 It was measured with a trimmed, self-contained publish on .NET 10 (win-x64) and `Microsoft.Data.Sqlite` 10.0.14, whose reader type is `SqliteDataReader`. Other providers and .NET 11 were not run.
 
-With these roots the trimmer reports a few IL2111 warnings (three more than without them in the measured publish); they are expected and the publish works.
+With these roots the trimmer reports a few IL2111 warnings; they are expected and the publish works.
 
 ## The packages
 

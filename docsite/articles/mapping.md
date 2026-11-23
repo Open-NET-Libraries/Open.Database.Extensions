@@ -1,6 +1,6 @@
 # Mapping rows to objects
 
-`Map<T>()` reads rows into your classes. It is deferred: nothing runs until you call a terminal such as `ToArray()`, and rows are mapped as the reader streams.
+`Map<T>()` reads rows into your classes. It is deferred: nothing runs until you call a terminal such as `ToArrayAsync()`, and rows are mapped as the reader streams.
 
 [!code-csharp[](../samples/Mapping.cs#map_default)]
 
@@ -132,10 +132,10 @@ The rules:
 - **Which types.** A primitive, an enum, `string`, `decimal`, `DateTime`, `DateTimeOffset`, `TimeSpan`, `DateOnly`, `TimeOnly`, `Guid`, `byte[]` and a `Nullable<>` of those. Not `object`, `char[]`, a provider type such as `SqlInt32`, or a `Stream` (the reader is closed when the terminal returns): use `Map(selector)` for those.
 - **The first column, whatever its name.** The other columns are ignored, so select only the one you need.
 - **Converted like a property of that type.** When the column type matches, or is an integer that fits (a `long` into an `int` is range-checked; a `short` widens), the value is read with the typed getter and nothing is boxed. Otherwise it is converted: a `decimal` into an `int` rounds, text into a `Guid`, an enum from its name (ignoring case) or its number, a `DateTime` into a `DateTimeOffset`. A value that cannot be converted throws `ValueMappingException`. The reader is chosen once per result set, from the type the first row reports.
-- **NULL.** Follows [the NULL rules](#null-in-a-non-nullable-column): `Map<int>().Single()` over a NULL is `0`, and `Map<int?>()` gives `null`.
+- **NULL.** Follows [the NULL rules](#null-in-a-non-nullable-column): `Map<int>()` with `SingleAsync` over a NULL gives `0`, and `Map<int?>()` gives `null`.
 - **Read through.** As every `Map` terminal, they read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
 
-It differs from `ExecuteScalar<T>()`, which returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
+It differs from `ExecuteScalarAsync<T>()`, which returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
 
 Pass the token or nothing to the `Async` terminals: the token goes straight after the comparer, or first when there is no comparer (`ToHashSetAsync(ct)`, `ToHashSetAsync(comparer, ct)`).
 
@@ -227,9 +227,9 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 
 ## NULL in a non-nullable column
 
-A NULL never overwrites a member the C# type declares non-nullable. A value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default, and so does a reference-type property when nullable annotations are on: `string Name { get; set; } = "";` keeps `""`, and one with no initializer stays `null`. A constructor parameter of such a type gets its declared default value, else its default. `Nullable<T>` (`int?`), a reference declared nullable (`string?`, or `[AllowNull]` on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter (`T Value`) get `null`; nothing throws. If NULL means something, declare the member nullable (`int?`, `string?`): that is the only way to tell NULL from 0 or "".
+A NULL never overwrites a member the C# type declares non-nullable. A value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default, and so does a reference-type property when nullable annotations are on: `string Name { get; init; } = "";` keeps `""`, and one with no initializer stays `null`. A constructor parameter of such a type gets its declared default value, else its default. `Nullable<T>` (`int?`), a reference declared nullable (`string?`, or `[AllowNull]` on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter (`T Value`) get `null`; nothing throws. If NULL means something, declare the member nullable (`int?`, `string?`): that is the only way to tell NULL from 0 or "".
 
-The same holds for a single value (see [One value per row](#one-value-per-row)): `Map<int>().Single()` over a NULL is `0` and does not throw, while `Map<int?>()` and `Map<string>()` give `null`.
+The same holds for a single value (see [One value per row](#one-value-per-row)): `Map<int>()` with `SingleAsync` over a NULL gives `0` and does not throw, while `Map<int?>()` and `Map<string>()` give `null`.
 
 The rule reads the nullable annotations the compiler stores in the assembly, so it needs `<Nullable>enable</Nullable>` (or `#nullable enable`) in the code that declares the model.
 
@@ -264,7 +264,7 @@ Some columns are not the type the model wants: a number the model keeps as text,
 
 ## Terminals
 
-`ToArray`, `ToList`, `ToImmutableArray`, `ToDictionary`, `ToHashSet`, `First`, `FirstOrDefault`, `Single`, and `SingleOrDefault`, each with an `Async` twin. `First` and `Single` throw `InvalidOperationException` when the query returns no row (and `Single` when it returns more than one); the `OrDefault` forms return `null` for no rows. A row whose value is `NULL` is still a row. Prefer `ToArray` for results you only read: it allocates one exactly sized array, and an empty result is the shared empty array. Use `ToList` when you add to or remove from the result afterwards.
+`ToArrayAsync`, `ToListAsync`, `ToImmutableArrayAsync`, `ToDictionaryAsync`, `ToHashSetAsync`, `FirstAsync`, `FirstOrDefaultAsync`, `SingleAsync` and `SingleOrDefaultAsync`. `FirstAsync` and `SingleAsync` throw `InvalidOperationException` when the query returns no row (and `SingleAsync` when it returns more than one); the `OrDefault` forms return `null` for no rows. A row whose value is `NULL` is still a row. Prefer `ToArrayAsync` for results you only read: it allocates one exactly sized array, and an empty result is the shared empty array. Use `ToListAsync` when you add to or remove from the result afterwards.
 
 [!code-csharp[](../samples/Mapping.cs#map_first_single)]
 
@@ -276,25 +276,17 @@ An insert that returns its new id is one `SingleAsync`: no handler, and no check
 
 [!code-csharp[](../samples/Mapping.cs#map_dictionary_values)]
 
-For a result that nobody else can change, use `ToImmutableArrayAsync`: it wraps the exactly sized array the read produced, with no second copy on .NET 8 and later (the netstandard2.0 build copies it once), and an `ImmutableArray<T>` reads as fast as an array (`AsSpan()` included). There is no `ToImmutableDictionary` or `ToImmutableHashSet` terminal on purpose: those types are trees, slower to build and to read, and the library would save you nothing over building one yourself. For a lookup that cannot change, build the dictionary and freeze it; a frozen dictionary is read faster than an immutable one:
-
-```cs
-FrozenDictionary<int, Post> byId = (await query
-	.ToDictionaryAsync(
-		static post => post.Id,
-		cancellationToken: cancellationToken))
-	.ToFrozenDictionary();
-```
+For a result that nobody else can change, use `ToImmutableArrayAsync`: it wraps the exactly sized array the read produced, with no second copy on .NET 8 and later (the netstandard2.0 build copies it once). There is no `ToImmutableDictionary` or `ToImmutableHashSet` terminal. For a lookup that cannot change, call `ToFrozenDictionary()` on the result of `ToDictionaryAsync`.
 
 `Skip` and `Take` are part of the query: skipped rows are advanced without being mapped, and reading stops once the take is satisfied. Call `Skip` before `Take`, as the types enforce:
 
 [!code-csharp[](../samples/Mapping.cs#map_paging)]
 
-Buffered terminals are the way to read rows. Only to stop early, `Stream(stallTimeout)` hands rows to an `await foreach` while the reader and the connection stay open; read its remarks before you use it. To hand rows to another consumer, use [`ToBufferedAsyncStream`](channels-and-dataflow.md); for the raw reader, `ExecuteReader(reader => ...)`:
+Buffered terminals are the way to read rows. **`Stream(stallTimeout, cancellationToken)` is only for stopping early: it holds the reader and the connection open while your loop works on each row.** Use `ToArrayAsync` unless you must stop early; to hand rows to another consumer, use [`ToBufferedAsyncStream`](channels-and-dataflow.md); for the raw reader, use `ExecuteReaderAsync`:
 
 [!code-csharp[](../samples/Mapping.cs#map_stream)]
 
-Every terminal has an `Async` twin that takes a `CancellationToken`:
+Every async terminal takes a `CancellationToken`:
 
 [!code-csharp[](../samples/Mapping.cs#map_dictionary_async)]
 
@@ -308,11 +300,11 @@ On a reader, the reader is yours. A terminal never opens, closes or disposes it,
 
 [!code-csharp[](../samples/Mapping.cs#map_reader_view)]
 
-On a command, the terminal opens the connection only if it is closed, and closes it again (`Close`, not `Dispose`) only if it opened it, as an expressive command does. Like a `Map` on an expressive command, it reads through the later result sets, so a failure in a later statement is thrown, and `command.SingleResult().Map<T>()` turns that off. The command is yours and is never disposed. The asynchronous terminals open and execute asynchronously when the command is a `DbCommand`.
+On a command, the terminal opens the connection only if it is closed, and closes it again (`Close`, not `Dispose`) only if it opened it, as an expressive command does. Like a `Map` on an expressive command, it reads through the later result sets, so a failure in a later statement is thrown, and `command.SingleResult().Map<T>()` turns that off. The command is yours: the terminal never disposes it. The asynchronous terminals open and execute asynchronously when the command is a `DbCommand`.
 
 [!code-csharp[](../samples/Mapping.cs#map_command_view)]
 
-A `DataTable` you already have works too: `table.Map<T>()` returns a `MappedTable<T>`, with the same overloads and terminals. Each terminal reads the table through its own `DataTableReader` and disposes it; the table is not changed or cleared, so the view can be read more than once, and there is no connection to open. It is a shortcut for `table.CreateDataReader().Map<T>()` where the view owns the readers it creates.
+A `DataTable` you already have works too: `table.Map<T>()` returns a `MappedTable<T>`, with the same overloads and terminals. Each terminal reads the table through its own `DataTableReader` and disposes it; the table is not changed or cleared, so the view can be read more than once, and there is no connection to open.
 
 [!code-csharp[](../samples/Mapping.cs#map_table_view)]
 
@@ -336,9 +328,9 @@ When there is no model class, ask for the rows as they are. `AsObjectArrays()` g
 
 [!code-csharp[](../samples/Migration.cs#migration_mappeddictionaries_after)]
 
-Both are mapped views like `Map<T>()`: the same terminals, `Skip` and `Take`, `SingleResult()`, `AsyncReads()` and `UsePool(pool, clearOnReturn)`, and, on a command or a query, the same read through the later result sets. They exist on an expressive command, an `IDbCommand`, a reader you own, a `DataTable` and a `DbQuery` definition. Every column is read once, in order, so a provider can stream the row. The buffers that hold the rows (the chunk arrays) are pooled and are cleared when they go back, whatever `clearOnReturn` says, because their slots hold references; each row array is yours.
+Both are mapped views like `Map<T>()`: the same terminals, `Skip` and `Take`, `SingleResult()`, `AsyncReads()` and `UsePool(pool, clearOnReturn)`, and, on a command or a query, the same read through the later result sets. They exist on an expressive command, an `IDbCommand`, a reader you own, a `DataTable` and a `DbQuery` definition. Every column is read once, in order, so a provider can stream the row. The buffers that hold the rows (the chunk arrays) are pooled and are cleared when they go back, whatever `clearOnReturn` says; each row array is yours.
 
-A `DictionaryRow` is a `struct` over the row's values and one list of column names that every row of the result set shares, so a million rows build the names once and no dictionary each. Its dictionary side covers the distinct names (the first column with a name wins; a name is found exactly, else ignoring case; a missing name throws `KeyNotFoundException`); the ordinal indexer and `FieldCount` reach every column. `ToDictionary()` makes a copy you own. Handing the row to an `IReadOnlyDictionary<string, object?>` boxes it. A result with no rows has no names. It is not a model: `Map<DictionaryRow>()` throws and points here. To keep only some columns, select just those in the query; the column names of a result with no rows come from the reader you own (`GetSchemaTable`, or `GetName` for each of `FieldCount`).
+A `DictionaryRow` is a `struct` over the row's values and one list of column names that every row of the result set shares. Its dictionary side covers the distinct names (the first column with a name wins; a name is found exactly, else ignoring case; a missing name throws `KeyNotFoundException`); the ordinal indexer and `FieldCount` reach every column. `ToDictionary()` makes a copy you own. Handing the row to an `IReadOnlyDictionary<string, object?>` boxes it. A result with no rows has no names. It is not a model: `Map<DictionaryRow>()` throws and points here. To keep only some columns, select just those in the query; the column names of a result with no rows come from the reader you own (`GetSchemaTable`, or `GetName` for each of `FieldCount`).
 
 ## Results, and a failure after the first one
 
@@ -348,7 +340,7 @@ A *result* here is one whole result set: what `NextResult` moves between. It is 
 
 Two cases do not read through, so a later failure goes unseen: `.SingleResult()` (before `Map`, or after it), and an enumeration you stopped early (a `break` out of the rows, `First()` on them) or that ended in an exception of yours (the mapping, your selector, `Single` or `SingleOrDefault` finding two rows, your handler). Your own exception is never replaced by a later one. `First`, `FirstOrDefault` and `Take` are not stopping early: they return their rows and still read through, and the provider discards the first set's unread rows on the way.
 
-`.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` still works (and so does it on the result of `Skip` and `Take`): the two forms are the same. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `First` and `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
+`.SingleResult()` goes before `Map`, on an expressive command and on a raw `IDbCommand` or `DbCommand`: `command.SingleResult().Map<T>()`. It reads as behavior first, then shape. `command.Map<T>().SingleResult()` is the same, on the result of `Skip` and `Take` too. It asserts nothing: it does not check that there is only one result set. It stops after the first, so a later failure is not seen, and the reader is asked for `SingleResult` (`SingleRow` too for `First` and `FirstOrDefault` when nothing is skipped), which lets the provider stop early:
 
 ```csharp
 var ids = await command
@@ -364,4 +356,4 @@ A reader and a `DataTable` have no `.SingleResult()` before `Map`: their views n
 
 ## How it works
 
-The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation. The reader is opened with `SequentialAccess`, and with `SingleResult` (plus `SingleRow` for `First` and `FirstOrDefault` when nothing is skipped) only after `.SingleResult()`; without it the reader is asked for every result set, to read through them. `Map(selector)` does not use `SequentialAccess`, because your function may read columns in any order.
+The mapping from a result-set shape (column names and column types) to `T` is compiled once and cached, so a repeated query does no reflection and no compilation.

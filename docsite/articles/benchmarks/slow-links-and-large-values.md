@@ -2,7 +2,7 @@
 
 **The question:** the [sync against async](sync-vs-async.md) page uses a model. What happens on a real SQL Server over a slow link, and with one very large value?
 
-All the numbers here are from a hand-run probe on SQL Server in a container, behind a simulated link (5 ms delay, 100 Mbit). Each case is one launch: one warm-up, then the mean of 3 measured operations (one for the large value). They show the size of the effect on that setup and are not a promise about yours.
+All the numbers here are from a hand-run probe on SQL Server in a container, behind a simulated link (5 ms delay, 100 Mbit). Each case is one launch: one warm-up, then the mean of 3 measured operations (one for the large value).
 
 ## In short
 
@@ -30,7 +30,7 @@ Memory per operation for the same 10,000 rows of 20 columns, for the sync read a
 
 [!include[](../../includes/perf/link-memory.md)]
 
-On `Map(Func)` with `AsyncReads()`, about 7.9% of the `ReadAsync` calls (on average 789 of 10,001 per operation) did not complete at once; on `Map<T>()`, 4 of 10,001. We think the reason is how SqlClient behaves in `Default` mode, where `ReadAsync` reads the whole row before it returns. That is an inference from the provider's documentation, not something these runs isolated.
+On `Map(Func)` with `AsyncReads()`, about 7.9% of the `ReadAsync` calls (on average 789 of 10,001 per operation) did not complete at once; on `Map<T>()`, 4 of 10,001.
 
 ## One 100 MB value
 
@@ -40,17 +40,17 @@ How long one row holding one 100 MB value takes. One bar is far longer than the 
 
 [!include[](../../includes/perf/large-value.md)]
 
-**A mitigation, measured once, on raw SqlClient.** With both SqlClient switches off, `Switch.Microsoft.Data.SqlClient.UseCompatibilityAsyncBehaviour` and `Switch.Microsoft.Data.SqlClient.UseCompatibilityProcessSni` set to false, the same raw `Default` and `ReadAsync` read took 8.87 s, at a peak working set 129.6 MB above the sync read's (383.7 against 254.1 MB). Per the SqlClient documentation the switches are available from SqlClient 7.0 and later.
+**A mitigation, measured once, on raw SqlClient.** With both SqlClient switches off, `Switch.Microsoft.Data.SqlClient.UseCompatibilityAsyncBehaviour` and `Switch.Microsoft.Data.SqlClient.UseCompatibilityProcessSni` set to false, the same raw `Default` and `ReadAsync` read took 8.87 s, at a peak working set 129.6 MB above the sync read's (383.7 against 254.1 MB). The switches exist from SqlClient 7.0.
 
 ## Why, and what to take from it
 
-The default, a synchronous `Read()`, allocates about 42% less on `Map(Func)` and takes the same time over a real link; in the synthetic runs it also took less time with nothing waiting (see [Sync reads against async reads](sync-vs-async.md)). For large values it is the safe choice. The maintainer's design reason for it is a separate matter and is not a measurement; it is on [Row reads: sync by default, AsyncReads() to opt in](../async-reads.md).
+The default, a synchronous `Read()`, allocates about 42% less on `Map(Func)` and takes the same time over a real link; in the synthetic runs it also took less time with nothing waiting (see [Sync reads against async reads](sync-vs-async.md)). For large values it is the safe choice. See [Row reads: sync by default, AsyncReads() to opt in](../async-reads.md).
 
 ## How this was measured
 
 - **Question:** does the read path change time, memory or behavior on a real SQL Server over a slow link, and with a very large value?
 - **Setup:** SQL Server 2022 in a Docker container (4 CPUs) on the same PC, reached over TCP, behind a simulated link with a 5 ms delay and a 100 Mbit rate (round trip median about 5.6 ms). The time and memory runs read 10,000 rows (S2: 20 typed columns; S3: an 8,000-byte `Body` column per row). The large-value run reads one `varbinary(max)` value of 100 MB. The probes also checked that every path reads the same values on the first 5 rows.
 - **Settings:** not BenchmarkDotNet. These are the benchmark project's own probe programs: one warm-up operation, then 3 measured operations per cell (one for the large value), reported as the mean. The probe process ran at below-normal priority on 4 processors. The memory is the whole-process allocation per operation.
-- **Build, date, machine:** build not recorded (the opt-in was named `EnableAsyncRead` in these runs); 2026-11-14 (time) and 2026-11-15 (memory and large value); AMD Ryzen 9 7900, .NET 11.0.0, Windows 10.
+- **Build, date, machine:** build not recorded; 2026-11-14 (time) and 2026-11-15 (memory and large value); AMD Ryzen 9 7900, .NET 11.0.0, Windows 10.
 - **Data:** [link-time.csv](../../perf-data/link-time.csv) ([source](../../perf-data/link-time.source.txt)), [link-memory.csv](../../perf-data/link-memory.csv) ([source](../../perf-data/link-memory.source.txt)), [large-value.csv](../../perf-data/large-value.csv) ([source](../../perf-data/large-value.source.txt)). The numbers were copied from the console output of the runs, which is not in the repository.
 - **Reproduce:** the probes are the `--in6` (`In6Probe.cs`) and `--s4` (`S4Probe.cs`) modes of the benchmark project. They need a SQL Server and a way to add latency, so they are not a one-command run.

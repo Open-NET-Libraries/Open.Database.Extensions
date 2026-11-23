@@ -1,10 +1,8 @@
 # The foundation
 
-Most of the library is a provider-agnostic set of extension methods on the standard ADO.NET types (`IDbConnection`, `DbConnection`, `IDbCommand`, `IDataReader`, `IDbTransaction`). They apply common best practices so that everyday database work is short to write and safe by default. Some helpers are deliberately thin and unopinionated; some are deliberately opinionated, for example a command built from a factory always disposes the connection it created.
+Most of the library is a provider-agnostic set of extension methods on the standard ADO.NET types (`IDbConnection`, `DbConnection`, `IDbCommand`, `IDataReader`, `IDbTransaction`).
 
 ![The layers of the library.](../images/architecture.svg)
-
-The expressive commands and the row mapping are built on this layer.
 
 ## Connection factories
 
@@ -35,8 +33,7 @@ A command built from a single connection refuses concurrent terminals: a second 
 Several helpers exist to keep the time a connection is open short:
 
 - `EnsureOpen()` and `EnsureOpenAsync()` open a closed (or broken) connection and return its prior state, so you can restore it.
-- Rows are read with `Map(...)` and a terminal: [Mapping rows to objects](mapping.md).
-- `Map<T>()` streams rows straight out of the reader while the connection is open; the connection is released as soon as the terminal returns.
+- Rows are read with `Map<T>()` and a terminal ([Mapping rows to objects](mapping.md)); a buffered terminal such as `ToListAsync` releases the connection as soon as it returns.
 
 ## Transactions
 
@@ -44,7 +41,7 @@ Several helpers exist to keep the time a connection is open short:
 
 [!code-csharp[](../samples/Transactions.cs#transaction)]
 
-The async forms (`ExecuteTransactionAsync`, `ExecuteTransactionConditionalAsync`) take the token too. The token is checked once more after your action returns: a token cancelled by then throws `OperationCanceledException` and nothing commits. The commit itself is sent without the token, so cancelling while it runs does not interrupt it (an interrupted commit would leave the outcome unknown).
+The async forms (`ExecuteTransactionAsync`, `ExecuteTransactionConditionalAsync`) take the token too. The token is checked once more after your action returns: a token cancelled by then throws `OperationCanceledException` and nothing commits. The commit itself is sent without the token, so cancelling while it runs does not interrupt it.
 
 [!code-csharp[](../samples/Transactions.cs#transaction_async)]
 

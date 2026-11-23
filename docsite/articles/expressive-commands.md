@@ -71,11 +71,11 @@ List<Post> posts = await PostsByAuthorTyped.Using(db)
 
 ### Map the definition too
 
-`Map<T>()` also works on the definition, before any connection exists. The result, a `MappedDbQuery<T>`, is immutable like the `DbQuery` under it, so it too lives in a `static readonly` field, and the map, with the reader compiled from it, lives with it: there is no separate `RowMap<T>` field to declare. (`DbQuery<TParams>` has the same `Map`, giving a `MappedDbQuery<TParams, T>`.) A class that holds its queries as definitions, next to the same class building each command on every call:
-
-[!code-csharp[](../samples/MapFirst.cs#mapfirst_before)]
+`Map<T>()` also works on the definition, before any connection exists. The result, a `MappedDbQuery<T>`, is immutable like the `DbQuery` under it, so it too lives in a `static readonly` field, and the map, with the reader compiled from it, lives with it: there is no separate `RowMap<T>` field to declare. (`DbQuery<TParams>` has the same `Map`, giving a `MappedDbQuery<TParams, T>`.) A class that holds its queries as definitions, then the same class building each command on every call:
 
 [!code-csharp[](../samples/MapFirst.cs#mapfirst_after)]
+
+[!code-csharp[](../samples/MapFirst.cs#mapfirst_before)]
 
 `Using(source)` takes the same four sources and returns the ordinary `MappedQuery<T>` view, with every terminal, `Skip` and `Take`. The parameters can come after `Using`, as above, or before it, and the command is the same either way. The values before the source are held without a connection, so the held call has no terminal: it cannot be read until `Using` gives it a source.
 
@@ -89,7 +89,7 @@ A parameter added after `Using` is added to a query that `Using` made from a def
 
 Everything after `Using` is what a command does: `Map<T>()` is the same extension, every terminal and `SingleResult()` apply, the connection is opened late and closed again only if the call opened it, a factory's connection is disposed and a pool's is given back. `SetTimeout(seconds)` on a definition returns a new definition. A `DbQuery` takes the same sources as `Using` does for a command, but only the typed ones: a connection (`DbConnection`), a transaction, an `IDbConnectionPool<TConnection>` or an `IDbConnectionFactory<TConnection>`; a bare `Func<TConnection>` is not one (wrap it in `new DbConnectionFactory<TConnection>(func)`).
 
-A call is cheaper than the command builder and no dearer than ADO.NET written by hand, apart from one small node (at most 48 bytes) at a single value: it is a few small immutable objects, and the typed form is one. Names are resolved as a command resolves them (see [Name a parameter from its argument](#name-a-parameter-from-its-argument)): `AddParam(authorId)` finds `@author_id`, and the typed form matches each member of the values type the same way and, when the names are known, does not send a member the query does not declare. A text definition finds its `@name` markers once, when it is made; a procedure's names are remembered for five minutes per connection source (the factory, the pool or the connection, also for a transaction) and per server and database, and read again only when they do not fit.
+A call allocates less than the command builder and within 7 bytes of ADO.NET written by hand (within 23 bytes at a single value). Names are resolved as a command resolves them (see [Name a parameter from its argument](#name-a-parameter-from-its-argument)): `AddParam(authorId)` finds `@author_id`, and the typed form matches each member of the values type the same way and, when the names are known, does not send a member the query does not declare. A text definition finds its `@name` markers once, when it is made; a procedure's names are remembered for five minutes per connection source (the factory, the pool or the connection, also for a transaction) and per server and database, and read again only when they do not fit.
 
 ## Parameters
 
@@ -156,48 +156,48 @@ A derived name stays as written when no real names were read: a text command, an
 
 ### A generated id
 
-To get the id an insert generated, select it in the same command and read it with `ExecuteScalar<T>()` (the statement that returns the id depends on your database; SQLite is shown). `ExecuteReturn<T>()` is only for a procedure's `RETURN` code.
+To get the id an insert generated, select it in the same command and read it with `ExecuteScalarAsync<T>()` (the statement that returns the id depends on your database; SQLite is shown). `ExecuteReturnAsync<T>()` is only for a procedure's `RETURN` code.
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#generated_id)]
 
 ### Return values and output parameters
 
-`ExecuteReturn<T>()` runs the command and returns the value of its return-value parameter, which it adds itself (you do not call `AddReturnParam` for it). As with `ExecuteScalar<T>()`, `T` must be the exact type the provider returns, and a NULL gives `default(T)`. A SQL Server stored procedure returns an `int`, its `RETURN` code:
+`ExecuteReturnAsync<T>()` runs the command and returns the value of its return-value parameter, which it adds itself (you do not call `AddReturnParam` for it). As with `ExecuteScalarAsync<T>()`, the value is converted to `T` the way `Map<T>()` converts a column, and a NULL gives `default(T)`. A SQL Server stored procedure returns an `int`, its `RETURN` code:
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_return)]
 
-Output values cannot be read back yet. You can send an output parameter (`AddParam(name, ParameterDirection.Output)`, with a type and size on SQL Server) but not read what the procedure put in it. A procedure that hands its results back through output parameters needs plain ADO.NET for now; a result set and the return value are readable.
+Output values cannot be read back. You can send an output parameter (`AddParam(name, ParameterDirection.Output)`, with a type and size on SQL Server) but not read what the procedure put in it. A procedure that hands its results back through output parameters needs plain ADO.NET; a result set and the return value are readable.
 
 ## Terminals
 
 | Terminal | Returns |
 |---|---|
-| `ExecuteNonQuery()` | Rows affected |
-| `ExecuteScalar<T>()`, `ExecuteScalar(value => ...)`, `ExecuteScalar()` | The first column of the first row: [which form](#which-scalar-form) |
-| `ExecuteReturn<T>()` | The value of the return-value parameter: [see above](#return-values-and-output-parameters) |
-| `Execute(command => ...)` | Whatever your function returns, given the raw command with its text, parameters and timeout applied: use it for a call the other terminals do not wrap |
-| `ExecuteReader(reader => ...)` | Whatever your function returns, given the live reader |
+| `ExecuteNonQueryAsync(token)` | Rows affected |
+| `ExecuteScalarAsync<T>(token)`, `ExecuteScalarAsync(value => ..., token)`, `ExecuteScalarAsync(token)` | The first column of the first row: [which form](#which-scalar-form) |
+| `ExecuteReturnAsync<T>(token)` | The value of the return-value parameter: [see above](#return-values-and-output-parameters) |
+| `ExecuteAsync(command => ...)` | Whatever your function returns, given the raw command with its text, parameters and timeout applied: use it for a call the other terminals do not wrap |
+| `ExecuteReaderAsync(reader => ..., token)` | Whatever your function returns, given the live reader |
 | `Map<T>()` then a terminal | Mapped objects, or one value per row such as `int` read from the first column: see [Mapping rows to objects](mapping.md) and [One value per row](mapping.md#one-value-per-row) |
 | `Map<T>()` then `ToChannelReader()` or `AsSourceBlock()` | See [Channels and Dataflow](channels-and-dataflow.md) |
 
-The blocking terminals (`ExecuteNonQuery()`, `ExecuteScalar`, `ExecuteReturn`, `Execute`, `ExecuteReader` and the `Map<T>()` terminals such as `ToList()`) are in the `Open.Database.Extensions.Synchronous` namespace: add `using Open.Database.Extensions.Synchronous;` to call them. The `Async` terminals need no extra `using`.
+The blocking forms (the same names without `Async`) are in the `Open.Database.Extensions.Synchronous` namespace: add `using Open.Database.Extensions.Synchronous;` to call them. The `Async` terminals need no extra `using`.
 
 `Map<T>()` reads one column as easily as a model; the token goes last:
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#single_value_async)]
 
-`ExpressiveDbCommand` and `ExpressiveSqlCommand` add `Async` twins (for example `ExecuteNonQueryAsync()`) that honor the command's cancellation token (`UseCancellationToken(token)`). `SetTimeout(seconds)` sets the command timeout. The default is 60 seconds. On SQL Server the lookup of a stored procedure's parameter names uses the same timeout. A failed lookup throws the provider's own exception (a `SqlException` stays a `SqlException`, so a retry policy still sees it), with the procedure's name in `Exception.Data["Procedure"]`.
+The `Async` terminals honor the command's cancellation token (`UseCancellationToken(token)`); `ExecuteNonQueryAsync` and `ExecuteScalarAsync` are on `ExpressiveDbCommand` and `ExpressiveSqlCommand`. `SetTimeout(seconds)` sets the command timeout. The default is 60 seconds. On SQL Server the lookup of a stored procedure's parameter names uses the same timeout. A failed lookup throws the provider's own exception (a `SqlException` stays a `SqlException`, so a retry policy still sees it), with the procedure's name in `Exception.Data["Procedure"]`.
 
 `UseCancellationToken(token)` sets a token for the command. A token passed to an async terminal such as `ToListAsync(token)` is combined with it, and either one cancels the call. The `Async` terminals of the command itself (`ExecuteNonQueryAsync`, `ExecuteScalarAsync`, `ExecuteReaderAsync`, `ExecuteReturnAsync`) take a `CancellationToken` too, and it is combined with this one. The call then stops with `OperationCanceledException`, except that a provider may report a cancellation that arrives while the command is executing as its own exception (SQL Server's `SqlException`, "Operation cancelled by user"); the library does not translate it. The token covers opening the connection, looking up stored-procedure parameter names, executing the command and reading the rows.
 
 ### Which scalar form
 
-- **`ExecuteScalar<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). A `NULL` or no rows gives `default(T)`.
-- **`ExecuteScalar(value => ...)`** to convert in your own way. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
-- **`ExecuteScalar()`** for the raw value: `DBNull.Value` for a `NULL`, `null` for no rows.
-- **`Map<T>()` then `ToListAsync(token)`** (or `ToList()`, `ToArrayAsync(token)`, ...) for many rows of one column: it converts like a property, as `ExecuteScalar<T>()` does. See [One value per row](mapping.md#one-value-per-row).
+- **`ExecuteScalarAsync<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). A `NULL` or no rows gives `default(T)`.
+- **`ExecuteScalarAsync(value => ...)`** to convert in your own way. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
+- **`ExecuteScalarAsync()`** for the raw value: `DBNull.Value` for a `NULL`, `null` for no rows.
+- **`Map<T>()` then `ToListAsync(token)`** (or `ToArrayAsync(token)`, ...) for many rows of one column: it converts like a property, as `ExecuteScalarAsync<T>()` does. See [One value per row](mapping.md#one-value-per-row).
 
-`ExecuteScalar<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. To tell a `NULL` from 0, ask for the nullable type: `int?` or `long?`.
+`ExecuteScalarAsync<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. To tell a `NULL` from 0, ask for the nullable type: `int?` or `long?`.
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#scalar_read_as_int)]
 

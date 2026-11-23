@@ -1,14 +1,14 @@
 # Async buffers and streams
 
-`ToAsyncBuffer`, `ToAsyncBufferStream` and `ToBufferedAsyncStream` read a query as fast as the provider allows, into pooled chunks, on their own background producer. The connection is released when the last row is read. What happens to the rows after that, and how slowly, is the consumer's business.
+`ToAsyncBuffer`, `ToAsyncBufferStream` and `ToBufferedAsyncStream` read a query at the provider's pace, into pooled chunks, on their own background producer. The connection is released when the last row is read. What happens to the rows after that, and how slowly, is the consumer's business.
 
-They are on the typed views: `Map<T>()` of a command, and the same view after `Skip` and `Take`. Every example on this page is async, and every one is compiled and checked in the samples project.
+They are on the typed views: `Map<T>()` of a command, and the same view after `Skip` and `Take`. Every example on this page is async. The examples are compiled in the samples project, except the two marked "Not compiled by the docs build".
 
 ## Why: the connection is the scarce thing
 
 The keystone is minimum connection-open time. A connection held while your code serializes a response, calls a web service or writes a file is a connection no one else can use. The producer reads the query into pooled chunks without ever waiting for the consumer, closes the connection, and the consumer works at its own pace afterwards.
 
-The cost is memory, and it is better to say so plainly. The rows are held, not the connection.
+The cost is memory. The rows are held, not the connection.
 
 - An unbounded stream holds a whole result in memory when its consumer is slow, because the producer never waits.
 - A buffer holds everything until it is disposed.
@@ -53,24 +53,24 @@ The connection was released when the read ended, however long the serialization 
 
 - It is an `IReadOnlyList<T>`, and an explicit read-only `ICollection<T>` (`Add`, `Clear` and `Remove` throw `NotSupportedException`).
 - `Count` and the indexer are O(1).
-- `foreach` binds to a struct enumerator, so walking the rows allocates nothing.
+- `foreach` binds to a struct enumerator.
 - LINQ's `ToArray` and `ToList` and the `List<T>` constructor see the count, and copy it one array at a time.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_items_view)]
 
-A read that finds no rows completes `Items` with `PooledArray<T>.Empty`, one shared view of no rows per row type. Nothing is rented for it, it needs no disposing, and its members never throw `ObjectDisposedException`, even after the buffer that gave it is disposed.
+A read that finds no rows completes `Items` with `PooledArray<T>.Empty`, which needs no disposing and never throws `ObjectDisposedException`.
 
 To test code that returns a buffer, without a database, build one from rows you already have: `PooledBuffer<Post>.From(rows)` copies them into one array rented from the shared pool (`From(rows, pool, clearOnReturn)` takes a pool you choose), nothing runs in the background, `Items` is complete at once, and disposing it sends the array back to the pool (through the cleanup queue for 128 KB or more of rows that must be cleared). No rows give `PooledArray<T>.Empty`.
 
 `Items` faults with the read's exception. It is cancelled when the read ended with an `OperationCanceledException` of any origin, or when the buffer was disposed first. Reading `Items` after the buffer is disposed throws `ObjectDisposedException`; a task you already hold that is still pending is cancelled. See [Cancellation and disposal](#cancellation-and-disposal).
 
-The view is valid until it is disposed. Disposing it disposes the buffer it came from, and disposing the buffer returns the arrays to the pool (a large clear goes to the cleanup queue, and a full queue clears them where they are released: see [Pooled memory](#pooled-memory)). After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included (the view of a read that found no rows, `PooledArray<T>.Empty`, is the one exception). Disposing again does nothing. Disposing the buffer while the read is still running cancels the query.
+The view is valid until it is disposed. Disposing it disposes the buffer it came from and returns the arrays to the pool. After that every member of the view except `Dispose` throws `ObjectDisposedException`, an enumeration in progress included. Disposing again does nothing. Disposing the buffer while the read is still running cancels the query. See [Pooled memory](#pooled-memory) for when the arrays are cleared.
 
 ## Lifetime and ownership
 
-A buffer is a loan of pooled arrays, and a loan has rules. These are the risks the design accepts, said plainly, so that you can accept them with your eyes open.
+A buffer is a lease of pooled arrays, and a lease has rules:
 
-- **One owner disposes.** Whoever ends the use of the rows disposes the buffer, once. The `PooledArray<T>` from `Items` is the same loan, so disposing the view disposes the buffer. Do not hand the view to a second owner that also disposes it, and do not dispose while something else still reads it.
+- **One owner disposes.** Whoever ends the use of the rows disposes the buffer, once. The `PooledArray<T>` from `Items` is the same lease, so disposing the view disposes the buffer. Do not hand the view to a second owner that also disposes it, and do not dispose while something else still reads it.
 - **A lazy query runs when it is enumerated.** `Where`, `Select` and the rest of LINQ run nothing when you call them. If the query is enumerated after the buffer is disposed, it reads arrays that are back in the pool, and the view throws `ObjectDisposedException`. Finish the query (`ToList()`, `ToArray()`) before the buffer goes.
 - **Copy out to keep the rows longer.** `ToArray()` or `ToList()` on the view copies the rows. The copy belongs to you and outlives the buffer.
 - **One thread at a time.** Do not use the view from another thread while something may dispose it. The view checks that it is alive before each read, but a check is not a lock: a dispose on another thread can land just after it, with the arrays on their way back to the pool.
@@ -98,20 +98,19 @@ The pattern is to register the buffer with the response, and then return the row
 
 [!code-csharp[](../samples/AsyncBuffersController.cs#buffers_aspnet_controller)]
 
-What was observed, on ASP.NET Core 11.0.0 against SQLite, with an action that awaited `Items`:
+What was observed on ASP.NET Core 11.0.0 against SQLite:
 
-- The response is `200` with a JSON array of the rows, equal to the array the same query gives with `ToListAsync`. The action returns `Items` without awaiting it, so it declares `Task<PooledArray<Post>>`: a `Task<T>` is not covariant. An `async` action that returns `await buffer.Items` can declare `IReadOnlyList<Post>` instead, and the JSON is the same.
+- The response is `200` with a JSON array of the rows, equal to the array the same query gives with `ToListAsync`. The action returns `Items` without awaiting it, so it declares `Task<PooledArray<Post>>`. An `async` action that returns `await buffer.Items` can declare `IReadOnlyList<Post>` instead; the JSON is the same.
 - Every array went back to the pool once the request was over.
 - `HttpResponse.RegisterForDispose` and `HttpResponse.RegisterForDisposeAsync` both exist. A `PooledBuffer<T>` is both `IDisposable` and `IAsyncDisposable`, and the framework disposed it with `DisposeAsync` whichever of the two was used, so `RegisterForDispose` is enough.
-- Register the buffer before you return `Items`. When the client aborted while the read ran, Kestrel still disposed the buffer and the arrays went back. When the action threw, Kestrel disposed an object registered the same way (a spy that was both `IDisposable` and `IAsyncDisposable`). A client abort cancels `HttpContext.RequestAborted`, which cancels the query: on a 1,000,000-row query aborted after 30 ms the read stopped early, having rented 12 arrays (at most 65,520 rows, worked out from the chunk sizes, not measured) where a full read rents 16.
+- Register the buffer before you return `Items`. A client abort cancels `HttpContext.RequestAborted`, which cancels the query. On Kestrel the buffer was still disposed after an abort, and an object registered the same way was disposed when the action threw.
 
-The form above, which returns the task, is checked on the test server: it writes the same JSON as `ToListAsync`, and the controller of [A controller with no service layer](no-service-layer.md#what-do-you-test-now), written the same way, gives every array back. It has not been run on Kestrel with an abort or a throw.
 > [!NOTE]
-> TestServer did not dispose what the request had registered when the action threw or the client aborted before the response started. Kestrel did. If a test of your own controller counts the arrays that come back, it sees them only on a successful request, or on a real server.
+> The form above, which returns the task, was checked on TestServer; the Kestrel observations were made with an action that awaited `Items`. TestServer did not dispose what the request had registered when the action threw or the client aborted before the response started; Kestrel did. A test of your own controller that counts the arrays that come back sees them only on a successful request, or on a real server.
 
 ### The trap: dispose before the framework serializes
 
-The tempting version disposes the buffer in the action, the way the earlier controller does:
+The tempting version disposes the buffer in the action, the way the controller above does:
 
 ```csharp
 // Not compiled by the docs build. Do not do this.
@@ -147,10 +146,10 @@ public IAsyncEnumerable<Post> StreamAsync()
 There is nothing to register: the framework enumerates the stream and disposes the enumerator, which returns every array still queued. What was observed:
 
 - System.Text.Json wrote it as a JSON array, equal to the list the same query gives, with status `200`.
-- The response was streamed. With the same stream wrapped in an `async IAsyncEnumerable` method, it had already started when the 4,000th of 5,000 rows was reached, so nothing waited for the whole result.
-- Every array went back to the pool, including when the client aborted in the middle of the body or before reading any of it. An abort stopped the query early: it had rented 9 or 13 arrays (at most about 8,000 or 24,000 rows, worked out from the chunk sizes, not measured) where a full 1,000,000-row read rents 252.
+- The response was streamed: it started before the last row was read.
+- Every array went back to the pool, including when the client aborted in the middle of the body or before reading any of it. An abort stopped the query early.
 
-A stream still reads ahead without waiting for the client, as [described above](#why-the-connection-is-the-scarce-thing). The read does not wait for a slow client: it is not held up by one, and the rows the client has not taken yet wait in memory. That follows from the read-ahead above; it was not measured with a slow client.
+A stream still reads ahead without waiting for the client, as [described above](#why-the-connection-is-the-scarce-thing), where a slow consumer is measured; a slow HTTP client was not measured. The rows it has not taken yet wait in memory.
 
 ## The streams
 
@@ -207,7 +206,8 @@ The rules of a pool of your own:
 - **It decides how long its arrays are.** ODX takes what the pool gives, uses the whole array, writes only the rows it has, and clears only those, not the rest. A pool that gives a shorter array than was asked for makes the read throw `InvalidOperationException`; that array, and every array before it, is given back.
 - **It may round up.** A pool that returns a longer array than asked for is fine, as `ArrayPool<T>.Shared` does; the extra room is used, and only the rows are copied.
 - **Returning an array must not throw.** If it does, every other array is still returned, and the first exception is thrown after the last. In the cleanup queue (below) a return that throws is swallowed and costs only that array.
-This pool counts what it hands out and what comes back, and the samples use it to check the claims on this page:
+
+The samples use a pool of their own to check the claims on this page:
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_counting_pool)]
 
@@ -217,9 +217,9 @@ This pool counts what it hands out and what comes back, and the samples use it t
 
 - What is cleared is the rows that were written, never the rest of a longer array. When every slot of an array was written, the pool is asked to clear it (`Return(array, clearArray: true)`); otherwise only the written slots are cleared and the array goes back without the flag.
 - For a buffer, the clear takes effect when the buffer, or its `PooledArray<T>` view, is disposed. For a stream, as each chunk goes back: at the next step, or when the enumeration ends or is disposed. For a collector, when the call ends, after the result is built.
-- A chunk under 128 KB of rows is cleared where it is released, which costs about as much as handing it over. A chunk of 128 KB or more of rows, value rows included, is cleared on one background loop instead, off the read path, and the loop also returns the array to the pool: neither the read nor the consumer waits for either.
+- A chunk of 128 KB or more of rows, value rows included, is cleared and returned on one background loop, so neither the read nor the consumer waits. A smaller chunk is cleared where it is released.
 - If 10,240 clears are ever waiting (a stalled custom pool, or an extreme burst), the next chunk is cleared and returned by the code that releases it, as a small one is. A dirty array never reaches a pool, and none is left behind with its rows.
-- A custom pool's `Return` that blocks stalls the loop shared by every pool; the chunks that then pile up are cleared and returned by the code that releases them.
+- A custom pool's `Return` should not block: the loop is shared by every pool.
 
 ## Cancellation and disposal
 
@@ -227,7 +227,6 @@ This pool counts what it hands out and what comes back, and the samples use it t
 - **Our own cancel is swallowed.** A cancel caused by disposing the buffer, or the stream's enumerator, is not reported: you asked for it. The read ends quietly, and an `Items` task you were already awaiting is cancelled.
 - **Yours is delivered.** The caller's own cancel, or a fault in the read, is delivered: to a stream after the rows that were already read, and to a buffer through `Items`. A stream's next step throws it after the chunks that were already delivered. `Items` is cancelled or faulted instead of producing a view.
 - **`DisposeAsync` waits for the producer, with no timeout.** It cancels a running read, waits until the producer has stopped, and returns the arrays (a large chunk that is to be cleared goes to the cleanup queue, so it is back in the pool shortly after `DisposeAsync` completes). A provider that ignores cancellation delays it by the call in progress. After that, the producer stops at the next chunk boundary at the latest. The synchronous `Dispose` does not wait. It cancels and returns at once. If the read is still running, the producer returns the arrays when it exits; if it had finished, `Dispose` returns them itself.
-- **No finalizer.** A buffer that is never disposed is not a leak: it holds its arrays until the garbage collector takes it, and the pool does not get them back.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_cancel)]
 
@@ -235,7 +234,7 @@ This pool counts what it hands out and what comes back, and the samples use it t
 
 ## Memory shape
 
-Chunks start at 16 rows and double: 16, 32, 64 and so on. A buffer keeps doubling, and never moves a row once it is written. That is what makes the indexer O(1): the chunk of a row is found with a shift and a log. A stream stops doubling at 4,096 rows, so a long result is read in chunks of at most 4,096.
+Chunks start at 16 rows and double: 16, 32, 64 and so on. A buffer keeps doubling, and never moves a row once it is written. A stream stops doubling at 4,096 rows, so a long result is read in chunks of at most 4,096.
 
 ## What it costs
 
@@ -247,15 +246,11 @@ The numbers come from a synthetic provider on net11, not from a real database, a
 
 ## When to use something else
 
-When the rows are only read or written once, the buffer is the default, whatever the size: the rows exist once, no list is built, and the arrays are reused by the next request. It is not faster: see [What it costs](#what-it-costs).
+When the rows are only read or written once, the buffer is the default, whatever the size: the rows exist once and no list is built. It is not faster: see [What it costs](#what-it-costs).
 
-When you need an array or a list that you keep or change, `ToArrayAsync` or `ToListAsync` is the tool. The rows are copied once into it, it is yours, and there is nothing to dispose.
+To keep or change the rows, use `ToArrayAsync` or `ToListAsync`: the copy is yours and there is nothing to dispose.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_rows_to_keep)]
-
-To shape a stream's rows, use `System.Linq.Async` over `ToBufferedAsyncStream`, and leave the filtering to the SQL. It is in the box on net10 and later.
-
-[!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
 
 To read a query while a consumer works, use the buffer streams: the connection is released as soon as the last row is read. See [Channels and Dataflow](channels-and-dataflow.md).
 

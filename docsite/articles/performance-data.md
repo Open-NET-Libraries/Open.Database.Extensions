@@ -1,6 +1,6 @@
 # Benchmark data files
 
-Every chart, and every table except the two marked "older run" (the table of everyday calls in the library comparison, and the map cost), is generated from a CSV file in the repository. Each CSV has a source file beside it that names the benchmark, the build, the date, the machine and the result file of every number. Download them, check them, or draw your own charts.
+Every chart, and every table except the two marked "older run" (the everyday calls in the library comparison, and the call-site map in What building a map costs), is generated from a CSV file in the repository. Each CSV has a source file beside it that names the benchmark, the build, the date, the machine and the result file of every number. Download them, check them, or draw your own charts.
 
 | Data file | Source and conditions | Used on |
 |---|---|---|

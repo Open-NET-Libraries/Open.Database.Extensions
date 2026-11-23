@@ -57,7 +57,7 @@ public sealed class PostCommands(
 
 
 
-// Controller: the pooled rows, for the serializer.
+// Controller, recommended: the pooled rows, for the serializer.
 [ApiController]
 [Route("posts")]
 public sealed class PostsController(PostCommands commands)

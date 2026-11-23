@@ -8,7 +8,7 @@ You define the command; the controller picks the shape of the result.
 
 ## Side by side
 
-Both versions read the posts of one author and write the same JSON; the samples project checks that they do. `PostEntity` and `PostDto` (not shown) have the same four properties as `Post`. The empty rows on the right are where the service was.
+Both versions read the posts of one author and write the same JSON. `PostEntity` and `PostDto` (not shown) have the same four properties as `Post`. The empty rows on the right are where the service was.
 
 <div class="side-by-side">
 <div>
@@ -33,8 +33,6 @@ What is gone:
 - **The service** and its mapping code: there is nothing to copy.
 - **The second set of objects.** The rows exist once, as `Post` objects in pooled arrays. The classic version builds a list of entities, then a list of DTOs, and leaves both to the garbage collector.
 
-The classic version is written fairly: Dapper's buffered result is already a list, and `AsList()` returns it without copying it again.
-
 ## The command factory
 
 A command factory is a class that holds the queries of one area of the app. Each query is defined once: the SQL and the `Map<Post>()`, with no connection, immutable, safe in a static field.
@@ -49,16 +47,16 @@ The entry point of the app provides the connection factory (SQLite in these samp
 
 `Program.cs` reads the connection string from configuration and calls it next to `AddControllers()`: `builder.Services.AddPostCommands(connectionString);`, then maps the controllers with `app.MapControllers()`. [With minimal APIs](no-service-layer-minimal-apis.md) shows those lines.
 
-`UsePool(pool, clearOnReturn)` hands the query its pool. The pool is handed in, not chosen inside, so a test can hand in one that counts (see [the lifetime guard](#what-do-you-test-now)). Both arguments are required. `clearOnReturn` decides only for rows with no references: pass `true` when those values are sensitive, `false` to skip the clear. A `Post` holds strings, so its rows are always cleared before an array goes back, whatever you pass. See [What is cleared](async-buffers.md#what-is-cleared).
+`UsePool(pool, clearOnReturn)` hands the query its pool; both arguments are required. `clearOnReturn` decides only for rows with no references: pass `true` when those values are sensitive, `false` to skip the clear. A `Post` holds strings, so its rows are always cleared before an array goes back, whatever you pass. See [What is cleared](async-buffers.md#what-is-cleared).
 
 ## The controller
 
 Read the controller of the side-by-side from the top:
 
-1. `ToAsyncBuffer` starts the read at the call, on its own producer, and returns the buffer at once.
+1. `ToAsyncBuffer(HttpContext.RequestAborted)` starts the read and returns the buffer at once; the read stops when the client leaves.
 2. `Response.RegisterForDispose(buffer)` hands the buffer to the framework, which disposes it when the request is over. Register it before you return; [Caveats](#caveats) says what was observed when a request fails.
 3. The action returns `buffer.Items`, the task of the rows, as it is: nothing in the action runs after the rows are ready, so there is no `async` and no `await`. The framework awaits it. The task completes when the read is over and the connection released, so nothing waits on the database while the JSON is written.
-4. The declared type is `Task<PooledArray<Post>>`, because a `Task<T>` is not covariant. A `PooledArray<Post>` is an `IReadOnlyList<Post>`, so the JSON is the same: `System.Text.Json` writes it as an array.
+4. The declared type is `Task<PooledArray<Post>>`. A `PooledArray<Post>` is an `IReadOnlyList<Post>`, so the JSON is the same: `System.Text.Json` writes it as an array.
 5. After the response is written, the framework disposes the buffer, and the arrays go back to the pool.
 
 <div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/no-service-layer-lifetime.svg" alt="A timeline of one request. The action starts the read, registers the buffer and returns at once. The connection is open only while the read runs. The rows stay in pooled arrays from the read until the response is over. The framework awaits the rows, then writes the JSON. When the response is over the framework disposes the buffer and the arrays go back to the pool." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
@@ -88,10 +86,10 @@ The hash covers every field the response carries, in order, and it encodes the t
 - When `Post` gains a field that the response carries, add it to the hash, or clients keep a `304` for rows that changed.
 - A stream from `ToBufferedAsyncStream` can be read once. To hash it and then write it, you would query again or copy the rows first.
 - The query still runs. A `304` saves the serialization and the bytes on the wire, not the read.
-- The `304` carries the ETag, as a `200` would. `If-None-Match` is compared weakly, so a tag with or without `W/` matches, and `*` matches anything.
-- The ETag is weak because the hash covers the values, not the bytes. If you change the JSON options (property names, say), clients keep ETags that still match: put a version string into the hash when you do.
+- The `304` carries the ETag, as a `200` would.
+- If you change the JSON options (property names, say), clients keep ETags that still match: put a version string into the hash when you do.
 
-## What do you test now
+## What to test
 
 With no service layer there is no pass-through code to mock. What is left to test is the SQL with its mapping, and the endpoint. The tests below are written for xUnit v3, and the samples project compiles and runs them against its in-memory SQLite database.
 
@@ -105,7 +103,7 @@ With no service layer there is no pass-through code to mock. What is left to tes
 
 - `CountingPool<T>` is the pool on [Your own pool](async-buffers.md#your-own-pool). The test hands it in through the services.
 - The client can see the response before the framework disposes the buffer, so the guard waits for the arrays, with a time limit.
-- The guard is the test that fails when the action on the route it requests does not call `RegisterForDispose`: the response is the same and no array comes back. The samples project checks that it does.
+- The guard is the test that fails when the action on the route it requests does not call `RegisterForDispose`: the response is the same and no array comes back.
 - Run the guard on a request that succeeds. When the action threw, or the client aborted before the response started, the test server did not dispose what the request had registered; Kestrel did. See the note on [Returning it from a controller](async-buffers.md#returning-it-from-a-controller).
 
 ## Caveats

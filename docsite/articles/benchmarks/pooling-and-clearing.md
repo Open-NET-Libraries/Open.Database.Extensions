@@ -1,14 +1,14 @@
 # Pooling and clearing
 
-**The question:** to read rows quickly, ODX keeps them in arrays it rents from a pool and gives back when the call is done. Which kind of pool is fastest, what does it cost to clear the rows before an array goes back, and where should the clearing happen?
+**The question:** ODX keeps rows in arrays it rents from a pool and gives back when the call is done. Which kind of pool is fastest, what does it cost to clear the rows before an array goes back, and where should the clearing happen?
 
 A *pool* is a shop for arrays: you rent one, use it, and return it, so the memory is reused and not allocated again. A *chunk* is one such array in a result that grows (16 rows, then 32, then 64 and so on).
 
 ## In short
 
 - **Arrays from `ArrayPool<T>` beat `MemoryPool<T>` in every store test, and allocate less.** To collect 10,000 `int` rows the two array designs took 9.1 and 9.8 µs (12.9 µs with an owner object per chunk). `MemoryPool<T>` took 16.3 µs with one span per chunk and 30.3 µs row by row. Reading a buffered result through the indexer took 22.3 µs with the design ODX uses (19.7 µs with the fastest array design) and 48.4 µs with `Memory<T>` chunks.
-- **The design that was built is 2.1 to 5.2% faster end to end** than the `Memory<T>` chunks build it replaced, with memory within 1 KB (10,000 rows: `ToListAsync` 5.2% less time, `ToAsyncBufferStream` 2.1% less).
-- **The recycle bin does what it is for.** Handing a chunk of class rows to the bin costs the releasing thread 95 ns at 4,096 rows, 75 ns at 16,384 and 144 ns at 65,536. Clearing it inline costs 550, 1,786 and 6,738 ns. The owner's rule is that the hand-off must cost less than the clear, and it does, by 6 to 47 times.
+- **The chunk store ODX uses is 2.1 to 5.2% faster end to end** than a `Memory<T>` chunk store, with memory within 1 KB (10,000 rows: `ToListAsync` 5.2% less time, `ToAsyncBufferStream` 2.1% less).
+- **Handing a chunk to the recycle bin costs the releasing thread less than clearing it inline.** For class rows it costs 95 ns at 4,096 rows, 75 ns at 16,384 and 144 ns at 65,536. Clearing inline costs 550, 1,786 and 6,738 ns: 6 to 47 times as much.
 - **Not faster:** the bin does not save time or CPU. End to end, time with the bin was 0.95 to 1.02 times the time with inline clearing, and CPU 0.89 to 1.06 times, over three runs. It moves the clearing to another thread; it does not remove it. Always clearing reference rows also costs 2.6 to 4.3 µs (8 to 18%) on a one-row call, and nothing measurable from 100 rows.
 - **`MemoryPool<T>` was slower even in its best case.** With one span per chunk it took 1.2 to 2.8 times as long as arrays (collect 16.3 against 9.1 µs, buffer 54.2 against 19.7 µs, stream 23.5 against 19.5 µs); row by row, 2.7 to 5.9 times. Only on the pool alone, renting one array and filling it, did it tie or win: 18 to 21% less time than `ArrayPool<T>` at 1,024 and 8,192 `int` slots when one span covers the array, and slower at 16 slots.
 
@@ -19,9 +19,9 @@ These are what ODX does with the arrays it rents. They are written in full on [P
 1. **Rows that hold references are always cleared.** A class, a string, a struct that contains either: the rows that were written are cleared before the array goes back, so a pooled array never keeps a row alive. Nothing turns this off.
 2. **Rows with no references are cleared when asked.** An `int` or a plain struct holds nothing to keep alive, so the default is not to clear them. Ask for it for one query with `.UsePool(pool, clearOnReturn: true)`, or for the whole application with the `Open.Database.Extensions.ClearPooledArrays` switch. An explicit `clearOnReturn: false` wins over the switch.
 3. **Only the part that was used is cleared.** An array can be longer than the rows written into it. ODX clears the written rows and not the rest. When every slot was written, it asks the pool to clear the array.
-4. **Where the clear happens depends on the size.** A chunk that is cleared at all is cleared by the code that releases it, unless it holds references and has 4,096 rows or more. Then it is handed to one background loop (the *recycle bin*), which clears it and returns the array to the pool, so neither the read nor the consumer waits for it. If the bin is full, the clear runs where the chunk is released. `int` rows never use the bin.
+4. **Where the clear happens depends on the size.** A chunk that is cleared at all is cleared by the code that releases it, unless its rows add up to 128 KB or more, of any kind of row. Then it is handed to one background loop (the *recycle bin*), which clears it and returns the array to the pool, so neither the read nor the consumer waits for it. If the bin is full, the clear runs where the chunk is released.
 
-The same query with the shared pool, clearing on, and the rows read asynchronously:
+The same query with the shared pool and clearing on:
 
 [!code-csharp[](../../samples/AsyncBuffers.cs#buffers_clearing_shared)]
 
@@ -29,7 +29,7 @@ The same query with the shared pool, clearing on, and the rows read asynchronous
 
 <div class="perf-chart"><img src="../../images/perf/perf-pool-store.svg" alt="Three panels of six bars, each panel on its own scale, the time to collect, buffer or stream 10,000 int rows with six designs of the chunk store. Collect: arrays in one store 9.1 microseconds, arrays with a lease per chunk 9.8, Memory chunks 11.7, arrays with an owner object 12.9, MemoryPool with a span per chunk 16.3, MemoryPool with a span per row 30.3. Buffer: one store 19.7, lease per chunk 22.3, owner object 24.1, Memory chunks 48.4, MemoryPool per row 53.7, MemoryPool per chunk 54.2. Stream: one store 19.5, lease per chunk 21.7, MemoryPool per chunk 23.5, owner object 24.4, Memory chunks 43.1, MemoryPool per row 115.9."></div>
 
-The same job with six designs for where the rows live. *One store*: one object owns all the arrays of a call. *Lease per chunk*: each array travels with a small struct that knows how to give it back (this is what ODX uses: a buffer's chunks are released one at a time by their consumer, so one store cannot own them all). *Owner object*: the same, with a class per chunk. *`Memory<T>` chunks*: the build ODX replaced. *`MemoryPool<T>`*: rents `IMemoryOwner<T>` objects; *span per row* writes each row through `Memory<T>.Span`, *span per chunk* writes a whole chunk through one span. The job: add 10,000 `int` rows, then collect them into one array (top), read each one through an indexer (middle), or read them chunk by chunk (bottom). Shorter is better, and each panel has its own scale; the "indexer" is the call that reads row number i of a buffer. The blue bars are the array designs without an owner object; the grey bars are the others. The two fastest bars in every panel are the array designs.
+The same job with six designs for where the rows live. *One store*: one object owns all the arrays of a call. *Lease per chunk*: each array travels with a small struct that knows how to give it back (this is what ODX uses: a buffer's chunks are released one at a time by their consumer, so one store cannot own them all). *Owner object*: the same, with a class per chunk. *`Memory<T>` chunks*: a store of `Memory<T>` chunks, for comparison. *`MemoryPool<T>`*: rents `IMemoryOwner<T>` objects; *span per row* writes each row through `Memory<T>.Span`, *span per chunk* writes a whole chunk through one span. The job: add 10,000 `int` rows, then collect them into one array (top), read each one through an indexer (middle), or read them chunk by chunk (bottom). Shorter is better, and each panel has its own scale; the "indexer" is the call that reads row number i of a buffer. The blue bars are the array designs without an owner object; the grey bars are the others. The two fastest bars in every panel are the array designs.
 
 The table has every cell of the store tests: `int` rows and class rows (an `int` and a string), at 1, 100 and 10,000 rows.
 
@@ -63,7 +63,7 @@ One chunk of class rows (an `int` and a string) released three ways: with no cle
 
 [!include[](../../includes/perf/pool-release-path.md)]
 
-The figures in brackets are the lowest and the highest of the three runs. `int` rows never use the bin: with a clear asked, an `int` chunk is cleared inline, which costs about a third of what a class chunk costs (181 ns at 4,096 rows, 2,075 ns at 65,536), and in the probe the bin arm for `int` rows ran the same inline path (so the table leaves it out).
+The figures in brackets are the lowest and the highest of the three runs. With a clear asked, an `int` chunk costs about a third of what a class chunk costs to clear inline (181 ns at 4,096 rows, 2,075 ns at 65,536). The probe's bin arm for `int` rows ran the same inline path (so the table leaves it out): the bin's cost for `int` rows is not measured here.
 
 ## Total time and CPU do not change
 
@@ -87,21 +87,15 @@ When the whole array was used, the span clear and the pool's own clear cost the 
 
 ## What always clearing reference rows costs end to end
 
-The recycle bin and the always-clear rule for reference rows together, against the code before the change, which cleared nothing. Class rows, SQLite in memory:
+The recycle bin and the always-clear rule for reference rows together, against a build that cleared nothing. Class rows, SQLite in memory:
 
 [!include[](../../includes/perf/pool-bin-cost.md)]
 
-At one row the new rule costs 2.6 to 4.3 µs, which is 8 to 18%. At 100 rows it is a tie. At 10,000 rows the calls took 2.3 and 8.6% *less* time. We do not know why they were faster, and an earlier build of the change was used for this pair, so read it as "the clearing does not cost time you can see on a large result", not as a speed-up.
+At one row the rule costs 2.6 to 4.3 µs, which is 8 to 18%. At 100 rows it is a tie. At 10,000 rows the calls took 2.3 and 8.6% *less* time. We do not know why they were faster, and an earlier build of the change was used for this pair, so read it as "the clearing does not cost time you can see on a large result", not as a speed-up.
 
-## Why
+## Limits
 
-**Why arrays win.** Each row of a buffer is read through an indexer. With arrays the indexer is one array access. With `Memory<T>` every read goes through `Memory<T>.Span`, which is more work for every row; that is where the 2.5 times on the buffer read comes from (our reading of the code, not a separate measurement). A `MemoryPool<T>` rent allocates 24 bytes and takes about 6 ns more at 16 slots. A per-row read through `Memory<T>.Span` is the expensive part: 2.7 times slower than arrays in the buffer test. Written through one span, renting and filling alone can tie with arrays (see the rent table above), but the chunk store as a whole was still slower in every test.
-
-**Why only the used part.** The pool's clear flag works on the whole array, so it is the right tool only when the whole array was used. For a long array with few rows written, clearing those rows is cheaper.
-
-**Why a recycle bin.** Clearing a large chunk costs the thread that releases it time that grows with the chunk: 6.7 µs for 65,536 class rows. Handing the chunk to the bin costs that thread 144 ns, whatever the size. The bin clears it and returns the array to the pool on one background thread, so the reader and the consumer do not wait for the clear. The work is the same and happens elsewhere. `int` rows do not need the bin, because clearing them is cheap.
-
-**Limits.** The store tests ran on .NET 10 only; the end-to-end pairs ran on .NET 11; the bin tests ran on .NET 10. The store prototype and the bin test program are scratch code that is not in the repository; the end-to-end benchmarks (`PoolEndToEndBenchmarks`, `PoolBinCostBenchmarks`) are. Every case is one run, except the bin tests, which were run three times (the CPU count twice). The stores were timed with clearing on. The bin tests keep the bin from filling; a bin that is full clears where the chunk is released, and that case was not measured here.
+The store tests ran on .NET 10 only; the end-to-end pairs ran on .NET 11; the bin tests ran on .NET 10, on build 11.0.0-rc.11, which handed only chunks of reference rows of 4,096 rows or more to the bin (the threshold is 128 KB of rows of any kind). Every case is one run, except the bin tests, which were run three times (the CPU count twice). The stores were timed with clearing on. The bin tests keep the bin from filling; a bin that is full clears where the chunk is released, and that case was not measured here.
 
 ## How this was measured
 

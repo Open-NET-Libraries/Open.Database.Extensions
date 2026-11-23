@@ -8,11 +8,11 @@ namespace Samples;
 
 // A model whose text members declare their own NULL value.
 #region shape_plant_model
-public class Plant
+public class Tag
 {
 	public int Id { get; init; }
-	public string Code { get; init; } = "";
-	public string SortDescr { get; init; } = "";
+	public string Label { get; init; } = "";
+	public string Description { get; init; } = "";
 }
 #endregion
 
@@ -38,20 +38,20 @@ public class PostStampInit
 
 // A model with a column you do not want read.
 #region shape_employee_model
-public class Employee
+public class Author
 {
-	public string Badge { get; init; } = "";
-	public string Desk { get; init; } = "";
-	public string Manager { get; init; } = "";
+	public string Handle { get; init; } = "";
+	public string City { get; init; } = "";
+	public string Editor { get; init; } = "";
 }
 #endregion
 
 // A model that must have a column for one member in every result.
 #region shape_strict_model
-public class StrictEmployee
+public class StrictAuthor
 {
-	public required string Badge { get; init; }
-	public string Manager { get; init; } = "";
+	public required string Handle { get; init; }
+	public string Editor { get; init; } = "";
 }
 #endregion
 
@@ -82,60 +82,59 @@ public sealed record WideEnds(int First, int Last);
 
 public static class ShapingMaps
 {
-	#region shape_null_initializer
-	// A NULL never overwrites a non-nullable member,
-	// and the converter is not called for it:
-	// Code keeps its initializer ("") and SortDescr keeps its own.
-	// The member's declaration is where its NULL value lives.
-	public static RowMap<Plant> PlantMap
-		=> field ??= RowMap<Plant>
-			.From([new(nameof(Plant.Code), "plant_type")])
-			.Convert<string, string>(
-				nameof(Plant.Code),
-				static code
-					=> code.Trim());
-	#endregion
+		#region shape_null_initializer
+		// A NULL never overwrites a non-nullable member,
+		// and the converter is not called for it:
+		// Label keeps its initializer ("") and Description keeps its own.
+		// The member's declaration is where its NULL value lives.
+		public static RowMap<Tag> TagMap
+			=> field ??= RowMap<Tag>
+				.From([new(nameof(Tag.Label), "tag_name")])
+				.Convert<string, string>(
+					nameof(Tag.Label),
+					static label
+						=> label.Trim());
+		#endregion
 
-	#region shape_null_factory
-	// A factory parameter declared string? receives null for a NULL,
-	// so the function can decide what NULL means.
-	// The pairs are not needed: plant_type matches plantType.
-	public static RowMap<Plant> PlantFactoryMap
-		=> field ??= RowMap<Plant>.From(
-			static (int id, string? plantType, string? sortDescr)
-				=> new Plant
-				{
-					Id = id,
-					Code = plantType?.Trim() ?? "",
-					SortDescr = sortDescr ?? "",
-				});
-	#endregion
+		#region shape_null_factory
+		// A factory parameter declared string? receives null for a NULL,
+		// so the function can decide what NULL means.
+		// The pairs are not needed: tag_name matches tagName.
+		public static RowMap<Tag> TagFactoryMap
+			=> field ??= RowMap<Tag>.From(
+				static (int id, string? tagName, string? description)
+					=> new Tag
+					{
+						Id = id,
+						Label = tagName?.Trim() ?? "",
+						Description = description ?? "",
+					});
+		#endregion
 
-	#region shape_ignore
-	// A null column means "do not map this member":
-	// Desk keeps its initializer,
-	// even though the result has a desk column.
-	// The null is the C# null, and it needs no ! after it.
-	public static RowMap<Employee> NoDeskMap
-		=> field ??= [
-			new(nameof(Employee.Desk), null),
-		];
-	#endregion
+		#region shape_ignore
+		// A null column means "do not map this member":
+		// City keeps its initializer,
+		// even though the result has a city column.
+		public static RowMap<Author> NoCityMap
+			=> field ??= [
+				new(nameof(Author.City), null),
+			];
+		#endregion
 
-	#region shape_factory_lists
-	// A factory map fills only what its function takes:
-	// no member is set from a column afterwards.
-	// A parameter with no column gets its declared default, else default,
-	// and nothing throws.
-	public static RowMap<Employee> ListedOnlyMap
-		=> field ??= RowMap<Employee>.From(
-			static (string badge, string? manager)
-				=> new Employee
-				{
-					Badge = badge,
-					Manager = manager ?? "unknown",
-				});
-	#endregion
+		#region shape_factory_lists
+		// A factory map fills only what its function takes:
+		// no member is set from a column afterwards.
+		// A parameter with no column gets its declared default, else default,
+		// and nothing throws.
+		public static RowMap<Author> ListedOnlyMap
+			=> field ??= RowMap<Author>.From(
+				static (string handle, string? editor)
+					=> new Author
+					{
+						Handle = handle,
+						Editor = editor ?? "unknown",
+					});
+		#endregion
 
 	#region shape_filter_factory
 	// A factory may return null: the row is then a null in the result.
@@ -184,12 +183,12 @@ public static class ShapingRows
 	{
 		string[] statements =
 		[
-			"drop table if exists plants",
-			"create table plants (id integer primary key, plant_type text null, sort_descr text null)",
-			"insert into plants (id, plant_type, sort_descr) values (1, '  PRESS ', 'Stamping'), (2, null, null)",
-			"drop table if exists employees",
-			"create table employees (badge text not null, desk text null, manager text null)",
-			"insert into employees (badge, desk, manager) values ('E-1', 'D-9', 'Kim'), ('E-2', null, 'Lee')",
+				"drop table if exists tags",
+				"create table tags (id integer primary key, tag_name text null, description text null)",
+				"insert into tags (id, tag_name, description) values (1, '  NEWS ', 'Weekly'), (2, null, null)",
+				"drop table if exists authors",
+				"create table authors (handle text not null, city text null, editor text null)",
+				"insert into authors (handle, city, editor) values ('ada', 'London', 'Kim'), ('grace', null, 'Lee')",
 		];
 
 		foreach (string sql in statements)
@@ -200,24 +199,24 @@ public static class ShapingRows
 		}
 	}
 
-	public static async Task<(Plant[] Initializer, Plant[] Factory)> NullToEmptyAsync(
-		SqliteConnection connection,
-		CancellationToken cancellationToken)
-	{
-		#region shape_null_initializer_use
-		Plant[] fromInitializer = await connection
-			.Command("select id, plant_type, sort_descr from plants order by id")
-			.Map(ShapingMaps.PlantMap)
-			.ToArrayAsync(cancellationToken);
+		public static async Task<(Tag[] Initializer, Tag[] Factory)> NullToEmptyAsync(
+			SqliteConnection connection,
+			CancellationToken cancellationToken)
+		{
+			#region shape_null_initializer_use
+			Tag[] fromInitializer = await connection
+				.Command("select id, tag_name, description from tags order by id")
+				.Map(ShapingMaps.TagMap)
+				.ToArrayAsync(cancellationToken);
 
-		Plant[] fromFactory = await connection
-			.Command("select id, plant_type, sort_descr from plants order by id")
-			.Map(ShapingMaps.PlantFactoryMap)
-			.ToArrayAsync(cancellationToken);
-		#endregion
+			Tag[] fromFactory = await connection
+				.Command("select id, tag_name, description from tags order by id")
+				.Map(ShapingMaps.TagFactoryMap)
+				.ToArrayAsync(cancellationToken);
+			#endregion
 
-		return (fromInitializer, fromFactory);
-	}
+			return (fromInitializer, fromFactory);
+		}
 
 	public static async Task<(PostStamp[] AfterClose, PostStampInit[] InQuery)> ValueFromOutsideAsync(
 		SqliteConnection connection,
@@ -251,61 +250,61 @@ public static class ShapingRows
 		return (stamps, fromQuery);
 	}
 
-	public static async Task<(Employee[] Ignored, Employee[] Listed, Employee[] NoManagerColumn)> ChooseWhatIsReadAsync(
-		SqliteConnection connection,
-		CancellationToken cancellationToken)
-	{
-		#region shape_ignore_use
-		Employee[] ignored = await connection
-			.Command("select badge, desk, manager from employees order by badge")
-			.Map(ShapingMaps.NoDeskMap)
-			.ToArrayAsync(cancellationToken);
-		#endregion
-
-		Employee[] listed = await connection
-			.Command("select badge, desk, manager from employees order by badge")
-			.Map(ShapingMaps.ListedOnlyMap)
-			.ToArrayAsync(cancellationToken);
-
-		#region shape_factory_missing
-		// No column feeds manager: it is null, so the function says "unknown".
-		// The factory did not throw.
-		Employee[] noManagerColumn = await connection
-			.Command("select badge from employees order by badge")
-			.Map(ShapingMaps.ListedOnlyMap)
-			.ToArrayAsync(cancellationToken);
-		#endregion
-
-		return (ignored, listed, noManagerColumn);
-	}
-
-	public static async Task<(StrictEmployee[] Found, ValueMappingException? Missing)> StrictAsync(
-		SqliteConnection connection,
-		CancellationToken cancellationToken)
-	{
-		StrictEmployee[] found = await connection
-			.Command("select badge, manager from employees order by badge")
-			.Map<StrictEmployee>()
-			.ToArrayAsync(cancellationToken);
-
-		#region shape_required_use
-		ValueMappingException? missing = null;
-		try
+		public static async Task<(Author[] Ignored, Author[] Listed, Author[] NoEditorColumn)> ChooseWhatIsReadAsync(
+			SqliteConnection connection,
+			CancellationToken cancellationToken)
 		{
-			// No column feeds Badge, so the first row throws.
-			_ = await connection
-				.Command("select manager from employees order by badge")
-				.Map<StrictEmployee>()
+			#region shape_ignore_use
+			Author[] ignored = await connection
+				.Command("select handle, city, editor from authors order by handle")
+				.Map(ShapingMaps.NoCityMap)
 				.ToArrayAsync(cancellationToken);
-		}
-		catch (ValueMappingException ex)
-		{
-			missing = ex;
-		}
-		#endregion
+			#endregion
 
-		return (found, missing);
-	}
+			Author[] listed = await connection
+				.Command("select handle, city, editor from authors order by handle")
+				.Map(ShapingMaps.ListedOnlyMap)
+				.ToArrayAsync(cancellationToken);
+
+			#region shape_factory_missing
+			// No column feeds editor: it is null, so the function says "unknown".
+			// The factory did not throw.
+			Author[] noEditorColumn = await connection
+				.Command("select handle from authors order by handle")
+				.Map(ShapingMaps.ListedOnlyMap)
+				.ToArrayAsync(cancellationToken);
+			#endregion
+
+			return (ignored, listed, noEditorColumn);
+		}
+
+		public static async Task<(StrictAuthor[] Found, ValueMappingException? Missing)> StrictAsync(
+			SqliteConnection connection,
+			CancellationToken cancellationToken)
+		{
+			StrictAuthor[] found = await connection
+				.Command("select handle, editor from authors order by handle")
+				.Map<StrictAuthor>()
+				.ToArrayAsync(cancellationToken);
+
+			#region shape_required_use
+			ValueMappingException? missing = null;
+			try
+			{
+				// No column feeds Handle, so the first row throws.
+				_ = await connection
+					.Command("select editor from authors order by handle")
+					.Map<StrictAuthor>()
+					.ToArrayAsync(cancellationToken);
+			}
+			catch (ValueMappingException ex)
+			{
+				missing = ex;
+			}
+			#endregion
+
+			return (found, missing);
+		}
 
 	public static async Task<(WideReading Reading, WideEnds Ends)> WideAsync(
 		SqliteConnection connection,
@@ -343,8 +342,8 @@ public static class ShapingRows
 		CancellationToken cancellationToken)
 	{
 		#region shape_filter_where
-		// The best place for a filter is the query's WHERE:
-		// the database skips the rows, and the connection closes sooner.
+			// Recommended: filter in the query's WHERE.
+			// The database skips the rows, so they never reach the reader.
 		Post[] inSql = await connection
 			.Command("select id, title from posts where views > @views order by id")
 			.AddParam("views", 20)

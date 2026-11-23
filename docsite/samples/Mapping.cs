@@ -31,9 +31,9 @@ public static class Mapping
 		CancellationToken cancellationToken)
 	{
 		#region map_declared_use
-		// Pass the declared map. It is built once;
-		// each call only checks that the result-set layout
-		// matches the one its reader was compiled for.
+		// Recommended: pass the declared map. It is built once and reused.
+		// Measured (one row, one column, synchronous terminal): a call
+		// allocates 0.547 KB, against 15.637 KB when a map is built on every call.
 		Person[] people = await connection
 			.Command("""
 				select person_id, first_name, last_name
@@ -47,12 +47,12 @@ public static class Mapping
 		return people;
 	}
 
-	public static async Task<Person[]> MapNamesOnlyAsync(
+	public static ValueTask<Person[]> MapNamesOnlyAsync(
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 		// LastName is not read at all, so it keeps its initial value
 		// although the result set has a last_name column.
-		=> await connection
+		=> connection
 			.Command("""
 				select person_id, first_name, last_name
 				from people
@@ -125,9 +125,10 @@ public static class Mapping
 	public static async Task<Person[]> MapCallSiteAsync(SqliteConnection connection, CancellationToken cancellationToken)
 	{
 		#region map_call_site
-		// A one-off: the pairs are written at the call site,
-		// so a new map is built, and the row reader compiled,
-		// on every call.
+		// Alternative, for a one-off: the pairs are written at the call site,
+		// so a new map is built, and the row reader compiled, on every call.
+		// Measured (one row, one column, synchronous terminal): 15.637 KB
+		// and 192 us a call, against 0.547 KB and 0.166 us with a declared map.
 		Person[] people = await connection
 			.Command("""
 				select person_id, first_name, last_name
@@ -227,10 +228,10 @@ public static class Mapping
 		return people;
 	}
 
-	public static async Task<OrderLine?> MapNullsAsync(
+	public static ValueTask<OrderLine?> MapNullsAsync(
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
-		=> await connection
+		=> connection
 			.Command("select null as quantity, null as discount, null as note, null as title")
 			.Map<OrderLine>()
 			.FirstOrDefaultAsync(cancellationToken);
@@ -487,7 +488,7 @@ public static class Mapping
 		#region map_command_view
 		// The connection is opened if it is closed,
 		// and closed again only if this call opened it.
-		// The command is yours and is never disposed here.
+		// The command is yours: Map never disposes it; the await using does.
 		await using SqliteCommand command = connection.CreateCommand();
 		command.CommandText = "select * from posts where author = 42 order by id";
 
@@ -577,19 +578,24 @@ public static class Mapping
 	public static async Task<int> StreamRowsAsync(SqliteConnection connection, CancellationToken cancellationToken)
 	{
 		#region map_stream
-		// Stream hands you the rows one at a time while the reader is open.
+		// Only to stop early: Stream holds the connection open while each row is read.
 		// The timeout is the longest you may go without pulling the next row.
-		int total = 0;
+		// To read all the rows, use ToArrayAsync, the buffered way.
+		int stoppedAt = 0;
 		await foreach (Post post in connection
 			.Command("select * from posts order by id")
 			.Map<Post>()
 			.Stream(TimeSpan.FromSeconds(30), cancellationToken))
 		{
-			total += post.Id;
+			stoppedAt = post.Id;
+			if (post.Title == "Post 3")
+			{
+				break;
+			}
 		}
 		#endregion
 
-		return total;
+		return stoppedAt;
 	}
 
 	public static async Task<Dictionary<int, Post>> ByIdAsync(SqliteConnection connection, CancellationToken cancellationToken)
@@ -630,12 +636,12 @@ public static class Mapping
 	{
 		#region map_converted_use
 		// order_num (an integer column) becomes text,
-		// first_load_datetime (a timestamp) becomes "HH:mm"
+		// placed_at (a timestamp) becomes "HH:mm"
 		// and customer is trimmed:
 		// the rows map straight into Order, with no row type to copy from.
 		Order[] orders = await connection
 			.Command("""
-				select id, order_num, first_load_datetime, customer
+				select id, order_num, placed_at, customer
 				from orders
 				order by id
 				""")
@@ -646,12 +652,12 @@ public static class Mapping
 		return orders;
 	}
 
-	public static async Task<Order[]> MapConvertedNull(
+	public static ValueTask<Order[]> MapConvertedNull(
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
-		=> await connection
+		=> connection
 			.Command("""
-				select id, order_num, first_load_datetime, customer
+				select id, order_num, placed_at, customer
 				from orders
 				order by id
 				""")
@@ -693,7 +699,7 @@ public static class OrderMaps
 	// the column is the one the member matches by name
 	// (order_num feeds OrderNum, ignoring underscores).
 	// Convert<TColumn, TMember>(member, column, convert)
-	// names the column too, for first_load_datetime,
+	// names the column too, for placed_at,
 	// which matches no property.
 	// The delegate runs inside the compiled row reader, once per row,
 	// and is never called for a NULL cell:
@@ -705,8 +711,8 @@ public static class OrderMaps
 				static number
 					=> number.ToString("D6", CultureInfo.InvariantCulture))
 			.Convert<DateTime, string>(
-				nameof(Order.FirstLoad),
-				"first_load_datetime",
+				nameof(Order.PlacedAt),
+				"placed_at",
 				static loaded
 					=> loaded.ToString("HH:mm", CultureInfo.InvariantCulture))
 			.Convert<string, string>(
@@ -721,8 +727,8 @@ public static class OrderMaps
 	public static RowMap<Order> NullAwareOrderMap
 		=> field ??= RowMap<Order>.Default
 			.Convert<DateTime?, string>(
-				nameof(Order.FirstLoad),
-				"first_load_datetime",
+				nameof(Order.PlacedAt),
+				"placed_at",
 				static loaded
 					=> loaded?.ToString("HH:mm", CultureInfo.InvariantCulture)
 						?? "--:--");

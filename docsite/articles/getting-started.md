@@ -56,10 +56,7 @@ There are two ways to start a command: from the factory, or from a connection yo
 </div>
 </div>
 
-What is different:
-
-- **Who creates the connection.** The factory, for each execution; or you.
-- **Open and close.** In both forms the command opens the connection only if it is closed. The factory form disposes the connection when the terminal returns. In the connection form the command closes only what it opened and never disposes it.
+In both forms the command opens the connection only if it is closed. The factory form disposes the connection when the terminal returns; in the connection form the command closes only what it opened and never disposes it. See [Who owns the connection](foundation.md#who-owns-the-connection).
 
 ## Before and after
 
@@ -82,13 +79,7 @@ The same query with plain ADO.NET and with the extensions, row against row: the 
 </div>
 </div>
 
-Lines you write, counted from `plain_list_aligned` and `ode_list_aligned` (`ConnectionPattern.cs`; not counting blank lines, `// nothing` comments or the `int author = 42;` that declares the value): plain ADO.NET 20, Open.Database.Extensions 5, plus three lines of one-time setup per application. The README table counts the same job with its SQL written inline, so its plain count is higher.
-
-What is different:
-
-- **Plain ADO.NET** needs you to open the connection, create and dispose the command and the reader, add each parameter by hand and copy each column by ordinal, with an `IsDBNull` check for nullable columns.
-- **With the extensions** the factory opens and disposes the connection, the command is one call, and the terminal does the read loop and the mapping. Matching columns to properties is by name, ignoring case and underscores.
-
+Lines you write, counted from `plain_list_aligned` and `ode_list_aligned` (`ConnectionPattern.cs`; not counting blank lines, `// nothing` comments or the `int author = 42;` that declares the value): plain ADO.NET 20, Open.Database.Extensions 5, plus three lines of one-time setup per application.
 ## With SQL Server
 
 ![Open.Database.Extensions.MSSqlClient: You write the SQL. ODX writes the other twenty lines.](../images/hero-mssqlclient.svg)

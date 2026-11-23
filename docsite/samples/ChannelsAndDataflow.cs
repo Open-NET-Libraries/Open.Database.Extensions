@@ -68,18 +68,19 @@ public static class ChannelsAndDataflow
 
 		#region to_channel_holding
 		// The channel holds at most two rows. The next row is pulled
-		// only after the last one was written.
+		// only after the last one was written, and the connection is
+		// held for each row: a slow consumer holds it. To release it as
+		// soon as the last row is read, use ToChannel (above).
 		Channel<Post> channel = Channel.CreateBounded<Post>(2);
 
-		Task<long> write = connectionFactory
+		ValueTask<long> write = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
 			.ToChannelHoldingConnection(
 				channel,
 				TimeSpan.FromSeconds(30),
 				complete: true,
-				cancellationToken)
-			.AsTask();
+				cancellationToken);
 
 		await foreach (Post post in channel.Reader.ReadAllAsync(cancellationToken))
 			received.Add(post);
@@ -108,10 +109,9 @@ public static class ChannelsAndDataflow
 		var enriched = new List<string>();
 
 		#region stream_producer_consumer
-		// The query is the producer: it reads the rows at database
-		// speed in the background, in chunks, and the connection is
-		// free as soon as the last row is read. Nothing runs until
-		// the first read below.
+		// The query is the producer: it reads the rows in the background,
+		// in chunks, and the connection is free as soon as the last row
+		// is read. Nothing runs until the first read below.
 		IAsyncEnumerable<Post> posts = connection
 			.Command("select * from posts order by id")
 			.Map<Post>()

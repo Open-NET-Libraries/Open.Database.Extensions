@@ -219,8 +219,7 @@
 
   <members name="create-timeout">
     <param name="secondsTimeout">
-      The number of seconds to wait before the command times out. The default
-      is 60 seconds.
+      The number of seconds to wait before the command times out. The default is 60 seconds.
     </param>
   </members>
 
@@ -402,14 +401,7 @@
     <para>
       An exception thrown by the action, or a cancellation, rolls the
       transaction back and propagates.
-      A transaction that is not committed is rolled back by disposing it,
-      which is the standard ADO.NET pattern; the .NET documentation for
-      <see cref="System.Data.Common.DbTransaction.Dispose()"/> notes that this
-      is provider specific.
-      The transaction is always disposed before the connection is closed, as
-      some providers (for example Microsoft.Data.Sqlite and MySqlConnector)
-      only roll back an uncommitted transaction on dispose while the
-      connection is still open.
+      The transaction is disposed before the connection is closed.
       The action should not commit or roll back the transaction itself;
       completion is handled here.
       When no isolation level is given,
@@ -419,16 +411,11 @@
 
   <members name="tx-async-para">
     <para>
-      The transaction is begun with <c>BeginTransaction</c>, not
-      <c>BeginTransactionAsync</c>, which returns a plain
-      <see cref="System.Data.Common.DbTransaction"/>:
-      this keeps the <see cref="SqlTransaction"/> type flowing to the action.
-      It is then disposed with <c>DisposeAsync</c>, committed with
+      The transaction is disposed with <c>DisposeAsync</c>, committed with
       <c>CommitAsync</c>, and the connection closed with <c>CloseAsync</c>,
       except on .NET Framework (net472), which does all three synchronously.
-      The token is checked just before the commit, and the commit itself is not
-      canceled once it has begun: cancelling part-way through would leave the
-      outcome unknown.
+      The token is checked just before the commit; the commit is not
+      canceled once it has begun.
     </para>
   </members>
 

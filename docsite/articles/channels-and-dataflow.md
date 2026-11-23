@@ -14,13 +14,13 @@ Both packages take a mapped query (`Map<T>()`), so rows are mapped the same way 
 
 To read a mapped query while a consumer works, use the buffer streams (`ToBufferedAsyncStream` and `ToAsyncBufferStream`) in the core package: the connection is released as soon as the last row is read.
 
-A stream earns its place when a producer and its consumer run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows at database speed on a background task, in chunks, and is finished with the connection as soon as the last row is read. The consumer does the slow work (a web call, a file write, a transform) while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`.
+A stream earns its place when a producer and its consumer run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows on a background task, in chunks, and is finished with the connection as soon as the last row is read. The consumer does the slow work (a web call, a file write, a transform) while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`.
 
 Which one to use:
 - `ToBufferedAsyncStream(cancellationToken)` yields the elements one by one, as an `IAsyncEnumerable<T>` that works with `await foreach` and `System.Linq.Async`.
-- `ToAsyncBufferStream(cancellationToken)` yields the chunks (`ReadOnlyMemory<T>`), for raw speed and the shortest connection time.
+- `ToAsyncBufferStream(cancellationToken)` yields the chunks (`ReadOnlyMemory<T>`) without copying the rows out of them.
 
-Both are lazy and single-use: nothing runs until the first read, a second enumeration throws, and a `break` or a dispose cancels the query. The pooled buffers are cleared by the rule in [Pooled memory](async-buffers.md#pooled-memory), and `UsePool(pool, clearOnReturn: ...)` after `Map` chooses the pool. The pool, clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
+Both are lazy and single-use, and a `break` or a dispose cancels the query. The pool (`UsePool` after `Map`), clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
 
 ### One producer, one consumer
 
@@ -44,7 +44,7 @@ To read rows one at a time and stop early, see [`Stream`](mapping.md#terminals):
 
 ### What it costs
 
-The producer is unbounded. It never waits for the consumer, so the read finishes at full speed and frees the connection, while memory grows with the backlog of a slow consumer. A bounded channel caps the channel, not the memory: the query is still read at full speed. To cap memory by holding the connection, see [Channels](#channels).
+The producer is unbounded. It never waits for the consumer, so the read finishes at the provider's pace and frees the connection, while memory grows with the backlog of a slow consumer. To cap memory by holding the connection, see [Channels](#channels).
 
 ## Channels
 
@@ -56,7 +56,7 @@ The producer is unbounded. It never waits for the consumer, so the read finishes
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_channel)]
 
-The query is read at full speed into pooled chunks, and the connection is closed when the read ends, however slowly the consumer reads. The rows the consumer has not read yet wait in memory. The channel is always completed: after the last row, or with the exception that ended the read, a cancel included. `ToChannel(out Task<long> readCount)` also returns the number of rows written. `ToBoundedChannelReader(capacity)` and `ToBoundedChannel(capacity)` make a bounded channel; the bound limits the channel, not memory.
+The query is read at the provider's pace into pooled chunks, and the connection is closed when the read ends, however slowly the consumer reads. The rows the consumer has not read yet wait in memory. The channel is always completed: after the last row, or with the exception that ended the read, a cancel included. `ToChannel(out Task<long> readCount)` also returns the number of rows written. `ToBoundedChannelReader(capacity)` and `ToBoundedChannel(capacity)` make a bounded channel; the bound limits the channel, not memory.
 
 ### A channel you own
 
@@ -76,13 +76,13 @@ When the channel is full, the write waits for room, before the command runs and 
 
 ![Open.Database.Extensions.Dataflow: You write the SQL. ODX writes the other twenty lines.](../images/hero-dataflow.svg)
 
-The Dataflow package exists to feed whatever pipeline you build, and to start it as fast as the query can be read. It reads a mapped query at full speed into pooled chunks and sends each row to a block, so the blocks, their task schedulers and their priorities stay yours.
+The Dataflow package reads a mapped query at the provider's pace into pooled chunks and sends each row to a block, so the blocks, their task schedulers and their priorities stay yours.
 
 `ToTargetBlock` sends the rows to a block you own and leaves it open, so passes can share it. The returned task is the done signal: it completes with the number of rows the block accepted, and a failure or a cancel comes back through it. `complete: true` completes the block when the pass ends, or faults it with the exception that ended it, a cancel included (a faulted block drops the rows it holds that were not received yet).
 
 [!code-csharp[](../samples/ChannelsAndDataflow.cs#to_target_block)]
 
-Each row is sent with `SendAsync`, so a bounded block that is full makes the pass wait and no row is dropped. The rows wait in memory meanwhile, and the connection is closed when the read ends. A block has no way to ask for room, so only a block that is already finished is known before the command runs. If the block declines a row for good (completed or faulted), the pass stops without an exception and returns the rows accepted so far.
+Each row is sent with `SendAsync`, so a bounded block that is full makes the pass wait and no row is dropped. The rows wait in memory meanwhile, and the connection is closed when the read ends. If the block declines a row for good (completed or faulted), the pass stops without an exception and returns the rows accepted so far.
 
 `AsSourceBlock` makes the block for you: an unbounded `BufferBlock<T>`, or one made from the `DataflowBlockOptions` you pass (its task scheduler, its bound, its name). It starts reading at the call and always finishes the block, completed after the last row or faulted with the exception that ended the read.
 

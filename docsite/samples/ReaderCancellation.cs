@@ -41,33 +41,7 @@ public static class ReaderCancellation
 		return ([.. seen], canceled);
 	}
 
-	public static (int[] Seen, bool Canceled) ForEachCanceled(
-		SqliteConnection connection)
-	{
-		var seen = new List<int>();
-		bool canceled = false;
-
-		#region reader_cancellation_sync
-		// The sync form of the same rule: ForEach checks the token
-		// before each read, and a cancel throws.
-		using var cts = new CancellationTokenSource();
-		using SqliteCommand command = connection.CreateCommand();
-		command.CommandText = "select id from posts order by id";
-		using SqliteDataReader reader = command.ExecuteReader();
-		try
-		{
-			reader.ForEach(record =>
-			{
-				seen.Add(record.GetInt32(0));
-				if (seen.Count == 2) cts.Cancel();
-			}, cts.Token);
-		}
-		catch (OperationCanceledException)
-		{
-			canceled = true;
-		}
-		#endregion
-
-		return ([.. seen], canceled);
-	}
+	#region reader_cancellation_sync
+	// The synchronous form of the same rule is in the Synchronous namespace.
+	#endregion
 }

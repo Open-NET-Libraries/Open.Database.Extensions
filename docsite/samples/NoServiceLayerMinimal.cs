@@ -16,7 +16,8 @@ public static class PostEndpoints
 	{
 		RouteGroupBuilder posts = endpoints.MapGroup("minimal/posts");
 
-		// The pooled buffer: registered, then its rows' task returned.
+		// Recommended: the pooled buffer, registered, then its
+		// rows' task returned.
 		posts.MapGet(
 			"by-author/{author}",
 			static Task<PooledArray<Post>> (
