@@ -227,9 +227,12 @@ public class SyntheticBenchmarks
 	[Benchmark(Baseline = true)]
 	public List<SynRow> V1_Sync() { _label = nameof(V1_Sync); return SyntheticVariants.V1(Connection); }
 
-	// V1 with a NULL policy on the class (SynRowPolicy.cs): the cost of checking every member for NULL. The columns hold no NULL the policy would meet in a non-nullable member.
+	// V1 with a NULL policy (SynRowPolicy.cs): the cost of testing members for NULL. Throw is on each non-nullable member, Default is on the class.
 	[Benchmark]
 	public List<SynRowThrow> V1_Throw_Sync() { _label = nameof(V1_Throw_Sync); return Connection.Command(SyntheticVariants.Sql).Map<SynRowThrow>().ToList(); }
+
+	[Benchmark]
+	public List<SynRowDefault> V1_Default_Sync() { _label = nameof(V1_Default_Sync); return Connection.Command(SyntheticVariants.Sql).Map<SynRowDefault>().ToList(); }
 
 	[Benchmark]
 	public ValueTask<List<SynRow>> V1_Async() { _label = nameof(V1_Async); return SyntheticVariants.V1Async(Connection); }
