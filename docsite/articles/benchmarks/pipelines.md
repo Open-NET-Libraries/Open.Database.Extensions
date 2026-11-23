@@ -1,30 +1,28 @@
 # Channels and Dataflow against a plain loop
 
-**The question:** `ToChannel` and the Dataflow methods feed a pipeline from a query. Are they faster than reading the rows in a plain loop?
-
-> [!NOTE]
-> This page rests on an **older run**, recorded in [`RESULTS.md`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/blob/master/Benchmarks/RESULTS.md) on .NET 10 with a build older than 11.0.0-rc.8. It was not repeated on .NET 11. Read the direction of the numbers, not the exact figures.
+**The question:** `ToChannelReader()` and `ToTargetBlock()` feed a pipeline from a query. Are they faster than a plain loop that reads the rows and feeds the same pipeline?
 
 ## In short
 
-- **No, they are not faster.** Draining a channel took 1.26 times as long as a plain loop over 1,000 rows (359 against 284 µs). Feeding a `BufferBlock` (a TPL Dataflow queue) took 2.1 times as long (325 against 156 µs).
-- **For one row they cost most**: 2.4 times for a channel and 9.6 times for a `BufferBlock`.
-- **Memory is close for larger results** (1.01 to 1.15 times the loop at 100 and 1,000 rows) and higher for one row (2.2 and 2.8 times).
+- **At 1,000 rows they are faster.** Draining a channel took 0.32 times as long as a plain loop (88 against 276 µs). Feeding a `BufferBlock` (a TPL Dataflow queue) took 0.72 times as long (95 against 132 µs).
+- **At 100 rows the channel is faster and the `BufferBlock` is not**: 0.45 times for the channel (18.7 against 41.2 µs), 1.10 times for the `BufferBlock` (22.8 against 20.7 µs).
+- **For one row they cost more than the loop**: 1.61 times for a channel (2.4 against 1.5 µs) and 2.56 times for a `BufferBlock` (4.8 against 1.9 µs).
+- **Memory follows**: 0.35 to 0.47 times the loop at 100 and 1,000 rows, and 1.82 and 1.84 times for one row.
 - **Use them when something downstream needs a channel or a block.** For a plain list, use a terminal such as `ToListAsync()`. See [Channels and Dataflow](../channels-and-dataflow.md).
 
 ## The chart
 
-<div class="perf-chart"><img src="../../images/perf/perf-channels.svg" alt="Two panels of two bars each, each on its own scale, the time to drain 1,000 rows. Channel: plain loop 284 microseconds, ToChannel 359. BufferBlock: plain loop 156 microseconds, Dataflow 325."></div>
+<div class="perf-chart"><img src="../../images/perf/perf-channels.svg" alt="Two panels of two bars each, each on its own scale, the time to drain 1,000 rows. Channel: plain loop 275.6 microseconds, ToChannel 87.8. BufferBlock: plain loop 132.0 microseconds, Dataflow 95.4."></div>
 
-The time to move 1,000 rows into a channel (top panel) and into a `BufferBlock` (bottom panel), with ODX and with a hand-written loop that does the same job in one stage. Shorter is better, and each panel has its own scale.
+The time to move 1,000 rows into a channel (top panel) and into a `BufferBlock` (bottom panel), with ODX (`ToChannelReader(true)` and `ToTargetBlock`, the bars labelled ToChannel and Dataflow) and with a hand-written loop that does the same job. Shorter is better, and each panel has its own scale.
 
 [!include[](../../includes/perf/channels.md)]
 
 ## How this was measured
 
 - **Question:** how much do `ToChannel` and a `BufferBlock` cost against a hand-written loop over the same rows?
-- **Setup:** an in-memory provider; 1, 100 and 1,000 rows. The loop is a hand-written single-stage loop. Both sides produce the same rows.
-- **Settings:** BenchmarkDotNet 0.15.8, `--inprocess`, 5 warm-up and 12 measured iterations. The Dataflow rows were re-run as scoped jobs on 4 cores at below-normal priority under a watchdog. The Dataflow one-row time depends on thread scheduling and moves a lot between runs; read its 100- and 1,000-row ratios.
-- **Build, date, machine:** build not recorded; 2026-11-07 for the Dataflow rows, earlier for the channel rows; AMD Ryzen 9 7900, .NET 10, Windows 10.
-- **Data:** [channels.csv](../../perf-data/channels.csv) ([source](../../perf-data/channels.source.txt)), copied from the "Other features" table of `RESULTS.md`.
+- **Setup:** an in-memory provider; 1, 100 and 1,000 rows. Channel: the loop is a producer task that writes every row into an unbounded channel, and the reader drains it; ODX is `Map<T>().ToChannelReader(true)` drained with `ReadAllAsync`. Dataflow: the loop reads the rows, then sends each into a `BufferBlock`, which is drained; ODX is `Map<T>().ToTargetBlock(block, complete: true)`, drained. Both sides produce the same rows.
+- **Settings:** BenchmarkDotNet 0.15.8, `--inprocess`, 5 warm-up and 12 measured iterations, one launch, at below-normal priority under a watchdog, one run at a time. Each time is one run; the CSV has no error column.
+- **Build, date, machine:** build `6a770e8`, 2026-11-23; AMD Ryzen 9 7900, .NET 11.0.0, Windows 10.
+- **Data:** [channels.csv](../../perf-data/channels.csv) ([source](../../perf-data/channels.source.txt)), from the BenchmarkDotNet reports.
 - **Reproduce:** `dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*ChannelBenchmarks*"` and `"*DataflowBenchmarks*"`.

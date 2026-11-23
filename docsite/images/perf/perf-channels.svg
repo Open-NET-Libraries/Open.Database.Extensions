@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 304" role="img" aria-labelledby="channels-title channels-desc">
   <title id="channels-title">Draining 1,000 rows: a plain loop against ODX</title>
-  <desc id="channels-desc">Two panels of two bars each, each panel on its own scale: the time to drain 1,000 rows with a hand-written loop and with ODX, for a channel and for a BufferBlock. Every bar starts at zero. ToChannel (drain a channel): Plain loop 284.0 µs; ToChannel 359.0 µs. Dataflow (BufferBlock): Plain loop 156.0 µs; Dataflow 325.0 µs.</desc>
+  <desc id="channels-desc">Two panels of two bars each, each panel on its own scale: the time to drain 1,000 rows with a hand-written loop and with ODX, for a channel and for a BufferBlock. Every bar starts at zero. ToChannel (drain a channel): Plain loop 275.6 µs; ToChannel 87.8 µs. Dataflow (BufferBlock): Plain loop 132.0 µs; Dataflow 95.4 µs.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -65,34 +65,34 @@
   <text class="small" x="231" y="72">ODX</text>
   <text class="head" x="16" y="108">ToChannel (drain a channel)</text>
   <g>
-    <title>A hand-written loop over 1,000 rows: 284 µs.</title>
+    <title>A hand-written loop over 1,000 rows: 276 µs.</title>
     <rect class="hit" x="0" y="118" width="520" height="26"/>
     <text class="name" x="90" y="135">Plain loop</text>
-    <path class="grey" d="M100,123 h271.3 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-271.3 z"/>
-    <text class="val" x="381.3" y="135">284.0 µs</text>
+    <path class="grey" d="M100,123 h344 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-344 z"/>
+    <text class="val" x="454" y="135">275.6 µs</text>
   </g>
   <g>
-    <title>ToChannel (drain a channel) over 1,000 rows: 359 µs, 1.26× the loop.</title>
+    <title>ToChannel (drain a channel) over 1,000 rows: 88 µs, 0.32× the loop.</title>
     <rect class="hit" x="0" y="144" width="520" height="26"/>
     <text class="name" x="90" y="161">ToChannel</text>
-    <path class="one" d="M100,149 h344 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-344 z"/>
-    <text class="val" x="454" y="161">359.0 µs</text>
+    <path class="one" d="M100,149 h106.88 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-106.88 z"/>
+    <text class="val" x="216.88" y="161">87.8 µs</text>
   </g>
   <line class="axis" x1="100" y1="118" x2="100" y2="170"/>
   <text class="head" x="16" y="198">Dataflow (BufferBlock)</text>
   <g>
-    <title>A hand-written loop over 1,000 rows: 156 µs.</title>
+    <title>A hand-written loop over 1,000 rows: 132 µs.</title>
     <rect class="hit" x="0" y="208" width="520" height="26"/>
     <text class="name" x="90" y="225">Plain loop</text>
-    <path class="grey" d="M100,213 h163.04 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-163.04 z"/>
-    <text class="val" x="273.04" y="225">156.0 µs</text>
+    <path class="grey" d="M100,213 h344 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-344 z"/>
+    <text class="val" x="454" y="225">132.0 µs</text>
   </g>
   <g>
-    <title>Dataflow (BufferBlock) over 1,000 rows: 325 µs, 2.1× the loop.</title>
+    <title>Dataflow (BufferBlock) over 1,000 rows: 95 µs, 0.72× the loop.</title>
     <rect class="hit" x="0" y="234" width="520" height="26"/>
     <text class="name" x="90" y="251">Dataflow</text>
-    <path class="one" d="M100,239 h344 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-344 z"/>
-    <text class="val" x="454" y="251">325.0 µs</text>
+    <path class="one" d="M100,239 h247.46 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-247.46 z"/>
+    <text class="val" x="357.46" y="251">95.4 µs</text>
   </g>
   <line class="axis" x1="100" y1="208" x2="100" y2="260"/>
   <text class="muted small" x="16" y="282">Older run. Numbers: channels.csv</text>

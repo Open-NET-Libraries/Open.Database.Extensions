@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="sync-async-title sync-async-desc">
   <title id="sync-async-title">Sync reads against async reads</title>
-  <desc id="sync-async-desc">Four panels of three bars each, one panel per condition, each on its own scale: sync, async execute, and async read. Every bar starts at zero. Neither: Sync 77.3 µs; Async execute 80.9 µs; Async read 82.3 µs. Busy thread pool: Sync 94.4 µs; Async execute 97.4 µs; Async read 102.4 µs. Buffer refills: Sync 257.9 µs; Async execute 261.2 µs; Async read 314.3 µs. Refills and busy pool: Sync 279.3 µs; Async execute 279.0 µs; Async read 11.2 ms.</desc>
+  <desc id="sync-async-desc">Four panels of three bars each, one panel per condition, each on its own scale: sync, async execute, and async read. Every bar starts at zero. Neither: Sync 76.3 µs; Async execute 77.4 µs; Async read 80.0 µs. Busy thread pool: Sync 95.6 µs; Async execute 95.6 µs; Async read 99.3 µs. Buffer refills: Sync 258.2 µs; Async execute 262.4 µs; Async read 285.8 µs. Refills and busy pool: Sync 274.9 µs; Async execute 279.8 µs; Async read 2.2 ms.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -61,95 +61,95 @@
   <text class="muted" x="16" y="48">Connection held open, Map&lt;T&gt;(), 20 columns, 1,000 rows. Each panel has its own scale.</text>
   <text class="head" x="16" y="80">Neither</text>
   <g>
-    <title>Neither, Sync: reader open 77.3 µs, 1.00× the sync read; 227.4 KB allocated.</title>
+    <title>Neither, Sync: reader open 76.3 µs, 1.00× the sync read; 227.4 KB allocated.</title>
     <rect class="hit" x="0" y="90" width="560" height="26"/>
     <text class="name" x="100" y="107">Sync</text>
-    <path class="one" d="M110,95 h350.81 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-350.81 z"/>
-    <text class="val" x="470.81" y="107">77.3 µs</text>
+    <path class="one" d="M110,95 h356.68 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-356.68 z"/>
+    <text class="val" x="476.68" y="107">76.3 µs</text>
   </g>
   <g>
-    <title>Neither, Async execute: reader open 80.9 µs, 1.05× the sync read; 227.5 KB allocated.</title>
+    <title>Neither, Async execute: reader open 77.4 µs, 1.01× the sync read; 219.1 KB allocated.</title>
     <rect class="hit" x="0" y="116" width="560" height="26"/>
     <text class="name" x="100" y="133">Async execute</text>
-    <path class="one" d="M110,121 h367.48 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-367.48 z"/>
-    <text class="val" x="487.48" y="133">80.9 µs</text>
+    <path class="one" d="M110,121 h361.61 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-361.61 z"/>
+    <text class="val" x="481.61" y="133">77.4 µs</text>
   </g>
   <g>
-    <title>Neither, Async read: reader open 82.3 µs, 1.07× the sync read; 227.5 KB allocated.</title>
+    <title>Neither, Async read: reader open 80.0 µs, 1.05× the sync read; 219.2 KB allocated.</title>
     <rect class="hit" x="0" y="142" width="560" height="26"/>
     <text class="name" x="100" y="159">Async read</text>
     <path class="one" d="M110,147 h374 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-374 z"/>
-    <text class="val" x="494" y="159">82.3 µs</text>
+    <text class="val" x="494" y="159">80.0 µs</text>
   </g>
   <line class="axis" x1="110" y1="90" x2="110" y2="168"/>
   <text class="head" x="16" y="196">Busy thread pool</text>
   <g>
-    <title>Busy thread pool, Sync: reader open 94.4 µs, 1.00× the sync read; 227.4 KB allocated.</title>
+    <title>Busy thread pool, Sync: reader open 95.6 µs, 1.00× the sync read; 227.4 KB allocated.</title>
     <rect class="hit" x="0" y="206" width="560" height="26"/>
     <text class="name" x="100" y="223">Sync</text>
-    <path class="one" d="M110,211 h344.55 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-344.55 z"/>
-    <text class="val" x="464.55" y="223">94.4 µs</text>
+    <path class="one" d="M110,211 h360.03 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-360.03 z"/>
+    <text class="val" x="480.03" y="223">95.6 µs</text>
   </g>
   <g>
-    <title>Busy thread pool, Async execute: reader open 97.4 µs, 1.03× the sync read; 227.5 KB allocated.</title>
+    <title>Busy thread pool, Async execute: reader open 95.6 µs, 1.00× the sync read; 219.2 KB allocated.</title>
     <rect class="hit" x="0" y="232" width="560" height="26"/>
     <text class="name" x="100" y="249">Async execute</text>
-    <path class="one" d="M110,237 h355.53 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-355.53 z"/>
-    <text class="val" x="475.53" y="249">97.4 µs</text>
+    <path class="one" d="M110,237 h359.99 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-359.99 z"/>
+    <text class="val" x="479.99" y="249">95.6 µs</text>
   </g>
   <g>
-    <title>Busy thread pool, Async read: reader open 102.4 µs, 1.08× the sync read; 227.5 KB allocated.</title>
+    <title>Busy thread pool, Async read: reader open 99.3 µs, 1.04× the sync read; 219.2 KB allocated.</title>
     <rect class="hit" x="0" y="258" width="560" height="26"/>
     <text class="name" x="100" y="275">Async read</text>
     <path class="one" d="M110,263 h374 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-374 z"/>
-    <text class="val" x="494" y="275">102.4 µs</text>
+    <text class="val" x="494" y="275">99.3 µs</text>
   </g>
   <line class="axis" x1="110" y1="206" x2="110" y2="284"/>
   <text class="head" x="16" y="312">Buffer refills</text>
   <g>
-    <title>Buffer refills, Sync: reader open 257.9 µs, 1.00× the sync read; 227.4 KB allocated.</title>
+    <title>Buffer refills, Sync: reader open 258.2 µs, 1.00× the sync read; 227.4 KB allocated.</title>
     <rect class="hit" x="0" y="322" width="560" height="26"/>
     <text class="name" x="100" y="339">Sync</text>
-    <path class="one" d="M110,327 h306.11 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-306.11 z"/>
-    <text class="val" x="426.11" y="339">257.9 µs</text>
+    <path class="one" d="M110,327 h337.43 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-337.43 z"/>
+    <text class="val" x="457.43" y="339">258.2 µs</text>
   </g>
   <g>
-    <title>Buffer refills, Async execute: reader open 261.2 µs, 1.01× the sync read; 227.5 KB allocated.</title>
+    <title>Buffer refills, Async execute: reader open 262.4 µs, 1.02× the sync read; 219.2 KB allocated.</title>
     <rect class="hit" x="0" y="348" width="560" height="26"/>
     <text class="name" x="100" y="365">Async execute</text>
-    <path class="one" d="M110,353 h310.17 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-310.17 z"/>
-    <text class="val" x="430.17" y="365">261.2 µs</text>
+    <path class="one" d="M110,353 h342.98 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-342.98 z"/>
+    <text class="val" x="462.98" y="365">262.4 µs</text>
   </g>
   <g>
-    <title>Buffer refills, Async read: reader open 314.3 µs, 1.22× the sync read; 229.9 KB allocated.</title>
+    <title>Buffer refills, Async read: reader open 285.8 µs, 1.11× the sync read; 221.7 KB allocated.</title>
     <rect class="hit" x="0" y="374" width="560" height="26"/>
     <text class="name" x="100" y="391">Async read</text>
     <path class="one" d="M110,379 h374 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-374 z"/>
-    <text class="val" x="494" y="391">314.3 µs</text>
+    <text class="val" x="494" y="391">285.8 µs</text>
   </g>
   <line class="axis" x1="110" y1="322" x2="110" y2="400"/>
   <text class="head" x="16" y="428">Refills and busy pool</text>
   <g>
-    <title>Refills and busy pool, Sync: reader open 279.3 µs, 1.00× the sync read; 227.4 KB allocated.</title>
+    <title>Refills and busy pool, Sync: reader open 274.9 µs, 1.00× the sync read; 227.5 KB allocated.</title>
     <rect class="hit" x="0" y="438" width="560" height="26"/>
     <text class="name" x="100" y="455">Sync</text>
-    <path class="one" d="M110,443 h5.45 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-5.45 z"/>
-    <text class="val" x="125.45" y="455">279.3 µs</text>
+    <path class="one" d="M110,443 h42.65 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-42.65 z"/>
+    <text class="val" x="162.65" y="455">274.9 µs</text>
   </g>
   <g>
-    <title>Refills and busy pool, Async execute: reader open 279.0 µs, 1.00× the sync read; 227.5 KB allocated.</title>
+    <title>Refills and busy pool, Async execute: reader open 279.8 µs, 1.02× the sync read; 219.2 KB allocated.</title>
     <rect class="hit" x="0" y="464" width="560" height="26"/>
     <text class="name" x="100" y="481">Async execute</text>
-    <path class="one" d="M110,469 h5.44 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-5.44 z"/>
-    <text class="val" x="125.44" y="481">279.0 µs</text>
+    <path class="one" d="M110,469 h43.49 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-43.49 z"/>
+    <text class="val" x="163.49" y="481">279.8 µs</text>
   </g>
   <g>
-    <title>Refills and busy pool, Async read: reader open 11.2 ms, 40.01× the sync read; 231.3 KB allocated.</title>
+    <title>Refills and busy pool, Async read: reader open 2.2 ms, 8.10× the sync read; 222.2 KB allocated.</title>
     <rect class="hit" x="0" y="490" width="560" height="26"/>
     <text class="name" x="100" y="507">Async read</text>
     <path class="one" d="M110,495 h374 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-374 z"/>
-    <text class="val" x="494" y="507">11.2 ms</text>
+    <text class="val" x="494" y="507">2.2 ms</text>
   </g>
   <line class="axis" x1="110" y1="438" x2="110" y2="516"/>
-  <text class="muted small" x="16" y="538">Build ea5f096, 2026-11-14, one run per case. Numbers: sync-async.csv</text>
+  <text class="muted small" x="16" y="538">Build 6a770e8, 2026-11-23, one run per case. Numbers: sync-async.csv</text>
 </svg>

@@ -278,11 +278,11 @@ Person[] people = await connection
 
 ## Performance
 
-- **Against Dapper 2.1.89 on an in-memory ADO.NET reader (no I/O; 1,000 rows, 20 columns):** `Map<T>()` takes 0.35 of Dapper's time (85 against 246 µs) and allocates 0.41 of its memory (227 against 548 KB).
-- **Against a real database (10,000 rows, 20 columns; SQL Server LocalDB and a SQLite file, two runs each):** `Map<T>()` takes 0.87 to 0.96 of Dapper's time (the error margins overlap in three of the four runs) and allocates 0.77 to 0.85 of its memory.
+- **Against Dapper 2.1.89 on an in-memory ADO.NET reader (no I/O; 1,000 rows, 20 columns):** `Map<T>()` takes 0.38 of Dapper's time (76 against 200 µs) and allocates 0.41 of its memory (227 against 548 KB).
+- **Against a real database (10,000 rows, 20 columns; SQL Server LocalDB and a SQLite file, two runs each):** `Map<T>()` takes 0.90 to 0.93 of Dapper's time (the error margins do not overlap in any of the four runs) and allocates 0.77 to 0.85 of its memory.
 - **Built to hold a connection briefly:** the row mapping is compiled once per result shape and cached, and a command built from a factory opens its connection when it runs and disposes it afterwards.
 
-These figures come from benchmark build b5b0014 (run 2026-11-21; the data and its sources are in [`docsite/perf-data`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/tree/master/docsite/perf-data)). Read the timing ratios as indicative. Channels and Dataflow are conveniences, not speed-ups. See [Performance](https://open-net-libraries.github.io/Open.Database.Extensions/articles/performance.html).
+These figures come from benchmark build 6a770e8 (run 2026-11-23; the data and its sources are in [`docsite/perf-data`](https://github.com/Open-NET-Libraries/Open.Database.Extensions/tree/master/docsite/perf-data)). Read the timing ratios as indicative. On a one-row call a channel or a Dataflow block costs more than a plain loop; with 100 rows (channels) or 1,000 rows (Dataflow) and more it costs less. See [Performance](https://open-net-libraries.github.io/Open.Database.Extensions/articles/performance.html).
 
 ## And more
 

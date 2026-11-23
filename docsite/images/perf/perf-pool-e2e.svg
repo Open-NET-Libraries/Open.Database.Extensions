@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 356" role="img" aria-labelledby="pool-e2e-title pool-e2e-desc">
   <title id="pool-e2e-title">The final design against the Memory chunks build</title>
-  <desc id="pool-e2e-desc">Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced. Every bar starts at zero. ToArrayAsync, 10,000 rows 4.8%; ToAsyncBuffer_Items, 10,000 rows 2.9%; ToAsyncBufferStream, 10,000 rows 2.1%; ToListAsync, 10,000 rows 5.2%; ToArrayAsync, 100 rows 3.4%; ToAsyncBuffer_Items, 100 rows 3.2%; ToAsyncBufferStream, 100 rows 3.3%; ToListAsync, 100 rows 3.1%.</desc>
+  <desc id="pool-e2e-desc">Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced. Every bar starts at zero. ToArrayAsync, 10,000 rows 2.5%; ToAsyncBuffer_Items, 10,000 rows 1.9%; ToAsyncBufferStream, 10,000 rows 3.1%; ToListAsync, 10,000 rows -0.0%; ToArrayAsync, 100 rows 1.7%; ToAsyncBuffer_Items, 100 rows 17.5%; ToAsyncBufferStream, 100 rows 23.0%; ToListAsync, 100 rows 1.6%.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -61,69 +61,73 @@
   <text class="muted" x="16" y="48">Longer is better. How much less time the call takes, in percent.</text>
   <line class="grid" x1="250" y1="66" x2="250" y2="274"/>
   <text class="muted small mid" x="250" y="290">0</text>
-  <line class="grid" x1="329.33" y1="66" x2="329.33" y2="274"/>
-  <text class="muted small mid" x="329.33" y="290">2</text>
-  <line class="grid" x1="408.67" y1="66" x2="408.67" y2="274"/>
-  <text class="muted small mid" x="408.67" y="290">4</text>
+  <line class="grid" x1="297.6" y1="66" x2="297.6" y2="274"/>
+  <text class="muted small mid" x="297.6" y="290">5</text>
+  <line class="grid" x1="345.2" y1="66" x2="345.2" y2="274"/>
+  <text class="muted small mid" x="345.2" y="290">10</text>
+  <line class="grid" x1="392.8" y1="66" x2="392.8" y2="274"/>
+  <text class="muted small mid" x="392.8" y="290">15</text>
+  <line class="grid" x1="440.4" y1="66" x2="440.4" y2="274"/>
+  <text class="muted small mid" x="440.4" y="290">20</text>
   <line class="grid" x1="488" y1="66" x2="488" y2="274"/>
-  <text class="muted small mid" x="488" y="290">6</text>
+  <text class="muted small mid" x="488" y="290">25</text>
   <g>
-    <title>ToArrayAsync, 10,000 rows: 3.4 ms before, 3.2 ms after, 4.8% less time.</title>
+    <title>ToArrayAsync, 10,000 rows: 3.4 ms before, 3.3 ms after, 2.5% less time.</title>
     <rect class="hit" x="0" y="66" width="560" height="26"/>
     <text class="name" x="240" y="83">ToArrayAsync, 10,000 rows</text>
-    <path class="one" d="M250,71 h186.47 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-186.47 z"/>
-    <text class="val" x="446.47" y="83">4.8%</text>
+    <path class="one" d="M250,71 h19.65 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-19.65 z"/>
+    <text class="val" x="279.65" y="83">2.5%</text>
   </g>
   <g>
-    <title>ToAsyncBuffer_Items, 10,000 rows: 3.4 ms before, 3.3 ms after, 2.9% less time.</title>
+    <title>ToAsyncBuffer_Items, 10,000 rows: 3.4 ms before, 3.3 ms after, 1.9% less time.</title>
     <rect class="hit" x="0" y="92" width="560" height="26"/>
     <text class="name" x="240" y="109">ToAsyncBuffer_Items, 10,000 rows</text>
-    <path class="one" d="M250,97 h111.77 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-111.77 z"/>
-    <text class="val" x="371.77" y="109">2.9%</text>
+    <path class="one" d="M250,97 h14.34 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-14.34 z"/>
+    <text class="val" x="274.34" y="109">1.9%</text>
   </g>
   <g>
-    <title>ToAsyncBufferStream, 10,000 rows: 3.4 ms before, 3.4 ms after, 2.1% less time.</title>
+    <title>ToAsyncBufferStream, 10,000 rows: 3.4 ms before, 3.3 ms after, 3.1% less time.</title>
     <rect class="hit" x="0" y="118" width="560" height="26"/>
     <text class="name" x="240" y="135">ToAsyncBufferStream, 10,000 rows</text>
-    <path class="one" d="M250,123 h80.67 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-80.67 z"/>
-    <text class="val" x="340.67" y="135">2.1%</text>
+    <path class="one" d="M250,123 h25.95 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-25.95 z"/>
+    <text class="val" x="285.95" y="135">3.1%</text>
   </g>
   <g>
-    <title>ToListAsync, 10,000 rows: 3.4 ms before, 3.2 ms after, 5.2% less time.</title>
+    <title>ToListAsync, 10,000 rows: 3.4 ms before, 3.4 ms after, -0.0% less time.</title>
     <rect class="hit" x="0" y="144" width="560" height="26"/>
     <text class="name" x="240" y="161">ToListAsync, 10,000 rows</text>
-    <path class="one" d="M250,149 h201.9 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-201.9 z"/>
-    <text class="val" x="461.9" y="161">5.2%</text>
+    <path class="one" d="M250,149 h1.5 a1.5,1.5 0 0 1 1.5,1.5 v13 a1.5,1.5 0 0 1 -1.5,1.5 h-1.5 z"/>
+    <text class="val" x="259" y="161">-0.0%</text>
   </g>
   <g>
-    <title>ToArrayAsync, 100 rows: 39.1 µs before, 37.8 µs after, 3.4% less time.</title>
+    <title>ToArrayAsync, 100 rows: 39.1 µs before, 38.4 µs after, 1.7% less time.</title>
     <rect class="hit" x="0" y="170" width="560" height="26"/>
     <text class="name" x="240" y="187">ToArrayAsync, 100 rows</text>
-    <path class="one" d="M250,175 h131 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-131 z"/>
-    <text class="val" x="391" y="187">3.4%</text>
+    <path class="one" d="M250,175 h12.32 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-12.32 z"/>
+    <text class="val" x="272.32" y="187">1.7%</text>
   </g>
   <g>
-    <title>ToAsyncBuffer_Items, 100 rows: 68.4 µs before, 66.2 µs after, 3.2% less time.</title>
+    <title>ToAsyncBuffer_Items, 100 rows: 68.4 µs before, 56.5 µs after, 17.5% less time.</title>
     <rect class="hit" x="0" y="196" width="560" height="26"/>
     <text class="name" x="240" y="213">ToAsyncBuffer_Items, 100 rows</text>
-    <path class="one" d="M250,201 h122.42 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-122.42 z"/>
-    <text class="val" x="382.42" y="213">3.2%</text>
+    <path class="one" d="M250,201 h162.18 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-162.18 z"/>
+    <text class="val" x="422.18" y="213">17.5%</text>
   </g>
   <g>
-    <title>ToAsyncBufferStream, 100 rows: 79.5 µs before, 76.8 µs after, 3.3% less time.</title>
+    <title>ToAsyncBufferStream, 100 rows: 79.5 µs before, 61.2 µs after, 23.0% less time.</title>
     <rect class="hit" x="0" y="222" width="560" height="26"/>
     <text class="name" x="240" y="239">ToAsyncBufferStream, 100 rows</text>
-    <path class="one" d="M250,227 h126.31 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-126.31 z"/>
-    <text class="val" x="386.31" y="239">3.3%</text>
+    <path class="one" d="M250,227 h214.56 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-214.56 z"/>
+    <text class="val" x="474.56" y="239">23.0%</text>
   </g>
   <g>
-    <title>ToListAsync, 100 rows: 39.0 µs before, 37.8 µs after, 3.1% less time.</title>
+    <title>ToListAsync, 100 rows: 39.0 µs before, 38.3 µs after, 1.6% less time.</title>
     <rect class="hit" x="0" y="248" width="560" height="26"/>
     <text class="name" x="240" y="265">ToListAsync, 100 rows</text>
-    <path class="one" d="M250,253 h118.11 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-118.11 z"/>
-    <text class="val" x="378.11" y="265">3.1%</text>
+    <path class="one" d="M250,253 h11.63 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-11.63 z"/>
+    <text class="val" x="271.63" y="265">1.6%</text>
   </g>
   <line class="axis" x1="250" y1="66" x2="250" y2="274"/>
   <text class="muted small mid" x="369" y="306">percent less time than the Memory&lt;T&gt; chunks build</text>
-  <text class="muted small" x="16" y="334">Builds 3c05c47 and d4b47b8, 2026-11-20, SQLite in memory, class rows. Numbers: pool-e2e.csv</text>
+  <text class="muted small" x="16" y="334">Builds 3c05c47 (before) and 6a770e8 (after), runs: after 2026-11-23; before 2026-11-20, SQLite in memory, class rows. Numbers: pool-e2e.csv</text>
 </svg>

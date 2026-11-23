@@ -2,11 +2,11 @@
 
 | Database | Approach | Run a | Run b | Run a against `Map<T>()` | Run b against `Map<T>()` |
 |---|---|---:|---:|---:|---:|
-| SQL Server LocalDB | Hand-written selector | 27.64 ms (±2.25) | 24.03 ms (±0.68) | 0.92× | 0.94× |
-| SQL Server LocalDB | Map&lt;T&gt;() | 30.10 ms (±6.22) | 25.55 ms (±1.15) | 1.00× | 1.00× |
-| SQL Server LocalDB | Dapper.AOT | 27.69 ms (±1.02) | 25.79 ms (±1.85) | 0.92× | 1.01× |
-| SQL Server LocalDB | Dapper Query&lt;T&gt; | 31.48 ms (±3.73) | 28.81 ms (±1.24) | 1.05× | 1.13× |
-| SQLite file | Hand-written selector | 28.99 ms (±3.03) | 29.58 ms (±5.72) | 1.01× | 0.90× |
-| SQLite file | Map&lt;T&gt;() | 28.66 ms (±2.23) | 33.02 ms (±5.12) | 1.00× | 1.00× |
-| SQLite file | Dapper.AOT | 30.52 ms (±1.17) | 28.55 ms (±2.90) | 1.06× | 0.86× |
-| SQLite file | Dapper Query&lt;T&gt; | 32.81 ms (±5.33) | 35.74 ms (±5.25) | 1.14× | 1.08× |
+| SQL Server LocalDB | Hand-written selector | 24.58 ms (±0.70) | 24.59 ms (±0.77) | 0.94× | 0.94× |
+| SQL Server LocalDB | Map&lt;T&gt;() | 26.13 ms (±0.65) | 26.07 ms (±1.02) | 1.00× | 1.00× |
+| SQL Server LocalDB | Dapper.AOT | 25.92 ms (±0.69) | 26.13 ms (±1.03) | 0.99× | 1.00× |
+| SQL Server LocalDB | Dapper Query&lt;T&gt; | 29.01 ms (±0.58) | 28.84 ms (±0.49) | 1.11× | 1.11× |
+| SQLite file | Hand-written selector | 25.84 ms (±1.42) | 26.13 ms (±1.44) | 0.94× | 0.94× |
+| SQLite file | Map&lt;T&gt;() | 27.61 ms (±0.16) | 27.74 ms (±0.17) | 1.00× | 1.00× |
+| SQLite file | Dapper.AOT | 28.45 ms (±0.68) | 28.61 ms (±0.70) | 1.03× | 1.03× |
+| SQLite file | Dapper Query&lt;T&gt; | 29.75 ms (±1.29) | 29.90 ms (±1.17) | 1.08× | 1.08× |

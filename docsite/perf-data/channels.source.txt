@@ -1,8 +1,11 @@
-Benchmark build: not recorded (Benchmarks/RESULTS.md, "Other features", before 11.0.0-rc.8, when the channel terminals left the typed views of Core)
-Run date: 2026-11-07 and earlier (the Dataflow rows were re-measured on 2026-11-07; the date of the ToChannel rows is not recorded)
-Machine: AMD Ryzen 9 7900 3.70GHz, Windows 10; 4 cores at BelowNormal priority under a watchdog
-Runtime: .NET 10
-Harness: BenchmarkDotNet 0.15.8, --inprocess, short job (5 warm-up and 12 measured iterations), in-memory provider; the plain loop is a hand-written single-stage loop over the same rows
-Benchmark: ChannelBenchmarks and DataflowBenchmarks (ToChannel and a BufferBlock against a hand-written loop)
-Columns: loop_us = the hand-written loop; odx_us = ToChannel or a BufferBlock fed by ODX; time_ratio and alloc_ratio = ODX over the loop, as printed in RESULTS.md
-Source: the numbers are copied from the table "Other features" in Benchmarks/RESULTS.md. The run folders are not in the repository.
+Benchmark build: 6a770e8 (master; the benchmark project compiled once, the guard run)
+Run date: 2026-11-23
+Machine: AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores; Windows 10 (10.0.19045.6466/22H2/2022Update)
+Runtime: .NET 11.0.0 (11.0.0, 11.0.26.53018), X64 RyuJIT x86-64-v4; .NET SDK 11.0.100
+Harness: BenchmarkDotNet 0.15.8, InProcessEmitToolchain (--inprocess), WarmupCount=5, IterationCount=12, LaunchCount=1, one run per benchmark class; in-memory provider; run through the benchmark guard (BelowNormal priority, affinity 0xFF0000, stopped on low free RAM or after 25 minutes), one heavy job at a time
+Benchmark: ChannelBenchmarks (Channel_Dapper, the baseline: a producer task writes every row into an unbounded channel and the reader drains it; Channel_ODE: Map<Post>().ToChannelReader(true) drained with ReadAllAsync) and DataflowBenchmarks (Dataflow_Dapper, the baseline: QueryAsync then SendAsync into a BufferBlock, drained; Dataflow_ODE: Map<Post>().ToTargetBlock(block, complete: true), drained); Rows = 1, 100 and 1000
+Columns: loop_us = the Mean of the _Dapper method (the hand-written baseline); odx_us = the Mean of the _ODE method; time_ratio = BenchmarkDotNet Ratio (ODX over the baseline, by Mean); alloc_ratio = BenchmarkDotNet Alloc Ratio (ODX over the baseline, by Allocated); the Means are as printed (microseconds)
+Feature labels: the labels in the feature column ("ToChannel (drain a channel)", "Dataflow (BufferBlock)") are the earlier names; the ODX side of this run is the v11 ToChannelReader(true) and ToTargetBlock, a different design from the older two-stage ToChannel the earlier numbers measured. The earlier numbers (Benchmarks/RESULTS.md, "Other features", 2026-11-07 and before) are replaced.
+Source files (BenchmarkDotNet report CSVs, one per run; the run folders are not in the repository):
+  chan/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.ChannelBenchmarks-report.csv  (source_run chan; console log bench-full/logs/chan.log)
+  dflow/BenchmarkDotNet.Artifacts/results/Open.Database.Extensions.Benchmarks.DataflowBenchmarks-report.csv  (source_run dflow; console log bench-full/logs/dflow.log)

@@ -15,7 +15,7 @@
   --fg-3: #737b86;
   --s1: #2a78d6; /* ODX one object per row */
   --s2: #eb6834; /* Dapper */
-  --s3: #1baf7a; /* ODX row class + Select */
+  --s3: #1baf7a; /* ODX shaped to a domain object */
   --s4: #8b929c; /* ODX object[] rows: neutral baseline */
   --tip-bg: #16191d;
   --tip-fg: #f6f7f9;
@@ -99,7 +99,7 @@ details summary { cursor: pointer; font-weight: 600; font-family: var(--font-dis
 <main>
   <nav class="back"><a href="../articles/performance.html">&larr; Back to the documentation</a></nav>
   <header>
-    <div class="eyebrow">Open.Database.Extensions 11.0 · benchmark snapshot · 2026-11-14</div>
+    <div class="eyebrow">Open.Database.Extensions 11.0 · benchmark snapshot · 2026-11-23 · build 6a770e8</div>
     <h1>How each way of reading rows ranks</h1>
     <p>Twenty columns, 1,000 rows, the same synthetic reader for every variant. Reader-open time is the time from <code>ExecuteReader</code> until the reader closes, and it is the number that matters most: it is how long the connection is held. Total time and allocations come second.</p>
     <div class="conditions">
@@ -107,7 +107,6 @@ details summary { cursor: pointer; font-weight: 600; font-family: var(--font-dis
       <span class="chip">BenchmarkDotNet 0.15.8, in-process</span>
       <span class="chip">synthetic provider, 20 typed columns</span>
       <span class="chip warn">wire and per-row cost set to 0</span>
-      <span class="chip warn">measured 2026-11-14, before 11.0.0-rc.6; a fresh run on the current build will replace these numbers</span>
     </div>
   </header>
 
@@ -128,7 +127,7 @@ details summary { cursor: pointer; font-weight: 600; font-family: var(--font-dis
 
   <section>
     <h2>Memory allocated per call</h2>
-    <p>The RowMap plan and the hand-written selector allocate the same bytes: the list and one object per row. A row class plus <code>Select</code> allocates about twice that.</p>
+    <p>The RowMap plan, the hand-written selector and the factory map allocate the same bytes: the list and one object per row. A row class, then <code>Select</code> after the close allocates about twice that.</p>
     <div class="chart" id="chartAlloc"></div>
   </section>
 
@@ -137,7 +136,7 @@ details summary { cursor: pointer; font-weight: 600; font-family: var(--font-dis
     <p>Total time at 1,000 rows across widths 1, 3, 5, 10 and 20. Every approach grows close to a straight line, so the slope is its cost per cell.</p>
     <div class="legend" id="legend2"></div>
     <div class="chart" id="chartWidth"></div>
-    <p class="note">Cost per cell, width 1 to 20: hand-written selector 1.91 ns, RowMap plan 3.65 ns, row class plus <code>Select</code> 4.12 ns, <code>object[]</code> dump 8.90 ns, Dapper 9.70 ns.</p>
+    <p class="note">Cost per cell, width 1 to 20: hand-written selector 1.98 ns, RowMap plan 3.69 ns, factory map 4.12 ns, <code>object[]</code> dump 8.81 ns, Dapper 9.50 ns.</p>
   </section>
 
   <section>
@@ -153,10 +152,10 @@ details summary { cursor: pointer; font-weight: 600; font-family: var(--font-dis
 
   <section>
     <h2>On real databases</h2>
-    <p>The same mapping paths on SQL Server LocalDB (SqlClient) and on a SQLite file, at 20 columns and 10,000 rows. A real provider spends its own time on every row, so mapping gaps that look large on the synthetic reader shrink to a few percent. Memory differences do not shrink.</p>
+    <p>The same mapping paths on SQL Server LocalDB (SqlClient) and on a SQLite file, at 20 columns and 10,000 rows. A real provider spends its own time on every row, so the gaps between the ODX paths that look large on the synthetic reader shrink to a few percent. Memory differences do not shrink.</p>
     <div class="legend" id="legendRp"></div>
     <div class="panels" id="rpPanels"></div>
-    <p class="note">On SQL Server the RowMap plan, the hand-written selector and the leanest hand loop are within 3% of each other, which is within run-to-run noise, while Dapper is 6% slower and allocates 29% more. On SQLite, which costs less per row, the plan is 21% slower than hand-written code and allocates 18% more. One run per cell; differences under about 5% cannot be told apart.</p>
+    <p class="note">On SQL Server the RowMap plan, the hand-written selector, the factory map and the leanest hand loop are within 3.3% of each other, which is within run-to-run noise, while Dapper is 15% slower than the plan and allocates 29% more. On SQLite the plan is 4.8% slower than the hand-written selector and allocates 4.6% more, while Dapper is 30% slower than the plan and allocates 18% more. One run per cell; differences under about 5% cannot be told apart.</p>
     <div class="tablewrap">
       <table id="rpTable">
         <thead><tr><th>Provider</th><th>Variant</th><th>5 columns (ms)</th><th>20 columns (ms)</th><th>5 columns (MB)</th><th>20 columns (MB)</th></tr></thead>
@@ -170,9 +169,9 @@ details summary { cursor: pointer; font-weight: 600; font-family: var(--font-dis
     <p>The same RowMap plan, read three ways, at 20 columns and 1,000 rows. Each panel is one condition: a buffer refill every 100 rows (20 µs each), a thread pool kept busy (8 work items), both, or neither. Shorter bars hold the connection for less time.</p>
     <div class="legend"><span><b>Sync</b>: <code>ExecuteReader</code>, then <code>Read()</code></span><span><b>Async execute</b>: <code>ExecuteReaderAsync</code>, then <code>Read()</code> (the default)</span><span><b>Async read</b>: <code>ReadAsync()</code> for every row (<code>AsyncReads()</code>)</span></div>
     <div class="panels" id="saPanels"></div>
-    <p class="note">Each panel has its own scale; compare bars within a panel. With a refill and a busy pool, every refill makes <code>ReadAsync()</code> wait about 1.2 ms for a free thread while the reader stays open: 11.2 ms against 0.28 ms for sync, 40 times longer (51 times at 5 columns). Sync and async execute do not move. Allocations are the same for all three (233 KB; async read adds 2.5 KB with refills). At one row no refill is reached and the three differ by under 0.1 µs.</p>
+    <p class="note">Each panel has its own scale; compare bars within a panel. With a refill and a busy pool, every refill makes <code>ReadAsync()</code> wait about 0.2 ms for a free thread while the reader stays open: 2.2 ms against 0.27 ms for sync, 8.1 times longer. Sync and async execute do not move. Sync allocates 227 KB and the two async paths 219 KB; async read adds about 2.5 KB with refills and 3 KB with refills and a busy pool.</p>
     <p class="note">This shows the mechanism in the synthetic model. A first probe on real providers (10,000 rows each) found that <code>ReadAsync()</code> almost never waits on local connections: 0 to 4 asynchronous completions in 10,000 reads on SQL Server LocalDB, including 8 KB rows, and none on a SQLite file. SQL Server 2022 over TCP (in Docker, on the same machine) behaved the same: 0 to 4 in 10,000, and the three paths were within the run's noise of each other. Without real network delay the rows arrive before <code>ReadAsync()</code> asks for them, so these setups cannot show the effect either way.</p>
-    <p class="note">Over a shaped link (SQL Server in Docker, 5 ms delay, 100 Mbit), the link sets the total and every path takes the same time, with or without a busy pool (within 3 ms). Where the wait happens depends on the access mode. In SqlClient&rsquo;s default mode, <code>ReadAsync()</code> reads the whole row and truly waits without blocking: 7.8% of calls for rows of 20 small columns, about 98% for 8 KB rows. With <code>SequentialAccess</code>, which ODX&rsquo;s <code>Map&lt;T&gt;()</code> uses today, <code>ReadAsync()</code> returns early and the synchronous column reads wait on the network instead, blocking the thread. Async reads also allocate more: 16.6 MB against 9.7 MB for sync over the small rows, and about 3 times as much for the 8 KB rows.</p>
+    <p class="note">Over a shaped link (SQL Server in Docker, 5 ms delay, 100 Mbit), the link sets the total and every path takes the same time, with or without a busy pool (within 3 ms). Where the wait happens depends on the access mode. In SqlClient&rsquo;s default mode, <code>ReadAsync()</code> reads the whole row and truly waits without blocking: 7.9% of calls for rows of 20 small columns, about 98% for 8 KB rows. With <code>SequentialAccess</code>, which ODX&rsquo;s <code>Map&lt;T&gt;()</code> uses today, <code>ReadAsync()</code> returns early and the synchronous column reads wait on the network instead, blocking the thread. Async reads also allocate more: 16.4 MB against 9.5 MB for sync over the small rows, and about 3 times as much for the 8 KB rows.</p>
   </section>
 
   <section>
@@ -192,52 +191,52 @@ details summary { cursor: pointer; font-weight: 600; font-family: var(--font-dis
 <script>
 const FAM = {
   one:   { name: "ODX: one object per row", color: "var(--s1)" },
-  two:   { name: "ODX: row class, then Select", color: "var(--s3)" },
+  two:   { name: "ODX: shaped to a domain object", color: "var(--s3)" },
   raw:   { name: "ODX: raw object[] rows", color: "var(--s4)" },
   dap:   { name: "Dapper 2.1.89", color: "var(--s2)" },
 };
-// Width 20, rows 1000, net11.0 (stage 1 re-run, build b27a02f). open/mean in µs, alloc in bytes.
+// Width 20, rows 1000, net11.0 (build 6a770e8, 2026-11-23; synthetic-overhead.csv). open/mean in µs, alloc in bytes (allocated_kb * 1024).
 const ROWS = [
-  { id: "V2",    fam: "one", name: "Map(selector), hand-written",          open: 46.8,  mean: 47.0,  alloc: 232880, how: "A static Func<IDataRecord,T> with typed getters" },
-  { id: "V4a",   fam: "one", name: "Selector into one reused row, Select",  open: 58.8,  mean: 59.0,  alloc: 233560, how: "Caller recipe: fill one held row, project it" },
-  { id: "V4b",   fam: "one", name: "Selector into a pooled row, Select",    open: 62.8,  mean: 63.1,  alloc: 233713, how: "Caller recipe: rent a row, project it, return it" },
-  { id: "V6a",   fam: "one", name: "Shaping inside the selector",           open: 67.6,  mean: 67.8,  alloc: 304889, how: "Computed members built in the selector" },
-  { id: "V1",    fam: "one", name: "Map<T>(), the RowMap plan",             open: 81.6,  mean: 81.7,  alloc: 232857, how: "The cached, compiled typed plan" },
-  { id: "V5",    fam: "two", name: "Row class, close, then Select",         open: 82.1,  mean: 97.8,  alloc: 456984, how: "Map<Row>().ToList(), then Select after the close" },
-  { id: "V6d",   fam: "two", name: "Row class, shaping after close",        open: 82.3,  mean: 134.5, alloc: 529073, how: "Computed members built after the close" },
-  { id: "V3",    fam: "two", name: "Row class plus inline Select",          open: 106.4, mean: 106.7, alloc: 449233, how: "Select runs with the reader open" },
-  { id: "V6c",   fam: "two", name: "Row class, shaping in inline Select",   open: 138.9, mean: 139.2, alloc: 521296, how: "Computed members in a Select, reader open" },
-  { id: "V0b",   fam: "raw", name: "object[] rows, transformed later",      open: 170.1, mean: 221.0, alloc: 753024, how: "GetValues into object[], typed objects built later" },
-  { id: "V0",    fam: "raw", name: "object[] dump (GetValues)",             open: 178.4, mean: 178.5, alloc: 528969, how: "The baseline: every cell boxed into object[]" },
-  { id: "V7_V5", fam: "dap", name: "Dapper, then Select after",             open: 197.5, mean: 217.1, alloc: 785369, how: "Query<Row>, then Select" },
-  { id: "V7_V6d",fam: "dap", name: "Dapper, shaping after",                 open: 200.5, mean: 256.2, alloc: 857458, how: "Query<Row>, computed members afterwards" },
-  { id: "V7_V1", fam: "dap", name: "Dapper Query<T>",                       open: 202.4, mean: 202.7, alloc: 561240, how: "Dapper's buffered Query<T>, the plain map" },
-  { id: "V7_V3", fam: "dap", name: "Dapper plus inline Select",             open: 214.0, mean: 214.3, alloc: 777240, how: "Query<Row>(buffered: false) with Select" },
-  { id: "V7_V6c",fam: "dap", name: "Dapper, shaping in inline Select",      open: 257.6, mean: 257.9, alloc: 849249, how: "Unbuffered Query<Row>, computed members in Select" },
+  { id: "V2",     fam: "one", name: "Map(selector), hand-written", open: 49.2, mean: 49.4, alloc: 232904, how: "A static Func<IDataRecord,T> with typed getters" },
+  { id: "V4a",    fam: "one", name: "Selector into one reused row, Select", open: 59.2, mean: 59.4, alloc: 233320, how: "Caller recipe: fill one held row, project it" },
+  { id: "V4b",    fam: "one", name: "Selector into a pooled row, Select", open: 62.2, mean: 62.4, alloc: 233473, how: "Caller recipe: rent a row, project it, return it" },
+  { id: "V6a",    fam: "one", name: "Shaping inside the selector", open: 74.0, mean: 74.2, alloc: 304913, how: "Computed members built in the selector" },
+  { id: "V5",     fam: "two", name: "Row class, close, then Select", open: 82.4, mean: 97.1, alloc: 457009, how: "Map<Row>().ToList(), then Select after the close" },
+  { id: "V1",     fam: "one", name: "Map<T>(), the RowMap plan", open: 83.1, mean: 83.2, alloc: 232881, how: "The cached, compiled typed plan" },
+  { id: "V6d",    fam: "two", name: "Row class, shaping after close", open: 86.5, mean: 137.2, alloc: 529098, how: "Computed members built after the close" },
+  { id: "V3",     fam: "two", name: "Factory map, domain object", open: 101.7, mean: 101.9, alloc: 232881, how: "One object per row: a factory map straight to the domain object, built while the reader is open" },
+  { id: "V6c",    fam: "two", name: "Factory map, shaping in the map", open: 133.1, mean: 133.3, alloc: 304890, how: "Computed members built inside the factory map, reader open" },
+  { id: "V0b",    fam: "raw", name: "object[] rows, transformed later", open: 174.9, mean: 223.4, alloc: 753050, how: "GetValues into object[], typed objects built later" },
+  { id: "V0",     fam: "raw", name: "object[] dump (GetValues)", open: 177.7, mean: 177.9, alloc: 528994, how: "The baseline: every cell boxed into object[]" },
+  { id: "V7_V6d", fam: "dap", name: "Dapper, shaping after", open: 199.4, mean: 252.1, alloc: 857483, how: "Query<Row>, computed members afterwards" },
+  { id: "V7_V1",  fam: "dap", name: "Dapper Query<T>", open: 199.6, mean: 199.9, alloc: 561266, how: "Dapper's buffered Query<T>, the plain map" },
+  { id: "V7_V5",  fam: "dap", name: "Dapper, then Select after", open: 200.3, mean: 216.7, alloc: 785394, how: "Query<Row>, then Select" },
+  { id: "V7_V3",  fam: "dap", name: "Dapper plus inline Select", open: 213.9, mean: 214.2, alloc: 777266, how: "Query<Row>(buffered: false) with Select" },
+  { id: "V7_V6c", fam: "dap", name: "Dapper, shaping in inline Select", open: 256.6, mean: 256.9, alloc: 849275, how: "Unbuffered Query<Row>, computed members in Select" },
 ];
 const WIDTHS = [1, 3, 5, 10, 20];
 const LINES = [
-  { id: "V2",    fam: "one", dash: true,  name: "Hand-written selector", ns: [10674, 11920, 16821, 31240, 46956] },
-  { id: "V1",    fam: "one", dash: false, name: "RowMap plan",           ns: [12399, 18280, 25154, 49070, 81728] },
-  { id: "V3",    fam: "two", dash: false, name: "Row class + Select",    ns: [28286, 32370, 41387, 67160, 106659] },
-  { id: "V0",    fam: "raw", dash: false, name: "object[] dump",         ns: [9476, 20020, 35872, 75730, 178496] },
-  { id: "V7_V1", fam: "dap", dash: false, name: "Dapper Query<T>",       ns: [18456, 31070, 44562, 96220, 202663] },
+  { id: "V2", fam: "one", dash: true, name: "Hand-written selector", ns: [11817, 13150, 16909, 31980, 49406] },
+  { id: "V1", fam: "one", dash: false, name: "RowMap plan", ns: [13056, 18720, 25753, 50610, 83217] },
+  { id: "V3", fam: "two", dash: false, name: "Factory map", ns: [23684, 29060, 36963, 60500, 101932] },
+  { id: "V0", fam: "raw", dash: false, name: "object[] dump", ns: [10539, 22420, 35018, 91230, 177889] },
+  { id: "V7_V1", fam: "dap", dash: false, name: "Dapper Query<T>", ns: [19440, 31040, 43940, 99660, 199873] },
 ];
-// BS-RP, rows 10,000 (frozen build fbb13d7, net11.0): mean µs and allocated KB at widths 5 and 20.
+// Real providers, rows 10,000 (build 6a770e8, 2026-11-23, net11.0; real-providers.csv): per variant [mean µs at 5 columns, mean µs at 20, allocated KB at 5, allocated KB at 20].
 const RP_V = [
   { id: "V1",  name: "Map<T>(), the RowMap plan", color: "var(--s1)" },
   { id: "V2",  name: "Map(selector), hand-written", color: "var(--s1)" },
   { id: "V9c", name: "Leanest hand loop (reference)", color: "var(--s4)" },
-  { id: "V3",  name: "Row class, then Select", color: "var(--s3)" },
+  { id: "V3",  name: "Factory map, domain object", color: "var(--s3)" },
   { id: "V7",  name: "Dapper Query<T>", color: "var(--s2)" },
 ];
 const RP = {
-  "SQL Server LocalDB": { V1: [3076.88, 25903.05, 2830.94, 9708.42], V2: [3157.90, 25177.33, 2830.96, 9708.44], V9c: [2942.05, 25594.00, 2830.77, 9708.21], V3: [3748.27, 27239.67, 4940.69, 11818.14], V7: [3188.24, 27572.23, 3799.97, 12561.54] },
-  "SQLite file":        { V1: [7425.35, 31300.98, 4373.67, 14448.46], V2: [5975.55, 25898.64, 3826.52, 12250.66], V9c: [5962.72, 25920.88, 3826.31, 12250.33], V3: [8412.85, 30899.16, 6483.38, 16558.28], V7: [7582.62, 29780.11, 4795.77, 15144.24] },
+  "SQL Server LocalDB": { V1: [3175.12, 25570.05, 2830.95, 9708.43], V2: [3011.49, 25517.80, 2830.97, 9708.45], V9c: [2997.49, 25038.22, 2830.76, 9708.25], V3: [3105.78, 25848.03, 2830.95, 9708.43], V7: [3226.95, 29387.67, 3799.97, 12561.47] },
+  "SQLite file":        { V1: [6909.23, 27860.75, 3826.80, 12814.38], V2: [6003.70, 26572.99, 3826.52, 12250.67], V9c: [5976.17, 25751.22, 3826.34, 12250.48], V3: [7038.60, 28128.83, 3826.80, 12814.38], V7: [9382.96, 36291.77, 4795.81, 15144.25] },
 };
 function rpPanels() {
   document.getElementById("legendRp").innerHTML =
-    `<span><i style="background:var(--s1)"></i>ODX: one object per row</span><span><i style="background:var(--s3)"></i>ODX: row class, then Select</span><span><i style="background:var(--s2)"></i>Dapper 2.1.89</span><span><i style="background:var(--s4)"></i>Hand loop on the provider's reader (reference)</span>`;
+    `<span><i style="background:var(--s1)"></i>ODX: one object per row</span><span><i style="background:var(--s3)"></i>ODX: shaped to a domain object</span><span><i style="background:var(--s2)"></i>Dapper 2.1.89</span><span><i style="background:var(--s4)"></i>Hand loop on the provider's reader (reference)</span>`;
   const box = document.getElementById("rpPanels");
   const panels = [];
   for (const prov of Object.keys(RP)) {
@@ -274,12 +273,12 @@ function rpPanels() {
     tb.appendChild(tr);
   }
 }
-// BS-SA matrix, width 20, rows 1000, reader-open µs (frozen build ea5f096, net11.0).
+// Sync against async matrix, width 20, rows 1000, reader-open µs (build 6a770e8, 2026-11-23, net11.0; sync-async.csv).
 const SA = [
-  { cond: "Neither",              vals: [77.3, 80.9, 82.3] },
-  { cond: "Busy thread pool",     vals: [94.4, 97.4, 102.4] },
-  { cond: "Buffer refills",       vals: [257.9, 261.2, 314.3] },
-  { cond: "Refills and busy pool", vals: [279.3, 279.0, 11175.0] },
+  { cond: "Neither",                 vals: [76.3, 77.4, 80.0] },
+  { cond: "Busy thread pool",        vals: [95.6, 95.6, 99.3] },
+  { cond: "Buffer refills",          vals: [258.2, 262.4, 285.8] },
+  { cond: "Refills and busy pool",   vals: [274.9, 279.8, 2227.4] },
 ];
 const SA_PATHS = ["Sync", "Async execute", "Async read"];
 function saPanels() {
@@ -307,9 +306,9 @@ function saPanels() {
   }
 }
 const FRESH = [
-  { w: 1,  reused: [166.4, 560],  fresh: [192393.9, 16012] },
-  { w: 5,  reused: [186.9, 560],  fresh: [332991.3, 23483] },
-  { w: 20, reused: [264.9, 560],  fresh: [875028.9, 53299] },
+  { w: 1, reused: [186, 584], fresh: [193122, 16236] },
+  { w: 5, reused: [202, 584], fresh: [333147, 23421] },
+  { w: 20, reused: [278, 584], fresh: [869609, 52728] },
 ];
 const NS = "http://www.w3.org/2000/svg";
 const el = (n, a = {}, parent) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (parent) parent.appendChild(e); return e; };
@@ -441,7 +440,7 @@ function tables() {
 legend("legend1", ["one", "two", "raw", "dap"]);
 (() => {
   const box = document.getElementById("legend2");
-  box.innerHTML = `<span><i class="dash"></i>Hand-written selector</span><span><i class="solid"></i>RowMap plan</span><span><i style="background:var(--s3)"></i>Row class + Select</span><span><i style="background:var(--s4)"></i>object[] dump</span><span><i style="background:var(--s2)"></i>Dapper</span>`;
+  box.innerHTML = `<span><i class="dash"></i>Hand-written selector</span><span><i class="solid"></i>RowMap plan</span><span><i style="background:var(--s3)"></i>Factory map</span><span><i style="background:var(--s4)"></i>object[] dump</span><span><i style="background:var(--s2)"></i>Dapper</span>`;
 })();
 stats();
 barChart("chartOpen", "Reader-open time", "µs", r => r.open, 1);

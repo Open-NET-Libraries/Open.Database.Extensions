@@ -2,8 +2,8 @@
 
 | Rank | Variant | Time per call (ms) | Error margin | Against the best | Memory per call (MB) | Against the least |
 |---:|---|---:|---:|---:|---:|---:|
-| 1 | Hand loop (reference) | 2.94 | ±1.5% | best | 2.76 | best |
-| 2 | Map&lt;T&gt;() | 3.08 | ±5.1% | +4.6% | 2.76 | +0.0% |
-| 3 | Map(selector), hand-written | 3.16 | ±5.6% | +7.3% | 2.76 | +0.0% |
-| 4 | Dapper Query&lt;T&gt; | 3.19 | ±1.7% | +8.4% | 3.71 | +34.2% |
-| 5 | Row class, inline Select | 3.75 | ±4.6% | +27.4% | 4.82 | +74.5% |
+| 1 | Hand loop (reference) | 3.00 | ±1.5% | best | 2.76 | best |
+| 2 | Map(selector), hand-written | 3.01 | ±2.2% | +0.5% | 2.76 | +0.0% |
+| 3 | Factory map, domain object | 3.11 | ±1.9% | +3.6% | 2.76 | +0.0% |
+| 4 | Map&lt;T&gt;() | 3.18 | ±2.9% | +5.9% | 2.76 | +0.0% |
+| 5 | Dapper Query&lt;T&gt; | 3.23 | ±1.0% | +7.7% | 3.71 | +34.2% |

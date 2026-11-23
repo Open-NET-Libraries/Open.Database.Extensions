@@ -10,7 +10,7 @@ The [command factory](no-service-layer.md#the-command-factory) does not care wha
 
 What each endpoint does:
 
-- **The buffer.** `HttpContext` is a parameter, for `RequestAborted` and `Response.RegisterForDispose`. The lambda returns `buffer.Items` without awaiting it, as the controller does, and declares `Task<PooledArray<Post>>`. The framework awaits the rows and writes them as a JSON array, and the arrays go back to the pool after the response. The rules are the controller's: register before you return the task, and never dispose a buffer whose rows you return (no `using`, no `await using`). See [The controller](no-service-layer.md#the-controller) and [Caveats](no-service-layer.md#caveats).
+- **The buffer.** `HttpContext` is a parameter, for `RequestAborted` and the response. [`RegisterForDispose(http.Response)`](no-service-layer.md#registerfordispose) registers the buffer with the response and returns the task of its rows, which the lambda returns without awaiting it, as the controller does. The framework awaits the rows and writes them as a JSON array, and the arrays go back to the pool after the response. The rule is the controller's: never dispose a buffer whose rows you return (no `using`, no `await using`). See [The controller](no-service-layer.md#the-controller) and [Caveats](no-service-layer.md#caveats).
 - **The list.** `ToListAsync` returns a `ValueTask<List<Post>>`, and the endpoint returns it as it is, with nothing to register.
 
 The tests on [What to test](no-service-layer.md#what-to-test) work the same way: point the `WebApplicationFactory` client at the endpoint's route.

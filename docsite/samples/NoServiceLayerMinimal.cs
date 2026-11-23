@@ -20,17 +20,11 @@ public static class PostEndpoints
 		// rows' task returned.
 		posts.MapGet(
 			"by-author/{author}",
-			static Task<PooledArray<Post>> (
-				int author,
-				PostCommands commands,
-				HttpContext http) =>
-			{
-				PooledBuffer<Post> buffer = commands
+			static (int author, PostCommands commands, HttpContext http)
+				=> commands
 					.ByAuthor(author)
-					.ToAsyncBuffer(http.RequestAborted);
-				http.Response.RegisterForDispose(buffer);
-				return buffer.Items;
-			});
+					.ToAsyncBuffer(http.RequestAborted)
+					.RegisterForDispose(http.Response));
 
 		// A list: one expression, nothing to register.
 		posts.MapGet(

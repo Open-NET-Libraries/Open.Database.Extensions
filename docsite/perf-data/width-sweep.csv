@@ -1,26 +1,26 @@
 variant_id,variant,family,columns,rows,total_us,source_run
-V2,"Map(selector), hand-written",odx-one,1,1000,10.674,stage1r-1a
-V2,"Map(selector), hand-written",odx-one,3,1000,11.92,stage2-2a
-V2,"Map(selector), hand-written",odx-one,5,1000,16.821,stage1r-1a
-V2,"Map(selector), hand-written",odx-one,10,1000,31.24,stage2-2a
-V2,"Map(selector), hand-written",odx-one,20,1000,46.956,stage1r-1a
-V1,"Map<T>(), the RowMap plan",odx-one,1,1000,12.399,stage1r-1a
-V1,"Map<T>(), the RowMap plan",odx-one,3,1000,18.28,stage2-2a
-V1,"Map<T>(), the RowMap plan",odx-one,5,1000,25.154,stage1r-1a
-V1,"Map<T>(), the RowMap plan",odx-one,10,1000,49.07,stage2-2a
-V1,"Map<T>(), the RowMap plan",odx-one,20,1000,81.728,stage1r-1a
-V3,"Row class, inline Select",odx-select,1,1000,28.286,stage1r-1a
-V3,"Row class, inline Select",odx-select,3,1000,32.37,stage2-2a
-V3,"Row class, inline Select",odx-select,5,1000,41.387,stage1r-1a
-V3,"Row class, inline Select",odx-select,10,1000,67.16,stage2-2a
-V3,"Row class, inline Select",odx-select,20,1000,106.659,stage1r-1a
-V0,"object[] rows (baseline)",odx-raw,1,1000,9.476,stage1r-1a
-V0,"object[] rows (baseline)",odx-raw,3,1000,20.02,stage2-2a
-V0,"object[] rows (baseline)",odx-raw,5,1000,35.872,stage1r-1a
-V0,"object[] rows (baseline)",odx-raw,10,1000,75.73,stage2-2a
-V0,"object[] rows (baseline)",odx-raw,20,1000,178.496,stage1r-1a
-V7_V1,"Dapper Query<T>",dapper,1,1000,18.456,stage1r-1c
-V7_V1,"Dapper Query<T>",dapper,3,1000,31.07,stage2-2c
-V7_V1,"Dapper Query<T>",dapper,5,1000,44.562,stage1r-1c
-V7_V1,"Dapper Query<T>",dapper,10,1000,96.22,stage2-2c
-V7_V1,"Dapper Query<T>",dapper,20,1000,202.663,stage1r-1c
+V2,"Map(selector), hand-written",odx-one,1,1000,11.817,stage1r-1a
+V2,"Map(selector), hand-written",odx-one,3,1000,13.15,stage2-2a
+V2,"Map(selector), hand-written",odx-one,5,1000,16.909,stage1r-1a
+V2,"Map(selector), hand-written",odx-one,10,1000,31.98,stage2-2a
+V2,"Map(selector), hand-written",odx-one,20,1000,49.406,stage1r-1a
+V1,"Map<T>(), the RowMap plan",odx-one,1,1000,13.056,stage1r-1a
+V1,"Map<T>(), the RowMap plan",odx-one,3,1000,18.72,stage2-2a
+V1,"Map<T>(), the RowMap plan",odx-one,5,1000,25.753,stage1r-1a
+V1,"Map<T>(), the RowMap plan",odx-one,10,1000,50.61,stage2-2a
+V1,"Map<T>(), the RowMap plan",odx-one,20,1000,83.217,stage1r-1a
+V3,"Factory map, domain object",odx-select,1,1000,23.684,stage1r-1a
+V3,"Factory map, domain object",odx-select,3,1000,29.06,stage2-2a
+V3,"Factory map, domain object",odx-select,5,1000,36.963,stage1r-1a
+V3,"Factory map, domain object",odx-select,10,1000,60.5,stage2-2a
+V3,"Factory map, domain object",odx-select,20,1000,101.932,stage1r-1a
+V0,"object[] rows (baseline)",odx-raw,1,1000,10.539,stage1r-1a
+V0,"object[] rows (baseline)",odx-raw,3,1000,22.42,stage2-2a
+V0,"object[] rows (baseline)",odx-raw,5,1000,35.018,stage1r-1a
+V0,"object[] rows (baseline)",odx-raw,10,1000,91.23,stage2-2a
+V0,"object[] rows (baseline)",odx-raw,20,1000,177.889,stage1r-1a
+V7_V1,"Dapper Query<T>",dapper,1,1000,19.44,stage1r-1c
+V7_V1,"Dapper Query<T>",dapper,3,1000,31.04,stage2-2c
+V7_V1,"Dapper Query<T>",dapper,5,1000,43.94,stage1r-1c
+V7_V1,"Dapper Query<T>",dapper,10,1000,99.66,stage2-2c
+V7_V1,"Dapper Query<T>",dapper,20,1000,199.873,stage1r-1c

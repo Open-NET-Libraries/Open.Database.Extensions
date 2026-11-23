@@ -15,9 +15,9 @@ The cost is memory. The rows are held, not the connection.
 
 The query is read with the same read as every other terminal: `Read()` by default, `ReadAsync` after [`AsyncReads()`](async-reads.md).
 
-<div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/async-buffers-reader-open.svg" alt="Three panels of paired bars: reader-open time in milliseconds for 10,000 rows. Consumer at 39 ns per row: chunk stream 6.29, no buffer 6.62. At 1 microsecond per row: 6.27 against 16.15. Waiting 20 microseconds per 100 rows: 6.21 against 8.54." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
+<div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/async-buffers-reader-open.svg" alt="Three panels of paired bars: reader-open time in milliseconds for 10,000 rows. Consumer at 40 ns per row: chunk stream 6.19, no buffer 6.39. At 1 microsecond per row: 6.26 against 16.01. Waiting 20 microseconds per 100 rows: 6.17 against 8.01." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
 
-Three panels, each a pair of bars that start at zero, on one scale: how long the reader is held open for a result of 10,000 rows, as the consumer gets slower. The left bar of each pair is `ToAsyncBufferStream`; the right bar is no buffer, the consumer working inside the read. At 39 ns per row the pair is 6.29 and 6.62 ms. At 1 µs per row it is 6.27 and 16.15 ms. With a 20 µs wait per 100 rows it is 6.21 and 8.54 ms. The chunk stream holds the reader the same time however slow the consumer is; without a buffer the reader is held as long as the consumer takes. The source is the library's unpublished pooled-buffer benchmark round: a synthetic provider on net11 with a 50 µs refill every 100 rows, one run. It is not a real database.
+Three panels, each a pair of bars that start at zero, on one scale: how long the reader is held open for a result of 10,000 rows, as the consumer gets slower. The left bar of each pair is `ToAsyncBufferStream`; the right bar is no buffer, the consumer working inside the read. At 40 ns per row the pair is 6.19 and 6.39 ms. At 1 µs per row it is 6.26 and 16.01 ms. With a 20 µs wait per 100 rows it is 6.17 and 8.01 ms. The chunk stream holds the reader the same time however slow the consumer is; without a buffer the reader is held as long as the consumer takes. The source is [pooled-buffer-cost.csv](../perf-data/pooled-buffer-cost.csv) (run pbcost-A, build `6a770e8`, 2026-11-23): a synthetic provider on net11 with a 50 µs refill every 100 rows, one run. It is not a real database.
 
 ## The three terminals
 
@@ -94,7 +94,7 @@ The mistake to avoid is a query that has not run when the buffer is disposed. Th
 
 The controller above serializes the rows itself, inside the method, so it can dispose the buffer in the same method. The other way is to hand the rows to the framework and let the framework serialize them after the action has returned. The buffer must then outlive the action, and the framework has to dispose it, not your method.
 
-The pattern is to register the buffer with the response, and then return the rows:
+The pattern is to register the buffer with the response, and then return the rows (the [`RegisterForDispose` extension](no-service-layer.md#registerfordispose) does both):
 
 [!code-csharp[](../samples/AsyncBuffersController.cs#buffers_aspnet_controller)]
 
@@ -238,11 +238,11 @@ Chunks start at 16 rows and double: 16, 32, 64 and so on. A buffer keeps doublin
 
 ## What it costs
 
-The numbers come from a synthetic provider on net11, not from a real database, and they are one run each. The figure and the simulated-link numbers were measured with `AsyncReads()` on for every variant, so the refill waits are real awaits; with the default `Read()` the buffer and `ToArrayAsync` held the reader 5.26 and 5.23 ms at a 50 µs refill. The refill timer busy-waits on one of the four cores the run used, so the overlap ran on about three.
+The numbers come from a synthetic provider on net11, not from a real database, and they are one run each. The figure and the simulated-link numbers were measured with `AsyncReads()` on for every variant, so the refill waits are real awaits; with the default `Read()` the buffer and `ToArrayAsync` held the reader 5.44 and 5.32 ms at a 50 µs refill. The refill timer busy-waits on one of the four physical cores (eight logical processors) the run used, so the overlap ran on about three cores. Data: [pooled-buffer-cost.csv](../perf-data/pooled-buffer-cost.csv) ([source and conditions](../perf-data/pooled-buffer-cost.source.txt)).
 
-- Reader-open time stays flat as the consumer slows. For the chunk stream at 10,000 rows it was 6.29, 6.27 and 6.21 ms for the three consumers in the figure above.
-- On a simulated link it is within a few percent of `ToArrayAsync`. At a 50 µs refill the buffer held the reader 6.27 ms and `ToArrayAsync` 6.29 ms.
-- At zero latency and 10,000 rows, dumping a result into a buffer holds the reader about 22% longer than `ToArrayAsync`: 225 against 185 µs. The buffer pays that to be able to hand the rows to someone else.
+- Reader-open time stays flat as the consumer slows. For the chunk stream at 10,000 rows it is 6.19, 6.26 and 6.17 ms for the three consumers in the figure above.
+- On a simulated link the buffer holds the reader about as long as `ToArrayAsync`. At a 50 µs refill every 100 rows the buffer held it 6.26 ms and `ToArrayAsync` 6.41 ms (the buffer 2.2% less, inside the 0.29 ms error of the `ToArrayAsync` total); with the default `Read()` it was 5.44 and 5.32 ms (the buffer 2.2% more).
+- At zero latency and 10,000 rows, dumping a result into a buffer held the reader 403.3 µs against 390.0 µs for `ToArrayAsync`, 3.4% longer. The whole call took 434.2 against 391.2 µs, 11.0% longer; the buffer's total includes its dispose, which clears the references of the rows, and the reader-open time does not. The buffer pays that to be able to hand the rows to someone else.
 
 ## When to use something else
 
@@ -258,9 +258,9 @@ To read a query while a consumer works, use the buffer streams: the connection i
 
 | Claim | Value | Run |
 |---|---|---|
-| Reader-open time, chunk stream, 10,000 rows | 6.29, 6.27 and 6.21 ms at 39 ns per row, 1 µs per row and a 20 µs wait per 100 rows | the library's unpublished pooled-buffer benchmark round, synthetic provider, net11, a 50 µs refill every 100 rows; one run |
-| Reader-open time, no buffer (the figure) | 6.62, 16.15 and 8.54 ms for the same consumers | same |
-| Buffer against `ToArrayAsync`, simulated link | 6.27 and 6.29 ms, at a 50 µs refill every 100 rows | same round, same provider; one run |
-| Buffer against `ToArrayAsync`, zero latency | 225 and 185 µs at 10,000 rows (about 22% longer) | same round, same provider; one run |
+| Reader-open time, chunk stream, 10,000 rows | 6.19, 6.26 and 6.17 ms at 40 ns per row, 1 µs per row and a 20 µs wait per 100 rows | [pooled-buffer-cost.csv](../perf-data/pooled-buffer-cost.csv), run pbcost-A: build `6a770e8`, 2026-11-23, synthetic provider, net11, a 50 µs refill every 100 rows; one run |
+| Reader-open time, no buffer (the figure) | 6.39, 16.01 and 8.01 ms for the same consumers | same |
+| Buffer against `ToArrayAsync`, simulated link | 6.26 and 6.41 ms reader open (6.29 and 6.42 ms in total), at a 50 µs refill every 100 rows; 5.44 and 5.32 ms with the default `Read()` (runs pbcost-A and pbcost-C) | same file, same provider; one run each |
+| Buffer against `ToArrayAsync`, zero latency | 403.3 and 390.0 µs reader open (3.4% longer), 434.2 and 391.2 µs in total (11.0% longer), at 10,000 rows (run pbcost-B) | same file, same provider; one run |
 | The controller checks: status, body, pool balance, abort | RegisterForDispose, a dispose before serialization, a returned stream, a client abort: 5,000 rows, and 1,000,000 rows for the aborts | ASP.NET Core 11.0.0 with TestServer and with Kestrel on loopback, Microsoft.Data.Sqlite on a file database, a counting `MemoryPool<T>`; one run or a few. A scratch project, not part of the docs build |
 | Chunk sizes, the cleanup queue, the single-use rule | 16 doubling to 4,096 for a stream; 10,240 waiting clears | the library source (`ChunkSizing`, `RecycleBin`, `ChunkStream`); not a measurement |

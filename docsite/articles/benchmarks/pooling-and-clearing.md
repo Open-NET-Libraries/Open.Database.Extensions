@@ -7,9 +7,9 @@ A *pool* is a shop for arrays: you rent one, use it, and return it, so the memor
 ## In short
 
 - **Arrays from `ArrayPool<T>` beat `MemoryPool<T>` in every store test, and allocate less.** To collect 10,000 `int` rows the two array designs took 9.1 and 9.8 µs (12.9 µs with an owner object per chunk). `MemoryPool<T>` took 16.3 µs with one span per chunk and 30.3 µs row by row. Reading a buffered result through the indexer took 22.3 µs with the design ODX uses (19.7 µs with the fastest array design) and 48.4 µs with `Memory<T>` chunks.
-- **The chunk store ODX uses is 2.1 to 5.2% faster end to end** than a `Memory<T>` chunk store, with memory within 1 KB (10,000 rows: `ToListAsync` 5.2% less time, `ToAsyncBufferStream` 2.1% less).
+- **End to end, the build with the chunk store ODX uses is level with the build with a `Memory<T>` chunk store, or faster**, with memory within 1 KB: at 10,000 rows `ToListAsync` took the same time and the other three terminals 1.9 to 3.1% less; at 100 rows all four took 1.6 to 23.0% less. The two sides are different builds on different days (`3c05c47`, 2026-11-20, and `6a770e8`, 2026-11-23).
 - **Handing a chunk to the recycle bin costs the releasing thread less than clearing it inline.** For class rows it costs 95 ns at 4,096 rows, 75 ns at 16,384 and 144 ns at 65,536. Clearing inline costs 550, 1,786 and 6,738 ns: 6 to 47 times as much.
-- **Not faster:** the bin does not save time or CPU. End to end, time with the bin was 0.95 to 1.02 times the time with inline clearing, and CPU 0.89 to 1.06 times, over three runs. It moves the clearing to another thread; it does not remove it. Always clearing reference rows also costs 2.6 to 4.3 µs (8 to 18%) on a one-row call, and nothing measurable from 100 rows.
+- **Not faster:** the bin does not save time or CPU. End to end, time with the bin was 0.95 to 1.02 times the time with inline clearing, and CPU 0.89 to 1.06 times, over three runs. It moves the clearing to another thread; it does not remove it. End to end, a build that always clears reference rows (`6a770e8`, 2026-11-23) took 2.0 to 28.1% less time than a build that cleared nothing (`f6942a7`, 2026-11-20), at 1, 100 and 10,000 rows: the clearing does not show as a cost. The two builds differ in more than the clearing, so it is not a speed-up either.
 - **`MemoryPool<T>` was slower even in its best case.** With one span per chunk it took 1.2 to 2.8 times as long as arrays (collect 16.3 against 9.1 µs, buffer 54.2 against 19.7 µs, stream 23.5 against 19.5 µs); row by row, 2.7 to 5.9 times. Only on the pool alone, renting one array and filling it, did it tie or win: 18 to 21% less time than `ArrayPool<T>` at 1,024 and 8,192 `int` slots when one span covers the array, and slower at 16 slots.
 
 ## The rules
@@ -47,9 +47,9 @@ A struct lease costs nothing to hold. An owner object costs 32 bytes for every c
 
 ## End to end
 
-<div class="perf-chart"><img src="../../images/perf/perf-pool-e2e.svg" alt="Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced. At 10,000 rows ToListAsync 5.2 percent, ToArrayAsync 4.8, ToAsyncBuffer Items 2.9, ToAsyncBufferStream 2.1. At 100 rows 3.1, 3.4, 3.2 and 3.3 percent."></div>
+<div class="perf-chart"><img src="../../images/perf/perf-pool-e2e.svg" alt="Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced. At 10,000 rows ToArrayAsync 2.5 percent, ToAsyncBuffer Items 1.9, ToAsyncBufferStream 3.1, ToListAsync -0.0 (the same time). At 100 rows ToArrayAsync 1.7, ToAsyncBuffer Items 17.5, ToAsyncBufferStream 23.0, ToListAsync 1.6 percent."></div>
 
-The same benchmark, compiled against the build before the change and the build after it, on SQLite in memory with class rows. Each bar is how much less time the call took. Longer is better. The collectors (`ToListAsync`, `ToArrayAsync`) and the buffer terminals each came out 2 to 5% faster, and allocated within 1 KB of the same.
+The same benchmark, run against the `Memory<T>` chunks build (`3c05c47`, 2026-11-20) and the arrays build (`6a770e8`, 2026-11-23), on SQLite in memory with class rows. Each bar is how much less time the call took on the later build. Longer is better. At 10,000 rows the collectors and the buffer terminals took 0.0 (`ToListAsync`) to 3.1% less; at 100 rows 1.6 to 23.0% less (the two buffer terminals 17.5 and 23.0%). Memory is within 1 KB of the same. The later build holds other changes too, so the bars are not the store alone.
 
 [!include[](../../includes/perf/pool-e2e.md)]
 
@@ -87,15 +87,15 @@ When the whole array was used, the span clear and the pool's own clear cost the 
 
 ## What always clearing reference rows costs end to end
 
-The recycle bin and the always-clear rule for reference rows together, against a build that cleared nothing. Class rows, SQLite in memory:
+The recycle bin and the always-clear rule for reference rows together (`6a770e8`, 2026-11-23), against a build that cleared nothing (`f6942a7`, 2026-11-20). Class rows, SQLite in memory:
 
 [!include[](../../includes/perf/pool-bin-cost.md)]
 
-At one row the rule costs 2.6 to 4.3 µs, which is 8 to 18%. At 100 rows it is a tie. At 10,000 rows the calls took 2.3 and 8.6% *less* time. We do not know why they were faster, and an earlier build of the change was used for this pair, so read it as "the clearing does not cost time you can see on a large result", not as a speed-up.
+The build with the rule took *less* time in every row: 2.0% (`Items`) and 28.1% (stream) at one row, 16.2 and 23.7% at 100 rows, 6.1 and 14.2% at 10,000 rows. The two builds are different days, and the later one holds changes besides the rule, so read it as "the clearing does not cost time you can see", not as a speed-up.
 
 ## Limits
 
-The store tests ran on .NET 10 only; the end-to-end pairs ran on .NET 11; the bin tests ran on .NET 10, on build 11.0.0-rc.11, which handed only chunks of reference rows of 4,096 rows or more to the bin (the threshold is 128 KB of rows of any kind). Every case is one run, except the bin tests, which were run three times (the CPU count twice). The stores were timed with clearing on. The bin tests keep the bin from filling; a bin that is full clears where the chunk is released, and that case was not measured here.
+The store tests ran on .NET 10 only; the end-to-end pairs ran on .NET 11, each side on its own day; the bin tests ran on .NET 10, on build 11.0.0-rc.11, which handed only chunks of reference rows of 4,096 rows or more to the bin (the threshold is 128 KB of rows of any kind). Every case is one run, except the bin tests, which were run three times (the CPU count twice). The stores were timed with clearing on. The bin tests keep the bin from filling; a bin that is full clears where the chunk is released, and that case was not measured here.
 
 ## How this was measured
 
@@ -103,7 +103,7 @@ The store tests ran on .NET 10 only; the end-to-end pairs ran on .NET 11; the bi
 - **Setup, the store tests:** a self-contained prototype with six designs of the chunk store, each returning the same rows, checked before any number was taken. `int` rows and class rows (an `int` and a string), 1, 100 and 10,000 rows, the same chunk schedule (16 rows, doubling) in every design, the used part cleared and then returned. Bytes are counted exactly (`GC.GetAllocatedBytesForCurrentThread`).
 - **Setup, the bin tests:** a probe program run three times against the library after the change: the release path of one chunk with no clear, an inline clear and a hand-off to the bin, paced so the bin never fills; the speed of four ways to clear and return an array; and the shipped bin against clearing inline always, end to end.
 - **Setup, end to end:** `PoolEndToEndBenchmarks` and `PoolBinCostBenchmarks`, the collecting and the buffer terminals on SQLite in memory with class rows, the same file compiled against two builds.
-- **Settings:** BenchmarkDotNet 0.15.8, in process, 5 warm-up and 12 measured iterations, one launch, 4 cores at below-normal priority, one run at a time, for the store tests and the end-to-end pairs; the bin tests use their own probe program (median of the arrays of a run, 8 logical cores). See [How we measure](how-we-measure.md).
-- **Build, date, machine:** store tests: build `3c05c47` plus the prototype, .NET 10.0.15, 2026-11-20. End to end: before `3c05c47` and after `d4b47b8`; for the always-clear cost before `f6942a7` and after `b86608b`; .NET 11.0.0, 2026-11-20. Bin tests: master `6a88b60` (11.0.0-rc.11), .NET 10.0.15, 2026-11-21. AMD Ryzen 9 7900, Windows 10.
+- **Settings:** BenchmarkDotNet 0.15.8, in process, 5 warm-up and 12 measured iterations, one launch, 4 cores at below-normal priority, one run at a time, for the store tests and the 2026-11-20 sides of the end-to-end pairs (the 2026-11-23 sides ran at below-normal priority on 8 cores, affinity `0xFF0000`); the bin tests use their own probe program (median of the arrays of a run, 8 logical cores). See [How we measure](how-we-measure.md).
+- **Build, date, machine:** store tests: build `3c05c47` plus the prototype, .NET 10.0.15, 2026-11-20. End to end: before `3c05c47` (2026-11-20) and after `6a770e8` (2026-11-23); for the always-clear cost before `f6942a7` (2026-11-20) and after `6a770e8` (2026-11-23); .NET 11.0.0. Bin tests: master `6a88b60` (11.0.0-rc.11), .NET 10.0.15, 2026-11-21. AMD Ryzen 9 7900, Windows 10.
 - **Data:** [pool-store.csv](../../perf-data/pool-store.csv), [pool-rent.csv](../../perf-data/pool-rent.csv), [pool-bytes.csv](../../perf-data/pool-bytes.csv), [pool-e2e.csv](../../perf-data/pool-e2e.csv), [pool-bin-cost.csv](../../perf-data/pool-bin-cost.csv), [pool-release-path.csv](../../perf-data/pool-release-path.csv), [pool-clear-speed.csv](../../perf-data/pool-clear-speed.csv), [pool-bin-proof-e2e.csv](../../perf-data/pool-bin-proof-e2e.csv), [pool-bin-cpu.csv](../../perf-data/pool-bin-cpu.csv), each with a `.source.txt` beside it. The store numbers were copied from the pool spike report and spot-checked against the BenchmarkDotNet output; the bin numbers were copied from the console output of the probe; the end-to-end numbers come from the BenchmarkDotNet reports.
 - **Reproduce:** the end-to-end pairs: `dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*PoolEndToEndBenchmarks*"` (and `"*PoolBinCostBenchmarks*"`), once on each build to compare. The store prototype and the bin probe are not published.

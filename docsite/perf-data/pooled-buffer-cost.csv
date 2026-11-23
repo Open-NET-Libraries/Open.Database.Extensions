@@ -1,0 +1,13 @@
+condition,path,consumer,rows,reader_open_us,total_us,error_us,allocated_kb,source_run
+"simulated link, AsyncReads() on","chunk stream","40 ns per row",10000,6193.511,6285,80.0,2130,pbcost-A
+"simulated link, AsyncReads() on","chunk stream","1 us per row",10000,6264.489,11078,81.0,2130,pbcost-A
+"simulated link, AsyncReads() on","chunk stream","20 us wait per 100 rows",10000,6167.432,6566,86.4,2130,pbcost-A
+"simulated link, AsyncReads() on","no buffer","40 ns per row",10000,6386.869,6397,30.5,2130,pbcost-A
+"simulated link, AsyncReads() on","no buffer","1 us per row",10000,16006.513,16016,74.9,2130,pbcost-A
+"simulated link, AsyncReads() on","no buffer","20 us wait per 100 rows",10000,8010.204,8024,149.5,2130,pbcost-A
+"simulated link, AsyncReads() on","buffer","none",10000,6264.576,6286,108.8,2130,pbcost-A
+"simulated link, AsyncReads() on","ToArrayAsync","none",10000,6405.552,6424,288.0,2202,pbcost-A
+"zero latency, AsyncReads() on","buffer","none",10000,403.294,434.2,30.13,2109,pbcost-B
+"zero latency, AsyncReads() on","ToArrayAsync","none",10000,389.987,391.2,18.70,2191,pbcost-B
+"simulated link, default Read()","buffer","none",10000,5435.063,5466,56.2,2109,pbcost-C
+"simulated link, default Read()","ToArrayAsync","none",10000,5318.162,5320,53.8,2191,pbcost-C

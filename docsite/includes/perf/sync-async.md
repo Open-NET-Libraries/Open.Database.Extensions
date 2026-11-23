@@ -2,7 +2,7 @@
 
 | Condition | Sync | Async execute | Async read | Async read against sync |
 |---|---:|---:|---:|---:|
-| Neither | 77.3 µs | 80.9 µs | 82.3 µs | 1.07× |
-| Busy thread pool | 94.4 µs | 97.4 µs | 102.4 µs | 1.08× |
-| Buffer refills | 257.9 µs | 261.2 µs | 314.3 µs | 1.22× |
-| Refills and busy pool | 279.3 µs | 279.0 µs | 11.2 ms | 40.01× |
+| Neither | 76.3 µs | 77.4 µs | 80.0 µs | 1.05× |
+| Busy thread pool | 95.6 µs | 95.6 µs | 99.3 µs | 1.04× |
+| Buffer refills | 258.2 µs | 262.4 µs | 285.8 µs | 1.11× |
+| Refills and busy pool | 274.9 µs | 279.8 µs | 2.2 ms | 8.10× |

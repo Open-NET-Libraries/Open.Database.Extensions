@@ -1,9 +1,9 @@
 rows,terminal,before_us,after_us,before_error_us,after_error_us,before_allocated_kb,after_allocated_kb,source_run
-100,ToListAsync,38.98,37.78,0.122,0.183,8.98,8.98,e2e-before/e2e-after
-100,ToArrayAsync,39.08,37.75,0.109,0.072,8.95,8.95,e2e-before/e2e-after
-100,ToAsyncBuffer_Items,68.4,66.22,1.406,0.655,9.57,9.1,e2e-before/e2e-after
-100,ToAsyncBufferStream,79.45,76.84,0.609,0.944,10.65,10.75,e2e-before/e2e-after
-10000,ToListAsync,3375.55,3200.33,13.902,17.512,782.44,782.49,e2e-before/e2e-after
-10000,ToArrayAsync,3373.15,3211.18,13.954,14.395,782.39,782.46,e2e-before/e2e-after
-10000,ToAsyncBuffer_Items,3371.22,3272.83,15.465,5.907,706.95,706.04,e2e-before/e2e-after
-10000,ToAsyncBufferStream,3427.64,3354.48,5.55,12.165,707.63,706.91,e2e-before/e2e-after
+100,ToListAsync,38.98,38.34,0.122,0.340,8.98,8.98,e2e-before/e2e-after
+100,ToArrayAsync,39.08,38.41,0.109,0.319,8.95,8.95,e2e-before/e2e-after
+100,ToAsyncBuffer_Items,68.4,56.46,1.406,0.349,9.57,9.13,e2e-before/e2e-after
+100,ToAsyncBufferStream,79.45,61.21,0.609,0.498,10.65,10.81,e2e-before/e2e-after
+10000,ToListAsync,3375.55,3376.30,13.902,30.124,782.44,782.42,e2e-before/e2e-after
+10000,ToArrayAsync,3373.15,3289.35,13.954,21.016,782.39,782.40,e2e-before/e2e-after
+10000,ToAsyncBuffer_Items,3371.22,3306.27,15.465,23.146,706.95,706.02,e2e-before/e2e-after
+10000,ToAsyncBufferStream,3427.64,3319.82,5.55,12.623,707.63,706.92,e2e-before/e2e-after

@@ -1,7 +1,7 @@
 rows,terminal,before_us,after_us,before_error_us,after_error_us,before_allocated_kb,after_allocated_kb,source_run
-1,ToAsyncBuffer(...).Items,23.47,27.77,0.265,0.657,2.21,2.33,pbB-buf-n1/pbA-buf-n1
-100,ToAsyncBuffer(...).Items,69.05,68.84,0.916,1.182,9.26,9.57,pbB-buf-n100/pbA-buf-n100
-10000,ToAsyncBuffer(...).Items,3495,3415,84.3,28.3,705.91,706.93,pbB-buf-n10000/pbA-buf-n10000
-1,ToBufferedAsyncStream,31.55,34.13,0.304,0.134,3.64,3.76,pbB-str-n1/pbA-str-n1
-100,ToBufferedAsyncStream,80.82,80.69,2.239,0.693,10.6,10.93,pbB-str-n100/pbA-str-n100
-10000,ToBufferedAsyncStream,3820,3492,18.6,35,706.87,707.9,pbB-str-n10000/pbA-str-n10000
+1,ToAsyncBuffer(...).Items,23.47,23.01,0.265,0.229,2.21,2.16,pbB-buf-n1/pbA-all
+100,ToAsyncBuffer(...).Items,69.05,57.86,0.916,0.654,9.26,9.13,pbB-buf-n100/pbA-all
+10000,ToAsyncBuffer(...).Items,3495,3281.36,84.3,14.367,705.91,706.02,pbB-buf-n10000/pbA-all
+1,ToBufferedAsyncStream,31.55,22.70,0.304,0.201,3.64,4.18,pbB-str-n1/pbA-all
+100,ToBufferedAsyncStream,80.82,61.65,2.239,0.920,10.6,11.12,pbB-str-n100/pbA-all
+10000,ToBufferedAsyncStream,3820,3278.44,18.6,15.951,706.87,707.22,pbB-str-n10000/pbA-all

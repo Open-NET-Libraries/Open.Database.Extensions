@@ -2,19 +2,19 @@
 
 | Rank | Variant | What it does | Connection held (µs) | Whole call (µs) | Allocated (KB) |
 |---:|---|---|---:|---:|---:|
-| 1 | Map(selector), hand-written | A static Func&lt;IDataRecord,T&gt; with typed getters | 46.8 | 47.0 | 227.4 |
-| 2 | Selector, reused row, Select | Caller recipe: fill one held row, project it | 58.8 | 59.0 | 228.1 |
-| 3 | Selector, pooled row, Select | Caller recipe: rent a row, project it, return it | 62.8 | 63.1 | 228.2 |
-| 4 | Shaping inside the selector | Computed members built in the selector | 67.6 | 67.8 | 297.7 |
-| 5 | Map&lt;T&gt;() | The cached, compiled typed plan | 81.6 | 81.7 | 227.4 |
-| 6 | Row class, close, then Select | Map&lt;Row&gt;().ToList(), then Select after the reader closes | 82.1 | 97.8 | 446.3 |
-| 7 | Row class, shaping after close | Computed members built after the reader closes | 82.3 | 134.5 | 516.7 |
-| 8 | Row class, inline Select | Two objects per row: a row class, then Select while the reader is open | 106.4 | 106.7 | 438.7 |
-| 9 | Row class, shaping in Select | Computed members built in an inline Select, reader open | 138.9 | 139.2 | 509.1 |
-| 10 | object[] rows, objects later | GetValues into object[], typed objects built afterwards | 170.1 | 221.0 | 735.4 |
-| 11 | object[] rows (baseline) | Every cell boxed into an object[] with GetValues; the baseline | 178.4 | 178.5 | 516.6 |
-| 12 | Dapper, then Select after | Query&lt;Row&gt;, then Select after | 197.5 | 217.1 | 767.0 |
-| 13 | Dapper, shaping after | Query&lt;Row&gt;, computed members afterwards | 200.5 | 256.2 | 837.4 |
-| 14 | Dapper Query&lt;T&gt; | Dapper 2.1.89, buffered Query&lt;T&gt;, the plain map | 202.4 | 202.7 | 548.1 |
-| 15 | Dapper, inline Select | Query&lt;Row&gt;(buffered: false) with Select | 214.0 | 214.3 | 759.0 |
-| 16 | Dapper, shaping in Select | Unbuffered Query&lt;Row&gt;, computed members in Select | 257.6 | 257.9 | 829.3 |
+| 1 | Map(selector), hand-written | A static Func&lt;IDataRecord,T&gt; with typed getters | 49.2 | 49.4 | 227.4 |
+| 2 | Selector, reused row, Select | Caller recipe: fill one held row, project it | 59.2 | 59.4 | 227.9 |
+| 3 | Selector, pooled row, Select | Caller recipe: rent a row, project it, return it | 62.2 | 62.4 | 228.0 |
+| 4 | Shaping inside the selector | Computed members built in the selector | 74.0 | 74.2 | 297.8 |
+| 5 | Row class, close, then Select | Map&lt;Row&gt;().ToList(), then Select after the reader closes | 82.4 | 97.1 | 446.3 |
+| 6 | Map&lt;T&gt;() | The cached, compiled typed plan | 83.1 | 83.2 | 227.4 |
+| 7 | Row class, shaping after close | Computed members built after the reader closes | 86.5 | 137.2 | 516.7 |
+| 8 | Factory map, domain object | One object per row: a factory map straight to the domain object, built while the reader is open | 101.7 | 101.9 | 227.4 |
+| 9 | Factory map, shaping in the map | Computed members built inside the factory map, reader open | 133.1 | 133.3 | 297.7 |
+| 10 | object[] rows, objects later | GetValues into object[], typed objects built afterwards | 174.9 | 223.4 | 735.4 |
+| 11 | object[] rows (baseline) | Every cell boxed into an object[] with GetValues; the baseline | 177.7 | 177.9 | 516.6 |
+| 12 | Dapper, shaping after | Query&lt;Row&gt;, computed members afterwards | 199.4 | 252.1 | 837.4 |
+| 13 | Dapper Query&lt;T&gt; | Dapper 2.1.89, buffered Query&lt;T&gt;, the plain map | 199.6 | 199.9 | 548.1 |
+| 14 | Dapper, then Select after | Query&lt;Row&gt;, then Select after | 200.3 | 216.7 | 767.0 |
+| 15 | Dapper, inline Select | Query&lt;Row&gt;(buffered: false) with Select | 213.9 | 214.2 | 759.0 |
+| 16 | Dapper, shaping in Select | Unbuffered Query&lt;Row&gt;, computed members in Select | 256.6 | 256.9 | 829.4 |

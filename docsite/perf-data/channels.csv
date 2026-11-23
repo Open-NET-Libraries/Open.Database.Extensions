@@ -1,7 +1,7 @@
 feature,rows,loop_us,odx_us,time_ratio,alloc_ratio,source_run
-"ToChannel (drain a channel)",1,1.3,3.1,2.4,2.20,results-md
-"ToChannel (drain a channel)",100,36,45,1.24,1.09,results-md
-"ToChannel (drain a channel)",1000,284,359,1.26,1.01,results-md
-"Dataflow (BufferBlock)",1,2.1,20.1,9.6,2.80,results-md
-"Dataflow (BufferBlock)",100,19.6,39.3,2.0,1.15,results-md
-"Dataflow (BufferBlock)",1000,156,325,2.1,1.04,results-md
+"ToChannel (drain a channel)",1,1.483,2.385,1.61,1.82,chan
+"ToChannel (drain a channel)",100,41.221,18.747,0.45,0.46,chan
+"ToChannel (drain a channel)",1000,275.605,87.814,0.32,0.35,chan
+"Dataflow (BufferBlock)",1,1.889,4.833,2.56,1.84,dflow
+"Dataflow (BufferBlock)",100,20.734,22.803,1.10,0.47,dflow
+"Dataflow (BufferBlock)",1000,131.999,95.379,0.72,0.36,dflow

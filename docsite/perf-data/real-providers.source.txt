@@ -1,5 +1,5 @@
-Benchmark build: fbb13d7
-Run date: 2026-11-14
+Benchmark build: 6a770e8
+Run date: 2026-11-23
 BenchmarkDotNet v0.15.8, Windows 10 (10.0.19045.6466/22H2/2022Update)
 AMD Ryzen 9 7900 3.70GHz, 1 CPU, 24 logical and 12 physical cores
 .NET SDK 11.0.100

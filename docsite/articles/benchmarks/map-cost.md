@@ -4,8 +4,8 @@
 
 ## In short
 
-- **Building and compiling a mapping costs 0.19 to 0.87 ms** (1 to 20 columns) and allocates 15 to 52 KB. ODX does it **once per result-set shape** (the columns and types a query returns) and caches it.
-- **After that a one-row call takes 0.17 to 0.27 µs.** A call that builds a new mapping every time takes 192 to 875 µs, 1,200 to 3,300 times longer. That is why ODX never builds one per call on its own path.
+- **Building and compiling a mapping costs 0.19 to 0.87 ms** (1 to 20 columns) and allocates 15 to 51 KB. ODX does it **once per result-set shape** (the columns and types a query returns) and caches it.
+- **After that a one-row call takes 0.19 to 0.28 µs.** A call that builds a new mapping every time takes 193 to 870 µs, 1,000 to 3,100 times longer. That is why ODX never builds one per call on its own path.
 - **Not faster, if you hold it wrong:** a `RowMap<T>` written at the call site (`new RowMap<T>([...])`) is built again on every call and pays the full cost each time. Declare it once, in a field. Measured on an older run: 0.44 ms and about 28.9 KB per call, against 0.11 µs through a declared map.
 
 ## The chart
@@ -44,6 +44,6 @@ The same file measured ways to hold a declared map: a `static readonly` field, `
 - **Question:** what does one build of a mapping cost, against reusing a cached one?
 - **Setup:** the synthetic reader, one row per call, 1, 5 and 20 typed columns. One case reuses a cached mapping; the other builds and compiles a new one on every call. Synchronous terminals.
 - **Settings:** BenchmarkDotNet 0.15.8, in-process, 5 warm-up and 12 measured iterations, one launch, one run per case. The one-time cost on the chart is the time (and memory) of the building case minus the reusing case. See [How we measure](how-we-measure.md).
-- **Build, date, machine:** build `544cc01`, 2026-11-14; AMD Ryzen 9 7900, .NET 11.0.0, Windows 10.
+- **Build, date, machine:** build `6a770e8`, 2026-11-23; AMD Ryzen 9 7900, .NET 11.0.0, Windows 10.
 - **Data:** [map-cost.csv](../../perf-data/map-cost.csv) ([source and conditions](../../perf-data/map-cost.source.txt)).
 - **Reproduce:** `dotnet run -c Release --project Benchmarks/Open.Database.Extensions.Benchmarks -- --filter "*SyntheticBenchmarks.V1_*Sync"` with `ODX_SYN_WIDTHS=1,5,20` and `ODX_SYN_ROWS=1,1000`.
