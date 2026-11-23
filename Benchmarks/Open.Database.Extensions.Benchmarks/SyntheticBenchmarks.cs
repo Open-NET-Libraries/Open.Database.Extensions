@@ -257,7 +257,16 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public object Ctl_Sync() { _label = nameof(Ctl_Sync); return SyntheticGenerated.Ctl(Connection); }
 
-	// V2 with the generated reader's NULL semantics (IsDBNull on every member): the fair bar for Gen (GP1 in the first decomposition run).
+	// The honest ladder at width 20: Gen_T is the generated reader on the twin whose member types are V2's (non-nullable Title, Body, Tag: read without a
+	// NULL test, as V2 reads them), Ctl_T is V2's selector on that twin in the same assembly. Expected: Gen_T = Ctl_T = V2, up to the binder and try regions.
+	[Benchmark]
+	public object Gen_T_Sync() { _label = nameof(Gen_T_Sync); return SyntheticGenerated.GenT(Connection); }
+
+	[Benchmark]
+	public object Ctl_T_Sync() { _label = nameof(Ctl_T_Sync); return SyntheticGenerated.CtlT(Connection); }
+
+	// V2 with IsDBNull on every member: the generated reader's former NULL semantics (GP1 in the first decomposition run). The generator now reads a
+	// non-nullable member without a NULL test, as V2 does, so V2 (with Ctl_T) is the bar for Gen_T; V2n stays for comparison with earlier runs.
 	[Benchmark]
 	public List<SynRow> V2n_Sync() { _label = nameof(V2n_Sync); return SyntheticVariants.V2(Connection, GenParity.V2n); }
 
@@ -273,6 +282,19 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public List<SynRow> GP5_Sync() { _label = nameof(GP5_Sync); return SyntheticVariants.V2(Connection, GenParity.GP5); }
 
+	// GP6/GP6r: V2's read in one try/catch per row, without and with the row counter (the generated reader's error shape); equal to V2 if a try is free.
+	[Benchmark]
+	public List<SynRow> GP6_Sync() { _label = nameof(GP6_Sync); return SyntheticVariants.V2(Connection, GenParity.GP6); }
+
+	[Benchmark]
+	public List<SynRow> GP6r_Sync() { _label = nameof(GP6r_Sync); return SyntheticVariants.V2(Connection, GenParity.GP6r); }
+
+	// GP7/GP7c: the raw loop (as V10r) with one try around it, and without: the loop placement, measurable only (no Core hook for a selector).
+	[Benchmark]
+	public List<SynRow> GP7_Sync() { _label = nameof(GP7_Sync); return GenParity.GP7(Connection); }
+
+	[Benchmark]
+	public List<SynRow> GP7c_Sync() { _label = nameof(GP7c_Sync); return GenParity.GP7c(Connection); }
 	// ---- V3 to V6 (BS-B): the domain object is SynItem; Pace applies to V3, V3s, V4a, V4b, V6c only ----------------------------------------------------------------
 	[Benchmark]
 	public List<SynItem> V3_Sync() { _label = nameof(V3_Sync); return SyntheticVariantsB.V3(Connection, Pace); }

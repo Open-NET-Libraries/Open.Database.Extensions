@@ -209,8 +209,9 @@ static class ModelReader
 		bool nullableValue = type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 		ITypeSymbol underlying = nullableValue ? ((INamedTypeSymbol)type).TypeArguments[0] : type;
 
-		// Slot.KeepsOnNull: a value type other than Nullable<T>, or a reference type the source declares non-nullable.
-		bool keeps = type.IsValueType ? !nullableValue : nonNullableReference;
+		// RowMap's Slot.KeepsValueOnNull test: a value type other than Nullable<T>, or a reference type the source declares non-nullable (oblivious:
+		// nullable). Read without a NULL test, except object or an interface: GetValue's DBNull would pass its cast silently, so those stay tested.
+		bool nonNullable = type.IsValueType ? !nullableValue : nonNullableReference && type.SpecialType != SpecialType.System_Object && type.TypeKind != TypeKind.Interface;
 
 		ImmutableArray<ReadCase> cases = Cases(underlying);
 		if (cases.IsEmpty) return null;
@@ -218,7 +219,7 @@ static class ModelReader
 		return new SlotSpec(
 			name, parameter, position,
 			type.ToDisplayString(Fq), underlying.ToDisplayString(Fq), nullableValue,
-			keeps, initBound, required,
+			nonNullable, initBound, required,
 			declared.Column, declared.Order, declared.NotMapped,
 			fallback,
 			new EquatableArray<ReadCase>(cases));

@@ -17,7 +17,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<long>("Id"), Col.Of<string>("Title"), Col.Of<long>("Qty"), Col.Of<int>("State"), Col.Of<string>("Tag"), Col.Of<string>("Note")],
 			[1L, "one", 2L, 1, "t", "n"],
-			[2L, null, null, null, null, null]);
+			[2L, "two", null, 2, "b", null]);
 		var runtime = q.Map(RowMap<PlainRecord>.Default).ToList();
 
 		var start = Counts.Now();
@@ -76,23 +76,6 @@ public partial class ParityTests
 	}
 
 	[Fact]
-	public void Decorated_required_null_row_is_built_by_the_runtime()
-	{
-		var q = new TableQuery(
-			[Col.Of<int>("post_id"), Col.Of<string>("title"), Col.Of<string>("note"), Col.Of<decimal>("price")],
-			[1, "one", "n", 2m],
-			[2, null, null, null]);
-		var runtime = q.Map(RowMap<DecoratedInit>.Default).ToList();
-
-		var start = Counts.Now();
-		var generated = q.Map<DecoratedInit>().ToList();
-		Counts c = Counts.Now().Since(start);
-
-		Parity.SameRows(runtime, generated);
-		Served(c, rowsDeclined: 1);
-	}
-
-	[Fact]
 	public void Keyword_named_members_are_served()
 	{
 		var q = new TableQuery([Col.Of<int>("event"), Col.Of<string>("class")], [1, "a"], [2, null]);
@@ -109,13 +92,13 @@ public partial class ParityTests
 	// ---- SequentialAccess: each cell once, in ascending column order ----
 
 	[Fact]
-	public void Sequential_reader_kept_null_rows_are_not_read_twice()
+	public void Sequential_reader_init_model_is_served()
 	{
-		// The NULL Title (init-only, non-nullable) row goes to the runtime: from the values already read, never by reading the row again.
+		// Read into locals in column order, each cell once, then built by an object initializer.
 		var q = new TableQuery(
 			[Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<string>("Note"), Col.Of<decimal>("Price")],
 			[1, "one", null, 1m],
-			[2, null, "n", 2m])
+			[2, "two", "n", 2m])
 		{ Sequential = true };
 
 		List<PlainInit> runtime;
@@ -129,7 +112,7 @@ public partial class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Parity.SameRows(runtime, query);
-		Served(c, sets: 2, rowsDeclined: 2);
+		Served(c, sets: 2);
 	}
 
 	[Fact]
@@ -138,7 +121,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<string>("Note"), Col.Of<bool>("IsActive"), Col.Of<int>("Id"), Col.Of<string>("Title")],
 			["n", true, 5, "t"],
-			[null, false, 6, null])
+			[null, false, 6, "u"])
 		{ Sequential = true };
 		var runtime = q.Map(RowMap<PlainPost>.Default).ToList();
 
@@ -164,7 +147,7 @@ public partial class ParityTests
 		{
 			var set = new DataSet();
 			set.Tables.Add(TableQuery.Table(PostColumns, PostRows));
-			set.Tables.Add(TableQuery.Table([Col.Of<string>("Title"), Col.Of<long>("Id")], ["second", 7L], [null, 8L]));
+			set.Tables.Add(TableQuery.Table([Col.Of<string>("Title"), Col.Of<long>("Id")], ["second", 7L], ["third", 8L]));
 			return set;
 		}
 

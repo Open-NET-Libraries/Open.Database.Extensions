@@ -22,6 +22,14 @@ public static class SyntheticGenerated
 	/// <summary>The control of Gen at width 20: V2's selector copied into the generated project's assembly, on Gen's twin of the row.</summary>
 	public static object Ctl(SyntheticConnection connection)
 		=> GeneratedControl.Control20(connection.Command(SyntheticVariants.Sql));
+
+	/// <summary>Gen_T (width 20): the twin whose member types are the ones V2 assumes (non-nullable Title, Body, Tag), so its generated reads are V2's reads.</summary>
+	public static object GenT(SyntheticConnection connection)
+		=> GeneratedReads.GenT20(connection.Command(SyntheticVariants.Sql));
+
+	/// <summary>The control of Gen_T: V2's selector on Gen_T's twin, compiled beside it.</summary>
+	public static object CtlT(SyntheticConnection connection)
+		=> GeneratedControl.ControlT20(connection.Command(SyntheticVariants.Sql));
 }
 
 public static partial class SyntheticChecks
@@ -30,7 +38,7 @@ public static partial class SyntheticChecks
 	static void VerifyGenerated(Report report, SyntheticConnection conn, int width, List<SynRow> v2, string where)
 	{
 		int sites = GeneratedReads.InterceptedCallSites();
-		report.Check(sites == 10, $"Gen/GenD: {sites} intercepted call sites, expected the 10 of GeneratedReads (is the generator referenced there?)");
+		report.Check(sites == 11, $"Gen/GenD: {sites} intercepted call sites, expected the 11 of GeneratedReads (is the generator referenced there?)");
 
 		// And none here: V1 (the baseline) and every other runtime variant of this project stay the runtime map.
 		bool interceptedHere = typeof(SyntheticChecks).Assembly.GetTypes().Any(static t => t.Name.EndsWith("OdxInterceptors", StringComparison.Ordinal));
@@ -42,6 +50,8 @@ public static partial class SyntheticChecks
 		if (width != 20) return;
 
 		CompareGenerated(report, "Ctl vs V2", where, v2, (IList)SyntheticGenerated.Ctl(conn));
+		CompareGenerated(report, "Gen_T vs V2", where, v2, (IList)SyntheticGenerated.GenT(conn));
+		CompareGenerated(report, "Ctl_T vs V2", where, v2, (IList)SyntheticGenerated.CtlT(conn));
 		KeyValuePair<string, Func<List<SynRow>>>[] parity =
 		[
 			new("V2n vs V2", () => SyntheticVariants.V2(conn, GenParity.V2n)),
@@ -49,6 +59,10 @@ public static partial class SyntheticChecks
 			new("GP3 vs V2", () => SyntheticVariants.V2(conn, GenParity.GP3)),
 			new("GP4 vs V2", () => SyntheticVariants.V2(conn, GenParity.GP4())),
 			new("GP5 vs V2", () => SyntheticVariants.V2(conn, GenParity.GP5)),
+			new("GP6 vs V2", () => SyntheticVariants.V2(conn, GenParity.GP6)),
+			new("GP6r vs V2", () => SyntheticVariants.V2(conn, GenParity.GP6r)),
+			new("GP7 vs V2", () => GenParity.GP7(conn)),
+			new("GP7c vs V2", () => GenParity.GP7c(conn)),
 		];
 		foreach (var variant in parity)
 			Compare(report, variant.Key, where, v2, variant.Value());
@@ -56,7 +70,7 @@ public static partial class SyntheticChecks
 
 	// The benchmark methods that read the 20 catalog columns at fixed ordinals (GenParity.cs, GeneratedControl.cs): they run at width 20 only.
 	static bool WidthTwentyOnly(string method)
-		=> method is "Ctl_Sync" or "V2n_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
+		=> method is "Ctl_Sync" or "Ctl_T_Sync" or "Gen_T_Sync" or "V2n_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
 
 	static void CompareGenerated(Report report, string name, string where, List<SynRow> expected, IList actual)
 	{

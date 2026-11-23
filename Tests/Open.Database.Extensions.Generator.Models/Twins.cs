@@ -20,7 +20,7 @@ public sealed class PlainPost
 
 	public DateTime Created { get; set; }
 
-	// Non-nullable: a NULL keeps the initializer.
+	// Non-nullable: on a NULL the runtime map keeps the initializer; the generated reader reads it as a hand-written selector does, and throws.
 	public string Title { get; set; } = "untitled";
 
 	public decimal Price { get; set; }
@@ -128,7 +128,7 @@ public sealed record DecoratedRecord(
 
 // ---- init-only and required members: an object initializer ----
 
-/// <summary>The undecorated init model: required members need a column; a NULL into a non-nullable one keeps what the type gives it.</summary>
+/// <summary>The undecorated init model: required members need a column.</summary>
 public sealed class PlainInit
 {
 	public required int Id { get; init; }
@@ -276,3 +276,15 @@ public sealed class OverridePost : VirtualPost
 
 	public string? Title { get; set; }
 }
+
+#nullable disable
+
+/// <summary>A model in code with nullable annotations off: its string is oblivious, nullable to the map and to the generator (tested, a NULL gives null).</summary>
+public sealed class ObliviousPost
+{
+	public int Id { get; set; }
+
+	public string Title { get; set; }
+}
+
+#nullable restore

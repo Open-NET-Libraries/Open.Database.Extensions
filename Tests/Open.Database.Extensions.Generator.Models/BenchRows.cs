@@ -133,3 +133,37 @@ public sealed class GenRowD20
 	[Column("Count", Order = 18)] public long Count { get; set; }
 	[Column("Summary", Order = 19)] public string? Summary { get; set; }
 }
+
+#pragma warning disable CS8618 // The non-nullable strings are always set by the reader (a NULL there throws); no initializer, so new() stores nothing, as SynRow's.
+
+/// <summary>
+/// Width 20, undecorated, with the member types V2's hand-written selector assumes: Title, Body and Tag are non-nullable <c>string</c> (V2 reads them
+/// with GetString alone), the rest as <see cref="GenRow20"/>. The generator reads a non-nullable member without an IsDBNull test, so this twin's
+/// generated reader makes exactly V2's reads (IsDBNull on Qty, Note, Amount, Stamp, Flag, Link and Summary only; Blob through GetValue).
+/// <see cref="GenRow20"/> stays as it was (string? members, tested), so earlier numbers stay comparable.
+/// </summary>
+public sealed class GenRowT20
+{
+	public int Id { get; set; }
+	public DateTime Created { get; set; }
+	public string Title { get; set; }
+	public decimal Price { get; set; }
+	public int? Qty { get; set; }
+	public bool IsActive { get; set; }
+	public Guid Key { get; set; }
+	public double Score { get; set; }
+	public string? Note { get; set; }
+	public byte[]? Blob { get; set; }
+	public long Big { get; set; }
+	public string Body { get; set; }
+	public decimal? Amount { get; set; }
+	public DateTime? Stamp { get; set; }
+	public string Tag { get; set; }
+	public double Ratio { get; set; }
+	public bool? Flag { get; set; }
+	public Guid? Link { get; set; }
+	public long Count { get; set; }
+	public string? Summary { get; set; }
+}
+
+#pragma warning restore CS8618

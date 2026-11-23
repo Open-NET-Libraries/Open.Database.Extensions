@@ -1,17 +1,25 @@
 using System.Data;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
+using Open.Database.Extensions.Core;
 
 namespace Open.Database.Extensions.Benchmarks;
 
 // The decomposition of the gap between V2 (the hand-written selector) and the generated reader (Gen), at width 20: each step adds one thing the generated
 // reader does and V2 does not, through the same Map(Func<IDataRecord, SynRow>) entry V2 uses (SyntheticVariants.V2).
 //   V2n  V2 plus IsDBNull on every member (the NULL rule of the runtime map: a NULL leaves the member's default), constant ordinals: the hand-written
-//        selector with the generated reader's NULL semantics, the fair bar for Gen (named GP1 in the first decomposition run).
+//        selector with the generated reader's former NULL semantics (named GP1 in the first decomposition run; the generator now tests nullable members only).
 //   GP2  V2n with the ordinals read from a layout object (resolved once per result set), as the generated reader's mode 1 reads them.
 //   GP3  GP2 inside try/catch with the error-position stores (s = k) in front of every member.
 //   GP4  GP3 behind the binder: the bound-layout check and the read-mode switch of the generated Row method, on an instance delegate.
-//   GP5  V2n with each member in its own try region (no position store): the row shape the generator now emits for the identity layout (mode 5),
-//        without the binder. Equal to V2n if a try region costs nothing on entry, as the emitter assumes.
+//   GP5  V2n with each member in its own try region (no position store): a former row shape of the generator (per-member error attribution).
+//   GP6  V2's own read (SyntheticVariants.Read20: no NULL test on a non-nullable member, IsDBNull on a nullable one) inside ONE try/catch per row
+//        with a cold throw: the row shape the generator emits now (one try region per row reader). Equal to V2 if entering a try region is free.
+//   GP6r GP6 plus the generated reader's row counter (Bound.Rows: one increment of an int field on a heap object per row), the row a failure reports.
+//   GP7  the raw loop (as V10r): ExecuteReader's callback, while (db.Read()) list.Add(Read(db)), V2's read at constant ordinals on DbDataReader,
+//        with ONE try/catch around the whole loop (the row number a loop local). Measurable only: a Map(Func) selector cannot put a try around
+//        Core's loop without a Core hook, so the generator does not use this placement.
+//   GP7c GP7 with no try: the bar of the loop placement.
 public static class GenParity
 {
 	sealed class Layout
@@ -28,6 +36,8 @@ public static class GenParity
 	public static readonly Func<IDataRecord, SynRow> GP2 = Read2;
 	public static readonly Func<IDataRecord, SynRow> GP3 = Read3;
 	public static readonly Func<IDataRecord, SynRow> GP5 = Read5;
+	public static readonly Func<IDataRecord, SynRow> GP6 = Read6;
+	public static readonly Func<IDataRecord, SynRow> GP6r = Read6r;
 
 	/// <summary>A new instance per query, as the generator's interceptor makes one (the delegate is an instance method).</summary>
 	public static Func<IDataRecord, SynRow> GP4() => new Binder().Row;
@@ -150,6 +160,149 @@ public static class GenParity
 		try { item.Summary = r.IsDBNull(19) ? null : r.GetString(19); } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 19); }
 		return item;
 	}
+
+	static SynRow Read6(IDataRecord r)
+	{
+		try
+		{
+			return new()
+			{
+				Id = r.GetInt32(0),
+				Created = r.GetDateTime(1),
+				Title = r.GetString(2),
+				Price = r.GetDecimal(3),
+				Qty = r.IsDBNull(4) ? null : r.GetInt32(4),
+				IsActive = r.GetBoolean(5),
+				Key = r.GetGuid(6),
+				Score = r.GetDouble(7),
+				Note = r.IsDBNull(8) ? null : r.GetString(8),
+				Blob = (byte[])r.GetValue(9),
+				Big = r.GetInt64(10),
+				Body = r.GetString(11),
+				Amount = r.IsDBNull(12) ? null : r.GetDecimal(12),
+				Stamp = r.IsDBNull(13) ? null : r.GetDateTime(13),
+				Tag = r.GetString(14),
+				Ratio = r.GetDouble(15),
+				Flag = r.IsDBNull(16) ? null : r.GetBoolean(16),
+				Link = r.IsDBNull(17) ? null : r.GetGuid(17),
+				Count = r.GetInt64(18),
+				Summary = r.IsDBNull(19) ? null : r.GetString(19),
+			};
+		}
+		catch (Exception ex) when (Wraps(ex))
+		{
+			throw RowFail(ex, -1);
+		}
+	}
+
+	/// <summary>The row counter of GP6r: a field on a heap object, as Bound.Rows is (never reset here: a benchmark measures the increment).</summary>
+	sealed class RowCount
+	{
+		public int Rows;
+	}
+
+	static readonly RowCount s_rows = new();
+
+	static SynRow Read6r(IDataRecord r)
+	{
+		RowCount b = s_rows;
+		b.Rows++;
+		try
+		{
+			return new()
+			{
+				Id = r.GetInt32(0),
+				Created = r.GetDateTime(1),
+				Title = r.GetString(2),
+				Price = r.GetDecimal(3),
+				Qty = r.IsDBNull(4) ? null : r.GetInt32(4),
+				IsActive = r.GetBoolean(5),
+				Key = r.GetGuid(6),
+				Score = r.GetDouble(7),
+				Note = r.IsDBNull(8) ? null : r.GetString(8),
+				Blob = (byte[])r.GetValue(9),
+				Big = r.GetInt64(10),
+				Body = r.GetString(11),
+				Amount = r.IsDBNull(12) ? null : r.GetDecimal(12),
+				Stamp = r.IsDBNull(13) ? null : r.GetDateTime(13),
+				Tag = r.GetString(14),
+				Ratio = r.GetDouble(15),
+				Flag = r.IsDBNull(16) ? null : r.GetBoolean(16),
+				Link = r.IsDBNull(17) ? null : r.GetGuid(17),
+				Count = r.GetInt64(18),
+				Summary = r.IsDBNull(19) ? null : r.GetString(19),
+			};
+		}
+		catch (Exception ex) when (Wraps(ex))
+		{
+			throw RowFail(ex, b.Rows - 1);
+		}
+	}
+
+	/// <summary>GP7: the raw loop with one try around it.</summary>
+	public static List<SynRow> GP7(DbConnection connection)
+		=> connection.Command(SyntheticVariants.Sql).ExecuteReader(static reader =>
+		{
+			var db = reader;
+			var list = new List<SynRow>();
+			int row = 0;
+			try
+			{
+				while (db.Read())
+				{
+					list.Add(Read7(db));
+					row++;
+				}
+			}
+			catch (Exception ex) when (Wraps(ex))
+			{
+				throw RowFail(ex, row);
+			}
+
+			while (db.NextResult()) { }
+			return list;
+		}, CommandBehavior.SequentialAccess);
+
+	/// <summary>GP7c: the raw loop of GP7 with no try.</summary>
+	public static List<SynRow> GP7c(DbConnection connection)
+		=> connection.Command(SyntheticVariants.Sql).ExecuteReader(static reader =>
+		{
+			var db = reader;
+			var list = new List<SynRow>();
+			while (db.Read()) list.Add(Read7(db));
+			while (db.NextResult()) { }
+			return list;
+		}, CommandBehavior.SequentialAccess);
+
+	// V2's read on DbDataReader (the loop's static type, as V10r's row method takes it).
+	static SynRow Read7(DbDataReader r) => new()
+	{
+		Id = r.GetInt32(0),
+		Created = r.GetDateTime(1),
+		Title = r.GetString(2),
+		Price = r.GetDecimal(3),
+		Qty = r.IsDBNull(4) ? null : r.GetInt32(4),
+		IsActive = r.GetBoolean(5),
+		Key = r.GetGuid(6),
+		Score = r.GetDouble(7),
+		Note = r.IsDBNull(8) ? null : r.GetString(8),
+		Blob = (byte[])r.GetValue(9),
+		Big = r.GetInt64(10),
+		Body = r.GetString(11),
+		Amount = r.IsDBNull(12) ? null : r.GetDecimal(12),
+		Stamp = r.IsDBNull(13) ? null : r.GetDateTime(13),
+		Tag = r.GetString(14),
+		Ratio = r.GetDouble(15),
+		Flag = r.IsDBNull(16) ? null : r.GetBoolean(16),
+		Link = r.IsDBNull(17) ? null : r.GetGuid(17),
+		Count = r.GetInt64(18),
+		Summary = r.IsDBNull(19) ? null : r.GetString(19),
+	};
+
+	// The cold report of GP6, GP6r and GP7 (out of the row method, as the generated Fail is).
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static InvalidOperationException RowFail(Exception ex, int row)
+		=> new("Unable to map row " + row + ".", ex);
 
 	static bool Wraps(Exception ex) => ex is not DbException && ex is not OperationCanceledException;
 

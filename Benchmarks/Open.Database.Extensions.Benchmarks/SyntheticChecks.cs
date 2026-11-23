@@ -285,7 +285,7 @@ public static partial class SyntheticChecks
 						case List<object[]> boxed:
 							report.Check(boxed.Count == rows, $"{name} {where}: {boxed.Count} rows, expected {rows}");
 							break;
-						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal) || method.Name == "Ctl_Sync":
+						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal) || method.Name is "Ctl_Sync" or "Ctl_T_Sync":
 							CompareGenerated(report, name, where, v1, generated);
 							break;
 						case System.Collections.IList shaped:
