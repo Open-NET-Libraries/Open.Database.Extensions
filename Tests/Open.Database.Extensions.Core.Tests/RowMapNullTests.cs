@@ -5,8 +5,8 @@ using System.Reflection;
 
 namespace Open.Database.Extensions.Tests;
 
-// The declared type of the property decides what a NULL does: a nullable or reference property gets null; a non-nullable value-type property keeps what new T() gave it
-// (its initializer, else its default). Every map does this, RowMap<T>.Default included; only a value that cannot be mapped throws a ValueMappingException.
+// The declared type of the property decides what a NULL does: a nullable or oblivious reference property gets null; a non-nullable value-type property rejects it
+// (the row throws ValueMappingException naming the model and the row), its initializer notwithstanding. Every map does this, RowMap<T>.Default included.
 [ExcludeFromCodeCoverage]
 public static class RowMapNullTests
 {
@@ -92,28 +92,20 @@ public static class RowMapNullTests
 		}
 	}
 
-	// ---- a non-nullable value-type property keeps what new T() gave it; every other cell is read ----
+	// ---- a non-nullable value-type property rejects NULL, on the typed path and the general path alike ----
 
 	[Theory]
 	[MemberData(nameof(NonNullable))]
-	public static void NullInANonNullableValueColumn_KeepsWhatNewTGave(string column)
+	public static void NullInANonNullableValueColumn_IsAnError(string column)
 	{
-		PropertyInfo property = typeof(Solid).GetProperty(column)!;
-
 		foreach (RowMap<Solid> map in Maps)
 		{
 			foreach (Func<RowMap<Solid>, string?, List<Solid>> route in Routes)
-			{
-				Solid expected = Valid();
-				property.SetValue(expected, property.GetValue(new Solid())); // the initializer
-
-				AssertSame(expected, Assert.Single(route(map, column)));
-			}
+				NullAssert.Model<Solid>(0, () => route(map, column));
 		}
 
-		// Map<T>() with no map is the same default.
-		Solid viaNoMap = Assert.Single(Cmd(SolidColumns, SolidRow(column)).Map<Solid>().ToList());
-		Assert.Equal(property.GetValue(new Solid()), property.GetValue(viaNoMap));
+		// Map<T>() with no map is the same.
+		NullAssert.Model<Solid>(0, () => Cmd(SolidColumns, SolidRow(column)).Map<Solid>().ToList());
 	}
 
 	[Fact]
@@ -127,20 +119,16 @@ public static class RowMapNullTests
 	}
 
 	[Fact]
-	public static void AValueThatCannotBeMapped_StillNamesThePropertyAndColumn()
+	public static void AValueThatCannotBeMapped_NamesTheModelAndRow()
 	{
 		object?[] row = SolidRow();
 		row[Array.IndexOf(SolidNames, "Shade")] = "Purple"; // not a member of Shade
 
 		var ex = Assert.Throws<ValueMappingException>(() => Cmd(SolidColumns, row).Map(RowMap<Solid>.Default).ToList());
-		Assert.Contains("property 'Shade' (Shade) from column 'Shade'", ex.Message);
-		Assert.Equal("Shade", ex.PropertyName);
-		Assert.Equal("Shade", ex.ColumnName);
-		Assert.Equal(typeof(Shade), ex.TargetType);
-		Assert.NotNull(ex.InnerException);
+		NullAssert.Check<Solid, ArgumentException>("Unable to map row 0 to 'Solid'.", ex);
 	}
 
-	// ---- cost: one IsDBNull per typed non-nullable cell, and a general cell is read once ----
+	// ---- cost: no IsDBNull for a non-nullable cell, and a general cell is read once ----
 
 	sealed class CountingReader(ImmutableArray<ColumnDef> columns, object?[][] rows) : TypedReader(columns, rows)
 	{
@@ -169,12 +157,12 @@ public static class RowMapNullTests
 	}
 
 	[Fact]
-	public static void DefaultMap_CostsOneIsDBNullPerTypedCell_AndReadsAGeneralCellOnce()
+	public static void DefaultMap_AsksNoIsDBNullForANonNullableCell_AndReadsAGeneralCellOnce()
 	{
 		foreach (RowMap<Solid> map in Maps)
 		{
 			CountingReader reader = ReadValidRows(map, 3);
-			Assert.Equal(3 * 6, reader.IsDBNullCalls); // six typed columns per row
+			Assert.Equal(0, reader.IsDBNullCalls); // a NULL makes the typed getter or the conversion throw: nothing to ask first
 			Assert.Equal(3 * 2, reader.GetValueCalls); // the two general-path columns, read once per row, not once to test and once to convert
 		}
 	}

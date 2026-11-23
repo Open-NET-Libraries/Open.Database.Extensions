@@ -29,8 +29,8 @@ public static partial class CoreExtensions
 	/// or a <see cref="Nullable{T}"/> of one)
 	/// is read from the first column of each row,
 	/// converted as a property of that type is;
-	/// a NULL is <see langword="default"/> for a non-nullable value type,
-	/// so declare <c>int?</c> to tell NULL from 0.
+	/// a NULL into a non-nullable value type throws <see cref="ValueMappingException"/> naming the type and the row,
+	/// so declare <c>int?</c> when a NULL is expected.
 	/// A <typeparamref name="T"/> that cannot be mapped
 	/// (an interface, an abstract class,
 	/// a type with two or more public constructors and none without parameters)

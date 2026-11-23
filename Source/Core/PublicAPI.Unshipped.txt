@@ -1,1 +1,11 @@
 #nullable enable
+Open.Database.Extensions.NullAction
+Open.Database.Extensions.NullAction.Default = 2 -> Open.Database.Extensions.NullAction
+Open.Database.Extensions.NullAction.None = 0 -> Open.Database.Extensions.NullAction
+Open.Database.Extensions.NullAction.Throw = 1 -> Open.Database.Extensions.NullAction
+Open.Database.Extensions.NullPolicyAttribute
+Open.Database.Extensions.NullPolicyAttribute.Action.get -> Open.Database.Extensions.NullAction
+Open.Database.Extensions.NullPolicyAttribute.NullPolicyAttribute(Open.Database.Extensions.NullAction action) -> void
+Open.Database.Extensions.NullValueAttribute
+Open.Database.Extensions.NullValueAttribute.NullValueAttribute(object? value) -> void
+Open.Database.Extensions.NullValueAttribute.Value.get -> object?

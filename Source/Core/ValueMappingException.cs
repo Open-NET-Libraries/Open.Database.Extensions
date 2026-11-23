@@ -1,4 +1,4 @@
-﻿namespace Open.Database.Extensions;
+namespace Open.Database.Extensions;
 
 // Deliberately a DataException and not an InvalidOperationException: application code often catches that type as a business-rule failure and reports its message.
 /// <summary>
@@ -9,6 +9,12 @@
 /// <para>
 /// The provider's or the conversion's error is the
 /// <see cref="Exception.InnerException"/>.
+/// </para>
+/// <para>
+/// A row that fails names the model and the row in the message. A NULL into a non-nullable member names the model and the row only;
+/// to have it name the member and the column, declare <see cref="NullPolicyAttribute"/> with <see cref="NullAction.Throw"/>,
+/// and to replace a NULL instead, declare <see cref="NullValueAttribute"/>.
+/// A <see cref="NullAction.Throw"/> policy and a <see langword="required"/> member no column feeds set <see cref="PropertyName"/> and <see cref="ColumnName"/>.
 /// </para>
 /// <para>
 /// This is a <see cref="DataException"/>.
@@ -25,15 +31,15 @@
 public sealed class ValueMappingException(string message, string propertyName, string columnName, Type targetType, Exception? innerException = null) : DataException(message, innerException)
 {
 	/// <summary>
-	/// The name of the property being set.
+	/// The name of the property being set; empty when the failure names no member (see the remarks).
 	/// </summary>
-	/// <value>The name of the property that was being set.</value>
+	/// <value>The name of the property that was being set. Empty when the failure names no member.</value>
 	public string PropertyName { get; } = propertyName;
 
 	/// <summary>
-	/// The name of the column being read.
+	/// The name of the column being read; empty when the failure names no column (see the remarks).
 	/// </summary>
-	/// <value>The name of the column that was being read.</value>
+	/// <value>The name of the column that was being read. Empty when the failure names no column.</value>
 	public string ColumnName { get; } = columnName;
 
 	/// <summary>

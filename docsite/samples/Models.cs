@@ -1,3 +1,4 @@
+using Open.Database.Extensions;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Samples;
@@ -44,8 +45,8 @@ public class Order
 {
 	public required int Id { get; init; }
 	public string OrderNum { get; init; } = "";
-	public string PlacedAt { get; init; } = "";
-	public string Customer { get; init; } = "";
+	public string? PlacedAt { get; init; }
+	public string? Customer { get; init; }
 
 	// Computed from the converted members: never mapped.
 	public string Summary => $"{OrderNum} at {PlacedAt}";
@@ -55,10 +56,17 @@ public class Order
 #region order_line_model
 public class OrderLine
 {
-	public int Quantity { get; init; } = 1;   // NULL leaves 1: a non-nullable value type keeps its initializer, else its default
+	[NullPolicy(NullAction.Default)]
+	public int Quantity { get; init; } = 1;   // NULL keeps 1: the policy keeps the initializer
+
+	[NullValue(0)]
+	public int Stock { get; init; } = -1;     // NULL gives 0: the null value, not the initializer
+
 	public int? Discount { get; init; }       // NULL gives null
 	public string? Note { get; init; }        // NULL gives null
-	public string Title { get; init; } = "";  // NULL leaves "": a non-nullable reference (nullable annotations on) keeps its initializer too
+
+	[NullPolicy(NullAction.Default)]
+	public string Title { get; init; } = "";  // NULL keeps ""
 }
 #endregion
 
@@ -86,9 +94,13 @@ public class PostInput
 }
 #endregion
 
-// A parameter no column feeds, and a NULL into a non-nullable parameter, take the declared default; a NULL into a nullable parameter is null.
+// A parameter no column feeds takes its declared default; with NullAction.Default, a NULL does too; a NULL into a nullable parameter is null.
 #region review_model
-public record Review(int Id, string Title = "untitled", int Stars = 3, int? Rating = 4);
+public record Review(
+	int Id,
+	[NullPolicy(NullAction.Default)] string Title = "untitled",
+	[NullPolicy(NullAction.Default)] int Stars = 3,
+	int? Rating = 4);
 #endregion
 
 // Two public constructors and none without parameters: Map<T>() cannot choose, and says so at the call.

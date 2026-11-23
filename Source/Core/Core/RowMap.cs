@@ -23,7 +23,7 @@ namespace Open.Database.Extensions;
 /// <para>
 /// A type with no public parameterless constructor is built through its one public constructor (a positional record, a record struct, a class with one constructor), and each parameter is fed like a property.
 /// A parameter and a public property whose names differ only in case are one member, fed once, through the constructor, and a pair names it by the property's name (exactly) or by the parameter's name (ignoring case).
-/// A parameter no column feeds, or a <see langword="null"/> column ignores, receives its declared default value, else <see langword="default"/>; so does a parameter the type declares non-nullable when the cell is NULL.
+/// A parameter no column feeds, or a <see langword="null"/> column ignores, receives its declared default value, else <see langword="default"/>; a parameter a column feeds receives the column's value, under the NULL rules below.
 /// </para>
 /// <para>
 /// A <see langword="required"/> property must be fed by a column in every result shape, and a constructor parameter's default never feeds it:
@@ -49,9 +49,12 @@ namespace Open.Database.Extensions;
 /// <item><description>a type whose <c>[Column]</c> and <c>[NotMapped]</c> declarations cannot all be honoured (see below).</description></item>
 /// </list>
 /// <para>
-/// A NULL never overwrites a member the C# type declares non-nullable: a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type with nullable annotations on (<c>string</c>, not <c>string?</c>).
-/// A property of such a type keeps the value its constructor or initializer gave it, else its default; a constructor parameter receives its declared default value, else <see langword="default"/>.
-/// Anything else receives <see langword="null"/>: <see cref="Nullable{T}"/>, a reference type declared nullable (<c>string?</c>, or <c>[AllowNull]</c> on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter.
+/// A NULL into a member the C# type declares non-nullable is an error: a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type with nullable annotations on (<c>string</c>, not <c>string?</c>).
+/// The row throws <see cref="ValueMappingException"/> naming the model type and the 0-based row, with the provider's error, if it raised one, as the inner exception.
+/// A member that takes NULL receives <see langword="null"/>: <see cref="Nullable{T}"/>, a reference type declared nullable (<c>string?</c>, or <c>[AllowNull]</c> on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter.
+/// A <see cref="NullPolicyAttribute"/> on a member or on <typeparamref name="T"/> says what a NULL does instead, whatever the member's type,
+/// and a <see cref="NullValueAttribute"/> on a member replaces a NULL with its value, over any policy;
+/// a pair or a converter of this map that names a member overrides the member's own declarations (the type's policy still covers it).
 /// </para>
 /// <para>
 /// A member that declares its column is a hard instruction, and a result that does not say the same throws.
@@ -79,7 +82,7 @@ namespace Open.Database.Extensions;
 /// </para>
 /// <para>
 /// A converter is not called for a NULL cell, and the member follows the NULL rules above:
-/// <see langword="null"/> for a nullable member, its own value (a property) or its declared default (a constructor parameter) for a non-nullable one.
+/// <see langword="null"/> for a nullable member, <see cref="ValueMappingException"/> for a non-nullable one.
 /// A converter that must see NULL names a <see cref="Nullable{T}"/> as <c>TColumn</c> (<c>int?</c>, <c>DateTime?</c>): it is called with <see langword="null"/>,
 /// and what it returns is the member's value, a non-nullable member's included.
 /// A converter of a reference-type column (text included) is never called with <see langword="null"/>, whatever its parameter is annotated as.
@@ -225,6 +228,8 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		ParameterInfo[] declared = factory.Method.GetParameters();
 		if (declared.Length == parameters.Length) parameters = declared;
 
+		string? policyError = null;
+		NullAction? modelPolicy = ModelPolicy(ref policyError);
 		var seen = new HashSet<string>(StringComparer.Ordinal);
 		var list = new List<Slot>(parameters.Length);
 		for (int i = 0; i < parameters.Length; i++)
@@ -236,9 +241,13 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			if (!seen.Add(name))
 				throw new ArgumentException($"The factory has two parameters named '{name}'.", nameof(factory));
 
-			list.Add(new Slot(name, parameter.ParameterType, i, name, false, Slot.FallbackOf(parameter), false, NullAnnotations.IsNonNullableReference(parameter)));
+			bool nonNullableReference = NullAnnotations.IsNonNullableReference(parameter);
+			NullRule? onNull = RuleOf(NullDeclaration.Of(parameter), modelPolicy, name, parameter.ParameterType, nonNullableReference, ref policyError);
+			NullRule? typeOnNull = RuleOf(NullDeclaration.None, modelPolicy, name, parameter.ParameterType, nonNullableReference, ref policyError);
+			list.Add(new Slot(name, parameter.ParameterType, i, name, false, Slot.FallbackOf(parameter), false, nonNullableReference, onNull: onNull, typeOnNull: typeOnNull));
 		}
 
+		if (policyError is not null) throw new ArgumentException(policyError, nameof(factory));
 		return [.. list];
 	}
 
@@ -481,6 +490,11 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// </summary>
 	static readonly string? TypeError = TypeShape.Error ?? Model.Error;
 
+	/// <summary>
+	/// Why a null policy of <typeparamref name="T"/> cannot be honoured, or <see langword="null"/> when every one can.
+	/// </summary>
+	static readonly string? PolicyError = Model.PolicyError;
+
 	// Only then does a result set pay the checks of Match for it (once per layout, never per row).
 	/// <summary>
 	/// Whether any member declares a column or an ordinal.
@@ -493,8 +507,12 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <param name="slots">The slots, in order.</param>
 	/// <param name="error">Why the declarations cannot be honoured, or <see langword="null"/> when they can.</param>
 	/// <param name="decorated"><see langword="true"/> if any slot declares a column name or an ordinal; otherwise, <see langword="false"/>.</param>
-	sealed class SlotTable(ImmutableArray<Slot> slots, string? error, bool decorated)
+	/// <param name="policyError">Why a null policy cannot be honoured, or <see langword="null"/> when every one can.</param>
+	sealed class SlotTable(ImmutableArray<Slot> slots, string? error, bool decorated, string? policyError = null)
 	{
+		/// <summary>Why a null declaration cannot be honoured (a null value that does not convert or is not a constant, an undefined action), or <see langword="null"/> when every one can.</summary>
+		public readonly string? PolicyError = policyError;
+
 		/// <summary>The slots, in order.</summary>
 		public readonly ImmutableArray<Slot> Slots = slots;
 
@@ -516,7 +534,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		var seen = new HashSet<string>(StringComparer.Ordinal);
 		var list = new List<Slot>();
 		string? error = null;
-		if (TypeShape.Constructor is { } constructor) AddParameterSlots(constructor, list, seen, ref error);
+		string? policyError = null;
+		NullAction? modelPolicy = ModelPolicy(ref policyError);
+		if (TypeShape.Constructor is { } constructor) AddParameterSlots(constructor, list, seen, ref error, modelPolicy, ref policyError);
 
 		foreach (PropertyInfo p in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		{
@@ -525,13 +545,97 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			var declared = Decoration.Of(p);
 			if (declared.NotMapped || declared.Invalid is not null) error ??= DeclarationError(p, declared, null);
 
-			list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p), NullAnnotations.IsNonNullableReference(p), declared.Column, declared.Order, declared.NotMapped));
+			bool nonNullableReference = NullAnnotations.IsNonNullableReference(p);
+			NullRule? onNull = RuleOf(NullDeclaration.Of(p), modelPolicy, p.Name, p.PropertyType, nonNullableReference, ref policyError);
+			NullRule? typeOnNull = RuleOf(NullDeclaration.None, modelPolicy, p.Name, p.PropertyType, nonNullableReference, ref policyError);
+			list.Add(new Slot(p.Name, p.PropertyType, setter, MustHaveColumn(p), nonNullableReference, declared.Column, declared.Order, declared.NotMapped, onNull, typeOnNull));
 		}
 
 		bool decorated = list.Exists(s => s.ColumnName is not null || s.Order >= 0);
 		if (decorated) error ??= DuplicateDeclaration(list);
 
-		return new([.. list], error, decorated);
+		return new([.. list], error, decorated, policyError);
+	}
+
+	// CustomAttributeData reads what a type declares itself, so the hierarchy is walked here: the nearest declaration wins.
+	/// <summary>
+	/// Returns the null policy the model type declares, else the nearest base type's, or <see langword="null"/> for none.
+	/// </summary>
+	/// <param name="error">The first null declaration error so far; set when the policy is not a <see cref="NullAction"/>.</param>
+	static NullAction? ModelPolicy(ref string? error)
+	{
+		for (Type? type = typeof(T); type is not null && type != typeof(object); type = type.BaseType)
+		{
+			NullDeclaration declared = NullDeclaration.Of(type);
+			if (declared.Invalid is not null)
+			{
+				error ??= $"'{Shape.TypeName(type)}' declares {declared.Invalid}.";
+				return null;
+			}
+
+			if (declared.Policy is { } policy) return policy;
+		}
+
+		return null;
+	}
+
+	// Resolved once per slot, when the slots are built: only a slot with a rule pays for a NULL test in the compiled readers.
+	/// <summary>
+	/// Returns what a NULL gives a member: its <see cref="NullValueAttribute"/>, else its own policy, else the model type's, or <see langword="null"/> for none.
+	/// </summary>
+	/// <param name="member">What the member declares; its null value wins over any policy.</param>
+	/// <param name="model">The policy the model type declares, or <see langword="null"/>.</param>
+	/// <param name="name">The member's name, for the message.</param>
+	/// <param name="type">The member's type.</param>
+	/// <param name="nonNullableReference"><see langword="true"/> for a reference type declared non-nullable.</param>
+	/// <param name="error">The first null declaration error so far; set when a declaration cannot be honoured.</param>
+	static NullRule? RuleOf(NullDeclaration member, NullAction? model, string name, Type type, bool nonNullableReference, ref string? error)
+	{
+		if (member.Invalid is not null)
+		{
+			error ??= $"'{name}' of '{Shape.TypeName(typeof(T))}' declares {member.Invalid}.";
+			return null;
+		}
+
+		if (member.HasValue)
+		{
+			if (NullValueOf(member.Value, type, nonNullableReference) is { } value) return new NullRule(value);
+
+			string shown = member.Value is { } v ? $"{System.Convert.ToString(v, CultureInfo.InvariantCulture)} ({v.GetType().Name})" : "null";
+			error ??= $"The null value of '{name}' of '{Shape.TypeName(typeof(T))}', {shown}, does not convert to {Shape.TypeName(type)}.";
+			return null;
+		}
+
+		return (member.Policy ?? model) switch
+		{
+			NullAction.Throw => NullRule.Throw,
+			NullAction.Default => NullRule.Default,
+			_ => null, // None or no policy: no test, and a member's None overrides the type's policy.
+		};
+	}
+
+	/// <summary>
+	/// Returns the constant a NULL gives a member: the value converted to the member's type (its underlying type for a <see cref="Nullable{T}"/>) as a column is,
+	/// or <see langword="null"/> when it does not convert.
+	/// </summary>
+	static ConstantExpression? NullValueOf(object? value, Type type, bool nonNullableReference)
+	{
+		Type? underlying = Nullable.GetUnderlyingType(type);
+		if (value is null)
+			return (type.IsValueType && underlying is null) || nonNullableReference ? null : Expression.Constant(null, type);
+
+		try
+		{
+			object? converted = typeof(RowMap<T>)
+				.GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!
+				.MakeGenericMethod(underlying ?? type)
+				.Invoke(null, [value]);
+			return Expression.Constant(converted, type);
+		}
+		catch (Exception ex) when (ex is TargetInvocationException or ArgumentException)
+		{
+			return null;
+		}
 	}
 
 	/// <summary>
@@ -547,8 +651,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <param name="list">The slots, to add to.</param>
 	/// <param name="seen">The names of the slots so far.</param>
 	/// <param name="error">The first declaration error so far; set when a declaration cannot be honoured and none was found before.</param>
-	static void AddParameterSlots(ConstructorInfo constructor, List<Slot> list, HashSet<string> seen, ref string? error)
-
+	/// <param name="modelPolicy">The null policy the model type declares, or <see langword="null"/>.</param>
+	/// <param name="policyError">The first null policy error so far.</param>
+	static void AddParameterSlots(ConstructorInfo constructor, List<Slot> list, HashSet<string> seen, ref string? error, NullAction? modelPolicy, ref string? policyError)
 	{
 		ParameterInfo[] parameters = constructor.GetParameters();
 		PropertyInfo[] properties = [.. typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.GetIndexParameters().Length == 0)];
@@ -582,7 +687,13 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			Decoration declared = matches[i] is { } property ? Decoration.Of(property) : Decoration.None;
 			if (declared.NotMapped || declared.Invalid is not null) error ??= DeclarationError(matches[i]!, declared, parameter);
 
-			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter), matches[i] is { } required && MustHaveColumn(required), NullAnnotations.IsNonNullableReference(parameter), declared.Column, declared.Order));
+			// A positional record's parameter takes the declarations on the parameter, else on the property it feeds.
+			bool nonNullableReference = NullAnnotations.IsNonNullableReference(parameter);
+			NullDeclaration own = NullDeclaration.Of(parameter);
+			if (matches[i] is { } fed) own = own.Or(NullDeclaration.Of(fed));
+			NullRule? onNull = RuleOf(own, modelPolicy, name, parameter.ParameterType, nonNullableReference, ref policyError);
+			NullRule? typeOnNull = RuleOf(NullDeclaration.None, modelPolicy, name, parameter.ParameterType, nonNullableReference, ref policyError);
+			list.Add(new Slot(name, parameter.ParameterType, i, parameter.Name ?? name, matches[i] is not null, Slot.FallbackOf(parameter), matches[i] is { } required && MustHaveColumn(required), nonNullableReference, declared.Column, declared.Order, onNull, typeOnNull));
 		}
 	}
 
@@ -663,11 +774,12 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <summary>Gets the map for the model's default mapping (property name == column name), used when no map is passed.</summary>
 	/// <value>The default map of <typeparamref name="T"/>.</value>
 	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="ArgumentException">A <see cref="NullValueAttribute"/> of <typeparamref name="T"/> does not convert to its member's type, or is not a supported constant.</exception>
 	public static RowMap<T> Default
 	{
 		// Null when T cannot be mapped, so reading Default throws instead of a static initializer failing.
-		get => field ?? throw new InvalidOperationException(TypeError);
-	} = TypeError is null ? new() : null; // Declared after TypeShape, ModelSlots and ModelSlotIndex: its constructor reads them.
+		get => field ?? throw (TypeError is not null ? new InvalidOperationException(TypeError) : new ArgumentException(PolicyError));
+	} = TypeError is null && PolicyError is null ? new() : null; // Declared after TypeShape, ModelSlots and ModelSlotIndex: its constructor reads them.
 
 	/// <summary>
 	/// Throws when <typeparamref name="T"/> cannot be mapped.
@@ -676,10 +788,12 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// It is for an entry point that runs a command before it maps a row: checking the type first makes an unmappable <typeparamref name="T"/> fail at the call, with nothing executed.
 	/// </remarks>
 	/// <exception cref="InvalidOperationException"><typeparamref name="T"/> cannot be mapped (see <see cref="RowMap{T}"/>).</exception>
+	/// <exception cref="ArgumentException">A <see cref="NullValueAttribute"/> of <typeparamref name="T"/> cannot be honoured.</exception>
 	[SuppressMessage("Roslynator", "RCS1158:Static member in generic type should use a type parameter", Justification = "It checks this T's shape: the type parameter is how a caller names which T to check (RowMap<T>.ThrowIfUnmappable()).")]
 	internal static void ThrowIfUnmappable()
 	{
 		if (TypeError is not null) throw new InvalidOperationException(TypeError);
+		if (PolicyError is not null) throw new ArgumentException(PolicyError);
 	}
 
 	/// <summary>What this map's columns can feed: the model's own slots (<c>ModelSlots</c>), or the parameters of its factory (<c>From(factory, pairs)</c>).</summary>
@@ -1103,14 +1217,13 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	// After the first query of a given shape no reflection, expression building or compilation happens again.
 	// Values are read with the provider's typed getters whenever the column type matches the property type (or converts numerically), so nothing is boxed.
-	// Skipping a NULL costs one IsDBNull per such cell on the typed path, a single read of the cell on the general path.
+	// A non-nullable member is read with the typed getter alone: a NULL makes the provider throw, so it costs nothing per cell. Only a nullable member asks IsDBNull.
 	// Which reference types are declared non-nullable is read once per model type, when the slots are built (NullAnnotations).
 	/// <summary>
 	/// Represents one result-set layout (the column names and types) and the compiled readers for it.
 	/// </summary>
 	/// <remarks>
 	/// The map holds the validated column table and the compiled typed row readers for one result-set layout (column names and column types).
-	/// A member the C# type declares non-nullable is skipped on NULL, so a property keeps what its constructor or initializer gave it (else its default), and a constructor parameter gets its fallback.
 	/// </remarks>
 	sealed class Layout
 	{
@@ -1229,51 +1342,39 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	Func<object?[], T> BuildArray(ArrayLayout layout)
 	{
 		ParameterExpression row = Expression.Parameter(typeof(object?[]), "row");
-		MethodInfo convert = typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!;
-
 		MethodInfo isNullCell = typeof(RowMap<T>).GetMethod(nameof(IsNullCell), BindingFlags.Static | BindingFlags.NonPublic)!;
 
-		// The cell of column i as a slot's type: NULL is its default.
-		Expression Read(int i, Slot slot)
-			=> Expression.Call(convert.MakeGenericMethod(slot.Type), Expression.ArrayIndex(row, Expression.Constant(i)));
+		Expression Cell(int i) => Expression.ArrayIndex(row, Expression.Constant(i));
 
-		// Whether that cell is NULL, asked only for a slot that keeps its value on NULL.
-		Expression? IsNull(int i, Slot slot)
-			=> slot.KeepsValueOnNull ? Expression.Call(isNullCell, Expression.ArrayIndex(row, Expression.Constant(i))) : null;
+		// A slot with a converter reads its column as the converter's type (see Converted).
+		// The caller of an array mapper owns the loop, so the row is not known: the error names none.
+		CellRead Read(int i, Slot slot)
+		{
+			Converter? converter = ConverterOf(slot);
+			// A null policy tests the cell first, so the value is converted (and a converter called) only when it is not NULL.
+			if (PolicyIn(slot) is { } rule)
+			{
+				Expression value = ConvertCell(Cell(i), converter?.Column ?? slot, nullChecked: true);
+				return new(Expression.Call(isNullCell, Cell(i)), converter is null ? value : Converted(converter, slot, value, null), rule);
+			}
 
-		// A property the type declares non-nullable (a value type, or a reference with nullable annotations on) is skipped when its cell is NULL; a constructor parameter of one gets its fallback.
-		// A slot with a converter reads its column as the converter's type, and is skipped or defaulted by that (see Converted).
-		return Compile<object?[]>(
-			row,
-			layout.Names,
-			(i, slot) => ConverterOf(slot) is { } converter
-				? Converted(converter, slot, Read(i, converter.Column), IsNull(i, converter.Column))
-				: Read(i, slot),
-			(i, slot) => ConverterOf(slot) is { } converter
-				? SkipsOnNull(slot, IsNull(i, converter.Column))
-				: IsNull(i, slot));
+			return new(
+				null,
+				converter is null
+					? ConvertCell(Cell(i), slot)
+					: Converted(
+						converter,
+						slot,
+						ConvertCell(Cell(i), converter.Column),
+						NullSkipsConverter(converter, slot) ? Expression.Call(isNullCell, Cell(i)) : null));
+		}
+
+		return Compile<object?[]>(row, layout.Names, Read, rowKnown: false);
 	}
 
 	#endregion
 
 	#region Compilation
-
-	/// <summary>Names what a failure reading a column concerns.</summary>
-	/// <remarks>
-	/// It holds the slot (its property, or its constructor parameter when no property carries its name),
-	/// the column and the type the value had to become.
-	/// </remarks>
-	/// <param name="property">The name of the slot.</param>
-	/// <param name="column">The name of the column.</param>
-	/// <param name="type">The type the value had to become.</param>
-	/// <param name="parameter">The name of the constructor parameter the column is passed to, <see langword="null"/> for a property that is set.</param>
-	sealed class Binding(string property, string column, Type type, string? parameter)
-	{
-		public readonly string Property = property;
-		public readonly string Column = column;
-		public readonly Type Type = type;
-		public readonly string? Parameter = parameter;
-	}
 
 	Func<TReader, T> Build<TReader>(Layout layout)
 		where TReader : class, IDataRecord
@@ -1284,27 +1385,56 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 		ParameterExpression r = Expression.Parameter(readerType, "r");
 
-		// The general path reads a cell once into `cell`, tests it for NULL, and converts that same value.
+		// A converter's general path reads its cell once into `cell`, tests it for NULL, and converts that same value.
 		ParameterExpression cell = Expression.Variable(typeof(object), "cell");
 
-		// What column i gives a slot, and whether its NULL leaves the slot alone, as the type it is read as:
-		// the member's own, or the one the converter of the slot receives (see Converted).
-		Expression Read(int i, Slot slot)
-			=> ReadValue(r, Expression.Constant(i), layout.Types[i], slot, readerType, isDbNull, getValue, cell);
+		// What column i gives a slot: the member's own type, or the one the converter of the slot receives (see Converted).
+		CellRead Read(int i, Slot slot)
+		{
+			Expression ordinal = Expression.Constant(i);
+			Type columnType = layout.Types[i];
+			Converter? converter = ConverterOf(slot);
 
-		MethodCallExpression? IsNull(int i, Slot slot)
-			=> NullTest(r, Expression.Constant(i), layout.Types[i], slot, readerType, isDbNull, getValue, cell);
+			// A null policy tests the cell first (the converter's column, when there is one), and the value is read (and a converter called) only when it is not NULL.
+			if (PolicyIn(slot) is { } rule)
+			{
+				Slot source = converter?.Column ?? slot;
+				Expression value = ReadValue(r, ordinal, columnType, source, readerType, isDbNull, getValue, cell, nullChecked: true);
+				return new(
+					NullTest(r, ordinal, columnType, source, readerType, isDbNull, getValue, cell),
+					converter is null ? value : Converted(converter, slot, value, null),
+					rule);
+			}
 
-		return Compile<TReader>(
-			r,
-			layout.Names,
-			(i, slot) => ConverterOf(slot) is { } converter
-				? Converted(converter, slot, Read(i, converter.Column), IsNull(i, converter.Column))
-				: Read(i, slot),
-			(i, slot) => ConverterOf(slot) is { } converter
-				? SkipsOnNull(slot, IsNull(i, converter.Column))
-				: IsNull(i, slot),
-			cell);
+			if (converter is null)
+				return new(null, ReadValue(r, ordinal, columnType, slot, readerType, isDbNull, getValue));
+
+			if (!NullSkipsConverter(converter, slot))
+				return new(null, Converted(converter, slot, ReadValue(r, ordinal, columnType, converter.Column, readerType, isDbNull, getValue), null));
+
+			return new(
+				null,
+				Converted(
+					converter,
+					slot,
+					ReadValue(r, ordinal, columnType, converter.Column, readerType, isDbNull, getValue, cell),
+					NullTest(r, ordinal, columnType, converter.Column, readerType, isDbNull, getValue, cell)));
+		}
+
+		return Compile<TReader>(r, layout.Names, Read, rowKnown: true, cell);
+	}
+
+	// A pair and a converter are explicit and belong to this map, so they override what the member declares, as a pair overrides [Column];
+	// the type's policy still covers the member. A converter whose column type takes NULL receives the NULL itself.
+	/// <summary>
+	/// Returns the null policy a slot follows in this map, or <see langword="null"/> for none.
+	/// </summary>
+	NullRule? PolicyIn(Slot slot)
+	{
+		int s = _slots.IndexOf(slot);
+		Converter? converter = _converters?[s];
+		if (converter?.Column.RejectsNull == false) return null;
+		return _named[s] || converter is not null ? slot.TypeOnNull : slot.OnNull;
 	}
 
 	/// <summary>
@@ -1314,32 +1444,33 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	Converter? ConverterOf(Slot slot) => _converters?[_slots.IndexOf(slot)];
 
 	/// <summary>
+	/// Returns whether a NULL bypasses the converter of a slot: its column type rejects NULL and the member takes it.
+	/// </summary>
+	/// <remarks>
+	/// The member is then <see langword="null"/> on NULL, and the converter is not called.
+	/// A member that rejects NULL needs no test: the column read throws.
+	/// </remarks>
+	static bool NullSkipsConverter(Converter converter, Slot slot) => converter.Column.RejectsNull && !slot.RejectsNull;
+
+	/// <summary>
 	/// Returns what a slot with a converter reads:
 	/// the delegate applied to the column read as the delegate's own parameter type.
 	/// </summary>
 	/// <remarks>
 	/// The column is a slot of that type (<c>Converter.Column</c>), so it is read, and its NULL judged, as a member of that type is:
-	/// only a <see cref="Nullable{T}"/> is given NULL (<c>columnIsNull</c> is <see langword="null"/> then),
+	/// only a <see cref="Nullable{T}"/> is given NULL,
 	/// and what the delegate returns is the value of the member, a non-nullable one's too.
 	/// For anything else the delegate is not called on NULL:
-	/// the slot is skipped (<c>SkipsOnNull</c>) when the member keeps its value on NULL,
-	/// and is otherwise <see langword="default"/>, <see langword="null"/> for a nullable member.
+	/// a member that takes NULL is <see langword="null"/> (<paramref name="columnIsNull"/> is the test then),
+	/// and a member that rejects it throws, as the column read does.
 	/// </remarks>
 	static Expression Converted(Converter converter, Slot slot, Expression column, Expression? columnIsNull)
 	{
 		Expression value = converter.Invoke(column, slot.Type);
-		return columnIsNull is not null && !slot.KeepsValueOnNull
-			? Expression.Condition(columnIsNull, Expression.Default(slot.Type), value)
-			: value;
+		return columnIsNull is null
+			? value
+			: Expression.Condition(columnIsNull, Expression.Default(slot.Type), value);
 	}
-
-	/// <summary>
-	/// Returns the test that leaves a slot with a converter alone when the cell is NULL, or <see langword="null"/> for none.
-	/// </summary>
-	/// <remarks>
-	/// A property keeps its value then, and a constructor parameter gets its fallback.
-	/// </remarks>
-	static Expression? SkipsOnNull(Slot slot, Expression? columnIsNull) => slot.KeepsValueOnNull ? columnIsNull : null;
 
 	/// <summary>
 	/// Builds the reader of a single value (<c>FirstColumn&lt;T&gt;</c>):
@@ -1347,9 +1478,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// with the same typed getter, conversion and NULL rule.
 	/// </summary>
 	/// <remarks>
-	/// A NULL into a type the C# type declares non-nullable is <c>default(T)</c>;
+	/// A NULL into a type the C# type declares non-nullable is an error (the read loop names the row);
 	/// any other NULL is <see langword="null"/>.
-	/// It is built from the helpers below, which the single-column reader also uses.
+	/// It is built from the helpers below, which the row readers also use.
 	/// </remarks>
 	/// <typeparam name="TReader">The type of the reader.</typeparam>
 	/// <param name="columnType">The type the reader reports for column 0.</param>
@@ -1366,77 +1497,20 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			[typeof(int)])!;
 
 		ParameterExpression r = Expression.Parameter(readerType, "r");
-		ParameterExpression cell = Expression.Variable(typeof(object), "cell");
-		ParameterExpression ex = Expression.Parameter(typeof(Exception), "ex");
-		Expression ordinal = Expression.Constant(0);
-		var slot = new Slot(typeof(T));
-
 		Expression value = ReadValue(
 			r,
-			ordinal,
+			Expression.Constant(0),
 			columnType,
-			slot,
+			new Slot(typeof(T)),
 			readerType,
 			isDbNull,
-			getValue,
-			cell);
-		if (NullTest(
-			r,
-			ordinal,
-			columnType,
-			slot,
-			readerType,
-			isDbNull,
-			getValue,
-			cell) is { } isNull)
-		{
-			value = Expression.Condition(
-				isNull,
-				Expression.Default(typeof(T)),
-				value);
-		}
-
-		Expression guarded = Expression.TryCatch(
-			value,
-			Expression.Catch(
-				ex,
-				Expression.Condition(
-					Expression.OrElse(
-						Expression.TypeIs(ex, typeof(DbException)),
-						Expression.TypeIs(
-							ex,
-							typeof(OperationCanceledException))),
-					Expression.Rethrow(typeof(T)),
-					Expression.Throw(
-						Expression.Call(
-							typeof(RowMap<T>).GetMethod(
-								nameof(FirstColumnError),
-								BindingFlags.Static | BindingFlags.NonPublic)!,
-							ex,
-							r),
-						typeof(T)))));
+			getValue);
 
 		return Expression
 			.Lambda<Func<TReader, T>>(
-				Expression.Block(typeof(T), [cell], guarded),
+				Guard(value, [], singleValue: true, rowKnown: true),
 				r)
 			.Compile();
-	}
-
-	static ValueMappingException FirstColumnError(
-		Exception ex,
-		IDataRecord record)
-	{
-		string column;
-		try { column = record.GetName(0); }
-		catch (Exception) { column = ""; } // Nothing to name: the failure being reported matters more.
-
-		return new ValueMappingException(
-			$"Unable to read column '{column}' as {Shape.TypeName(typeof(T))}.",
-			"",
-			column,
-			typeof(T),
-			ex);
 	}
 
 	// Built from the same helpers (TypedGetters, TryConvert, ConvertValue) as the single-column reader, so the two agree for every provider tested; the parity matrix checks it.
@@ -1445,16 +1519,24 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// a value that has arrived boxed, converted as column 0 of <c>Map&lt;T&gt;()</c> is.
 	/// </summary>
 	/// <remarks>
-	/// NULL, <see cref="DBNull"/> and no row are <c>default(T)</c>;
+	/// No value (no row) is <c>default(T)</c>;
+	/// NULL (<see cref="DBNull"/>) is <see langword="null"/> for a <typeparamref name="T"/> that takes NULL, and an error for a non-nullable value type;
 	/// a value that is already a <typeparamref name="T"/> is returned as it is;
 	/// any other value is converted the way <c>Map&lt;T&gt;()</c> converts a column of its type.
 	/// </remarks>
 	/// <param name="value">The scalar as it arrived.</param>
 	/// <returns>The value as a <typeparamref name="T"/>.</returns>
-	/// <exception cref="ValueMappingException">The value cannot be converted: it is the exception the column read gives.</exception>
+	/// <exception cref="ValueMappingException">The value is NULL and <typeparamref name="T"/> is a non-nullable value type, or it cannot be converted: the conversion's error is the inner exception.</exception>
 	internal static T ConvertScalar(object? value)
 	{
-		if (value is null or DBNull) return default!;
+		if (value is null) return default!;
+		if (value is DBNull)
+		{
+			return ScalarRejectsNull
+				? throw new ValueMappingException(RowErrors.NullScalar(typeof(T)), "", "", typeof(T))
+				: default!;
+		}
+
 		if (value is T exact) return exact;
 
 		try
@@ -1479,6 +1561,14 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// as many as the types a provider returns for one <typeparamref name="T"/>.
 	/// </summary>
 	static readonly ConcurrentDictionary<Type, Func<object, T>> Scalars = new();
+
+	/// <summary>
+	/// Whether a NULL scalar is an error: <typeparamref name="T"/> is a value type other than <see cref="Nullable{T}"/>.
+	/// </summary>
+	/// <remarks>
+	/// A reference type is <see langword="null"/>: a type argument carries no nullable annotation, as a single value read by <c>Map&lt;T&gt;()</c> does not.
+	/// </remarks>
+	static readonly bool ScalarRejectsNull = typeof(T).IsValueType && Nullable.GetUnderlyingType(typeof(T)) is null;
 
 	/// <summary>
 	/// Builds the converter of the scalars of one runtime type:
@@ -1514,31 +1604,35 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	// A model built through a constructor reads every fed cell, in column order, into a typed local,
 	// then calls new T(arguments), then sets the properties no parameter covers.
 	// Only how a cell is read differs (a live reader vs buffered object[] rows).
-	//
-	// isNull gives, for a property that must keep its value on NULL, the test that the cell is NULL,
-	// which wraps the assignment as if (!isNull) item.Property = <cell>;
-	// it may leave the raw cell in cell, which readCell then converts.
+	// No state is written per cell: a failure is reported for the row (Guard), never for a column, so nothing tracks which cell is being read.
 	/// <summary>
 	/// Builds the compiled row reader that both mappers share.
 	/// </summary>
-	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, Slot, Expression> readCell,
-		Func<int, Slot, Expression?> isNull, ParameterExpression? cell = null)
+	/// <param name="arg">The parameter the row is read from.</param>
+	/// <param name="names">The names of the columns, in order.</param>
+	/// <param name="readCell">What column i gives a slot.</param>
+	/// <param name="rowKnown"><see langword="true"/> when a read loop of the library calls the reader and names the row of a failure; otherwise, <see langword="false"/>.</param>
+	/// <param name="cell">The variable a read may keep a raw cell in, or <see langword="null"/> for none.</param>
+	Func<TArg, T> Compile<TArg>(ParameterExpression arg, string[] names, Func<int, Slot, CellRead> readCell, bool rowKnown, ParameterExpression? cell = null)
 	{
 		ParameterExpression item = Expression.Variable(typeof(T), "item");
-		ParameterExpression index = Expression.Variable(typeof(int), "index");
 
-		var bindings = new Binding?[names.Length];
-		var locals = new List<ParameterExpression>();
+		var locals = new List<ParameterExpression> { item };
+		if (cell is not null) locals.Add(cell);
 		Slot?[] feeds = Match(names);
 		RequireColumns(feeds);
 
 		List<Expression> statements = _factory is { } factory
-			? BindConstructor(_slots.Length, arguments => CallFactory(factory, arguments), item, index, bindings, names, feeds, readCell, isNull, locals)
+			? BindConstructor(_slots.Length, arguments => CallFactory(factory, arguments), item, names, feeds, readCell, locals)
 			: TypeShape.Constructor is { } constructor
-				? BindConstructor(constructor.GetParameters().Length, arguments => Expression.New(constructor, arguments), item, index, bindings, names, feeds, readCell, isNull, locals)
-				: CreateThenSet(item, index, bindings, names, feeds, readCell, isNull);
+				? BindConstructor(constructor.GetParameters().Length, arguments => Expression.New(constructor, arguments), item, names, feeds, readCell, locals)
+				: CreateThenSet(item, names, feeds, readCell);
 
-		return Expression.Lambda<Func<TArg, T>>(Guard(statements, item, index, cell, locals, bindings), arg).Compile();
+		return Expression
+			.Lambda<Func<TArg, T>>(
+				Guard(Expression.Block(typeof(T), statements), locals, singleValue: false, rowKnown),
+				arg)
+			.Compile();
 	}
 
 	/// <summary>
@@ -1591,10 +1685,9 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// <remarks>
 	/// It is <c>new T()</c>, then each cell is read and assigned in column order, with no locals.
 	/// </remarks>
-	static List<Expression> CreateThenSet(ParameterExpression item, ParameterExpression index, Binding?[] bindings, string[] names, Slot?[] feeds,
-		Func<int, Slot, Expression> readCell, Func<int, Slot, Expression?> isNull)
+	static List<Expression> CreateThenSet(ParameterExpression item, string[] names, Slot?[] feeds, Func<int, Slot, CellRead> readCell)
 	{
-		var statements = new List<Expression>(names.Length * 2 + 2)
+		var statements = new List<Expression>(names.Length + 2)
 		{
 			Expression.Assign(item, Expression.New(typeof(T))),
 		};
@@ -1603,10 +1696,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		{
 			if (feeds[i] is not { } slot) continue; // Not mapped: ignore the column.
 
-			bindings[i] = new Binding(slot.Name, names[i], slot.Type, null);
-			statements.Add(Expression.Assign(index, Expression.Constant(i)));
-			Expression assign = Expression.Call(item, slot.Setter!, readCell(i, slot));
-			statements.Add(isNull(i, slot) is { } skip ? Expression.IfThen(Expression.Not(skip), assign) : assign);
+			CellRead read = readCell(i, slot);
+			statements.Add(KeepsOnNull(read, slot) is { } isNull
+				? Expression.IfThen(Expression.Not(isNull), Expression.Call(item, slot.Setter!, read.Value))
+				: Expression.Call(item, slot.Setter!, OnNull(read, slot, names[i])));
 		}
 
 		statements.Add(item);
@@ -1615,61 +1708,55 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	// A constructor needs its arguments before anything can be set, and a SequentialAccess reader allows each cell to be read once, in ascending order:
 	// so every fed cell is read, in column order, into a typed local (nothing is boxed on the typed path),
-	// the constructor is called with the locals (the fallback for a parameter no column feeds, and for a NULL into a member the type declares non-nullable),
-	// and then the properties the constructor does not cover are set from their locals, a NULL skipping one the type declares non-nullable.
+	// the constructor is called with the locals (the fallback for a parameter no column feeds),
+	// and then the properties the constructor does not cover are set from their locals.
 	/// <summary>
 	/// Builds the statements of a model created through a constructor.
 	/// </summary>
-	List<Expression> BindConstructor(int parameterCount, Func<Expression[], Expression> create, ParameterExpression item, ParameterExpression index, Binding?[] bindings, string[] names, Slot?[] feeds,
-		Func<int, Slot, Expression> readCell, Func<int, Slot, Expression?> isNull, List<ParameterExpression> locals)
+	List<Expression> BindConstructor(int parameterCount, Func<Expression[], Expression> create, ParameterExpression item, string[] names, Slot?[] feeds,
+		Func<int, Slot, CellRead> readCell, List<ParameterExpression> locals)
 	{
 		var arguments = new Expression[parameterCount];
-		var statements = new List<Expression>(names.Length * 2 + 4);
+		var statements = new List<Expression>(names.Length + 3);
 		var sets = new List<Expression>();
 
 		for (int i = 0; i < names.Length; i++)
 		{
 			if (feeds[i] is not { } slot) continue; // Not mapped: ignore the column.
 
-			bindings[i] = new Binding(slot.Name, names[i], slot.Type, slot.Parameter);
-			statements.Add(Expression.Assign(index, Expression.Constant(i)));
-
 			ParameterExpression local = Expression.Variable(slot.Type, "value" + i);
 			locals.Add(local);
-			Expression? skip = isNull(i, slot);
-			Expression value = readCell(i, slot);
+			CellRead read = readCell(i, slot);
+
+			if (slot.Setter is not null && KeepsOnNull(read, slot) is { } isNull)
+			{
+				// A property that keeps its value on NULL is not set then: the NULL is remembered, as the set comes after the constructor.
+				ParameterExpression wasNull = Expression.Variable(typeof(bool), "null" + i);
+				locals.Add(wasNull);
+				statements.Add(Expression.Assign(local, Expression.Condition(Expression.Assign(wasNull, isNull), Expression.Default(slot.Type), read.Value)));
+				sets.Add(Expression.IfThen(Expression.Not(wasNull), Expression.Call(item, slot.Setter, local)));
+				continue;
+			}
+
+			statements.Add(Expression.Assign(local, OnNull(read, slot, names[i])));
 
 			if (slot.Setter is null)
 			{
-				// A NULL into a parameter the type declares non-nullable (a value type, or a reference with nullable annotations on) is not a value: the parameter gets its fallback. Any other NULL is null, as it is for a property.
-				Debug.Assert(slot.Fallback is not null && arguments[slot.Position] is null);
-				statements.Add(Expression.Assign(local, skip is null ? value : Expression.Condition(skip, slot.Fallback!, value)));
+				Debug.Assert(arguments[slot.Position] is null);
 				arguments[slot.Position] = local;
-			}
-			else if (skip is null)
-			{
-				statements.Add(Expression.Assign(local, value));
-				sets.Add(Expression.Assign(index, Expression.Constant(i)));
-				sets.Add(Expression.Call(item, slot.Setter, local));
 			}
 			else
 			{
-				ParameterExpression isNullCell = Expression.Variable(typeof(bool), "null" + i);
-				locals.Add(isNullCell);
-				statements.Add(Expression.Assign(isNullCell, skip));
-				statements.Add(Expression.Assign(local, Expression.Condition(isNullCell, Expression.Default(slot.Type), value)));
-				sets.Add(Expression.Assign(index, Expression.Constant(i)));
-				sets.Add(Expression.IfThen(Expression.Not(isNullCell), Expression.Call(item, slot.Setter, local)));
+				sets.Add(Expression.Call(item, slot.Setter, local));
 			}
 		}
 
 		foreach (Slot slot in _slots)
 		{
-			if (slot.Setter is null && arguments[slot.Position] is null) arguments[slot.Position] = slot.Fallback!; // No column feeds it.
+			// Only a parameter no column feeds receives its declared default: a NULL in a column that feeds one follows the NULL rules.
+			if (slot.Setter is null && arguments[slot.Position] is null) arguments[slot.Position] = slot.Fallback!;
 		}
 
-		// A constructor that throws is not the fault of the last column read: the index says no column.
-		statements.Add(Expression.Assign(index, Expression.Constant(-1)));
 		statements.Add(Expression.Assign(item, create(arguments)));
 		statements.AddRange(sets);
 		statements.Add(item);
@@ -1677,27 +1764,68 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	/// <summary>
-	/// Wraps the statements so a failure names the offending property and column.
+	/// Returns the NULL test of a property whose null policy is <see cref="NullAction.Default"/> (it is not set on NULL), or <see langword="null"/> for any other read.
+	/// </summary>
+	static Expression? KeepsOnNull(CellRead read, Slot slot)
+		=> slot.Setter is not null && read.Rule?.Action == NullAction.Default ? read.IsNull : null;
+
+	/// <summary>
+	/// Returns what a slot receives from its read, under its null policy:
+	/// the value, else on NULL a <c>NullPolicyViolation</c> (<see cref="NullAction.Throw"/>), the parameter's fallback (<see cref="NullAction.Default"/>), or the member's <see cref="NullValueAttribute"/> constant.
+	/// </summary>
+	/// <param name="read">The read of the cell.</param>
+	/// <param name="slot">The slot.</param>
+	/// <param name="column">The name of the column, for the error.</param>
+	static Expression OnNull(CellRead read, Slot slot, string column)
+	{
+		if (read.IsNull is not { } isNull) return read.Value;
+
+		NullRule rule = read.Rule!;
+		Expression whenNull = rule.Action switch
+		{
+			NullAction.Throw => Expression.Throw(
+				Expression.New(
+					typeof(NullPolicyViolation).GetConstructor([typeof(string), typeof(string), typeof(Type)])!,
+					Expression.Constant(slot.Name),
+					Expression.Constant(column),
+					Expression.Constant(slot.Type, typeof(Type))),
+				slot.Type),
+			NullAction.Default => slot.Fallback!, // Only a parameter reaches here: a property's Default is a set left out (KeepsOnNull).
+			_ => rule.Value!,
+		};
+
+		return Expression.Condition(isNull, whenNull, read.Value);
+	}
+
+	// One try region per row and nothing written per cell: the region costs the row nothing until it throws.
+	// The reader is not touched after a failure (no name is read for the message): the row is what is reported.
+	/// <summary>
+	/// Wraps the read of a row so that a failure is reported for the row.
 	/// </summary>
 	/// <remarks>
-	/// <c>index</c> tracks the column being read.
+	/// The provider's own failures (<see cref="DbException"/>) and cancellation propagate untouched.
+	/// Anything else is handed to the read loop that called the reader, which knows the row (<c>RowMappingFailure</c>),
+	/// or, for a reader whose caller owns the loop (<c>ArrayMapper</c>), thrown at once as a <see cref="ValueMappingException"/> that names no row.
 	/// </remarks>
-	static BlockExpression Guard(List<Expression> statements, ParameterExpression item, ParameterExpression index, ParameterExpression? cell, List<ParameterExpression> locals, Binding?[] bindings)
+	/// <param name="body">The read of the row.</param>
+	/// <param name="variables">The variables of the read.</param>
+	/// <param name="singleValue"><see langword="true"/> for the reader of a single value; otherwise, <see langword="false"/> for a model.</param>
+	/// <param name="rowKnown"><see langword="true"/> when a read loop of the library calls the reader; otherwise, <see langword="false"/>.</param>
+	/// <returns>The guarded read.</returns>
+	static BlockExpression Guard(Expression body, List<ParameterExpression> variables, bool singleValue, bool rowKnown)
 	{
 		ParameterExpression ex = Expression.Parameter(typeof(Exception), "ex");
-		var variables = new List<ParameterExpression> { item, index };
-		if (cell is not null) variables.Add(cell);
-		variables.AddRange(locals);
+		MethodInfo fail = rowKnown
+			? typeof(RowMappingFailure).GetMethod(nameof(RowMappingFailure.Defer))!
+			: typeof(RowErrors).GetMethod(nameof(RowErrors.Create), [typeof(Exception), typeof(Type), typeof(bool)])!;
+
 		return Expression.Block(
 			typeof(T),
 			variables,
-			Expression.Assign(index, Expression.Constant(-1)),
 			Expression.TryCatch(
-				Expression.Block(typeof(T), statements),
+				body,
 				Expression.Catch(
 					ex,
-					// The provider's own failures and cancellation propagate untouched; everything else is wrapped with
-					// the property and column that were being read.
 					Expression.Condition(
 						Expression.OrElse(
 							Expression.TypeIs(ex, typeof(DbException)),
@@ -1705,8 +1833,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 						Expression.Rethrow(typeof(T)),
 						Expression.Throw(
 							Expression.Call(
-								typeof(RowMap<T>).GetMethod(nameof(MapError), BindingFlags.Static | BindingFlags.NonPublic)!,
-								ex, index, Expression.Constant(bindings)),
+								fail,
+								ex,
+								Expression.Constant(typeof(T)),
+								Expression.Constant(singleValue)),
 							typeof(T))))));
 	}
 
@@ -1723,20 +1853,17 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	}
 
 	/// <summary>
-	/// Returns the expression that is <see langword="true"/> when the cell of a slot that keeps its value on NULL (<c>Slot.KeepsValueOnNull</c>) is NULL,
-	/// or <see langword="null"/> for any other slot.
+	/// Returns the expression that is <see langword="true"/> when the cell is NULL: for a slot with a null policy, and for a converter whose column type rejects NULL and whose member takes it (<c>NullSkipsConverter</c>).
 	/// </summary>
 	/// <remarks>
 	/// On the typed path the reader answers; on the general path the cell is read once into <c>cell</c> and <c>ReadValue</c> converts that same value.
 	/// </remarks>
-	static MethodCallExpression? NullTest(
+	static MethodCallExpression NullTest(
 		ParameterExpression r, Expression ordinal,
 		Type columnType, Slot slot,
 		Type readerType, MethodInfo isDbNull, MethodInfo getValue, ParameterExpression cell)
 	{
-		if (!slot.KeepsValueOnNull) return null;
-
-		if (TypedRead(r, ordinal, columnType, slot.Type, readerType) is not null)
+		if (TypedRead(r, ordinal, columnType, Nullable.GetUnderlyingType(slot.Type) ?? slot.Type, readerType) is not null)
 			return Expression.Call(r, isDbNull, ordinal);
 
 		return Expression.Call(
@@ -1744,23 +1871,38 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 			Expression.Assign(cell, Expression.Call(r, getValue, ordinal)));
 	}
 
+	// A slot that rejects NULL is read with no IsDBNull: the typed getter throws on NULL (SqlClient: SqlNullValueException; Microsoft.Data.Sqlite: InvalidOperationException),
+	// and the general path's conversion throws SqlNullValueException itself (ConvertCell), so both report the same way.
+	/// <summary>
+	/// Returns the read of a cell as the type of a slot.
+	/// </summary>
+	/// <param name="r">The reader.</param>
+	/// <param name="ordinal">The ordinal of the column.</param>
+	/// <param name="columnType">The type the reader reports for the column.</param>
+	/// <param name="slot">The slot the value is for.</param>
+	/// <param name="readerType">The type of the reader.</param>
+	/// <param name="isDbNull">The reader's <c>IsDBNull</c>.</param>
+	/// <param name="getValue">The reader's <c>GetValue</c>.</param>
+	/// <param name="cell">The variable <c>NullTest</c> has read the cell into on the general path, or <see langword="null"/> to read the cell here.</param>
+	/// <param name="nullChecked"><see langword="true"/> when <c>NullTest</c> has found the cell not NULL (a null policy), so the read makes no NULL test of its own.</param>
+	/// <returns>The read.</returns>
 	static Expression ReadValue(
 		ParameterExpression r, Expression ordinal,
 		Type columnType, Slot slot,
 		Type readerType, MethodInfo isDbNull, MethodInfo getValue,
-		ParameterExpression? cell = null)
+		ParameterExpression? cell = null, bool nullChecked = false)
 	{
 		Type propertyType = slot.Type;
 		Type? underlying = Nullable.GetUnderlyingType(propertyType);
 		Type target = underlying ?? propertyType;
-		bool nullable = !slot.KeepsValueOnNull; // Nullable<T>, or a reference the C# type does not declare non-nullable: a NULL is null.
 
 		if (TypedRead(r, ordinal, columnType, target, readerType) is { } typed)
 		{
-			if (!nullable) return typed;
-
-			// NULL → null/default; otherwise the typed value (lifted to Nullable<> when needed).
+			// The typed value, lifted to Nullable<> when needed.
 			Expression present = underlying is null ? typed : Expression.Convert(typed, propertyType);
+			if (slot.RejectsNull || nullChecked) return present;
+
+			// NULL → null.
 			return Expression.Condition(
 				Expression.Call(r, isDbNull, ordinal),
 				Expression.Default(propertyType),
@@ -1768,11 +1910,21 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 		}
 
 		// General path: the boxed value, converted. Handles enums, strings → Guid, mismatched types, unknown column types.
-		// NullTest has already read the cell of a member that keeps its value on NULL into `cell` to test it: the cell is read once, so it is converted from there.
-		return Expression.Call(
-			typeof(RowMap<T>).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!.MakeGenericMethod(propertyType),
-			cell is not null && slot.KeepsValueOnNull ? cell : Expression.Call(r, getValue, ordinal));
+		return ConvertCell(cell ?? (Expression)Expression.Call(r, getValue, ordinal), slot, nullChecked);
 	}
+
+	/// <summary>
+	/// Returns the conversion of a boxed cell to the type of a slot: NULL is <see langword="null"/> for a slot that takes it, and an error for one that rejects it.
+	/// </summary>
+	/// <param name="value">The boxed cell.</param>
+	/// <param name="slot">The slot.</param>
+	/// <param name="nullChecked"><see langword="true"/> when the cell is known not to be NULL (a null policy tested it).</param>
+	static MethodCallExpression ConvertCell(Expression value, Slot slot, bool nullChecked = false)
+		=> Expression.Call(
+			typeof(RowMap<T>)
+				.GetMethod(slot.RejectsNull && !nullChecked ? nameof(ConvertRequired) : nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!
+				.MakeGenericMethod(slot.Type),
+			value);
 
 	static bool IsIntegral(Type t)
 		=> t == typeof(byte) || t == typeof(sbyte) || t == typeof(short) || t == typeof(ushort)
@@ -1848,9 +2000,16 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 	static bool IsNullCell(object? value) => value is null or DBNull;
 
+	// The provider's typed getters throw SqlNullValueException on NULL (SqlClient), so the library's own NULL check throws the same:
+	// one exception type for "a NULL into a non-nullable member", whichever path read the cell.
+	static TTarget ConvertRequired<TTarget>(object? value)
+		=> value is null or DBNull
+			? throw new System.Data.SqlTypes.SqlNullValueException()
+			: ConvertValue<TTarget>(value);
+
 	static TTarget ConvertValue<TTarget>(object? value)
 	{
-		// A NULL never reaches here for a member the type declares non-nullable: the compiled readers skip that assignment.
+		// Only a slot that takes NULL reaches here with one (ConvertRequired guards the others).
 		if (value is null or DBNull) return default!;
 
 		if (value is TTarget exact) return exact;
@@ -1936,20 +2095,6 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 			return System.Convert.ChangeType(value, u, CultureInfo.InvariantCulture);
 		}
-	}
-
-	static Exception MapError(Exception ex, int index, Binding?[] bindings)
-	{
-		if (index >= 0 && index < bindings.Length && bindings[index] is { } b)
-		{
-			string message = b.Parameter is { } parameter
-				? $"Unable to pass value of column '{b.Column}' to constructor parameter '{parameter}' ({Shape.TypeName(b.Type)}) of '{Shape.TypeName(typeof(T))}'."
-				: $"Unable to set value of property '{b.Property}' ({Shape.TypeName(b.Type)}) from column '{b.Column}'.";
-
-			return new ValueMappingException(message, b.Property, b.Column, b.Type, ex);
-		}
-
-		return ex is InvalidOperationException ? ex : new InvalidOperationException($"Unable to create '{typeof(T)}' from the current row.", ex);
 	}
 
 	#endregion
@@ -2039,9 +2184,11 @@ internal sealed class FirstColumn<T> : IRowSource<T>
 sealed class Slot
 {
 	/// <summary>Initializes a slot for a settable property.</summary>
-	public Slot(string name, Type type, MethodInfo setter, bool required, bool nonNullableReference, string? columnName = null, int order = -1, bool notMapped = false)
+	public Slot(string name, Type type, MethodInfo setter, bool required, bool nonNullableReference, string? columnName = null, int order = -1, bool notMapped = false, NullRule? onNull = null, NullRule? typeOnNull = null)
 	{
 		Name = name;
+		OnNull = onNull;
+		TypeOnNull = typeOnNull;
 		ColumnName = columnName;
 		Order = order;
 		NotMapped = notMapped;
@@ -2050,7 +2197,7 @@ sealed class Slot
 		Setter = setter;
 		Position = -1;
 		IsProperty = true;
-		KeepsValueOnNull = KeepsOnNull(type, nonNullableReference);
+		RejectsNull = IsNonNullable(type, nonNullableReference);
 	}
 
 	/// <summary>Initializes a slot for the one value of a single-value model type (<c>FirstColumn&lt;T&gt;</c>): no name, nothing to set.</summary>
@@ -2065,13 +2212,15 @@ sealed class Slot
 		Name = "";
 		Type = type;
 		Position = -1;
-		KeepsValueOnNull = KeepsOnNull(type, nonNullableReference);
+		RejectsNull = IsNonNullable(type, nonNullableReference);
 	}
 
 	/// <summary>Initializes a slot for a constructor parameter, named after the property of that name when there is one.</summary>
-	public Slot(string name, Type type, int position, string parameter, bool isProperty, Expression fallback, bool required, bool nonNullableReference, string? columnName = null, int order = -1)
+	public Slot(string name, Type type, int position, string parameter, bool isProperty, Expression fallback, bool required, bool nonNullableReference, string? columnName = null, int order = -1, NullRule? onNull = null, NullRule? typeOnNull = null)
 	{
 		Name = name;
+		OnNull = onNull;
+		TypeOnNull = typeOnNull;
 		ColumnName = columnName;
 		Order = order;
 		Required = required;
@@ -2080,25 +2229,34 @@ sealed class Slot
 		Parameter = parameter;
 		IsProperty = isProperty;
 		Fallback = fallback;
-		KeepsValueOnNull = KeepsOnNull(type, nonNullableReference);
+		RejectsNull = IsNonNullable(type, nonNullableReference);
 	}
 
 	/// <summary>
-	/// Returns whether a NULL leaves a member of this type alone.
+	/// Returns whether a NULL is an error for a member of this type.
 	/// </summary>
 	/// <remarks>
 	/// A NULL is not a value for a member the C# type declares non-nullable:
 	/// a value type other than <see cref="Nullable{T}"/> (an enum counts), or a reference type declared non-nullable (<c>NullAnnotations</c>).
-	/// A property then keeps what the constructor or its initializer gave it, and a constructor parameter gets its fallback.
 	/// </remarks>
-	static bool KeepsOnNull(Type type, bool nonNullableReference)
+	static bool IsNonNullable(Type type, bool nonNullableReference)
 		=> type.IsValueType ? Nullable.GetUnderlyingType(type) is null : nonNullableReference;
 
 	/// <summary>
-	/// Whether a NULL cell leaves the member alone (see <c>KeepsOnNull</c>) rather than assigning <see langword="null"/>;
-	/// the compiled readers test the cell only for such a slot.
+	/// Whether a NULL cell is an error for the member (see <c>IsNonNullable</c>) rather than <see langword="null"/>;
+	/// the compiled readers test the cell only for a slot that takes NULL.
 	/// </summary>
-	public readonly bool KeepsValueOnNull;
+	public readonly bool RejectsNull;
+
+	/// <summary>
+	/// What a NULL gives the member (<see cref="NullPolicyAttribute"/>), or <see langword="null"/> for no policy: the cell is then not tested, and the NULL rules of the type apply.
+	/// </summary>
+	public readonly NullRule? OnNull;
+
+	/// <summary>
+	/// What a NULL gives the member under the model type's policy alone: the rule of a member a pair or a converter names, whose own policy the map overrides.
+	/// </summary>
+	public readonly NullRule? TypeOnNull;
 
 	public readonly string Name;
 	public readonly Type Type;
@@ -2175,6 +2333,46 @@ sealed class Slot
 }
 
 /// <summary>
+/// Represents what a NULL gives a member as the compiled readers apply it: a policy's action, or a null value's constant.
+/// </summary>
+sealed class NullRule
+{
+	/// <summary>A NULL throws (<see cref="NullAction.Throw"/>).</summary>
+	public static readonly NullRule Throw = new(NullAction.Throw, null);
+
+	/// <summary>A NULL leaves the member as it is, or gives a parameter its fallback (<see cref="NullAction.Default"/>).</summary>
+	public static readonly NullRule Default = new(NullAction.Default, null);
+
+	/// <summary>Initializes a rule by which a NULL gives the constant.</summary>
+	public NullRule(ConstantExpression value) : this(null, value) { }
+
+	NullRule(NullAction? action, ConstantExpression? value)
+	{
+		Action = action;
+		Value = value;
+	}
+
+	/// <summary>What a NULL does, or <see langword="null"/> when it gives <see cref="Value"/>.</summary>
+	public readonly NullAction? Action;
+
+	/// <summary>The constant a NULL gives, typed as the member; <see langword="null"/> for an action.</summary>
+	public readonly ConstantExpression? Value;
+}
+
+/// <summary>
+/// Represents the read of one cell for a slot: the value, and for a slot with a null policy the test that comes first.
+/// </summary>
+/// <param name="isNull">The test of the cell for NULL, evaluated before <paramref name="value"/>; <see langword="null"/> for a slot with no null policy.</param>
+/// <param name="value">The read of the value; when <paramref name="isNull"/> is given, it is evaluated only for a cell that is not NULL.</param>
+/// <param name="rule">The null policy the slot follows in this map; given with <paramref name="isNull"/>.</param>
+readonly struct CellRead(Expression? isNull, Expression value, NullRule? rule = null)
+{
+	public readonly Expression? IsNull = isNull;
+	public readonly Expression Value = value;
+	public readonly NullRule? Rule = rule;
+}
+
+/// <summary>
 /// Represents the converter of one slot: the delegate a caller gave <c>RowMap&lt;T&gt;.Convert</c>, as the compiled row readers call it.
 /// </summary>
 /// <remarks>
@@ -2221,7 +2419,7 @@ sealed class Converter(
 // This runs once per model type, when the slots are built, never per row.
 /// <summary>
 /// Decides whether a property or a constructor parameter is a reference type the C# source declares non-nullable,
-/// which is when a NULL must not overwrite it (<c>Slot.KeepsValueOnNull</c>).
+/// which is when a NULL into it is an error (<c>Slot.RejectsNull</c>).
 /// </summary>
 static class NullAnnotations
 {
@@ -2419,6 +2617,97 @@ readonly struct Decoration(string? column, int order, bool hasColumnAttribute, b
 		}
 
 		return new(column, order, hasColumn, notMapped, invalid);
+	}
+}
+
+// Read by full name through CustomAttributeData, as [Column] and [NotMapped] are: no attribute is instantiated,
+// and a generator reading the same declarations from symbols sees the same constructor arguments.
+/// <summary>
+/// What a member, a parameter or a model type declares for a NULL: a <see cref="NullPolicyAttribute"/> and a <see cref="NullValueAttribute"/>.
+/// </summary>
+/// <param name="policy">The declared policy, or <see langword="null"/> for none.</param>
+/// <param name="hasValue"><see langword="true"/> if a null value is declared, <see langword="null"/> included.</param>
+/// <param name="value">The declared null value: <see langword="null"/>, a string, a bool, a char, a number or an enum value.</param>
+/// <param name="invalid">Why a declaration cannot be honoured, or <see langword="null"/>.</param>
+readonly struct NullDeclaration(NullAction? policy, bool hasValue, object? value, string? invalid)
+{
+	const string PolicyAttributeName = "Open.Database.Extensions.NullPolicyAttribute";
+	const string ValueAttributeName = "Open.Database.Extensions.NullValueAttribute";
+
+	/// <summary>Gets the declared policy, or <see langword="null"/> for none.</summary>
+	public NullAction? Policy => policy;
+
+	/// <summary>Gets whether a null value is declared.</summary>
+	public bool HasValue => hasValue;
+
+	/// <summary>Gets the declared null value.</summary>
+	public object? Value => value;
+
+	/// <summary>Gets why a declaration cannot be honoured, or <see langword="null"/>.</summary>
+	public string? Invalid => invalid;
+
+	/// <summary>Gets a <see cref="NullDeclaration"/> that declares nothing.</summary>
+	public static NullDeclaration None => default;
+
+	/// <summary>Reads what a member or a type declares.</summary>
+	public static NullDeclaration Of(MemberInfo member) => Of(CustomAttributeData.GetCustomAttributes(member));
+
+	/// <summary>Reads what a parameter declares.</summary>
+	public static NullDeclaration Of(ParameterInfo parameter) => Of(CustomAttributeData.GetCustomAttributes(parameter));
+
+	/// <summary>
+	/// Returns this declaration, with what it leaves out taken from <paramref name="other"/>.
+	/// </summary>
+	/// <param name="other">The declaration to fall back on: a positional record's property, for its parameter.</param>
+	public NullDeclaration Or(NullDeclaration other)
+		=> new(
+			policy ?? other.Policy,
+			hasValue || other.HasValue,
+			hasValue ? value : other.Value,
+			invalid ?? other.Invalid);
+
+	static NullDeclaration Of(IList<CustomAttributeData> attributes)
+	{
+		NullAction? policy = null;
+		bool hasValue = false;
+		object? value = null;
+		string? invalid = null;
+		foreach (CustomAttributeData attribute in attributes)
+		{
+			string? name = attribute.AttributeType.FullName;
+			if (name is not (PolicyAttributeName or ValueAttributeName) || attribute.ConstructorArguments.Count != 1) continue;
+
+			CustomAttributeTypedArgument argument = attribute.ConstructorArguments[0];
+			if (name == PolicyAttributeName)
+			{
+				// An enum argument arrives as its underlying value; a cast such as (NullAction)7 is not an action.
+				if (argument.Value is int action && Enum.IsDefined(typeof(NullAction), action))
+					policy = (NullAction)action;
+				else
+					invalid ??= $"[NullPolicy({argument.Value})], which is not a NullAction";
+			}
+			else
+			{
+				hasValue = true;
+				value = Constant(argument, ref invalid);
+			}
+		}
+
+		return new(policy, hasValue, value, invalid);
+	}
+
+	// A constant of an object parameter arrives as itself, an enum as its underlying value and its type;
+	// a Type or an array cannot be a member's value.
+	static object? Constant(CustomAttributeTypedArgument argument, ref string? invalid)
+	{
+		object? raw = argument.Value;
+		Type type = argument.ArgumentType;
+		if (raw is null) return null;
+		if (type.IsEnum) return Enum.ToObject(type, raw);
+		if (raw is string || type.IsPrimitive) return raw;
+
+		invalid ??= $"a [NullValue] of type {type.Name}: a null value is null, a string, a bool, a char, a number or an enum value";
+		return null;
 	}
 }
 

@@ -48,7 +48,7 @@ public static class SequentialAccessOrderTests
 	// Declared in the opposite order to the columns of the result sets below.
 	public sealed class Declared
 	{
-		public int Alpha { get; set; } = 100;          // typed, non-nullable (IsDBNull, then the typed getter)
+		public int Alpha { get; set; } = 100;          // typed, non-nullable (the typed getter alone)
 		public string? Beta { get; set; }              // typed, reference
 		public decimal Gamma { get; set; }             // typed, non-nullable
 		public int? Delta { get; set; }                // typed, Nullable<T>
@@ -68,7 +68,7 @@ public static class SequentialAccessOrderTests
 
 	static object?[] Row(int n, bool withNulls = false)
 		=> [
-			n, "u1", Stamp, "Green", withNulls ? null : n + 1, "u2", n * 1.5m, withNulls ? null : "beta" + n, withNulls ? null : n + 2,
+			n, "u1", Stamp, "Green", withNulls ? null : n + 1, "u2", n * 1.5m, withNulls ? null : "beta" + n, n + 2,
 		];
 
 	static readonly int[] MappedOrdinals = [0, 2, 3, 4, 6, 7, 8];
@@ -114,11 +114,15 @@ public static class SequentialAccessOrderTests
 
 		Assert.All(items, item =>
 		{
-			Assert.Equal(100, item.Alpha); // NULL into a non-nullable value type keeps the initializer
-			Assert.Null(item.Beta);
+			Assert.Null(item.Beta);  // the NULLs of nullable members: IsDBNull, then nothing
 			Assert.Null(item.Delta);
 		});
+		Assert.Equal([3, 4], items.Select(i => i.Alpha));
 		AssertAscendingAndComplete(reader!, 2);
+
+		// A NULL into the non-nullable Alpha, the last column read, is the error of that row.
+		var alphaNull = new SequentialReader(Columns, [Row(1), [.. Row(2)[..^1], null]]);
+		NullAssert.Model<Declared>(1, () => new FakeExecuteReader(() => alphaNull).Map<Declared>().ToList());
 	}
 
 	[Fact]
@@ -241,16 +245,15 @@ public static class SequentialAccessOrderTests
 		Assert.All(items, item => Assert.Equal(Shade.Green, item.Epsilon));
 		AssertEachCellOnceInOrder(reader!, 2);
 
-		// A NULL text cell keeps the property's initializer, and still reads the cell once.
+		// A NULL text cell into the non-nullable property is an error, and the cell was read once.
 		ImmutableArray<ColumnDef> columns = [("Eta", typeof(int)), ("Epsilon", typeof(string)), ("Delta", typeof(int))];
 		var nulls = new SequentialReader(columns, [[1, null, null]]);
-		GeneralPathProperty item = new FakeExecuteReader(() => nulls).Map<GeneralPathProperty>().ToList().Single();
-		Assert.Equal((1L, Shade.Red, null), (item.Eta, item.Epsilon, item.Delta));
+		NullAssert.Model<GeneralPathProperty>(0, () => new FakeExecuteReader(() => nulls).Map<GeneralPathProperty>().ToList());
 		Assert.Equal(1, nulls.TouchedPerRow.Single().Count(o => o == 1));
 	}
 
 	[Fact]
-	public static void NullCells_OfAConstructorModel_AreStillReadInColumnOrder_AndGiveTheFallbacks()
+	public static void NullCells_OfAConstructorModel_AreStillReadInColumnOrder()
 	{
 		SequentialReader? reader = null;
 		var command = new FakeExecuteReader(() => reader = NewReader(2, withNulls: true));
@@ -258,19 +261,19 @@ public static class SequentialAccessOrderTests
 		var records = command.Map<DeclaredRecord>().ToList();
 		Assert.All(records, item =>
 		{
-			Assert.Equal(0, item.Alpha); // NULL into a non-nullable value-type parameter: its fallback, default(int)
 			Assert.Null(item.Beta);
 			Assert.Null(item.Delta);
 		});
+		Assert.Equal([3, 4], records.Select(r => r.Alpha));
 		AssertEachCellOnceInOrder(reader!, 2);
 
 		var leading = new FakeExecuteReader(() => reader = NewReader(2, withNulls: true)).Map<LeadingParameters>().ToList();
 		Assert.All(leading, item =>
 		{
-			Assert.Equal(100, item.Alpha); // NULL into a non-nullable value-type property after the constructor: skipped, so the initializer stays
 			Assert.Null(item.Beta);
 			Assert.Null(item.Delta);
 		});
+		Assert.Equal([3, 4], leading.Select(r => r.Alpha));
 		AssertEachCellOnceInOrder(reader!, 2);
 	}
 

@@ -110,14 +110,11 @@ public static class DateAndTimeMappingTests
 	}
 
 	[Fact]
-	public static void NullInANonNullableMember_LeavesTheDefault()
+	public static void NullInANonNullableMember_IsAnError()
 	{
 		var cmd = Cmd([("Day", typeof(DateTime)), ("Time", typeof(TimeSpan))], new object?[] { null, null }); // one row of two NULLs, not two rows
 
-		Stamps item = Assert.Single(cmd.Map<Stamps>().ToList());
-
-		Assert.Equal(default, item.Day);
-		Assert.Equal(default, item.Time);
+		NullAssert.Model<Stamps>(0, () => cmd.Map<Stamps>().ToList());
 	}
 
 	[Fact]
@@ -125,11 +122,9 @@ public static class DateAndTimeMappingTests
 	{
 		var cmd = Cmd([("Day", typeof(string))], ["not a date"]);
 
-		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Stamps>().ToList());
-
-		Assert.Equal("Day", ex.PropertyName);
-		Assert.Equal(typeof(DateOnly), ex.TargetType);
-		Assert.IsType<FormatException>(ex.InnerException);
+		NullAssert.Check<Stamps, FormatException>(
+			"Unable to map row 0 to 'Stamps'.",
+			Assert.Throws<ValueMappingException>(() => cmd.Map<Stamps>().ToList()));
 	}
 
 	[Fact]
@@ -137,9 +132,8 @@ public static class DateAndTimeMappingTests
 	{
 		var cmd = Cmd([("Day", typeof(int))], [5]);
 
-		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Stamps>().ToList());
-
-		Assert.Equal("Day", ex.PropertyName);
-		Assert.IsType<InvalidCastException>(ex.InnerException);
+		NullAssert.Check<Stamps, InvalidCastException>(
+			"Unable to map row 0 to 'Stamps': a NULL was read into a non-nullable member, or a column's type does not convert to its member's. Declare the member nullable (int?, string?), or match the member's type to the column's.",
+			Assert.Throws<ValueMappingException>(() => cmd.Map<Stamps>().ToList()));
 	}
 }

@@ -8,6 +8,7 @@ namespace Samples;
 
 // A model whose text members declare their own NULL value.
 #region shape_plant_model
+[NullPolicy(NullAction.Default)]
 public class Tag
 {
 	public int Id { get; init; }
@@ -83,9 +84,9 @@ public sealed record WideEnds(int First, int Last);
 public static class ShapingMaps
 {
 		#region shape_null_initializer
-		// A NULL never overwrites a non-nullable member,
+		// Tag is NullAction.Default: a NULL keeps the initializer,
 		// and the converter is not called for it:
-		// Label keeps its initializer ("") and Description keeps its own.
+		// Label keeps "" and Description keeps its own.
 		// The member's declaration is where its NULL value lives.
 		public static RowMap<Tag> TagMap
 			=> field ??= RowMap<Tag>

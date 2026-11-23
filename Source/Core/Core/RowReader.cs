@@ -94,12 +94,19 @@ internal static class RowReader
 
 		Func<DbDataReader, T> map = source.Mapper(db);
 		int n = 0;
-		do
+		try
 		{
-			sink.Add(map(db));
-			if (++n == take) break;
+			do
+			{
+				sink.Add(map(db));
+				if (++n == take) break;
+			}
+			while (db.Read());
 		}
-		while (db.Read());
+		catch (RowMappingFailure failure)
+		{
+			throw failure.At(skip + n);
+		}
 	}
 
 	/// <summary>Reads the rows into a <see cref="List{T}"/>.</summary>
@@ -123,12 +130,20 @@ internal static class RowReader
 
 		Func<DbDataReader, T> map = source.Mapper(db);
 		int n = 0;
-		do
+		try
 		{
-			list.Add(map(db));
-			if (++n == take) break;
+			do
+			{
+				list.Add(map(db));
+				if (++n == take) break;
+			}
+			while (db.Read());
 		}
-		while (db.Read());
+		catch (RowMappingFailure failure)
+		{
+			throw failure.At(skip + n);
+		}
+
 		return list;
 	}
 
@@ -198,9 +213,9 @@ internal static class RowReader
 
 		Func<DbDataReader, T> map = source.Mapper(db);
 		var buffer = new ArraySink<T>(config);
+		int n = 0;
 		try
 		{
-			int n = 0;
 			do
 			{
 				buffer.Add(map(db));
@@ -208,6 +223,10 @@ internal static class RowReader
 			}
 			while (db.Read());
 			return buffer.ToArray();
+		}
+		catch (RowMappingFailure failure)
+		{
+			throw failure.At(skip + n);
 		}
 		finally
 		{
@@ -221,7 +240,7 @@ internal static class RowReader
 		{
 			if (take != 0 && SkipRows(db, skip) && db.Read())
 			{
-				item = source.Mapper(db)(db);
+				item = MapAt(source.Mapper(db), db, skip);
 				return true;
 			}
 
@@ -249,7 +268,7 @@ internal static class RowReader
 				return false;
 			}
 
-			item = source.Mapper(db)(db);
+			item = MapAt(source.Mapper(db), db, skip);
 			if (take != 1 && db.Read()) throw MoreThanOne();
 			return true;
 		}
@@ -284,6 +303,7 @@ internal static class RowReader
 	/// <returns>A lazy sequence of the mapped rows.</returns>
 	public static IEnumerable<T> Stream<T>(IRowSource<T> source, IDataReader reader, int skip, int take, bool readThrough = false, CancellationToken token = default)
 	{
+		int first = skip; // The row number of the first row mapped: skip counts down below.
 		bool skipped = take != 0;
 		if (skipped)
 		{
@@ -306,7 +326,7 @@ internal static class RowReader
 				while (db.Read())
 				{
 					dbMap ??= source.Mapper(db);
-					yield return dbMap(db);
+					yield return MapAt(dbMap, db, first + n);
 					if (++n == take) break;
 				}
 			}
@@ -318,7 +338,7 @@ internal static class RowReader
 					token.ThrowIfCancellationRequested();
 					if (!reader.Read()) break;
 					map ??= source.Mapper(reader);
-					yield return map(reader);
+					yield return MapAt(map, reader, first + n);
 				}
 				while (++n != take);
 			}
@@ -354,6 +374,28 @@ internal static class RowReader
 		for (; skip > 0; skip--)
 			if (!reader.Read()) return false;
 		return true;
+	}
+
+	// The loops that fill a collection catch around the loop: one try region for the whole loop. The iterators (Stream, StreamAsync) cannot catch around a yield, so they catch per row, here.
+	/// <summary>
+	/// Maps the current row, and reports a failure of a row reader of the library for the row.
+	/// </summary>
+	/// <typeparam name="TReader">The type of the reader.</typeparam>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <param name="map">The mapper.</param>
+	/// <param name="reader">The reader positioned on the row.</param>
+	/// <param name="row">The 0-based row in the result set.</param>
+	/// <returns>The mapped row.</returns>
+	static T MapAt<TReader, T>(Func<TReader, T> map, TReader reader, int row)
+	{
+		try
+		{
+			return map(reader);
+		}
+		catch (RowMappingFailure failure)
+		{
+			throw failure.At(row);
+		}
 	}
 
 	static InvalidOperationException MoreThanOne() => new("Sequence contains more than one element.");
@@ -401,12 +443,20 @@ internal static class RowReader
 
 		Func<DbDataReader, T> map = source.Mapper(reader);
 		int n = 0;
-		do
+		try
 		{
-			sink.Add(map(reader));
-			if (++n == take) break;
+			do
+			{
+				sink.Add(map(reader));
+				if (++n == take) break;
+			}
+			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
 		}
-		while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
+		catch (RowMappingFailure failure)
+		{
+			throw failure.At(skip + n);
+		}
+
 		return sink;
 	}
 
@@ -443,12 +493,19 @@ internal static class RowReader
 		{
 			Func<DbDataReader, T> map = source.Mapper(reader);
 			int n = 0;
-			do
+			try
 			{
-				chain.Add(map(reader));
-				if (++n == take) break;
+				do
+				{
+					chain.Add(map(reader));
+					if (++n == take) break;
+				}
+				while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
 			}
-			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
+			catch (RowMappingFailure failure)
+			{
+				throw failure.At(skip + n);
+			}
 		}
 
 		return build.Build(chain);
@@ -459,7 +516,7 @@ internal static class RowReader
 		=> take != 0
 		&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 		&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)
-		? (true, source.Mapper(reader)(reader))
+		? (true, MapAt(source.Mapper(reader), reader, skip))
 		: (false, default);
 
 	public static async ValueTask<(bool Found, T? Item)> TrySingleAsync<T>(
@@ -469,7 +526,7 @@ internal static class RowReader
 			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 			&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 		{
-			T item = source.Mapper(reader)(reader);
+			T item = MapAt(source.Mapper(reader), reader, skip);
 			if (take != 1 && await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)) throw MoreThanOne();
 			return (true, item);
 		}
@@ -504,7 +561,7 @@ internal static class RowReader
 			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 			{
 				map ??= source.Mapper(reader);
-				yield return map(reader);
+				yield return MapAt(map, reader, skip + n);
 				if (++n == take) break;
 			}
 		}

@@ -11,7 +11,7 @@
 | Named differently | Declare a `RowMap<T>` once and pass it: `Map<T>(map)` |
 | One property must not be read | A pair whose column is the C# `null` (not SQL NULL) in the `RowMap<T>` |
 | A property must always be read | Declare it `required` ([`required` and `init` members](#required-and-init-members)) |
-| A column can hold NULL | Declare the property nullable (`int?`, `string?`): see [NULL in a non-nullable column](#null-in-a-non-nullable-column) |
+| A column can hold NULL | Declare the property nullable (`int?`, `string?`), or give it a [null policy](#null-policy): see [NULL in a non-nullable column](#null-in-a-non-nullable-column) |
 | Your own conversion | `Map(selector)` |
 
 For the shapes this table does not cover, such as a NULL that means an empty string, a value that is not in the row or a row to skip, see [Shaping rows](shaping-rows.md).
@@ -70,7 +70,7 @@ An `init` property is set like any other settable property. A `required` propert
 
 - **A column must feed it, whatever the query** (a `required` property of a base class too). When the column names and types of a query include none for it, the first row throws `ValueMappingException`, with the property, its type, the model and the column that was looked for in the message. A query with no rows never reports it, except through the routes that know the columns before the first row: `ToChannel` and the Dataflow methods ([Channels and Dataflow](channels-and-dataflow.md)).
 - **A constructor parameter's default does not feed it.** A `required` property needs its own column, even when a constructor parameter has the same name.
-- **A NULL in that column is not an error.** The column must be there, but a NULL cell follows [the NULL rules](#null-in-a-non-nullable-column), as for any other property.
+- **A NULL in that column follows [the NULL rules](#null-in-a-non-nullable-column)**, as for any other property: the column must be there, and the NULL is judged by the property's type.
 - **It cannot be ignored.** A `RowMap<T>` pair with a `null` column for a `required` property throws `ArgumentException` when the map is created.
 - **`[SetsRequiredMembers]`.** When the constructor the type is built through carries it, nothing is enforced: the members are ordinary properties.
 - **A `required` public field** cannot be set, because fields are never mapped, so the type throws `InvalidOperationException` at the call. Declare it as a property.
@@ -81,14 +81,15 @@ An `init` property is set like any other settable property. A `required` propert
 
 ### A missing column and a NULL
 
-A property no column feeds keeps what the constructor or its initializer gave it. A constructor parameter no column feeds takes its declared default value (`int stars = 3` gives `3`), else `default` (`0`, `null`). A NULL cell follows the rule in [NULL in a non-nullable column](#null-in-a-non-nullable-column), which for a parameter means its declared default instead of the initializer:
+A property no column feeds keeps what the constructor or its initializer gave it. A constructor parameter no column feeds takes its declared default value (`int stars = 3` gives `3`), else `default` (`0`, `null`). A NULL cell is a different case: it follows [the NULL rules](#null-in-a-non-nullable-column), and a parameter's declared default applies to it only through `[NullPolicy(NullAction.Default)]`:
 
-| The member is declared | A NULL gives a property | A NULL gives a constructor parameter |
-|---|---|---|
-| A value type: `int`, `bool`, `DateTime`, an enum | Its initializer, else its default | Its declared default, else `default` |
-| A `string` with `<Nullable>enable</Nullable>` | Its initializer, else `null` | Its declared default, else `null` |
-| `int?`, `string?`, or `[AllowNull]` on a property | `null` | `null` (the declared default is not used: a NULL is a value) |
-| A `string` with nullable annotations off, or a type parameter | `null` | `null` |
+| The member is declared | A NULL gives a property or a constructor parameter |
+|---|---|
+| A value type: `int`, `bool`, `DateTime`, an enum | `ValueMappingException`, naming the model and the row |
+| A `string` with `<Nullable>enable</Nullable>` | `ValueMappingException`, naming the model and the row |
+| `int?`, `string?`, or `[AllowNull]` on a property | `null` (a parameter's declared default is not used: a NULL is a value) |
+| A `string` with nullable annotations off, or a type parameter | `null` |
+| Any of these, with a [null policy](#null-policy) | What the policy says |
 
 [!code-csharp[](../samples/Models.cs#review_model)]
 
@@ -132,7 +133,7 @@ The rules:
 - **Which types.** A primitive, an enum, `string`, `decimal`, `DateTime`, `DateTimeOffset`, `TimeSpan`, `DateOnly`, `TimeOnly`, `Guid`, `byte[]` and a `Nullable<>` of those. Not `object`, `char[]`, a provider type such as `SqlInt32`, or a `Stream` (the reader is closed when the terminal returns): use `Map(selector)` for those.
 - **The first column, whatever its name.** The other columns are ignored, so select only the one you need.
 - **Converted like a property of that type.** When the column type matches, or is an integer that fits (a `long` into an `int` is range-checked; a `short` widens), the value is read with the typed getter and nothing is boxed. Otherwise it is converted: a `decimal` into an `int` rounds, text into a `Guid`, an enum from its name (ignoring case) or its number, a `DateTime` into a `DateTimeOffset`. A value that cannot be converted throws `ValueMappingException`. The reader is chosen once per result set, from the type the first row reports.
-- **NULL.** Follows [the NULL rules](#null-in-a-non-nullable-column): `Map<int>()` with `SingleAsync` over a NULL gives `0`, and `Map<int?>()` gives `null`.
+- **NULL.** Follows [the NULL rules](#null-in-a-non-nullable-column): `Map<int>()` over a NULL throws `ValueMappingException` naming `Int32` and the row, and `Map<int?>()` gives `null`.
 - **Read through.** As every `Map` terminal, they read through the later result sets; `command.SingleResult().Map<T>()` stops after the first.
 
 It differs from `ExecuteScalarAsync<T>()`, which returns one value, converted the same way as the column of `Map<T>()` (see [which scalar form](expressive-commands.md#which-scalar-form)).
@@ -227,17 +228,47 @@ Values are read with the provider's typed getters (`GetInt32`, `GetString`, ...)
 
 ## NULL in a non-nullable column
 
-A NULL never overwrites a member the C# type declares non-nullable. A value-type property (`int`, `bool`, `DateTime`, an enum, ...) keeps its initializer, else its default, and so does a reference-type property when nullable annotations are on: `string Name { get; init; } = "";` keeps `""`, and one with no initializer stays `null`. A constructor parameter of such a type gets its declared default value, else its default. `Nullable<T>` (`int?`), a reference declared nullable (`string?`, or `[AllowNull]` on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter (`T Value`) get `null`; nothing throws. If NULL means something, declare the member nullable (`int?`, `string?`): that is the only way to tell NULL from 0 or "".
+If the type says `int`, it is an `int`. A NULL into a member the C# type declares non-nullable is an error: a value type (`int`, `bool`, `DateTime`, an enum, ...), and a reference type when nullable annotations are on (`string` or `object`, not `string?` or `object?`). The row throws `ValueMappingException` naming the model and the 0-based row of the result set, with the provider's error as its inner exception. Which message you get depends on that error:
 
-The same holds for a single value (see [One value per row](#one-value-per-row)): `Map<int>()` with `SingleAsync` over a NULL gives `0` and does not throw, while `Map<int?>()` and `Map<string>()` give `null`.
+| The provider | Its error on NULL | The message |
+|---|---|---|
+| SqlClient | `SqlNullValueException` | `A NULL was read into a non-nullable member of Post at row 3. Declare the member nullable (int?, string?).` |
+| Microsoft.Data.Sqlite, a column typed as its member | `InvalidOperationException` | `Unable to map row 3 to 'Post'.` |
+| Any provider, a column that is converted (another type, or none, as for SQLite's `null as title`) | none: ODX detects the NULL | The NULL message, with `SqlNullValueException` inside |
+| A provider whose getter casts | `InvalidCastException` | A message that names both causes: a NULL, or a column type that does not convert |
+
+`Nullable<T>` (`int?`), a reference declared nullable (`string?`, or `[AllowNull]` on a property), a reference type in code with nullable annotations off, and a member declared as a type parameter (`T Value`) get `null`. To accept a NULL, declare the member nullable, give it a [null policy](#null-policy), or give it a [converter](#converting-a-column) whose column type is nullable.
+
+[!code-csharp[](../samples/Mapping.cs#map_null_error)]
+
+The same holds for a single value (see [One value per row](#one-value-per-row)): `Map<int>()` over a NULL throws (`A NULL was read into a non-nullable Int32 at row 0. Declare it nullable (Int32?).`), while `Map<int?>()` and `Map<string>()` give `null`. `ExecuteScalarAsync<int>()` over a NULL throws too; no row gives `0`.
 
 The rule reads the nullable annotations the compiler stores in the assembly, so it needs `<Nullable>enable</Nullable>` (or `#nullable enable`) in the code that declares the model.
 
+### Null policy
+
+`[NullPolicy]` on a member, or on the model type for all its members, says what a NULL does. `[NullValue]` on a member replaces a NULL with its value. Both always apply, whatever the member's type.
+
+| The declaration | A NULL gives |
+|---|---|
+| None, or `[NullPolicy(NullAction.None)]` | The rule above, with no check: `null` for a nullable member, `ValueMappingException` naming the model and the row for a non-nullable one |
+| `[NullPolicy(NullAction.Throw)]` | `ValueMappingException` naming the member, the column and the row: `A NULL was read from column 'Likes' into 'Likes' of Post at row 3, whose null policy is Throw.` |
+| `[NullPolicy(NullAction.Default)]` | The member's initializer, else its default; a constructor parameter's declared default, else its default |
+| `[NullValue(0)]` (a member only) | The value, converted to the member's type when the map is created |
+
 [!code-csharp[](../samples/Models.cs#order_line_model)]
+
+- **`[NullValue]` wins.** It overrides any policy: the type's, and the member's own.
+- **A member's policy overrides the type's.** `[NullPolicy(NullAction.None)]` on one member of a `Throw` type takes that member out of the check.
+- **A null value is a constant:** `null`, a string, a bool, a char, a number or an enum value. It converts as a column does (text to a `DateTime`, a number to an enum). One that does not convert to the member's type, or a `Type` or an array, throws `ArgumentException` when the map is created, not at the first NULL.
+- **A positional record** takes the declaration on the parameter, or `[property: NullValue(...)]` on its property.
+- **A base type's policy covers a derived model.** The nearest declaration wins: the derived type's own policy, then its base type's; a member's own policy beats both, and `[NullValue]` beats all.
+- **A `RowMap<T>` pair or converter that names the member overrides the member's own declarations** in that map; the type's policy still covers it. A converter whose column type is nullable receives the NULL itself, and no policy applies.
+- **Cost.** `Throw`, `Default` and a null value test the cell for NULL, once per covered member per row; `None` and no declaration add nothing. They are read once per type, when its map is built.
 
 ## Values that cannot be mapped
 
-A value that cannot be mapped (an unconvertible value, an overflow) throws `ValueMappingException`, a `DataException` (not an `InvalidOperationException`). It carries `PropertyName`, `ColumnName` and `TargetType`, its message names all three (`Unable to set value of property 'Id' (Int32) from column 'id'.`), and the conversion error is its `InnerException`. A value that cannot be passed to a constructor parameter says so (`Unable to pass value of column 'post_id' to constructor parameter 'Id' (Int32) of 'Post'.`); `PropertyName` is then the member's name. A `required` property no column feeds throws it too, without an inner exception (see [`required` and `init` members](#required-and-init-members)). Provider exceptions (`DbException`) and cancellation pass through unwrapped. Any other failure while building a row object throws `InvalidOperationException` (the cause is its inner exception, unless the cause already was an `InvalidOperationException`); when a constructor throws, its message is `Unable to create 'MyApp.Post' from the current row.`, with the type's full name.
+A row that cannot be mapped (an unconvertible value, an overflow, a NULL into a non-nullable member, a constructor that throws) throws `ValueMappingException`, a `DataException` (not an `InvalidOperationException`). Its message names the model and the 0-based row of the result set (`Unable to map row 0 to 'Post'.`), `TargetType` is the model (the value's type for `Map<int>()`), and the error that stopped the row is its `InnerException`. It names no member or column: the reader reads nothing more once a row fails. To have a NULL named by member and column, give the member `[NullPolicy(NullAction.Throw)]` (see [Null policy](#null-policy)). A `required` property no column feeds throws it too, naming the property and the column, without an inner exception (see [`required` and `init` members](#required-and-init-members)). Provider exceptions (`DbException`) and cancellation pass through unwrapped.
 
 [!code-csharp[](../samples/Mapping.cs#map_value_error)]
 
@@ -254,7 +285,7 @@ Some columns are not the type the model wants: a number the model keeps as text,
 [!code-csharp[](../samples/Mapping.cs#map_converted_use)]
 
 - **It runs inside the row reader.** The delegate is called once per row, as the value is read, not in a second pass over a row object. When the column's type is `TColumn` the value is read with the provider's typed getter, so nothing is boxed; when it is not, it is read the way `Map<int>()` reads a single value (an integer converts within its range, and an overflow throws `ValueMappingException`). An exception the delegate throws surfaces as a `ValueMappingException` with the original as its inner exception, like any other failure while reading a value; a database exception and a cancellation pass through unchanged, so catch the wrapper, not `FormatException`. The delegate is the only cost. It works for a property, a constructor parameter and a `required` or `init` member (a `required` member still needs its column).
-- **A NULL is not converted.** The delegate is not called for a NULL cell, and the member follows [the NULL rules](#null-in-a-non-nullable-column): `null` for a nullable member; for a non-nullable one its own value, or the constructor parameter's default. A trim or a parse needs no NULL check. A converter that must see NULL asks for a nullable value type as `TColumn` (`int?`, `DateTime?`): it is then called with `null`, and what it returns is the value of the member, a non-nullable member included. A nullable reference type does not do this: `string?` says nothing at run time, so a reference type is never null in a converter.
+- **A NULL is not converted.** The delegate is not called for a NULL cell, and the member follows [the NULL rules](#null-in-a-non-nullable-column): `null` for a nullable member, `ValueMappingException` for a non-nullable one, unless the type's [null policy](#null-policy) covers it (a converter overrides the member's own). A trim or a parse needs no NULL check. A converter that must see NULL asks for a nullable value type as `TColumn` (`int?`, `DateTime?`): it is then called with `null`, and what it returns is the value of the member, a non-nullable member included. A nullable reference type does not do this: `string?` says nothing at run time, so a reference type is never null in a converter.
 
 [!code-csharp[](../samples/Mapping.cs#map_converted_null)]
 

@@ -1826,9 +1826,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <typeparam name="T">The type to convert the value to.</typeparam>
 	/// <returns>
 	/// The value from the return parameter, converted to <typeparamref name="T"/> as <c>Map&lt;T&gt;()</c> converts a column: a value that is already a <typeparamref name="T"/> is returned as is, an integer is converted to another integer type with a range check, and any other value takes the general conversion.
-	/// <see langword="default"/> when it is NULL.
+	/// <see langword="null"/> when it is NULL and <typeparamref name="T"/> takes it.
 	/// </returns>
-	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range.</exception>
+	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range, or it is NULL and <typeparamref name="T"/> is a non-nullable value type.</exception>
 	internal T ExecuteReturn<T>()
 		=> RowMap<T>.ConvertScalar(ExecuteReturn());
 
@@ -1887,7 +1887,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <summary>
 	/// Executes the command with <see cref="IDbCommand.ExecuteScalar"/>.
 	/// </summary>
-	/// <returns>The raw value the provider returns: <see cref="DBNull.Value"/> when the column is NULL and <see langword="null"/> when there is no row, which is how to tell the two apart. Use <see cref="ExecuteScalar{T}()"/> for <see langword="default"/> in both cases, or a transform overload to receive <see langword="null"/> in both.</returns>
+	/// <returns>The raw value the provider returns: <see cref="DBNull.Value"/> when the column is NULL and <see langword="null"/> when there is no row, which is how to tell the two apart. Use <see cref="ExecuteScalar{T}()"/> for the value converted, or a transform overload to receive <see langword="null"/> in both.</returns>
 	internal object? ExecuteScalar()
 		=> Execute(command => command.ExecuteScalar());
 
@@ -1897,9 +1897,9 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <typeparam name="T">The type to convert the value to.</typeparam>
 	/// <returns>
 	/// The value, converted to <typeparamref name="T"/>: a value that is already a <typeparamref name="T"/> is returned as is, an integer is converted to another integer type with a range check (a <see cref="long"/> read as an <see cref="int"/>), and any other value takes the general conversion (a <see cref="decimal"/> read as a <see cref="long"/>).
-	/// <see langword="default"/> when the result is NULL or there was no row.
+	/// <see langword="default"/> when there was no row; <see langword="null"/> when the result is NULL and <typeparamref name="T"/> takes it.
 	/// </returns>
-	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range; the conversion's own error is the inner exception.</exception>
+	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range (the conversion's own error is the inner exception), or it is NULL and <typeparamref name="T"/> is a non-nullable value type.</exception>
 	internal T ExecuteScalar<T>()
 		=> RowMap<T>.ConvertScalar(ExecuteScalar());
 

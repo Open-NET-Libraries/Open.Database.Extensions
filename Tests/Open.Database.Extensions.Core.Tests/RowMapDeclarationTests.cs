@@ -216,33 +216,31 @@ public static class RowMapDeclarationTests
 	// ---- the ValueMappingException message names the property, its type and the column ----
 
 	[Fact]
-	public static void ValueMappingException_Message_NamesThePropertyItsTypeAndTheColumn()
+	public static void ValueMappingException_Message_NamesTheModelAndTheRow()
 	{
 		RowMap<Item> map = [new(nameof(Item.Id), "item_id")];
 
 		var ex = Assert.Throws<ValueMappingException>(() => new FakeExecuteReader(["item_id"], ["abc"]).Map(map).ToList());
 
-		Assert.Equal("Unable to set value of property 'Id' (Int32) from column 'item_id'.", ex.Message);
-		Assert.Equal("Id", ex.PropertyName);
-		Assert.Equal("item_id", ex.ColumnName);
-		Assert.Equal(typeof(int), ex.TargetType);
+		NullAssert.Check<Item, FormatException>("Unable to map row 0 to 'Item'.", ex);
 	}
 
 	[Fact]
-	public static void ValueMappingException_Message_NamesANullableTypeWithAQuestionMark()
+	public static void ValueMappingException_Message_ForANullableMember_NamesTheModel()
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => new FakeExecuteReader(["Count"], ["abc"]).Map<Probe>().ToList());
 
-		Assert.Equal("Unable to set value of property 'Count' (Int32?) from column 'Count'.", ex.Message);
-		Assert.Equal(typeof(int?), ex.TargetType);
+		NullAssert.Check<Probe, FormatException>("Unable to map row 0 to 'Probe'.", ex);
 	}
 
 	[Fact]
-	public static void ValueMappingException_Message_NamesAReferenceType()
+	public static void ValueMappingException_Message_ForAnInvalidCast_NamesBothCauses()
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => new FakeExecuteReader(["Text"], [new byte[] { 1 }]).Map<Probe>().ToList());
 
-		Assert.Equal("Unable to set value of property 'Text' (String) from column 'Text'.", ex.Message);
+		NullAssert.Check<Probe, InvalidCastException>(
+			"Unable to map row 0 to 'Probe': a NULL was read into a non-nullable member, or a column's type does not convert to its member's. Declare the member nullable (int?, string?), or match the member's type to the column's.",
+			ex);
 	}
 
 	// ---- overload resolution: nothing is ambiguous, every spelling reaches the map ----

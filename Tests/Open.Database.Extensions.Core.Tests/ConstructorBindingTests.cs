@@ -129,10 +129,12 @@ public static class ConstructorBindingTests
 
 	[Theory]
 	[MemberData(nameof(Routes))]
-	public static void AnInitPropertyWithNoColumn_KeepsItsInitializer_AndANullIntoAValueTypePropertyKeepsItsValue(Route route)
+	public static void AnInitPropertyWithNoColumn_KeepsItsInitializer_AndANullIntoAValueTypePropertyIsAnError(Route route)
 	{
-		PostExtra post = Assert.Single(Read<PostExtra>(route, [("Id", typeof(int)), ("Title", typeof(string)), ("Views", typeof(int))], [1, "t", null]));
-		Assert.Equal((1, "t", 0, "none"), (post.Id, post.Title, post.Views, post.Label));
+		PostExtra post = Assert.Single(Read<PostExtra>(route, [("Id", typeof(int)), ("Title", typeof(string)), ("Views", typeof(int))], [1, "t", 2]));
+		Assert.Equal((1, "t", 2, "none"), (post.Id, post.Title, post.Views, post.Label));
+
+		NullAssert.Model<PostExtra>(0, () => Read<PostExtra>(route, [("Id", typeof(int)), ("Title", typeof(string)), ("Views", typeof(int))], [1, "t", null]));
 	}
 
 	[Theory]
@@ -177,12 +179,13 @@ public static class ConstructorBindingTests
 
 	[Theory]
 	[MemberData(nameof(Routes))]
-	public static void ANull_IntoANonNullableValueType_GivesTheParametersFallback_AndIntoANullableOrReference_GivesNull(Route route)
+	public static void ANull_IntoANonNullableValueType_IsAnError_AndIntoANullableOrReference_GivesNull(Route route)
 	{
-		WithDefaults item = Assert.Single(Read<WithDefaults>(route, DefaultsColumns, [null, null, null, null, null, null, null, null]));
+		// A declared default feeds only a parameter no column feeds: a NULL into a non-nullable value type is an error.
+		NullAssert.Model<WithDefaults>(0, () => Read<WithDefaults>(route, DefaultsColumns, [null, null, null, null, null, null, null, null]));
 
-		// Id has no declared default: its fallback is default(int). Views, Price, Tone and At fall back to their declared default (At is `default`).
-		Assert.Equal((0, 3, 9.99m, Tone.Green, default(DateTime)), (item.Id, item.Views, item.Price, item.Tone, item.At));
+		WithDefaults item = Assert.Single(Read<WithDefaults>(route, DefaultsColumns, [1, 2, 3m, (int)Tone.Blue, Stamp, null, null, null]));
+		Assert.Equal((1, 2, 3m, Tone.Blue, Stamp), (item.Id, item.Views, item.Price, item.Tone, item.At));
 
 		// A NULL into a nullable value type or a reference is null, not the declared default: NULL is a value.
 		Assert.Null(item.Count);
@@ -198,18 +201,17 @@ public static class ConstructorBindingTests
 		{
 			object?[] row = [2, 5, 1.5m, (int)Tone.Blue, Stamp, 6, "n", "b"];
 			row[column] = null;
-			WithDefaults item = Assert.Single(Read<WithDefaults>(route, DefaultsColumns, row));
 
-			object?[] expected = [2, 5, 1.5m, Tone.Blue, Stamp, 6, "n", "b"];
-			expected[column] = column switch
+			// A non-nullable value type rejects NULL, its declared default notwithstanding.
+			if (column <= 4)
 			{
-				1 => 3,
-				2 => 9.99m,
-				3 => Tone.Green,
-				4 => default(DateTime),
-				_ => null, // a nullable value type and a reference receive null: not the declared 4, not "none"
-			};
+				NullAssert.Model<WithDefaults>(0, () => Read<WithDefaults>(route, DefaultsColumns, row));
+				continue;
+			}
 
+			WithDefaults item = Assert.Single(Read<WithDefaults>(route, DefaultsColumns, row));
+			object?[] expected = [2, 5, 1.5m, Tone.Blue, Stamp, 6, "n", "b"];
+			expected[column] = null; // a nullable value type and a reference receive null: not the declared 4, not "none"
 			Assert.Equal<object?>(expected, [item.Id, item.Views, item.Price, item.Tone, item.At, item.Count, item.Note, item.Bare]);
 		}
 	}
@@ -230,8 +232,9 @@ public static class ConstructorBindingTests
 		Assert.Equal((Tone.Blue, Tone.Blue), (missing.Maybe, missing.Plain));
 
 		ImmutableArray<ColumnDef> columns = [("Id", typeof(int)), ("Maybe", typeof(int)), ("Plain", typeof(int))];
-		WithEnumDefaults nulls = Assert.Single(Read<WithEnumDefaults>(route, columns, [1, null, null]));
-		Assert.Equal((null, Tone.Blue), (nulls.Maybe, nulls.Plain)); // NULL into a nullable is null, not the default; into the non-nullable enum it is the default
+		WithEnumDefaults nulls = Assert.Single(Read<WithEnumDefaults>(route, columns, [1, null, (int)Tone.Green]));
+		Assert.Equal((null, Tone.Green), (nulls.Maybe, nulls.Plain)); // NULL into a nullable is null, not the default
+		NullAssert.Model<WithEnumDefaults>(0, () => Read<WithEnumDefaults>(route, columns, [1, null, null])); // into the non-nullable enum it is an error
 
 		WithEnumDefaults given = Assert.Single(Read<WithEnumDefaults>(route, columns, [1, (int)Tone.None, (int)Tone.Green]));
 		Assert.Equal((Tone.None, Tone.Green), (given.Maybe, given.Plain));
@@ -266,7 +269,6 @@ public static class ConstructorBindingTests
 		(ImmutableArray<ColumnDef> Columns, object?[] Row)[] shapes =
 		[
 			(PostColumns, [1, "one"]),                         // everything there
-			(PostColumns, [null, null]),                       // NULL into a non-nullable value type, and into a reference
 			([("Id", typeof(int))], [4]),                      // no column for Title
 			([("Title", typeof(string))], ["t"]),              // no column for Id
 			(ReversedPostColumns, ["x", "r", 5]),              // reversed, with an extra column
@@ -283,6 +285,11 @@ public static class ConstructorBindingTests
 			Assert.Equal((before.Id, before.Title), (readonlyNow.Id, readonlyNow.Title));
 			Assert.Equal(new RecordStruct(before.Id, before.Title!), now);
 		}
+
+		// NULL into a non-nullable value type, and into a reference: an error on every shape.
+		NullAssert.Model<RecordStructBefore>(0, () => Read<RecordStructBefore>(route, PostColumns, [null, null]));
+		NullAssert.Model<RecordStruct>(0, () => Read<RecordStruct>(route, PostColumns, [null, null]));
+		NullAssert.Model<ReadonlyRecordStruct>(0, () => Read<ReadonlyRecordStruct>(route, PostColumns, [null, null]));
 	}
 
 	[Theory]
@@ -318,8 +325,9 @@ public static class ConstructorBindingTests
 		RecordStructExtra item = Assert.Single(Read<RecordStructExtra>(route, [("Note", typeof(string)), ("Id", typeof(int)), ("Views", typeof(int))], ["n", 4, 9]));
 		Assert.Equal((4, "n", 9), (item.Id, item.Note, item.Views));
 
-		RecordStructExtra nulls = Assert.Single(Read<RecordStructExtra>(route, [("Note", typeof(string)), ("Id", typeof(int)), ("Views", typeof(int))], [null, null, null]));
-		Assert.Equal((0, null, 0), (nulls.Id, nulls.Note, nulls.Views));
+		RecordStructExtra nulls = Assert.Single(Read<RecordStructExtra>(route, [("Note", typeof(string)), ("Id", typeof(int)), ("Views", typeof(int))], [null, 5, 6]));
+		Assert.Equal((5, null, 6), (nulls.Id, nulls.Note, nulls.Views));
+		NullAssert.Model<RecordStructExtra>(0, () => Read<RecordStructExtra>(route, [("Note", typeof(string)), ("Id", typeof(int)), ("Views", typeof(int))], [null, null, null]));
 	}
 
 	// ---- T8: pairs and validation, for parameters ----
@@ -555,40 +563,32 @@ public static class ConstructorBindingTests
 
 	[Theory]
 	[MemberData(nameof(Routes))]
-	public static void AnUnconvertibleValue_IntoAParameter_ThrowsValueMappingException_NamingTheParameterColumnAndType(Route route)
+	public static void AnUnconvertibleValue_IntoAParameter_ThrowsValueMappingException_NamingTheModelAndRow(Route route)
 	{
 		var map = new RowMap<Post>([new(nameof(Post.Id), "post_id")]);
-		var ex = Assert.Throws<ValueMappingException>(() => Read(route, [("post_id", typeof(object)), ("Title", typeof(string))], ["abc", "t"], map));
-
-		Assert.Equal("Id", ex.PropertyName); // the slot's name: the property of the parameter's name
-		Assert.Equal("post_id", ex.ColumnName);
-		Assert.Equal(typeof(int), ex.TargetType);
-		Assert.Equal("Unable to pass value of column 'post_id' to constructor parameter 'Id' (Int32) of 'Post'.", ex.Message);
-		Assert.IsType<FormatException>(ex.InnerException);
+		var ex = Assert.Throws<ValueMappingException>(() => ReadRows(route, [("post_id", typeof(object)), ("Title", typeof(string))], [[1, "a"], ["abc", "t"]], map));
+		NullAssert.Check<Post, FormatException>("Unable to map row 1 to 'Post'.", ex);
 	}
 
 	[Fact]
-	public static void AnUnconvertibleValue_IntoANullableParameter_ReportsTheNullableType_AndAParameterOfADifferentNameThanItsProperty_NamesTheParameter()
+	public static void AnUnconvertibleValue_IntoANullableParameter_NamesTheModelAndRow()
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => Read<WithDefaults>(Route.Boxed, Cols("Id", "Count"), [1, "abc"]));
-		Assert.Equal(("Count", "Count", typeof(int?)), (ex.PropertyName, ex.ColumnName, ex.TargetType));
-		Assert.Equal("Unable to pass value of column 'Count' to constructor parameter 'count' (Int32?) of 'WithDefaults'.", ex.Message);
+		NullAssert.Check<WithDefaults, FormatException>("Unable to map row 0 to 'WithDefaults'.", ex);
 	}
 
 	[Fact]
 	public static void AnOverflowOnTheTypedPath_IntoAParameter_IsReportedTheSameWay()
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => Read<Post>(Route.Typed, [("Id", typeof(long)), ("Title", typeof(string))], [4_294_967_301L, "x"]));
-		Assert.Equal(("Id", "Id", typeof(int)), (ex.PropertyName, ex.ColumnName, ex.TargetType));
-		Assert.IsType<OverflowException>(ex.InnerException);
+		NullAssert.Check<Post, OverflowException>("Unable to map row 0 to 'Post'.", ex);
 	}
 
 	[Fact]
-	public static void AnUnconvertibleValue_IntoAPropertyOfAConstructorModel_StillSaysProperty()
+	public static void AnUnconvertibleValue_IntoAPropertyOfAConstructorModel_NamesTheModelAndRow()
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => Read<PostExtra>(Route.Boxed, Cols("Id", "Title", "Views"), [1, "t", "abc"]));
-		Assert.Equal(("Views", "Views", typeof(int)), (ex.PropertyName, ex.ColumnName, ex.TargetType));
-		Assert.Equal("Unable to set value of property 'Views' (Int32) from column 'Views'.", ex.Message);
+		NullAssert.Check<PostExtra, FormatException>("Unable to map row 0 to 'PostExtra'.", ex);
 	}
 
 	public sealed class ThrowingSetter(int id)
@@ -601,8 +601,7 @@ public static class ConstructorBindingTests
 	public static void APropertySetterThatThrows_AfterTheConstructor_IsReportedAsAValueMappingException()
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => Read<ThrowingSetter>(Route.Typed, [("Id", typeof(int)), ("Name", typeof(string))], [1, "x"]));
-		Assert.Equal(("Name", "Name", typeof(string)), (ex.PropertyName, ex.ColumnName, ex.TargetType));
-		Assert.IsType<NotSupportedException>(ex.InnerException);
+		NullAssert.Check<ThrowingSetter, NotSupportedException>("Unable to map row 0 to 'ThrowingSetter'.", ex);
 	}
 
 	[SuppressMessage("Roslynator", "RCS1194:Implement exception constructors")]
@@ -629,25 +628,24 @@ public static class ConstructorBindingTests
 
 	[Theory]
 	[MemberData(nameof(Routes))]
-	public static void AConstructorThatThrows_IsWrapped_AsInvalidOperationException_WithTheOriginalInside(Route route)
+	public static void AConstructorThatThrows_IsWrapped_AsValueMappingException_NamingTheModelAndRow(Route route)
 	{
 		var original = new ArgumentException("constructor said no");
 		ThrowingConstructor.Failure = original;
 
-		var ex = Assert.Throws<InvalidOperationException>(() => Read<ThrowingConstructor>(route, [("Id", typeof(int)), ("Name", typeof(string))], [1, "x"]));
-		Assert.IsNotType<ValueMappingException>(ex);
-		Assert.Equal($"Unable to create '{typeof(ThrowingConstructor)}' from the current row.", ex.Message);
+		var ex = Assert.Throws<ValueMappingException>(() => Read<ThrowingConstructor>(route, [("Id", typeof(int)), ("Name", typeof(string))], [1, "x"]));
+		NullAssert.Check<ThrowingConstructor, ArgumentException>("Unable to map row 0 to 'ThrowingConstructor'.", ex);
 		Assert.Same(original, ex.InnerException);
 	}
 
 	[Fact]
-	public static void AnInvalidOperationExceptionFromTheConstructor_PassesThroughUnwrapped_AsDoProviderAndCancellationExceptions()
+	public static void AnInvalidOperationExceptionFromTheConstructor_IsWrapped_ProviderAndCancellationExceptionsPassThroughUnwrapped()
 	{
 		ImmutableArray<ColumnDef> columns = [("Id", typeof(int)), ("Name", typeof(string))];
 
 		var refused = new InvalidOperationException("constructor refused");
 		ThrowingConstructor.Failure = refused;
-		Assert.Same(refused, Assert.Throws<InvalidOperationException>(() => Read<ThrowingConstructor>(Route.Typed, columns, [1, "x"])));
+		Assert.Same(refused, Assert.Throws<ValueMappingException>(() => Read<ThrowingConstructor>(Route.Typed, columns, [1, "x"])).InnerException);
 
 		var provider = new ProviderFailure();
 		ThrowingConstructor.Failure = provider;

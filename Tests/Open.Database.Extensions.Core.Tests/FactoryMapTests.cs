@@ -72,19 +72,30 @@ public static class FactoryMapTests
 	public static void TheConstructorAndTheFactoryRoutes_GiveTheSameRow_ForNullAndMissingColumns(Route route, int caseIndex)
 	{
 		Case c = Cases[caseIndex];
-		WithDefaults viaConstructor = Assert.Single(Read(route, c.Columns, c.Row, ConstructorRoute));
-		WithDefaults viaFactory = Assert.Single(Read(route, c.Columns, c.Row, FactoryRoute));
+		Assert.Equal(Outcome(route, c, ConstructorRoute), Outcome(route, c, FactoryRoute));
+	}
 
-		Assert.Equal(Project(viaConstructor), Project(viaFactory));
+	// The row as a projection, or the message of the error the row throws: the two routes must agree on both.
+	static object Outcome(Route route, Case c, RowMap<WithDefaults> map)
+	{
+		try
+		{
+			return Project(Assert.Single(Read(route, c.Columns, c.Row, map)));
+		}
+		catch (ValueMappingException ex)
+		{
+			return ex.Message;
+		}
 	}
 
 	[Theory]
 	[MemberData(nameof(Routes))]
 	public static void TheFactoryRoute_FollowsTheDocumentedRule(Route route)
 	{
-		// A NULL into a non-nullable value parameter: its declared default, else default; into a nullable one: null, the declared default (4) not used.
-		WithDefaults nulls = Assert.Single(Read(route, DefaultsColumns, [null, null, null, null, null, null, null, null], FactoryRoute));
-		Assert.Equal((0, 3, 9.99m, Tone.Green, default, null, null, null), (nulls.Id, nulls.Views, nulls.Price, nulls.Tone, nulls.At, nulls.Count, nulls.Note, nulls.Bare));
+		// A NULL into a non-nullable value parameter is an error, its declared default notwithstanding; into a nullable one: null, the declared default (4) not used.
+		NullAssert.Model<WithDefaults>(0, () => Read(route, DefaultsColumns, [null, null, null, null, null, null, null, null], FactoryRoute));
+		WithDefaults nulls = Assert.Single(Read(route, DefaultsColumns, [2, 5, 1.5m, (int)Tone.Blue, Stamp, null, null, null], FactoryRoute));
+		Assert.Equal((2, 5, 1.5m, Tone.Blue, Stamp, null, null, null), (nulls.Id, nulls.Views, nulls.Price, nulls.Tone, nulls.At, nulls.Count, nulls.Note, nulls.Bare));
 
 		// A parameter no column feeds: its declared default, else default; nothing throws.
 		WithDefaults idOnly = Assert.Single(Read(route, [("Id", typeof(int))], [1], FactoryRoute));
@@ -366,7 +377,7 @@ public static class FactoryMapTests
 		Assert.Equal(new Post(5, ""), Assert.Single(Read(route, [("id", typeof(int)), ("title", typeof(string))], [5, null], map)));
 
 		var ex = Assert.Throws<ValueMappingException>(() => Read(Route.Boxed, [("id", typeof(object)), ("title", typeof(string))], ["abc", "t"], map));
-		Assert.Equal("id", ex.ColumnName);
+		NullAssert.Check<Post, FormatException>("Unable to map row 0 to 'Post'.", ex);
 	}
 
 	[Fact]
@@ -378,7 +389,7 @@ public static class FactoryMapTests
 	}
 
 	// A reference parameter with a declared default shows whether the compiler's nullable annotation reached the lambda's parameter (U4):
-	// non-nullable gets the declared default for a NULL, nullable and unannotated get null.
+	// non-nullable rejects a NULL (the declared default feeds only a parameter no column feeds), nullable gets null.
 	public sealed record Labeled(int Id, string Code, string? Other);
 
 	[Theory]
@@ -387,7 +398,12 @@ public static class FactoryMapTests
 	{
 		var map = RowMap<Labeled>.From(static (int id, string code = "d1", string? other = "d2") => new Labeled(id, code, other));
 
-		Labeled item = Assert.Single(Read(route, [("id", typeof(int)), ("code", typeof(string)), ("other", typeof(string))], [1, null, null], map));
-		Assert.Equal(("d1", null), (item.Code, item.Other));
+		Labeled item = Assert.Single(Read(route, [("id", typeof(int)), ("code", typeof(string)), ("other", typeof(string))], [1, "c", null], map));
+		Assert.Equal(("c", null), (item.Code, item.Other));
+		NullAssert.Model<Labeled>(0, () => Read(route, [("id", typeof(int)), ("code", typeof(string)), ("other", typeof(string))], [1, null, null], map));
+
+		// No column for them: the declared defaults.
+		Labeled idOnly = Assert.Single(Read(route, [("id", typeof(int))], [1], map));
+		Assert.Equal(("d1", "d2"), (idOnly.Code, idOnly.Other));
 	}
 }

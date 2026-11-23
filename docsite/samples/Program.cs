@@ -48,7 +48,7 @@ Check(await ExpressiveCommands.ConvertedScalarAsync(factory, CancellationToken.N
 Check(await ExpressiveCommands.ScalarReadAsInt(factory, CancellationToken.None) == 5, "ExecuteScalarAsync<int> reads a SQLite bigint as int");
 Check(factory.Command("select count(*) from posts").ExecuteScalar<int>() == 5, "ExecuteScalar<int> over a SQLite integer converts, as Map<int>() does");
 Check(Throws<ValueMappingException>(() => factory.Command("select 5000000000").ExecuteScalar<int>()), "ExecuteScalar<int> over a value that does not fit throws ValueMappingException");
-Check(factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long>() == 0, "ExecuteScalar<long> over NULL is default");
+Check(Throws<ValueMappingException>(() => factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long>()), "ExecuteScalar<long> over NULL throws ValueMappingException");
 Check(factory.Command("select id from posts where id > 1000").ExecuteScalar<long>() == 0, "ExecuteScalar<long> over no rows is default");
 Check(factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long?>() is null, "ExecuteScalar<long?> over NULL is null");
 Check(factory.Command("select max(id) from posts where id <= 3").ExecuteScalar<long?>() == 3, "ExecuteScalar<long?> reads a value");
@@ -76,7 +76,7 @@ Check(declarationForms.All(form => connection.Command("select person_id, first_n
 Check(declarationForms[0].Select(pair => pair.Key).SequenceEqual([nameof(Person.Id), nameof(Person.FirstName)]) && declarationForms[0].SequenceEqual(declarationForms[^1]), "a map enumerates the pairs it was declared with, and a copy built from them declares the same pairs");
 Check(PersonMaps.PersonNamesOnlyMap.Count() == 3 && PersonMaps.PersonNamesOnlyMap.Single(pair => pair.Value is null).Key == nameof(Person.LastName), "an ignored property is enumerated with a null column");
 Order[] converted = await Mapping.MapConverted(connection, CancellationToken.None);
-Check(converted is [{ Id: 1, OrderNum: "000042", PlacedAt: "14:05", Customer: "Ada" }, { Id: 2, OrderNum: "000007", PlacedAt: "", Customer: "" }] && converted[0].Summary == "000042 at 14:05", "converters turn order_num into text, the timestamp into HH:mm and trim the customer, a NULL cell is not converted and keeps the property's initial value, and the rest maps by name");
+Check(converted is [{ Id: 1, OrderNum: "000042", PlacedAt: "14:05", Customer: "Ada" }, { Id: 2, OrderNum: "000007", PlacedAt: null, Customer: null }] && converted[0].Summary == "000042 at 14:05", "converters turn order_num into text, the timestamp into HH:mm and trim the customer, a NULL cell is not converted and a nullable property gets null, and the rest maps by name");
 Order[] convertedNull = await Mapping.MapConvertedNull(connection, CancellationToken.None);
 Check(convertedNull is [{ OrderNum: "42", PlacedAt: "14:05", Customer: "  Ada  " }, { OrderNum: "7", PlacedAt: "--:--" }], "a converter whose TColumn is nullable is called with null and what it returns is the value of the property; the other columns map without a converter");
 Person[] snake = await Mapping.MapSnakeCaseAsync(connection, CancellationToken.None);
@@ -100,8 +100,10 @@ RowMap<Person> nullPair = new([new(nameof(Person.FirstName), null)]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).FirstOrDefault()?.FirstName is "", "a null pair stops the underscore match");
 RowMap<Person> otherPair = new([new(nameof(Person.FirstName), "given_name")]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName is "", "a property named by a pair is not matched by an underscore column");
-Check((await Mapping.MapNullsAsync(connection, CancellationToken.None)) is { Quantity: 1, Discount: null, Note: null, Title: "" }, "NULL keeps the initializer of a non-nullable property (a value type, or a reference with nullable annotations on) and gives null to nullable properties");
-Check(connection.Command("select null").Map<int>().Single() == 0 && connection.Command("select null").Map<int?>().Single() is null && connection.Command("select null").Map<string>().Single() is null, "a single value: NULL into int is 0, into int? and string is null");
+Check((await Mapping.MapNullsAsync(connection, CancellationToken.None)) is { Quantity: 1, Stock: 0, Discount: null, Note: null, Title: "" }, "NullAction.Default keeps the initializer, [NullValue(0)] sets 0 over the initializer, and a nullable property gets null");
+ValueMappingException? nullError = await Mapping.MapNullErrorAsync(connection, CancellationToken.None);
+Check(nullError is { Message: "A NULL was read into a non-nullable member of PostRecord at row 0. Declare the member nullable (int?, string?).", InnerException: System.Data.SqlTypes.SqlNullValueException } && nullError.TargetType == typeof(PostRecord), "a NULL into a non-nullable member throws ValueMappingException naming the model and the row");
+Check(Throws<ValueMappingException>(() => connection.Command("select null").Map<int>().Single()) && connection.Command("select null").Map<int?>().Single() is null && connection.Command("select null").Map<string>().Single() is null, "a single value: NULL into int throws, into int? and string is null");
 Check(Throws<Exception>(() => Dapper.SqlMapper.QuerySingle<int>(connection, "select null")), "Dapper QuerySingle<int> over NULL throws");
 Check(connection.Command("select 1 as Id, 'Ada' as FirstName, 'Lovelace' as LastName").Map<Person>(new RowMap<Person>([new(nameof(Person.LastName), null)])).Single() is { Id: 1, FirstName: "Ada", LastName: "" }
 	&& connection.Command("select 1 as Id, 'Ada' as FirstName, 'Lovelace' as LastName").Map<Person>().Single() is { LastName: "Lovelace" }, "new(nameof(Person.LastName), null) needs no null!: the member stays unmapped although a column of that name exists, and the other members still map");
@@ -116,14 +118,14 @@ Check(inputs is [{ Title: "Post 1", Body: "Body 1" }, { Title: "Post 2", Body: n
 Check(missingTitle is { PropertyName: "Title", ColumnName: "Title", InnerException: null }, "a result shape with no column for a required property throws ValueMappingException at its first row");
 Check(missingTitle?.Message == "No column feeds the required property 'Title' (String) of 'PostInput'; expected a column named 'Title'.", "the missing required column message names the property, its type, the model and the column looked for");
 Check(connection.Command("select body from posts where id = 999").Map<PostInput>().ToArray().Length == 0, "an empty result does not report a missing required column");
-Check(connection.Command("select null as Title, 'x' as Body").Map<PostInput>().FirstOrDefault() is { Title: null, Body: "x" }, "a NULL in the column that feeds a required property is not an error: the property keeps what it had");
+Check(Throws<ValueMappingException>(() => connection.Command("select null as Title, 'x' as Body").Map<PostInput>().FirstOrDefault()), "a NULL in the column that feeds a required non-nullable property follows the NULL rules: it throws");
 (Review? withNulls, Review? withoutColumns) = await Mapping.MapCtorNullColumnAsync(connection, CancellationToken.None);
-Check(withNulls == new Review(7, "untitled", 3, null), "a NULL into a non-nullable parameter takes its declared default, and a NULL into a nullable one is null");
+Check(withNulls == new Review(7, "untitled", 3, null), "with NullAction.Default a NULL into a parameter takes its declared default, and a NULL into a nullable one is null");
 Check(withoutColumns == new Review(7), "a parameter with no column takes its declared default, a nullable one included");
 Check(Mapping.MapUnmappable(connection) == "'PostCard' cannot be mapped: it has 2 public constructors, PostCard(String title) and PostCard(String title, String body), and none without parameters. Make one of them non-public, or use Map(selector).", "a type with two public constructors and none without parameters throws at the call");
 ValueMappingException? bad = await Mapping.MapValueErrorAsync(connection, CancellationToken.None);
-Check(bad is { PropertyName: "Id", ColumnName: "id" } && bad.TargetType == typeof(int) && bad.InnerException is not null, "an overflow throws ValueMappingException with the property, column, target type and inner exception");
-Check(bad?.Message == "Unable to set value of property 'Id' (Int32) from column 'id'.", "the ValueMappingException message names the property, its type and the column");
+Check(bad is { PropertyName: "", ColumnName: "" } && bad.TargetType == typeof(Post) && bad.InnerException is not null, "an overflow throws ValueMappingException with the model as the target type and the overflow inside");
+Check(bad?.Message == "Unable to map row 0 to 'Post'.", "the ValueMappingException message names the model and the row");
 Exception? badException = bad;
 #pragma warning disable IDE0078 // The pattern form is an error: after "is DataException" the type cannot be an InvalidOperationException (CS8121).
 Check(badException is DataException && badException is not InvalidOperationException, "ValueMappingException is a DataException, not an InvalidOperationException");

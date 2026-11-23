@@ -101,25 +101,11 @@ public static class MappingCharacterizationTests
 		Assert.Equal("n", item.Note);
 	}
 
+	// A non-nullable value type and a reference declared non-nullable reject NULL, whatever their initializer.
 	[Theory]
 	[MemberData(nameof(ProbeCombos))]
-	public static void NullInEveryColumn_KeepsWhatTheTypeDeclaresNonNullable(bool boxed, bool buffered, int map)
-	{
-		NullProbe item = ReadProbe(boxed, buffered, map, "*");
-
-		// A non-nullable value type keeps what new T() gave it (its initializer): the rule that stays.
-		Assert.Equal(7, item.Count);
-		Assert.Equal(Shade.Green, item.Level);
-
-		// Nullable<T> and a reference declared nullable receive null, whatever their initializer: the rule that stays.
-		Assert.Null(item.Maybe);
-		Assert.Null(item.Note);
-
-		// Phase E: a reference declared NON-nullable (nullable annotations on) keeps its initializer too, as a value type does ("init", where it was null before).
-		// Without an initializer nothing assigned it, so it stays null.
-		Assert.Equal("init", item.Title);
-		Assert.Null(item.Bare);
-	}
+	public static void NullInEveryColumn_IsAnError_ForAMemberTheTypeDeclaresNonNullable(bool boxed, bool buffered, int map)
+		=> NullAssert.Model<NullProbe>(0, () => ReadProbe(boxed, buffered, map, "*"));
 
 	[Theory]
 	[MemberData(nameof(ProbeCombos))]
@@ -127,17 +113,17 @@ public static class MappingCharacterizationTests
 	{
 		foreach (string column in NullProbeNames)
 		{
+			// Nullable<T> and a reference declared nullable receive null; any other member rejects NULL.
+			if (column is not ("Maybe" or "Note"))
+			{
+				NullAssert.Model<NullProbe>(0, () => ReadProbe(boxed, buffered, map, column));
+				continue;
+			}
+
 			NullProbe item = ReadProbe(boxed, buffered, map, column);
 			NullProbe expected = new() { Count = 1, Level = Shade.Red, Maybe = 2, Title = "t", Bare = "b", Note = "n" };
-			switch (column)
-			{
-				case "Count": expected.Count = 7; break;
-				case "Level": expected.Level = Shade.Green; break;
-				case "Maybe": expected.Maybe = null; break;
-				case "Title": expected.Title = "init"; break; // phase E: a NULL does not overwrite a non-nullable reference (it was null before)
-				case "Bare": expected.Bare = null!; break;
-				default: expected.Note = null; break;
-			}
+			if (column == "Maybe") expected.Maybe = null;
+			else expected.Note = null;
 
 			Assert.Equal((expected.Count, expected.Level, expected.Maybe, expected.Title, expected.Bare, expected.Note), (item.Count, item.Level, item.Maybe, item.Title, item.Bare, item.Note));
 		}
@@ -366,33 +352,26 @@ public static class MappingCharacterizationTests
 	[Theory]
 	[InlineData(false)]
 	[InlineData(true)]
-	public static void AnUnconvertibleValue_ThrowsValueMappingException_NamingThePropertyColumnAndType(bool buffered)
+	public static void AnUnconvertibleValue_ThrowsValueMappingException_NamingTheModelAndRow(bool buffered)
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => Read(buffered, Columns("entry_id", "entry_count", "entry_name"), ["abc", 1, "x"], RenamedEntry));
-		Assert.Equal("Id", ex.PropertyName);
-		Assert.Equal("entry_id", ex.ColumnName);
-		Assert.Equal(typeof(int), ex.TargetType);
-		Assert.Equal("Unable to set value of property 'Id' (Int32) from column 'entry_id'.", ex.Message);
-		Assert.IsType<FormatException>(ex.InnerException);
+		NullAssert.Check<Entry, FormatException>("Unable to map row 0 to 'Entry'.", ex);
 	}
 
 	[Theory]
 	[InlineData(false)]
 	[InlineData(true)]
-	public static void AnUnconvertibleValue_IntoANullableProperty_ReportsTheNullableType(bool buffered)
+	public static void AnUnconvertibleValue_IntoANullableProperty_IsReportedTheSameWay(bool buffered)
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => Read(buffered, Columns("entry_id", "entry_count", "entry_name"), [1, "abc", "x"], RenamedEntry));
-		Assert.Equal("Count", ex.PropertyName);
-		Assert.Equal("entry_count", ex.ColumnName);
-		Assert.Equal(typeof(int?), ex.TargetType); // the declared type, Nullable<int>, not its underlying type
-		Assert.Equal("Unable to set value of property 'Count' (Int32?) from column 'entry_count'.", ex.Message);
+		NullAssert.Check<Entry, FormatException>("Unable to map row 0 to 'Entry'.", ex);
 	}
 
 	[Fact]
-	public static void AnUnconvertibleValue_NamesTheColumnAsTheResultSpellsIt_WhenMatchedByName()
+	public static void AnUnconvertibleValue_WhenMatchedByName_IsReportedTheSameWay()
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => Read<Entry>(false, Columns("ID"), ["abc"]));
-		Assert.Equal(("Id", "ID", typeof(int)), (ex.PropertyName, ex.ColumnName, ex.TargetType));
+		NullAssert.Check<Entry, FormatException>("Unable to map row 0 to 'Entry'.", ex);
 	}
 
 	// Typed columns raise the failure from a typed read, not from the general conversion; the report is the same.
@@ -401,8 +380,7 @@ public static class MappingCharacterizationTests
 	{
 		ImmutableArray<ColumnDef> columns = [("entry_id", typeof(long)), ("entry_count", typeof(int)), ("entry_name", typeof(string))];
 		var ex = Assert.Throws<ValueMappingException>(() => Read(false, columns, [4_294_967_301L, 1, "x"], RenamedEntry));
-		Assert.Equal(("Id", "entry_id", typeof(int)), (ex.PropertyName, ex.ColumnName, ex.TargetType));
-		Assert.IsType<OverflowException>(ex.InnerException);
+		NullAssert.Check<Entry, OverflowException>("Unable to map row 0 to 'Entry'.", ex);
 	}
 
 	public sealed class ThrowingSetter
@@ -415,8 +393,7 @@ public static class MappingCharacterizationTests
 	public static void APropertySetterThatThrows_IsReportedAsAValueMappingException_WithTheInnerException()
 	{
 		var ex = Assert.Throws<ValueMappingException>(() => Read<ThrowingSetter>(false, Columns("Id", "Name"), [1, "x"]));
-		Assert.Equal(("Name", "Name", typeof(string)), (ex.PropertyName, ex.ColumnName, ex.TargetType));
-		Assert.IsType<NotSupportedException>(ex.InnerException);
+		NullAssert.Check<ThrowingSetter, NotSupportedException>("Unable to map row 0 to 'ThrowingSetter'.", ex);
 	}
 
 	// A model whose parameterless constructor throws.
@@ -436,25 +413,24 @@ public static class MappingCharacterizationTests
 	[Theory]
 	[InlineData(false)]
 	[InlineData(true)]
-	public static void AConstructorThatThrows_IsWrapped_AsInvalidOperationException_WithTheOriginalInside(bool buffered)
+	public static void AConstructorThatThrows_IsWrapped_AsValueMappingException_WithTheOriginalInside(bool buffered)
 	{
 		var original = new ArgumentException("constructor said no");
 		ThrowingConstructor.Failure = original;
 
-		var ex = Assert.Throws<InvalidOperationException>(() => Read<ThrowingConstructor>(buffered, Columns("Id"), [1]));
-		Assert.IsNotType<ValueMappingException>(ex);
-		Assert.Equal($"Unable to create '{typeof(ThrowingConstructor)}' from the current row.", ex.Message);
+		var ex = Assert.Throws<ValueMappingException>(() => Read<ThrowingConstructor>(buffered, Columns("Id"), [1]));
+		NullAssert.Check<ThrowingConstructor, ArgumentException>("Unable to map row 0 to 'ThrowingConstructor'.", ex);
 		Assert.Same(original, ex.InnerException);
 	}
 
 	[Fact]
-	public static void AnInvalidOperationExceptionFromTheConstructor_PassesThroughUnwrapped()
+	public static void AnInvalidOperationExceptionFromTheConstructor_IsWrappedTheSameWay()
 	{
 		var original = new InvalidOperationException("constructor refused");
 		ThrowingConstructor.Failure = original;
 
-		var ex = Assert.Throws<InvalidOperationException>(() => Read<ThrowingConstructor>(false, Columns("Id"), [1]));
-		Assert.Same(original, ex);
+		var ex = Assert.Throws<ValueMappingException>(() => Read<ThrowingConstructor>(false, Columns("Id"), [1]));
+		Assert.Same(original, ex.InnerException);
 	}
 
 	[Fact]

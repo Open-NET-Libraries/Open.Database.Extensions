@@ -124,27 +124,41 @@ public static class SingleValueTerminalTests
 	// ---- 2. NULL ----
 
 	[Fact]
-	public static void ANull_IsDefaultForANonNullableValueType_AndNullForTheRest()
+	public static void ANull_IsAnErrorForANonNullableValueType_AndNullForTheRest()
 	{
-		Check(typeof(int), null, 0);
-		Check(typeof(sbyte), null, (sbyte)0); // a column type with no typed getter: the general path
-		Check(typeof(decimal), null, 0); // a column that has to be converted
-		Check(typeof(Guid), null, Guid.Empty);
-		Check(typeof(DateTime), null, default(DateTime));
-		Check(typeof(int), null, Level.None);
+		CheckNull<int>(typeof(int));
+		CheckNull<sbyte>(typeof(sbyte)); // a column type with no typed getter: the general path
+		CheckNull<int>(typeof(decimal)); // a column that has to be converted
+		CheckNull<Guid>(typeof(Guid));
+		CheckNull<DateTime>(typeof(DateTime));
+		CheckNull<Level>(typeof(int));
+		CheckNull<DateOnly>(typeof(DateOnly));
 		Check<int?>(typeof(int), null, null);
 		Check<Guid?>(typeof(string), null, null);
 		Check<string?>(typeof(string), null, null);
 		Check<string?>(typeof(int), null, null);
 		Check<byte[]?>(typeof(byte[]), null, null);
-		Check<DateOnly>(typeof(DateOnly), null, default);
+	}
+
+	// Every terminal that reads the row rejects the NULL, naming the type and row 0.
+	static void CheckNull<T>(Type column)
+	{
+		FakeExecuteReader cmd = Cmd(column, [null]);
+		NullAssert.Value<T>(0, () => cmd.Map<T>().ToList());
+		NullAssert.Value<T>(0, () => cmd.Map<T>().ToArray());
+		NullAssert.Value<T>(0, () => cmd.Map<T>().FirstOrDefault());
+		NullAssert.Value<T>(0, () => cmd.Map<T>().SingleOrDefault());
+		NullAssert.Value<T>(0, () => cmd.Map<T>().ToHashSet());
+		NullAssert.Value<T>(0, () => cmd.Map<T>().ToImmutableArray());
+		NullAssert.Value<T>(0, () => cmd.Map<T>().ToListAsync(Ct).AsTask().GetAwaiter().GetResult());
 	}
 
 	[Fact]
 	public static void ANull_InTheFirstRowAndInALaterRow_IsHandledPerRow()
 	{
 		FakeExecuteReader cmd = Cmd(typeof(int), null, 5, null, 7);
-		Assert.Equal([0, 5, 0, 7], cmd.Map<int>().ToList());
+		NullAssert.Value<int>(0, () => cmd.Map<int>().ToList());
+		NullAssert.Value<int>(1, () => Cmd(typeof(int), 5, null, 7).Map<int>().ToList());
 		Assert.Equal([null, 5, null, 7], cmd.Map<int?>().ToList());
 		Assert.Equal([null, "5", null, "7"], cmd.Map<string?>().ToList());
 	}
@@ -158,11 +172,7 @@ public static class SingleValueTerminalTests
 
 		ValueMappingException failure = Assert.Throws<ValueMappingException>(
 			() => Cmd(typeof(long), 5_000_000_000L).Map<int>().ToList());
-		Assert.IsType<OverflowException>(failure.InnerException);
-		Assert.Equal("v", failure.ColumnName);
-		Assert.Equal(typeof(int), failure.TargetType);
-		Assert.Equal("", failure.PropertyName);
-		Assert.Contains("'v'", failure.Message);
+		NullAssert.Check<int, OverflowException>("Unable to map row 0 to 'Int32'.", failure);
 	}
 
 	[Fact]
@@ -193,8 +203,7 @@ public static class SingleValueTerminalTests
 	{
 		ValueMappingException text = Assert.Throws<ValueMappingException>(
 			() => Cmd(typeof(string), "abc").Map<int>().ToList());
-		Assert.IsType<FormatException>(text.InnerException);
-		Assert.Equal("v", text.ColumnName);
+		NullAssert.Check<int, FormatException>("Unable to map row 0 to 'Int32'.", text);
 
 		Assert.Throws<ValueMappingException>(
 			() => Cmd(typeof(byte[]), new byte[] { 1 }).Map<string>().ToList()); // ConvertValue refuses a byte array into a string
@@ -481,11 +490,12 @@ public static class SingleValueTerminalTests
 			new PlainReaderCommand(() => Plain(typeof(long), 1L, 2L))
 				.Map<int>()
 				.ToArray());
-		Assert.Equal(
-			[1, 0],
-			new PlainReaderCommand(() => Plain(typeof(int), 1, DBNull.Value))
+		// The substitute's GetInt32 casts the cell, so a NULL is an InvalidCastException: the message names both causes.
+		NullAssert.Check<int, InvalidCastException>(
+			"Unable to map row 1 to 'Int32': the value is NULL, or its type does not convert to Int32. Declare it nullable (Int32?), or read the column as its own type.",
+			Assert.Throws<ValueMappingException>(() => new PlainReaderCommand(() => Plain(typeof(int), 1, DBNull.Value))
 				.Map<int>()
-				.ToList());
+				.ToList()));
 		Assert.Equal(
 			[1, null],
 			new PlainReaderCommand(() => Plain(typeof(int), 1, DBNull.Value))
