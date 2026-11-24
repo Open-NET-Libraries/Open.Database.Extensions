@@ -577,8 +577,11 @@ static class Emitter
 		int position = 0;
 		for (int k = 0; k < slots.Length; k++)
 		{
-			if (slots[k].NotMapped) literal[k] = -1;
-			else literal[k] = m.AllOrdered ? slots[k].Order : position++;
+			literal[k] = slots[k].NotMapped
+				? -1
+				: m.AllOrdered
+					? slots[k].Order
+					: position++;
 		}
 
 		return literal;

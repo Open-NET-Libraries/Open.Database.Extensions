@@ -295,7 +295,7 @@ public static partial class SyntheticChecks
 						case System.Collections.IList policy when method.Name is "V1_Throw_Sync" or "V1_Default_Sync" or "V2_Throw_Sync" or "V2_Default_Sync":
 							ComparePolicyTwin(report, name, where, table, v1, policy);
 							break;
-						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal) || method.Name is "Ctl_Sync" or "Ctl_T_Sync":
+						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal) || method.Name is "Ctl_Sync" or "Ctl_T_Sync" or "CtlB_Sync" or "CtlS_Sync":
 							CompareGenerated(report, name, where, v1, generated);
 							break;
 						case System.Collections.IList shaped:

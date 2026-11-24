@@ -295,6 +295,21 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public object Ctl_Sync() { _label = nameof(Ctl_Sync); WidthTwenty(); return SyntheticGenerated.Ctl(Connection); }
 
+	// Why can a COPY of V2 read slower? Three controls (width 20), each isolating one candidate, all measured with time AND allocation (MemoryDiagnoser):
+	//   V2b_Sync   V2's exact code path a SECOND time under another name (same selector, same delegate): V2_Sync against V2b_Sync is the noise of the run itself
+	//              (ordering, tiering, the JIT's profile data); a difference between Ctl and V2 inside that gap is not a finding.
+	//   CtlB_Sync  V2's selector copied into THIS assembly, producing GenRow20, Map(static readonly delegate): isolates the ROW TYPE (GenRow20 against SynRow) from the assembly.
+	//   CtlS_Sync  Ctl's selector in the Generated assembly through a static readonly Func field, not a method group at each call: isolates DELEGATE CREATION per call.
+	// (A fourth, V2's selector in the Generated assembly on SynRow, is impossible: SynRow is not visible there, the Generated project does not reference this one.)
+	[Benchmark]
+	public List<SynRow> V2b_Sync() { _label = nameof(V2b_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, _hand); }
+
+	[Benchmark]
+	public object CtlB_Sync() { _label = nameof(CtlB_Sync); WidthTwenty(); return SyntheticGenerated.CtlB(Connection); }
+
+	[Benchmark]
+	public object CtlS_Sync() { _label = nameof(CtlS_Sync); WidthTwenty(); return SyntheticGenerated.CtlS(Connection); }
+
 	// The ladder at width 20: Gen_T is the generated reader on the twin whose Title, Body and Tag are non-nullable (read without a NULL test, as V2 reads
 	// them), Ctl_T is the hand-written selector of that twin in the same assembly (GeneratedControl.cs). Gen_T and Ctl_T differ from V2 by Blob (byte[]?: a NULL
 	// test on the value, one compare per row; V2 casts GetValue alone), and they build a GenRowT20, not a SynRow: compare Gen_T with Ctl_T for the generated

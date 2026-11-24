@@ -21,6 +21,16 @@ public static class GeneratedControl
 	public static object Control20(IExecuteReader command)
 		=> command.Map(Read20).ToList();
 
+	/// <summary>The delegate of <see cref="Control20S"/>: the SAME method as <see cref="Control20"/> reads (Read20), converted ONCE into a static readonly field.</summary>
+	static readonly Func<IDataRecord, GenRow20> Read20Delegate = Read20;
+
+	/// <summary>
+	/// CtlS: Control20 with ONE thing changed, the delegate. Control20 passes the method group (a delegate converted at each call, which C# 11+ caches in a hidden static
+	/// field, but through a different path than V2's own static readonly <c>Hand20</c>); this passes a static readonly <c>Func</c> field, as V2 does. Same selector, same
+	/// row type, same assembly: a difference from Ctl_Sync isolates the DELEGATE CREATION per call.
+	/// </summary>
+	public static object Control20S(IExecuteReader command)
+		=> command.Map(Read20Delegate).ToList();
 	/// <summary>The control of Gen_T: the same selector on <see cref="GenRowT20"/> (its non-nullable strings read alone).</summary>
 	public static object ControlT20(IExecuteReader command)
 		=> command.Map(ReadT20).ToList();

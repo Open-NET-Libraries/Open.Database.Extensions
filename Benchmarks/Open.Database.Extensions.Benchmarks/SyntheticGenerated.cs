@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using Open.Database.Extensions.Benchmarks.Generated;
+using Open.Database.Extensions.Generator.Models;
 
 namespace Open.Database.Extensions.Benchmarks;
 
@@ -35,6 +36,44 @@ public static class SyntheticGenerated
 	/// <summary>The control of Gen_T: the hand-written selector of Gen_T's twin (the same Blob test as the generator makes), compiled beside it.</summary>
 	public static object CtlT(SyntheticConnection connection)
 		=> GeneratedControl.ControlT20(connection.Command(SyntheticVariants.Sql));
+
+	/// <summary>CtlS: Ctl's selector and row type and assembly, with the delegate a static readonly field instead of a method group at each call. Isolates delegate creation.</summary>
+	public static object CtlS(SyntheticConnection connection)
+		=> GeneratedControl.Control20S(connection.Command(SyntheticVariants.Sql));
+
+	// V2's selector, copied byte for byte (SyntheticVariants.Read20: no NULL test on Title, Body, Tag or Blob), but producing GenRow20 and compiled in THIS assembly
+	// (the Benchmarks assembly, V2's own). GenRow20 comes from the Generator.Models assembly, which this project reaches through its reference to the Generated project
+	// (a project reference is transitive). Held in a static readonly field, as V2's Hand20 is.
+	static readonly Func<System.Data.IDataRecord, GenRow20> ReadB = static r => new()
+	{
+		Id = r.GetInt32(0),
+		Created = r.GetDateTime(1),
+		Title = r.GetString(2),
+		Price = r.GetDecimal(3),
+		Qty = r.IsDBNull(4) ? null : r.GetInt32(4),
+		IsActive = r.GetBoolean(5),
+		Key = r.GetGuid(6),
+		Score = r.GetDouble(7),
+		Note = r.IsDBNull(8) ? null : r.GetString(8),
+		Blob = (byte[])r.GetValue(9),
+		Big = r.GetInt64(10),
+		Body = r.GetString(11),
+		Amount = r.IsDBNull(12) ? null : r.GetDecimal(12),
+		Stamp = r.IsDBNull(13) ? null : r.GetDateTime(13),
+		Tag = r.GetString(14),
+		Ratio = r.GetDouble(15),
+		Flag = r.IsDBNull(16) ? null : r.GetBoolean(16),
+		Link = r.IsDBNull(17) ? null : r.GetGuid(17),
+		Count = r.GetInt64(18),
+		Summary = r.IsDBNull(19) ? null : r.GetString(19),
+	};
+
+	/// <summary>
+	/// CtlB: V2's selector copied into the BENCHMARKS assembly, producing GenRow20, through Map(selector) with a static readonly delegate (exactly V2's path). Against V2_Sync it
+	/// isolates the ROW TYPE (GenRow20 against SynRow) from the assembly; against Ctl_Sync (same row type, other assembly, NULL tests on four members, method-group delegate) the rest.
+	/// </summary>
+	public static List<GenRow20> CtlB(SyntheticConnection connection)
+		=> connection.Command(SyntheticVariants.Sql).Map(ReadB).ToList();
 }
 
 public static partial class SyntheticChecks
@@ -57,6 +96,8 @@ public static partial class SyntheticChecks
 		CompareGenerated(report, "Ctl vs V2", where, v2, (IList)SyntheticGenerated.Ctl(conn));
 		CompareGenerated(report, "Gen_T vs V2", where, v2, (IList)SyntheticGenerated.GenT(conn));
 		CompareGenerated(report, "Ctl_T vs V2", where, v2, (IList)SyntheticGenerated.CtlT(conn));
+		CompareGenerated(report, "CtlS vs V2", where, v2, (IList)SyntheticGenerated.CtlS(conn));
+		CompareGenerated(report, "CtlB vs V2", where, v2, SyntheticGenerated.CtlB(conn));
 		KeyValuePair<string, Func<List<SynRow>>>[] parity =
 		[
 			new("V2n vs V2", () => SyntheticVariants.V2(conn, GenParity.V2n)),
@@ -75,7 +116,7 @@ public static partial class SyntheticChecks
 
 	// The benchmark methods that read the 20 catalog columns at fixed ordinals (GenParity.cs, GeneratedControl.cs): they run at width 20 only.
 	static bool WidthTwentyOnly(string method)
-		=> method is "Ctl_Sync" or "Ctl_T_Sync" or "Gen_T_Sync" or "V2n_Sync" or "V2_Throw_Sync" or "V2_Default_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
+		=> method is "Ctl_Sync" or "Ctl_T_Sync" or "CtlB_Sync" or "CtlS_Sync" or "V2b_Sync" or "Gen_T_Sync" or "V2n_Sync" or "V2_Throw_Sync" or "V2_Default_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
 
 	// The NULL policy twins (SynRowPolicy.cs) against V1, member by member. A narrower table has no column for some members: SynRow leaves a reference-typed
 	// one null, a twin keeps its initializer ("" or an empty array). That tolerance holds ONLY for a member whose column is missing from the table (not in
