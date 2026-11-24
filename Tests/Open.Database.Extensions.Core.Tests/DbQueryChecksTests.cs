@@ -171,11 +171,11 @@ public static class DbQueryChecksTests
 	}
 
 	// The pull as a task, returned whole: the call itself is what is expected to throw.
-	static object Pull(IExecuteReader reader, CancellationToken token)
-		=> reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default, token).AsTask();
+	static void Pull(IExecuteReader reader, CancellationToken token)
+		=> _ = reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default, token).AsTask();
 
-	static object PullWithoutToken(IExecuteReader reader)
-		=> reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default).AsTask();
+	static void PullWithoutToken(IExecuteReader reader)
+		=> _ = reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default).AsTask();
 
 	[Fact]
 	public static void ADefaultBoundQuery_Throws_FromEveryAddAndMap()
