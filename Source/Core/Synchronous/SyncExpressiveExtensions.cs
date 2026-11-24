@@ -81,11 +81,11 @@ public static class SyncExpressiveExtensions
 	/// <param name="command">The command to execute.</param>
 	/// <returns>
 	/// The value, converted to <typeparamref name="T"/>: a value that is already a <typeparamref name="T"/> is returned as is, an integer is converted to another integer type with a range check, and so on for the other conversions <c>Map&lt;T&gt;()</c> makes.
-	/// <see langword="default"/> when there was no row; <see langword="null"/> when the result is NULL and <typeparamref name="T"/> takes it.
+	/// <see langword="null"/> when there was no row and <typeparamref name="T"/> takes null; an error when there was no row and <typeparamref name="T"/> is a non-nullable value type; <see langword="null"/> when the result is NULL and <typeparamref name="T"/> takes it.
 	/// </returns>
-	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range (the conversion's own error is the inner exception), or it is NULL and <typeparamref name="T"/> is a non-nullable value type.</exception>
+	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range (the conversion's own error is the inner exception), there was no row or it is NULL and <typeparamref name="T"/> is a non-nullable value type.</exception>
 	public static T ExecuteScalar<T>(this IExecuteCommand command)
-		=> RowMap<T>.ConvertScalar(command.ExecuteScalar());
+		=> RowMap<T>.ConvertScalar(command.ExecuteScalar(), nameof(ExecuteScalar));
 
 	/// <summary>
 	/// Executes the command with <see cref="IDbCommand.ExecuteScalar"/> and

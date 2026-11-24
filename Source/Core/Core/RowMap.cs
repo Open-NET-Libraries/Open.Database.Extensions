@@ -1519,17 +1519,25 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	/// a value that has arrived boxed, converted as column 0 of <c>Map&lt;T&gt;()</c> is.
 	/// </summary>
 	/// <remarks>
-	/// No value (no row) is <c>default(T)</c>;
+	/// No value (no row) is <see langword="null"/> for a <typeparamref name="T"/> that takes NULL and an error for a non-nullable value type when the caller names its method (<paramref name="noRowsMethod"/>), and <c>default(T)</c> for a caller that does not;
 	/// NULL (<see cref="DBNull"/>) is <see langword="null"/> for a <typeparamref name="T"/> that takes NULL, and an error for a non-nullable value type;
 	/// a value that is already a <typeparamref name="T"/> is returned as it is;
 	/// any other value is converted the way <c>Map&lt;T&gt;()</c> converts a column of its type.
 	/// </remarks>
 	/// <param name="value">The scalar as it arrived.</param>
+	/// <param name="noRowsMethod">The name of the typed scalar method that asked, for the message when there were no rows and <typeparamref name="T"/> is a non-nullable value type; <see langword="null"/> keeps <c>default(T)</c>.</param>
 	/// <returns>The value as a <typeparamref name="T"/>.</returns>
-	/// <exception cref="ValueMappingException">The value is NULL and <typeparamref name="T"/> is a non-nullable value type, or it cannot be converted: the conversion's error is the inner exception.</exception>
-	internal static T ConvertScalar(object? value)
+	/// <exception cref="ValueMappingException">There were no rows (with <paramref name="noRowsMethod"/>) or the value is NULL and <typeparamref name="T"/> is a non-nullable value type, or it cannot be converted: the conversion's error is the inner exception.</exception>
+	internal static T ConvertScalar(object? value, string? noRowsMethod = null)
 	{
-		if (value is null) return default!;
+		if (value is null)
+		{
+			// No rows. A typed scalar of a method that names itself (noRowsMethod) needs a value for a non-nullable value type; every other caller keeps default.
+			return ScalarRejectsNull && noRowsMethod is not null
+				? throw new ValueMappingException(RowErrors.NoRowsScalar(typeof(T), noRowsMethod), "", "", typeof(T))
+				: default!;
+		}
+
 		if (value is DBNull)
 		{
 			return ScalarRejectsNull

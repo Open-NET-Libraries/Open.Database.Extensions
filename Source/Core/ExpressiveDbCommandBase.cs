@@ -196,12 +196,14 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <inheritdoc cref="ExpressiveCommandBase{TConnection, TCommand, TReader, TDbType, TThis}.ExecuteScalar{T}()"/>
 	/// <include file="Commands.docs.xml" path="docs/members[@name='token']/*" />
+	/// <exception cref="ValueMappingException">There was no row or the value is NULL and <typeparamref name="T"/> is a non-nullable value type (ask for the nullable type and use <c>??</c> for a default), the value does not convert to <typeparamref name="T"/>, or it is out of its range (the conversion's own error is the inner exception).</exception>
 	public async ValueTask<T> ExecuteScalarAsync<T>(
 		CancellationToken cancellationToken = default)
 		// Converted after the command has released the connection.
 		=> RowMap<T>.ConvertScalar(
 			await ExecuteScalarAsync(cancellationToken)
-				.ConfigureAwait(false));
+				.ConfigureAwait(false),
+			nameof(ExecuteScalarAsync));
 
 	/// <summary>
 	/// Asynchronously executes the command with

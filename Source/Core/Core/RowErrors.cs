@@ -64,6 +64,18 @@ static class RowErrors
 		string type = Shape.TypeName(target);
 		return $"A NULL was read into a non-nullable {type}. Declare it nullable ({type}?).";
 	}
+
+	/// <summary>
+	/// Returns the message for a scalar query that returned no rows, read as a non-nullable value type.
+	/// </summary>
+	/// <param name="target">The type the scalar was read as.</param>
+	/// <param name="method">The name of the method the caller used.</param>
+	/// <returns>The message.</returns>
+	public static string NoRowsScalar(Type target, string method)
+	{
+		string type = Shape.TypeName(target);
+		return $"The query returned no rows; {method}<{type}> needs a value. Ask for {type}? and use ?? for a default.";
+	}
 }
 
 // Internal and never seen by a caller: the row reader's guard hands it to RowErrors.Create, which turns it into the ValueMappingException.

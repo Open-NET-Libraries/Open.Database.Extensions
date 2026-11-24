@@ -79,7 +79,7 @@ public static class TokenTerminalTests
 					.ConfigureAwait(false);
 				break;
 			case TokenTerminal.ScalarT:
-				await cmd.ExecuteScalarAsync<int>(token).ConfigureAwait(false);
+				await cmd.ExecuteScalarAsync<int?>(token).ConfigureAwait(false);
 				break;
 			case TokenTerminal.Return:
 				await cmd.ExecuteReturnAsync(token).ConfigureAwait(false);
@@ -506,10 +506,10 @@ public static class TokenTerminalTests
 		Assert.Equal(1, await cmd.ExecuteScalarAsync(_ => 1, ct));
 		Assert.Equal(
 			1, await cmd.ExecuteScalarAsync(_ => new ValueTask<int>(1), ct));
-		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>());
-		Assert.Equal(0, await cmd.ExecuteScalarAsync<int>(ct));
-		Assert.Equal(
-			0, await cmd.ExecuteScalarAsync<int>(CancellationToken.None));
+		// The rig returns no row: a nullable type gets null.
+		Assert.Null(await cmd.ExecuteScalarAsync<int?>());
+		Assert.Null(await cmd.ExecuteScalarAsync<int?>(ct));
+		Assert.Null(await cmd.ExecuteScalarAsync<int?>(CancellationToken.None));
 		await cmd.ExecuteReturnAsync();
 		await cmd.ExecuteReturnAsync(ct);
 		await cmd.ExecuteReturnAsync<int>(ct);

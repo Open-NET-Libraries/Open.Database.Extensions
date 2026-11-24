@@ -52,6 +52,25 @@ internal static class NullAssert
 		return ex;
 	}
 
+	/// <summary>Asserts that a typed scalar query that returned no rows, read as a non-nullable value type, throws the no-rows error: the method, the type, no member, no column, nothing inside.</summary>
+	public static ValueMappingException NoRows<T>(string method, Action read)
+		=> CheckNoRows<T>(method, Assert.Throws<ValueMappingException>(read));
+
+	/// <inheritdoc cref="NoRows{T}(string, Action)"/>
+	public static async Task<ValueMappingException> NoRowsAsync<T>(string method, Func<Task> read)
+		=> CheckNoRows<T>(method, await Assert.ThrowsAsync<ValueMappingException>(read));
+
+	static ValueMappingException CheckNoRows<T>(string method, ValueMappingException ex)
+	{
+		string type = Shape.TypeName(typeof(T));
+		Assert.Equal($"The query returned no rows; {method}<{type}> needs a value. Ask for {type}? and use ?? for a default.", ex.Message);
+		Assert.Equal(typeof(T), ex.TargetType);
+		Assert.Equal("", ex.PropertyName);
+		Assert.Equal("", ex.ColumnName);
+		Assert.Null(ex.InnerException);
+		return ex;
+	}
+
 	/// <summary>Asserts what every row error has: the message, the type, no member, no column, and the inner exception's type.</summary>
 	public static ValueMappingException Check<TTarget, TInner>(string message, ValueMappingException ex)
 		where TInner : Exception
