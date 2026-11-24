@@ -105,7 +105,7 @@ public static class ToChannelTargetTests
 		Assert.Empty(tally.Commands);
 
 		// Room appears: the pass runs.
-		Assert.Equal(0, (await channel.Reader.ReadAsync(Ct)).Id);
+		Assert.Equal(0, (await channel.Reader.ReadAsync(Ct).AsTask().Within()).Id);
 		Assert.Equal([1, 2, 3, 4, 5], await Drain(channel.Reader, 5));
 		Assert.Equal(5, await task.Within());
 	}
@@ -360,7 +360,7 @@ public static class ToChannelTargetTests
 			SynchronizationContext.SetSynchronizationContext(previous);
 		}
 
-		if (full) _ = await channel.Reader.ReadAsync(Ct);
+		if (full) _ = await channel.Reader.ReadAsync(Ct).AsTask().Within();
 		Assert.Equal(200, (await Drain(channel.Reader, 200)).Count);
 		Assert.Equal(200, await task.Within());
 		Assert.Equal(0, context.Posts);

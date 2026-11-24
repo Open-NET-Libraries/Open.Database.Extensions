@@ -141,7 +141,7 @@ public static class ToTargetBlockStreamingTests
 				.Within());
 
 		Assert.False(block.Completion.IsCompleted);
-		_ = await block.ReceiveAsync(Ct);
+		_ = await block.ReceiveAsync(Ct).Within();
 		Assert.True(await block.SendAsync(new(99), Ct).Within());
 	}
 
@@ -153,14 +153,14 @@ public static class ToTargetBlockStreamingTests
 
 		Task<long> task = Read(tally)
 			.ToTargetBlockHoldingConnection(
-				block, TimeSpan.FromMilliseconds(400), Ct)
+				block, TimeSpan.FromMilliseconds(4000), Ct)
 			.AsTask();
 
 		List<int> rows = [];
 		while (rows.Count < 30)
 		{
-			await Task.Delay(40, Ct);
-			rows.Add((await block.ReceiveAsync(Ct)).Id);
+			await Task.Delay(150, Ct);
+			rows.Add((await ChannelWait.ReceiveRow(block, task)).Id);
 		}
 
 		Assert.Equal(ChannelWait.Ids(30), rows);

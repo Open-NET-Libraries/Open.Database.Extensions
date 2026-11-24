@@ -815,7 +815,7 @@ public static class PooledBufferJourneyTests
 		string terminal)
 	{
 		using var j = new Journey(
-			() => new DeafReader(100, 20, TimeSpan.FromMilliseconds(400)));
+			() => new DeafReader(100, 20, TimeSpan.FromMilliseconds(2000)));
 		Task dispose;
 		if (terminal == "stream")
 		{

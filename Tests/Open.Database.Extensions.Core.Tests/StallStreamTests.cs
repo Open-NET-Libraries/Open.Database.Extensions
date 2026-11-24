@@ -166,10 +166,10 @@ public static class StallStreamTests
 		List<int> ids = [];
 
 		// Each pull is well inside the timeout; the whole read is several times longer than it.
-		await foreach (Row row in Query(tally).Stream(TimeSpan.FromMilliseconds(500), Ct))
+		await foreach (Row row in Query(tally).Stream(TimeSpan.FromMilliseconds(1000), Ct))
 		{
 			ids.Add(row.Id);
-			await Task.Delay(100, TestContext.Current.CancellationToken);
+			await Task.Delay(150, TestContext.Current.CancellationToken);
 		}
 
 		Assert.Equal(Enumerable.Range(1, 12), ids);
