@@ -27,6 +27,30 @@ public static class SyntheticVariantsStream
 		return sum;
 	}
 
+	// The stream models side by side (the streaming article's table): Stream (no channel), StreamBuffered with a channel of one row (what Stream was before it read
+	// on the consumer's thread), StreamBuffered with its default buffer, and ToPooledStream. yield makes the consumer await Task.Yield() per row, as an async loop body does.
+	public enum Model { Stream, OneRowChannel, Buffered, Pooled }
+
+	public static async ValueTask<long> Models(SyntheticConnection connection, Model model, bool yield)
+	{
+		var rows = connection.Command(SyntheticVariants.Sql).Map<SynRow>();
+		IAsyncEnumerable<SynRow> stream = model switch
+		{
+			Model.Stream => rows.Stream(Timeout.InfiniteTimeSpan),
+			Model.OneRowChannel => rows.StreamBuffered(Timeout.InfiniteTimeSpan, 1),
+			Model.Buffered => rows.StreamBuffered(Timeout.InfiniteTimeSpan),
+			_ => rows.ToPooledStream(),
+		};
+
+		long sum = 0;
+		await foreach (var row in stream.ConfigureAwait(false))
+		{
+			sum += Checksum(row.Id, row.Big);
+			if (yield) await Task.Yield();
+		}
+
+		return sum;
+	}
 	// The runtime twins: V1 on a row type that carries a NULL policy (SynRowPolicy.cs).
 	public static async ValueTask<long> V1Throw(SyntheticConnection connection)
 	{
