@@ -18,9 +18,9 @@ A stream earns its place when a producer and its consumer run at different speed
 
 Which one to use:
 - `ToBufferedAsyncStream(cancellationToken)` yields the elements one by one, as an `IAsyncEnumerable<T>` that works with `await foreach` and `System.Linq.Async`.
-- `ToAsyncBufferStream(cancellationToken)` yields the chunks (`ReadOnlyMemory<T>`) without copying the rows out of them.
+- `ToAsyncBufferStream(cancellationToken)` yields the chunks (`ReadOnlyMemory<T>`) without copying the rows out of them. A chunk is valid only until the next step of the loop: copy what you keep.
 
-Both are lazy and single-use, and a `break` or a dispose cancels the query. The pool (`UsePool` after `Map`), clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
+Both are lazy and single-use, and a `break` or a dispose cancels the query: it waits for the provider call in progress to return. Always dispose the enumerator (`await foreach` does): one that is abandoned holds the connection until the read ends. The pool (`UsePool` after `Map`), clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToAsyncBuffer`.
 
 ### One producer, one consumer
 

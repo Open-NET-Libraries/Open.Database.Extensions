@@ -526,8 +526,8 @@ public static class DerivedParameterNameTests
 		Throws(() => cmd.AddParam(default(int)), "default(int)");
 		Throws(() => cmd.AddParam(true), "true");
 
-		// AddParamIf checks the argument even when the condition is false, so a mistake is not hidden by the data.
-		Throws(() => cmd.AddParamIf(false, a + b), "a + b");
+		// A true condition checks the argument too; a false one adds nothing and does not look (AddParamIfConditionTests).
+		Throws(() => cmd.AddParamIf(true, a + b), "a + b");
 
 		Assert.Empty(cmd.Params);
 	}
@@ -542,7 +542,6 @@ public static class DerivedParameterNameTests
 		{
 			() => cmd.AddParam(value: 1, expression: null),
 			() => cmd.AddParamIf(true, value: 1, expression: null),
-			() => cmd.AddParamIf(false, value: 1, expression: null),
 		})
 		{
 			var ex = Assert.Throws<ArgumentException>(call);

@@ -85,7 +85,7 @@ What the definition fixes is what never changes from one call to the next: the c
 
 [!code-csharp[](../samples/MapFirst.cs#mapfirst_paged)]
 
-A parameter added after `Using` is added to a query that `Using` made from a definition. A query built the other way (`connection.Command(sql).Map<T>()`) takes its parameters on the command, before `Map`, and `AddParam` on it throws `InvalidOperationException`. A `default` value of one of these types throws the same exception, as the other structs do.
+A parameter added after `Using` is added to a query that `Using` made from a definition. A query built the other way (`connection.Command(sql).Map<T>()`) takes its parameters on the command, before `Map`: the mapped view has no `AddParam`. A `default` value of one of these types throws the same exception, as the other structs do.
 
 Everything after `Using` is what a command does: `Map<T>()` is the same extension, every terminal and `SingleResult()` apply, the connection is opened late and closed again only if the call opened it, a factory's connection is disposed and a pool's is given back. `SetTimeout(seconds)` on a definition returns a new definition. A `DbQuery` takes the same sources as `Using` does for a command, but only the typed ones: a connection (`DbConnection`), a transaction, an `IDbConnectionPool<TConnection>` or an `IDbConnectionFactory<TConnection>`; a bare `Func<TConnection>` is not one (wrap it in `new DbConnectionFactory<TConnection>(func)`).
 
@@ -150,7 +150,7 @@ A derived name stays as written when no real names were read: a text command, an
 
 ### Name a parameter yourself
 
-`AddParam(name, value)` adds an input parameter under the name you give. Overloads accept a database type and a `ParameterDirection`. `AddParamIf(condition, value)` (or `AddParamIf(condition, name, value)`) adds the parameter only when the condition is true, which keeps the SQL text constant:
+`AddParam(name, value)` adds an input parameter under the name you give. Overloads accept a database type and a `ParameterDirection`. `AddParamIf(condition, value)` (or `AddParamIf(condition, name, value)`) adds the parameter only when the condition is true, which keeps the SQL text constant. A false condition adds nothing and does not look at the argument, so a name that could not be derived is an error only when the condition holds:
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#param_if)]
 
@@ -162,7 +162,7 @@ To get the id an insert generated, select it in the same command and read it wit
 
 ### Return values and output parameters
 
-`ExecuteReturnAsync<T>()` runs the command and returns the value of its return-value parameter, which it adds itself (you do not call `AddReturnParam` for it). As with `ExecuteScalarAsync<T>()`, the value is converted to `T` the way `Map<T>()` converts a column: a NULL is `null` for a nullable `T` and throws `ValueMappingException` for a non-nullable value type. A SQL Server stored procedure returns an `int`, its `RETURN` code:
+`ExecuteReturnAsync<T>()` runs the command and returns the value of its return-value parameter, which it adds itself (you do not call `AddReturnParam` for it). As with `ExecuteScalarAsync<T>()`, the value is converted to `T` the way `Map<T>()` converts a column: a NULL is `null` for a nullable `T` and throws `ValueMappingException` for a non-nullable value type. A token that is already cancelled fails the call with `OperationCanceledException` before anything runs. A SQL Server stored procedure returns an `int`, its `RETURN` code:
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_return)]
 

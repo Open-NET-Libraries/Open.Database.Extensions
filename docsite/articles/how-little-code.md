@@ -2,7 +2,7 @@
 
 The same four tasks, written with Open.Database.Extensions (ODX), Dapper, EF Core and plain ADO.NET. This page is about the size of the code and nothing else: it makes no claim about speed or safety. Every snippet is compiled in the samples project, and the samples run all four versions of a task and check that they return the same rows.
 
-Everything here is async, and the SQL is the same string for all four libraries in each of tasks 1 to 3 (tasks 2 and 3 add `where author = @author`). The tasks read the `posts` table of the [sample database](getting-started.md#your-first-query) into the `Post` class.
+Everything here is async. ODX, Dapper and plain ADO.NET share the same SQL string in each of tasks 1 to 3 (tasks 2 and 3 add `where author = @author`); EF Core writes the same query as LINQ. The tasks read the `posts` table of the [sample database](getting-started.md#your-first-query) into the `Post` class.
 
 ## How the lines are counted
 
@@ -20,7 +20,7 @@ What is outside the count, and what each cell includes:
 - **ODX** needs a connection factory, created once per application and passed in (`db` below). Setup is `new DbConnectionFactory<SqliteConnection>(...)` for any provider (three lines) or `new SqlConnectionFactory(connectionString)` for SQL Server (one line). It is not counted.
 - **EF Core** needs a `DbContext` that maps the model. The one in these samples is five lines (`little_setup_ef` below) and is not counted. The context is also passed in, and EF Core reads `Post` through it.
 - **Dapper and plain ADO.NET** have no setup, so each method creates its own connection from a connection string: that line is counted. An application that already has a connection factory for them would save that line.
-- The methods take the connection source (`db`, `connectionString` or the context) and a `CancellationToken` as arguments, so the signatures are comparable. Dapper's `QueryAsync` only takes a token inside a `CommandDefinition`, and the Dapper snippets use it.
+- The methods take the connection source (`db`, `connectionString` or the context) and a `CancellationToken` as arguments, so the signatures are comparable. Dapper's `QueryAsync` only takes a token inside a `CommandDefinition`, and the Dapper snippets pass it that way; the Dapper stream passes it through `WithCancellation`.
 - EF Core tracks the entities it returns by default. The snippets do not call `AsNoTracking()`, which would add one line to each EF Core method that reads a table.
 
 The setup that EF Core needs:

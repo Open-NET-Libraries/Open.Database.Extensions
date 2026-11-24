@@ -108,7 +108,7 @@ public static class ParameterNameEndToEndTests
 				cmd => cmd.AddParam(customerBillingAddressLineSecondPostalCodeRegionCountryPhoneNumberFaxEmailNotes)),
 		};
 
-		// AddParamIf at a call site: the argument is checked and named whether or not the condition holds.
+		// AddParamIf at a call site: the argument is named only when the condition holds.
 		public ExpressiveCommand AddIf(ExpressiveCommand cmd, bool condition)
 			=> cmd.AddParamIf(condition, Author).AddParamIf(!condition, search.AuthorId);
 

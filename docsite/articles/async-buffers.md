@@ -60,7 +60,7 @@ The connection was released when the read ended, however long the serialization 
 
 A read that finds no rows completes `Items` with `PooledArray<T>.Empty`, which needs no disposing and never throws `ObjectDisposedException`.
 
-To test code that returns a buffer, without a database, build one from rows you already have: `PooledBuffer<Post>.From(rows)` copies them into one array rented from the shared pool (`From(rows, pool, clearOnReturn)` takes a pool you choose), nothing runs in the background, `Items` is complete at once, and disposing it sends the array back to the pool (through the cleanup queue for 128 KB or more of rows that must be cleared). No rows give `PooledArray<T>.Empty`.
+To test code that returns a buffer, without a database, build one from an array or a span of rows (`rows.ToArray()` for a list): `PooledBuffer<Post>.From(rows)` copies them into one array rented from the shared pool (`From(rows, pool, clearOnReturn)` takes a pool you choose), nothing runs in the background, `Items` is complete at once, and disposing it sends the array back to the pool (through the cleanup queue for 128 KB or more of rows that must be cleared). No rows give `PooledArray<T>.Empty`.
 
 `Items` faults with the read's exception. It is cancelled when the read ended with an `OperationCanceledException` of any origin, or when the buffer was disposed first. Reading `Items` after the buffer is disposed throws `ObjectDisposedException`; a task you already hold that is still pending is cancelled. See [Cancellation and disposal](#cancellation-and-disposal).
 
@@ -76,7 +76,7 @@ A buffer is a lease of pooled arrays, and a lease has rules:
 - **One thread at a time.** Do not use the view from another thread while something may dispose it. The view checks that it is alive before each read, but a check is not a lock: a dispose on another thread can land just after it, with the arrays on their way back to the pool.
 - **A buffer that is never disposed is not a leak, but it costs the pool.** There is no finalizer. The arrays stay with the buffer until the garbage collector takes it, and the pool never gets them back. The cost is the allocations the pool would have saved. This includes `await LatestPosts(...).Items` when `Items` faults or is cancelled: you never receive the view, so nothing disposes the buffer, and its arrays wait for the garbage collector.
 
-To shape the rows as they arrive, use async LINQ over the stream and return it: no `async`, no `await`, no `using`. Filter in the SQL; shape in C#. The work overlaps the read, only what you keep is held, and there is nothing to dispose. It is in the box on net10 and later; net472 and netstandard need the `System.Linq.Async` package.
+To shape the rows as they arrive, use async LINQ over the stream and return it: no `async`, no `await`, no `using`. Filter in the SQL; shape in C#. The work overlaps the read, only what you keep is held, and there is nothing to dispose. It is in the box on net10 and later, and Core brings the `System.Linq.AsyncEnumerable` package in on `netstandard`: there is nothing extra to add.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_linq_async)]
 
@@ -103,10 +103,10 @@ What was observed on ASP.NET Core 11.0.0 against SQLite:
 - The response is `200` with a JSON array of the rows, equal to the array the same query gives with `ToListAsync`. The action returns `Items` without awaiting it, so it declares `Task<PooledArray<Post>>`. An `async` action that returns `await buffer.Items` can declare `IReadOnlyList<Post>` instead; the JSON is the same.
 - Every array went back to the pool once the request was over.
 - `HttpResponse.RegisterForDispose` and `HttpResponse.RegisterForDisposeAsync` both exist. A `PooledBuffer<T>` is both `IDisposable` and `IAsyncDisposable`, and the framework disposed it with `DisposeAsync` whichever of the two was used, so `RegisterForDispose` is enough.
-- Register the buffer before you return `Items`. A client abort cancels `HttpContext.RequestAborted`, which cancels the query. On Kestrel the buffer was still disposed after an abort, and an object registered the same way was disposed when the action threw.
+- Register the buffer before you return `Items`. A client abort cancels `HttpContext.RequestAborted`, which cancels the query. On Kestrel the buffer was still disposed after an abort during the read, and when the action threw after the rows were read: every array went back to the pool, also with the form above, which returns the task (the samples project checks both).
 
 > [!NOTE]
-> The form above, which returns the task, was checked on TestServer; the Kestrel observations were made with an action that awaited `Items`. TestServer did not dispose what the request had registered when the action threw or the client aborted before the response started; Kestrel did. A test of your own controller that counts the arrays that come back sees them only on a successful request, or on a real server.
+> The form above, which returns the task, was checked on TestServer and on Kestrel. TestServer did not dispose what the request had registered when the action threw or the client aborted during the read; Kestrel did. A test of your own controller that counts the arrays that come back sees them only on a successful request, or on a real server.
 
 ### The trap: dispose before the framework serializes
 

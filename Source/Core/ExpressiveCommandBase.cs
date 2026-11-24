@@ -553,10 +553,10 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <param name="value">The value of the parameter.</param>
 	/// <param name="expression">The text of the argument, supplied by the compiler. Do not pass it.</param>
 	/// <returns>This instance for use in method chaining.</returns>
-	/// <exception cref="ArgumentException">A parameter name cannot be derived from the argument (checked even when <paramref name="condition"/> is <see langword="false"/>).</exception>
+	/// <exception cref="ArgumentException"><paramref name="condition"/> is <see langword="true"/> and a parameter name cannot be derived from the argument. When it is <see langword="false"/>, nothing is added and the argument is not looked at.</exception>
 	[OverloadResolutionPriority(-1)]
 	public TThis AddParamIf<T>(bool condition, T value, [CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> condition ? AddDerivedParam(value, expression, typeof(T)) : CheckDerivable(expression);
+		=> condition ? AddDerivedParam(value, expression, typeof(T)) : (TThis)this;
 
 	// A member the remembered names lack makes them be read once more first, in case the procedure gained that parameter since: once per remembered set, so a member the procedure never takes costs one extra read, not one per run. The members of each runtime type are found once and remembered.
 	/// <summary>
@@ -620,9 +620,6 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		_hasDerivedParams = true;
 		return (TThis)this;
 	}
-
-	TThis CheckDerivable(string? expression)
-		=> ParameterNames.IsDerivable(expression) ? (TThis)this : throw NotDerivable(expression);
 
 	[SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly")]
 	static ArgumentException NotDerivable(string? expression)

@@ -36,7 +36,9 @@ On `Map(Func)` with `AsyncReads()`, about 7.9% of the `ReadAsync` calls (on aver
 
 <div class="perf-chart"><img src="../../images/perf/perf-large-value.svg" alt="Horizontal bars in seconds for one 100 MB value. Raw sync Read 8.86; raw Default with ReadAsync 48.0; raw SequentialAccess with ReadAsync 8.86; ODX Map of T with AsyncReads 8.86; raw Default with ReadAsync and both SqlClient switches off 8.87; ODX Map of Func with AsyncReads not measured."></div>
 
-How long one row holding one 100 MB value takes. One bar is far longer than the rest: the raw `Default` read with `ReadAsync`. The others, including ODX `Map<T>()` with `AsyncReads()`, take about the same time as a sync read.
+How long one row holding one 100 MB value takes. One bar is far longer than the rest: the raw `Default` read with `ReadAsync`. The others, including ODX `Map<T>()` with `AsyncReads()`, take about the same time as a sync read. The size is in the [source of the data](../../perf-data/large-value.source.txt): one `varbinary(max)` value of 100 MB.
+
+`Map(Func)` with `AsyncReads()` on this value was not measured. On the 10,000 rows of the [memory run](#memory) (not a large value) it allocated more with `AsyncReads()` than with the sync read: 16,812 against 9,713 KB.
 
 [!include[](../../includes/perf/large-value.md)]
 
