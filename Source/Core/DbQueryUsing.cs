@@ -124,7 +124,7 @@ public readonly struct DbQueryUsing
 	/// </remarks>
 	public DbQueryCall AddParams<T>(T values)
 		where T : notnull
-		=> new DbQueryCall(Definition, SourceOrThrow, default).AddParams(values);
+		=> ToCall().AddParams(values);
 
 	/// <summary>Adds an input parameter named as you write it.</summary>
 	/// <remarks>
@@ -146,7 +146,7 @@ public readonly struct DbQueryUsing
 	/// <paramref name="name"/> is empty or white space.
 	/// </exception>
 	public DbQueryCall AddParam<T>(string name, T value)
-		=> new DbQueryCall(Definition, SourceOrThrow, default)
+		=> ToCall()
 			.AddParam(name, value);
 
 	/// <summary>Adds an input parameter with a string value.</summary>
@@ -155,7 +155,7 @@ public readonly struct DbQueryUsing
 	// this overload they would read the name as the value of AddParam<T>(T,
 	// string?).
 	public DbQueryCall AddParam(string name, string? value)
-		=> new DbQueryCall(Definition, SourceOrThrow, default)
+		=> ToCall()
 			.AddParam(name, value);
 
 	/// <summary>
@@ -179,13 +179,16 @@ public readonly struct DbQueryUsing
 	public DbQueryCall AddParam<T>(
 		T value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> new DbQueryCall(Definition, SourceOrThrow, default)
+		=> ToCall()
 			.AddParam(value, expression);
 
 	/// <inheritdoc />
 	public bool Equals(DbQueryUsing other)
-		=> Equals(_definition, other._definition)
-		&& Equals(_source, other._source);
+		=> DbQueryCall.SameTarget(
+			_definition,
+			_source,
+			other._definition,
+			other._source);
 
 	/// <inheritdoc />
 	public override bool Equals(object? obj)
@@ -207,13 +210,7 @@ public readonly struct DbQueryUsing
 
 	/// <inheritdoc />
 	public override int GetHashCode()
-	{
-		unchecked
-		{
-			return (_definition?.GetHashCode() ?? 0) * 31
-				+ (_source?.GetHashCode() ?? 0);
-		}
-	}
+		=> DbQueryCall.TargetHash(_definition, _source);
 
 	CancellationToken IExecuteReader.CancellationToken => default;
 
@@ -223,40 +220,20 @@ public readonly struct DbQueryUsing
 		TState state,
 		Func<IDataReader, TState, TResult> transform,
 		CommandBehavior behavior)
-		=> DbQueryRunner.Run(
-			Definition,
-			SourceOrThrow,
-			default,
-			state,
-			transform,
-			behavior);
+		=> ToCall().Run(state, transform, behavior);
 
 	ValueTask<TResult> IExecuteReader.ExecuteReaderAsync<TState, TResult>(
 		TState state,
 		Func<IDataReader, TState, ValueTask<TResult>> transform,
 		CommandBehavior behavior,
 		CancellationToken cancellationToken)
-		=> DbQueryRunner.RunAsync(
-			Definition,
-			SourceOrThrow,
-			default,
-			state,
-			transform,
-			behavior,
-			cancellationToken);
+		=> ToCall().RunAsync(state, transform, behavior, cancellationToken);
 
 	ValueTask<TResult> IExecuteReader.ExecuteReaderAsync<TState, TResult>(
 		TState state,
 		Func<IDataReader, TState, ValueTask<TResult>> transform,
 		CommandBehavior behavior)
-		=> DbQueryRunner.RunAsync(
-			Definition,
-			SourceOrThrow,
-			default,
-			state,
-			transform,
-			behavior,
-			default);
+		=> ToCall().RunAsync(state, transform, behavior, default);
 
 	void IExecuteReaderSync.ExecuteReader(
 		Action<IDataReader> handler,
