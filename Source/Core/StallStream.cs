@@ -22,19 +22,35 @@ internal interface IStallSignal
 	TimeoutException ToException();
 }
 
-// The producer reads one row ahead and then waits for room in a channel of one. That wait is the stall, and it is measured on the producer's own side:
+/// <summary>
+/// The sizes of the stream buffer, kept out of the generic <see cref="StallStream{T}"/> so they are one value for every row type.
+/// </summary>
+internal static class StallStream
+{
+	/// <summary>
+	/// Gets the most rows the read runs ahead of the consumer unless the caller asks for another size.
+	/// </summary>
+	/// <remarks>
+	/// A ceiling against a read that outruns its consumer without bound: it counts rows, not bytes.
+	/// A buffer this size lets the read ride out a slow consumer instead of waiting on every row.
+	/// </remarks>
+	public const int DefaultBufferSize = 1024;
+}
+
+// The producer reads ahead of the consumer, up to the buffer size in rows, and then waits for room in the channel. That wait is the stall, and it is measured on the producer's own side:
 // when it lasts stallTimeout the producer stops the read from inside its own handler, so the cleanup of the query runs on the thread that owns the reader.
 // Only the channel, the expiry and disposal flags and the cancellation sources are shared between the two sides.
 /// <summary>
 /// The rows of a query, one at a time, read by a producer that holds the reader while the consumer pulls.
 /// </summary>
 /// <remarks>
-/// The producer reads one row ahead of the consumer, which never touches the reader.
+/// The producer reads up to the buffer size it was given (<see cref="StallStream.DefaultBufferSize"/> for the buffered stream) rows ahead of the consumer, which never touches the reader.
 /// </remarks>
 internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 {
 	readonly MappedQueryCore<T> _query;
 	readonly TimeSpan _stall;
+	readonly int _bufferSize;
 	readonly bool _finite;
 	readonly CancellationToken _caller;
 
@@ -54,10 +70,12 @@ internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 	public StallStream(
 		MappedQueryCore<T> query,
 		TimeSpan stallTimeout,
+		int bufferSize,
 		CancellationToken caller)
 	{
 		_query = query;
 		_stall = stallTimeout;
+		_bufferSize = bufferSize;
 		_caller = caller;
 
 		// An infinite timeout, or one over the longest a timer can count, starts no timer and no signal source.
@@ -93,7 +111,7 @@ internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 		_caller.ThrowIfCancellationRequested();
 
 		var channel = Channel.CreateBounded<T>(
-			new BoundedChannelOptions(1)
+			new BoundedChannelOptions(_bufferSize)
 			{
 				SingleReader = true,
 				SingleWriter = true,

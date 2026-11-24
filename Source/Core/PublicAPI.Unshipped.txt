@@ -9,3 +9,13 @@ Open.Database.Extensions.NullPolicyAttribute.NullPolicyAttribute(Open.Database.E
 Open.Database.Extensions.NullValueAttribute
 Open.Database.Extensions.NullValueAttribute.NullValueAttribute(object? value) -> void
 Open.Database.Extensions.NullValueAttribute.Value.get -> object?
+Open.Database.Extensions.IMappedQuery<T>.StreamBuffered(System.TimeSpan stallTimeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.IMappedQuery<T>.StreamBuffered(System.TimeSpan stallTimeout, int bufferSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedCommand<T>.StreamBuffered(System.TimeSpan stallTimeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedCommand<T>.StreamBuffered(System.TimeSpan stallTimeout, int bufferSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQuery<T>.StreamBuffered(System.TimeSpan stallTimeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQuery<T>.StreamBuffered(System.TimeSpan stallTimeout, int bufferSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQueryWithSkip<T>.StreamBuffered(System.TimeSpan stallTimeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQueryWithSkip<T>.StreamBuffered(System.TimeSpan stallTimeout, int bufferSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQueryWithTake<T>.StreamBuffered(System.TimeSpan stallTimeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!
+Open.Database.Extensions.MappedQueryWithTake<T>.StreamBuffered(System.TimeSpan stallTimeout, int bufferSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T>!

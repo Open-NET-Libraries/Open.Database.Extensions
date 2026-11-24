@@ -1009,6 +1009,19 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.Stream(stallTimeout, cancellationToken);
 
+	/// <inheritdoc cref="MappedQuery{T}.StreamBuffered(TimeSpan, CancellationToken)"/>
+	public IAsyncEnumerable<T> StreamBuffered(
+		TimeSpan stallTimeout,
+		CancellationToken cancellationToken = default)
+		=> _core.StreamBuffered(stallTimeout, StallStream.DefaultBufferSize, cancellationToken);
+
+	/// <inheritdoc cref="MappedQuery{T}.StreamBuffered(TimeSpan, int, CancellationToken)"/>
+	public IAsyncEnumerable<T> StreamBuffered(
+		TimeSpan stallTimeout,
+		int bufferSize,
+		CancellationToken cancellationToken = default)
+		=> _core.StreamBuffered(stallTimeout, bufferSize, cancellationToken);
+
 	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
 	public IAsyncEnumerable<T> ToBufferedAsyncStream(
 		CancellationToken cancellationToken = default)

@@ -118,6 +118,17 @@ internal static class ChannelFixtures
 				: stream(stallTimeout, cancellationToken);
 		}
 
+		public IAsyncEnumerable<ChannelRow> StreamBuffered(
+			TimeSpan stallTimeout,
+			CancellationToken cancellationToken = default)
+			=> Stream(stallTimeout, cancellationToken);
+
+		public IAsyncEnumerable<ChannelRow> StreamBuffered(
+			TimeSpan stallTimeout,
+			int bufferSize,
+			CancellationToken cancellationToken = default)
+			=> Stream(stallTimeout, cancellationToken);
+
 		async IAsyncEnumerable<ChannelRow> Rows()
 		{
 			foreach (ChannelRow row in rows)

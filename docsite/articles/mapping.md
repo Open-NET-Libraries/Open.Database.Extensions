@@ -321,9 +321,20 @@ For a result that nobody else can change, use `ToImmutableArrayAsync`: it wraps 
 
 [!code-csharp[](../samples/Mapping.cs#map_paging)]
 
-Buffered terminals are the way to read rows. **`Stream(stallTimeout, cancellationToken)` is only for stopping early: it holds the reader and the connection open while your loop works on each row.** Use `ToArrayAsync` unless you must stop early; to hand rows to another consumer, use [`ToBufferedAsyncStream`](channels-and-dataflow.md); for the raw reader, use `ExecuteReaderAsync`:
+Buffered terminals are the way to read all the rows: use `ToArrayAsync` unless you need rows as they arrive. **`Stream(stallTimeout, cancellationToken)` holds the reader and the connection open while your loop works on each row**, so keep that loop fast; to hand rows to another consumer, use [`ToBufferedAsyncStream`](channels-and-dataflow.md); for the raw reader, use `ExecuteReaderAsync`:
 
 [!code-csharp[](../samples/Mapping.cs#map_stream)]
+
+To read rows as they arrive there are three ways, and they differ in what they buffer and how long they hold the connection:
+
+| | Buffer | Threads | Connection held until | Stall protection |
+|---|---|---|---|---|
+| `Stream(stallTimeout, ct)` | none: one row at a time, a row or two read ahead | a producer task and your loop, a hand-off per row | you pull the last row | yes, on every pull |
+| `StreamBuffered(stallTimeout, ct)` | up to 1,024 rows (`bufferSize` sets it; it counts rows, not bytes) | a producer task and your loop | the read ends, or, once the buffer is full, the stall timeout passes without a pull (never with an infinite timeout) | yes, once the buffer is full |
+| `ToBufferedAsyncStream` | unbounded: pooled chunks, the whole result if you are slow | a producer task and your loop | the read ends, however slowly you read | none |
+
+Which to use: a fast loop, `Stream` (it can also stop early); slow or async work per row, `StreamBuffered`; to free the connection as soon as possible, `ToBufferedAsyncStream`.
+`StreamBuffered` is the shortcut for a bounded read. Rows still waiting in the buffer when a stall trips are discarded, not delivered. A result that fits in the buffer is read whole, the later result sets included, and the connection is released before you have pulled every row. Breaking out early never throws for rows or result sets you did not reach. Wide rows (blobs) make the buffer cost memory for each stream running at once. All three are lazy: calling one does nothing until the first `MoveNextAsync`. A slow or hung database read is bounded by the command's `CommandTimeout` and your cancellation token on every one of them; the stall timeout is only about a slow consumer, and a cancel or a dispose stops the read promptly only as far as the provider honors the cancellation.
 
 Every async terminal takes a `CancellationToken`:
 
