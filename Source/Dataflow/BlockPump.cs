@@ -126,7 +126,7 @@ internal readonly struct ChunkFeed<T>(
 // The stall timeout is Core's: this feed only learns of an expiry while it waits for the target,
 // because a loop that is not pulling cannot see it in MoveNextAsync.
 /// <summary>
-/// The streaming feed: Core's <c>Stream</c>, one row at a time.
+/// The streaming feed: Core's <c>StreamBuffered</c> with a channel of one row.
 /// </summary>
 /// <remarks>
 /// The next row is pulled only after the current one was accepted, so a

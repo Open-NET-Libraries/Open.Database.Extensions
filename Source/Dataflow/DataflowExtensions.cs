@@ -205,7 +205,7 @@ public static partial class DataflowExtensions
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// Pulls <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>: the reader and the connection are held for each row,
+	/// Pulls <see cref="IMappedQuery{T}.StreamBuffered(TimeSpan, int, CancellationToken)"/> with a buffer of one row: the reader and the connection are held for each row,
 	/// and while the block is full they stay held until it takes the row or <paramref name="stallTimeout"/> expires;
 	/// with <see cref="Timeout.InfiniteTimeSpan"/> nothing ends that wait.
 	/// To close the connection as soon as the rows are read, use
@@ -245,7 +245,7 @@ public static partial class DataflowExtensions
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// Pulls <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>: the reader and the connection are held for each row,
+	/// Pulls <see cref="IMappedQuery{T}.StreamBuffered(TimeSpan, int, CancellationToken)"/> with a buffer of one row: the reader and the connection are held for each row,
 	/// and while the block is full they stay held until it takes the row or <paramref name="stallTimeout"/> expires;
 	/// with <see cref="Timeout.InfiniteTimeSpan"/> nothing ends that wait.
 	/// To close the connection as soon as the rows are read, use
@@ -286,7 +286,7 @@ public static partial class DataflowExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 		return BlockPump.Run<T, RowFeed<T>>(
-			new(source.Stream(stallTimeout, cancellationToken)),
+			new(source.StreamBuffered(stallTimeout, 1, cancellationToken)),
 			target,
 			complete,
 			checkOpen: true,
