@@ -589,4 +589,43 @@ public static class StallStreamTests
 		Assert.Single(tally.Connections);
 		Assert.Single(tally.Commands);
 	}
+
+	// ---- StreamBuffered: every documented throw is pinned ----
+
+	[Fact]
+	public static void StreamBuffered_ADefaultView_IsRefusedAtTheCall()
+	{
+		Assert.Throws<InvalidOperationException>(() => default(MappedQuery<Row>).StreamBuffered(Long, Ct));
+		Assert.Throws<InvalidOperationException>(() => default(MappedQuery<Row>).StreamBuffered(Long, 8, Ct));
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public static async Task StreamBuffered_IsTakenOnce_ASecondEnumerationThrows(bool sized)
+	{
+		DbTally tally = Tally(3);
+		IAsyncEnumerable<Row> rows = sized
+			? Query(tally).StreamBuffered(Long, 8, Ct)
+			: Query(tally).StreamBuffered(Long, Ct);
+
+		await using IAsyncEnumerator<Row> first = rows.GetAsyncEnumerator(Ct);
+		Assert.Throws<InvalidOperationException>(() => rows.GetAsyncEnumerator(Ct));
+
+		Assert.True(await first.MoveNextAsync());
+	}
+
+	[Fact]
+	public static async Task StreamBuffered_ACanceledToken_ThrowsACancel_AndStartsNothing()
+	{
+		DbTally tally = Tally(3);
+		using CancellationTokenSource cts = new();
+		cts.Cancel();
+
+		IAsyncEnumerable<Row> rows = Query(tally).StreamBuffered(Long, cts.Token);
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await Collect(rows));
+		Assert.Empty(tally.Connections);
+		Assert.Empty(tally.Commands);
+	}
 }
