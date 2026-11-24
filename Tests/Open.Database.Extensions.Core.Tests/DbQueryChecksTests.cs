@@ -165,10 +165,17 @@ public static class DbQueryChecksTests
 
 		// A faulted task would be a different contract: these throw before they return.
 		Assert.Throws<InvalidOperationException>(
-			() => { _ = reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default, Token).AsTask(); });
+			() => Pull(reader, Token));
 		Assert.Throws<InvalidOperationException>(
-			() => { _ = reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default).AsTask(); });
+			() => PullWithoutToken(reader));
 	}
+
+	// The pull as a task, returned whole: the call itself is what is expected to throw.
+	static object Pull(IExecuteReader reader, CancellationToken token)
+		=> reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default, token).AsTask();
+
+	static object PullWithoutToken(IExecuteReader reader)
+		=> reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default).AsTask();
 
 	[Fact]
 	public static void ADefaultBoundQuery_Throws_FromEveryAddAndMap()
