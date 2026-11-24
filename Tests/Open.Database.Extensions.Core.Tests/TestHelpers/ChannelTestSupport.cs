@@ -142,7 +142,6 @@ internal static class ChannelWait
 		return await read.ConfigureAwait(false);
 	}
 
-
 	/// <summary>
 	/// <see cref="ReadRow"/> for a block: receives one row, bounded by the limit and watching the pass, so a pass that stopped fails the test with its own exception.
 	/// </summary>
@@ -153,6 +152,7 @@ internal static class ChannelWait
 		if (first == pass && !receive.IsCompleted) await pass.ConfigureAwait(false); // a failed pass throws here
 		return await receive.ConfigureAwait(false);
 	}
+
 	/// <summary>
 	/// Reads to the end of the channel: the ids of the rows,
 	/// and the exception the channel ended with, if it did.
