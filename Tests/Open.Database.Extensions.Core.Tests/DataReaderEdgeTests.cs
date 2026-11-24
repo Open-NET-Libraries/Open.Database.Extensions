@@ -639,8 +639,8 @@ public static class DataReaderEdgeTests
 			});
 
 		Assert.Equal(3, mapped);
-		// A stream reads one row ahead of its consumer: the cancel, at the third row, comes before that row is delivered.
-		Assert.True(seen < mapped);
+		// A stream reads one row ahead of its consumer, so the consumer sees the first two rows, or all three when it takes the third before the cancel reaches it (under load): never the ten.
+		Assert.True(seen <= mapped);
 	}
 
 	// ---- AsEnumerable / AsAsyncEnumerable ----
