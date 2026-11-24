@@ -103,10 +103,10 @@ What was observed on ASP.NET Core 11.0.0 against SQLite:
 - The response is `200` with a JSON array of the rows, equal to the array the same query gives with `ToListAsync`. The action returns `Items` without awaiting it, so it declares `Task<PooledArray<Post>>`. An `async` action that returns `await buffer.Items` can declare `IReadOnlyList<Post>` instead; the JSON is the same.
 - Every array went back to the pool once the request was over.
 - `HttpResponse.RegisterForDispose` and `HttpResponse.RegisterForDisposeAsync` both exist. A `PooledBuffer<T>` is both `IDisposable` and `IAsyncDisposable`, and the framework disposed it with `DisposeAsync` whichever of the two was used, so `RegisterForDispose` is enough.
-- Register the buffer before you return `Items`. A client abort cancels `HttpContext.RequestAborted`, which cancels the query. On Kestrel the buffer was still disposed after an abort during the read, and when the action threw after the rows were read: every array went back to the pool, also with the form above, which returns the task (the samples project checks both).
+- Register the buffer before you return `Items`. A client abort cancels `HttpContext.RequestAborted`, which cancels the query. On Kestrel, with the form above (the action returns the task), the buffer was still disposed after an abort during the read, when the action threw before it returned the task, and when an `async` action threw after the rows were read: every array went back to the pool (the samples project checks all three).
 
 > [!NOTE]
-> The form above, which returns the task, was checked on TestServer and on Kestrel. TestServer did not dispose what the request had registered when the action threw or the client aborted during the read; Kestrel did. A test of your own controller that counts the arrays that come back sees them only on a successful request, or on a real server.
+> TestServer did not dispose what the request had registered when the action threw (either way) or the client aborted during the read; Kestrel did. A test of your own controller that counts the arrays that come back sees them only on a successful request, or on a real server.
 
 ### The trap: dispose before the framework serializes
 

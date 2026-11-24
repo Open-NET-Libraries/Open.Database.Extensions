@@ -94,6 +94,29 @@ public sealed class ThrowingPostsController(HeldPostCommands commands)
 	}
 }
 
+// The recipe form, with no async and no await: the action registers the buffer and throws before it
+// returns the task. The read is held in its second row, and the action waits until the first chunk is
+// rented, so the throw finds arrays in use.
+[ApiController]
+[Route("lifetime/throws-sync")]
+public sealed class SyncThrowingPostsController(HeldPostCommands commands, ArrayPool<Post> pool)
+	: ControllerBase
+{
+	[HttpGet("by-author/{author}")]
+	public Task<PooledArray<Post>> ByAuthorAsync(int author)
+	{
+		Task<PooledArray<Post>> rows = commands
+			.Held(author)
+			.ToAsyncBuffer(HttpContext.RequestAborted)
+			.RegisterForDispose(Response);
+
+		CountingPool<Post> counting = (CountingPool<Post>)pool;
+		SpinWait.SpinUntil(() => counting.Rented > 0, TimeSpan.FromSeconds(5));
+		GC.KeepAlive(rows);
+		throw new InvalidOperationException("The action failed after the buffer was registered, before it returned the task.");
+	}
+}
+
 /// <summary>Runs the abort and the throw on a test server and on Kestrel and counts the arrays.</summary>
 public static class NoServiceLayerLifetimeChecks
 {
@@ -107,22 +130,29 @@ public static class NoServiceLayerLifetimeChecks
 	{
 		Outcome testServerAbort = await AbortAsync(kestrel: false);
 		Outcome kestrelAbort = await AbortAsync(kestrel: true);
-		Outcome testServerThrow = await ThrowAsync(kestrel: false);
-		Outcome kestrelThrow = await ThrowAsync(kestrel: true);
+		Outcome testServerThrow = await ThrowAsync(kestrel: false, "lifetime/throws/by-author/42");
+		Outcome kestrelThrow = await ThrowAsync(kestrel: true, "lifetime/throws/by-author/42");
+		Outcome testServerSyncThrow = await ThrowAsync(kestrel: false, "lifetime/throws-sync/by-author/42");
+		Outcome kestrelSyncThrow = await ThrowAsync(kestrel: true, "lifetime/throws-sync/by-author/42");
 
 		Console.WriteLine($"  [lifetime] test server, abort: {testServerAbort}");
 		Console.WriteLine($"  [lifetime] Kestrel, abort: {kestrelAbort}");
-		Console.WriteLine($"  [lifetime] test server, throw: {testServerThrow}");
-		Console.WriteLine($"  [lifetime] Kestrel, throw: {kestrelThrow}");
+		Console.WriteLine($"  [lifetime] test server, throw after the rows (async action): {testServerThrow}");
+		Console.WriteLine($"  [lifetime] Kestrel, throw after the rows (async action): {kestrelThrow}");
+		Console.WriteLine($"  [lifetime] test server, throw before the task is returned: {testServerSyncThrow}");
+		Console.WriteLine($"  [lifetime] Kestrel, throw before the task is returned: {kestrelSyncThrow}");
 
 		check(kestrelAbort.Rented > 0 && kestrelAbort.Aborted, "no service layer, Kestrel: a client abort during the read reaches RequestAborted (the read had rented arrays)");
 		check(kestrelAbort.Returned == kestrelAbort.Rented, "no service layer, Kestrel: after a client abort during the read, every array went back to the pool");
 		check(kestrelThrow.Rented > 0 && kestrelThrow.Returned == kestrelThrow.Rented, "no service layer, Kestrel: when the action throws after RegisterForDispose, every array went back to the pool");
+		check(kestrelSyncThrow.Rented > 0 && kestrelSyncThrow.Returned == kestrelSyncThrow.Rented, "no service layer, Kestrel: when the action throws after RegisterForDispose, before it returns the task, every array went back to the pool");
+		check(kestrelSyncThrow.ClientFailure == "status 500", "no service layer, Kestrel: an action that throws before it returns the task answers 500");
 		check(kestrelAbort.Canceled && testServerAbort.Canceled, "no service layer: on a client abort the action's task faults with an OperationCanceledException (a TaskCanceledException)");
 		check(kestrelThrow.ClientFailure == "status 500", "no service layer, Kestrel: an action that throws answers 500");
 
 		// What the test server does not do, so a test of your own controller on it cannot see these two cases.
 		check(testServerAbort.Rented > 0 && testServerAbort.Returned == 0, "no service layer, test server: after a client abort the registered buffer is NOT disposed (use Kestrel to check it)");
+		check(testServerSyncThrow.Rented > 0 && testServerSyncThrow.Returned == 0 && testServerSyncThrow.ClientFailure == nameof(InvalidOperationException), "no service layer, test server: when the action throws before it returns the task the exception reaches the caller and the registered buffer is NOT disposed");
 		check(testServerThrow.Rented > 0 && testServerThrow.Returned == 0 && testServerThrow.ClientFailure == nameof(InvalidOperationException), "no service layer, test server: when the action throws the exception reaches the caller and the registered buffer is NOT disposed");
 	}
 
@@ -214,23 +244,28 @@ public static class NoServiceLayerLifetimeChecks
 		}
 	}
 
-	static async Task<Outcome> ThrowAsync(bool kestrel)
+	static async Task<Outcome> ThrowAsync(bool kestrel, string route)
 	{
 		(IHost host, HttpClient client, CountingPool<Post> pool, LifetimeProbe probe) = await StartAsync(kestrel);
 		using (host)
 		using (client)
 		{
-			probe.Gate.Set();
+			// The throwing action of the returned-task form holds its read; let it go once the client has its answer.
+			bool held = route.Contains("throws-sync");
+			if (!held) probe.Gate.Set();
+
 			string? clientFailure = null;
 			try
 			{
-				using HttpResponseMessage response = await client.GetAsync("lifetime/throws/by-author/42");
+				using HttpResponseMessage response = await client.GetAsync(route);
 				clientFailure = "status " + (int)response.StatusCode;
 			}
 			catch (Exception ex)
 			{
 				clientFailure = ex.GetType().Name;
 			}
+
+			probe.Gate.Set();
 
 			await Settle(pool);
 			await Task.Delay(300);

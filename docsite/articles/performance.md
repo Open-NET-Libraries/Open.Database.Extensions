@@ -35,7 +35,7 @@ Also: [How we measure](benchmarks/how-we-measure.md) (the method, the settings, 
 
 - Dapper.AOT and a hand-written selector are faster than `Map<T>()` on the synthetic reader (54.4 and 40.7 against 76.1 µs of connection time). On SQL Server and SQLite, at 10,000 rows of 20 columns, the hand-written selector takes about 6% less than `Map<T>()` in all four runs (the error margins are apart in three), and Dapper.AOT is level on SQL Server and 3% slower on SQLite. [ODX against Dapper and hand-written code](benchmarks/library-comparison.md).
 - A hand-written selector is faster than `Map<T>()` at every width, and `object[]` rows are faster at one column. [Cost per column](benchmarks/cost-per-column.md).
-- `AsyncReads()` costs more than the default. With a 20 µs wait every 100 rows and a busy thread pool it took 8 times as long as the default read (2,227 against 280 µs; a synthetic model); with only a busy pool, no refill, it took 3.8% more than the default (99.3 against 95.6 µs). [Sync reads against async reads](benchmarks/sync-vs-async.md).
+- `AsyncReads()` costs more than the default. With a 20 µs wait every 100 rows and a busy thread pool it took 8 times as long as the default read (2,227 against 280 µs; a synthetic model); with only a busy pool, no refill, it took 3.9% more than the default (99.3 against 95.6 µs). [Sync reads against async reads](benchmarks/sync-vs-async.md).
 - `ToChannel` and the Dataflow methods are slower than reading rows in a plain loop for one row (1.6 and 2.6 times), and Dataflow is 1.10 times a plain loop at 100 rows; at 1,000 rows they are faster (0.32 and 0.72). They exist to feed pipelines: see [Channels and Dataflow](channels-and-dataflow.md).
 
 ## Limits of these numbers
