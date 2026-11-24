@@ -305,9 +305,14 @@ static class DbQueryRunner
 		ProcedureKey key,
 		ImmutableArray<string> names,
 		bool afterMiss)
-		=> names.IsDefaultOrEmpty
-			? null
-			: ProcedureNameCache.Set(owner, key, names, afterMiss);
+	{
+		if (!names.IsDefaultOrEmpty) return ProcedureNameCache.Set(owner, key, names, afterMiss);
+
+		// An empty answer is remembered as unknown for a short while, as a command remembers it (ExpressiveCommandBase.Remember),
+		// so a repeat run does not ask the provider again.
+		ProcedureNameCache.SetUnknown(owner, key);
+		return null;
+	}
 
 	/// <summary>
 	/// Finds the real names that the derived parameters are matched to.

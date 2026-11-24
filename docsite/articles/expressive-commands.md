@@ -55,6 +55,8 @@ List<Post> posts = await PostsByAuthor.Using(db)
     .ToListAsync(cancellationToken);
 ```
 
+A procedure's parameter names are read through the ADO.NET schema collection `ProcedureParameters` (`DbConnection.GetSchema`) the first time a call needs them, and remembered; a provider that answers nothing is remembered as unknown for a short while, so a repeat call does not ask again.
+
 To have the values checked at compile time, declare their type once. It is a `struct` that implements `IEquatable<TParams>` (a `readonly record struct` is the intended shape, and does) whose public properties and fields are the parameters, given in one call that the compiler checks:
 
 ```csharp
