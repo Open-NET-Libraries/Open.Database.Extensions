@@ -234,6 +234,30 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public List<SynRowDefault> V1_Default_Sync() { _label = nameof(V1_Default_Sync); return Connection.Command(SyntheticVariants.Sql).Map<SynRowDefault>().ToList(); }
 
+	// ---- The NULL-rule merge-gate ladder, width 20 x 1,000 rows (ODX_SYN_WIDTHS=20 ODX_SYN_ROWS=1000) ----
+	// Buffered: V1_Sync (runtime map, no policy) against V2_Sync (hand-written, no NULL test but the nullable members' own); V1_Throw_Sync and V1_Default_Sync (the runtime map on
+	// the policy rows) against their hand-written bars V2_Throw_Sync and V2_Default_Sync, which build the same row types over the same typed getters (SyntheticVariantsNull.cs).
+	// Throw on every non-nullable member / Default on every member: the two twins test that many members for NULL, so the pairs are like-for-like.
+	[Benchmark]
+	public List<SynRowThrow> V2_Throw_Sync() { _label = nameof(V2_Throw_Sync); WidthTwenty(); return SyntheticVariantsNull.V2Throw(Connection); }
+
+	[Benchmark]
+	public List<SynRowDefault> V2_Default_Sync() { _label = nameof(V2_Default_Sync); WidthTwenty(); return SyntheticVariantsNull.V2Default(Connection); }
+
+	// Streaming: the same four rungs through Map(...).Stream(Timeout.InfiniteTimeSpan), consumed whole (SyntheticVariantsStream.cs; the library's default reads, no AsyncReads()).
+	// Each returns the checksum of its loop. V2_Stream_Async is the bar of the other three.
+	[Benchmark]
+	public ValueTask<long> V1_Stream_Async() { _label = nameof(V1_Stream_Async); return SyntheticVariantsStream.V1(Connection); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Throw_Stream_Async() { _label = nameof(V1_Throw_Stream_Async); return SyntheticVariantsStream.V1Throw(Connection); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Default_Stream_Async() { _label = nameof(V1_Default_Stream_Async); return SyntheticVariantsStream.V1Default(Connection); }
+
+	[Benchmark]
+	public ValueTask<long> V2_Stream_Async() { _label = nameof(V2_Stream_Async); return SyntheticVariantsStream.V2(Connection, _hand); }
+
 	[Benchmark]
 	public ValueTask<List<SynRow>> V1_Async() { _label = nameof(V1_Async); return SyntheticVariants.V1Async(Connection); }
 

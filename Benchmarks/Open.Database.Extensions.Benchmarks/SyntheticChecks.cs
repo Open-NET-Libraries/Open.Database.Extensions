@@ -60,6 +60,9 @@ public static partial class SyntheticChecks
 		Console.WriteLine("== the benchmark methods through the benchmark class's own Setup ==");
 		VerifyBenchmarkPath(report);
 
+		Console.WriteLine("== the NULL-rule ladder: a NULL in a column the model does not allow ==");
+		VerifyNullPolicyOnNull(report);
+
 		Console.WriteLine("== BS-C: object sizes, V9a buffers, the DateTimeOffset scenario, the one-off overloads ==");
 		VerifyObjectSizes(report);
 		VerifyBufferBytes(report);
@@ -136,6 +139,7 @@ public static partial class SyntheticChecks
 
 		VerifyVariantsB(report, conn, table, width, rows, v1, where);
 		VerifyVariantsC(report, conn, table, width, rows, v1, where);
+		VerifyNullLadder(report, conn, table, width, v1, where);
 
 		Console.WriteLine($"  ok  {where}: V0, V0b, V1, V2, V3-V7 (sync and async) equal ({rows} rows)");
 	}
@@ -285,7 +289,10 @@ public static partial class SyntheticChecks
 						case List<object[]> boxed:
 							report.Check(boxed.Count == rows, $"{name} {where}: {boxed.Count} rows, expected {rows}");
 							break;
-						case System.Collections.IList policy when method.Name is "V1_Throw_Sync" or "V1_Default_Sync":
+						case long checksum when method.Name.EndsWith("_Stream_Async", StringComparison.Ordinal):
+							report.Check(checksum == SyntheticVariantsStream.Expected(v1), $"{name} {where}: checksum {checksum}, expected {SyntheticVariantsStream.Expected(v1)}");
+							break;
+						case System.Collections.IList policy when method.Name is "V1_Throw_Sync" or "V1_Default_Sync" or "V2_Throw_Sync" or "V2_Default_Sync":
 							ComparePolicyTwin(report, name, where, table, v1, policy);
 							break;
 						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal) || method.Name is "Ctl_Sync" or "Ctl_T_Sync":

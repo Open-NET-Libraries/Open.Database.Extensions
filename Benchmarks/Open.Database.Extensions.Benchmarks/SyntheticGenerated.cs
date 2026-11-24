@@ -75,7 +75,7 @@ public static partial class SyntheticChecks
 
 	// The benchmark methods that read the 20 catalog columns at fixed ordinals (GenParity.cs, GeneratedControl.cs): they run at width 20 only.
 	static bool WidthTwentyOnly(string method)
-		=> method is "Ctl_Sync" or "Ctl_T_Sync" or "Gen_T_Sync" or "V2n_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
+		=> method is "Ctl_Sync" or "Ctl_T_Sync" or "Gen_T_Sync" or "V2n_Sync" or "V2_Throw_Sync" or "V2_Default_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
 
 	// The NULL policy twins (SynRowPolicy.cs) against V1, member by member. A narrower table has no column for some members: SynRow leaves a reference-typed
 	// one null, a twin keeps its initializer ("" or an empty array). That tolerance holds ONLY for a member whose column is missing from the table (not in
