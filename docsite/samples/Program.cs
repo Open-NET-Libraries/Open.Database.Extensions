@@ -217,7 +217,7 @@ Check(
 	bufferLines.SequenceEqual(expectedLines),
 	"buffering with ToListAsync returns the same rows as the stream");
 
-// Async buffers and streams.
+// Pooled buffers and streams.
 string rendered = await AsyncBuffers
 	.RenderPostsAsync(factory, CancellationToken.None);
 Check(

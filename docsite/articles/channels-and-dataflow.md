@@ -12,7 +12,7 @@ Both packages take a mapped query (`Map<T>()`), so rows are mapped the same way 
 
 ## Streaming from a mapped query
 
-To read a mapped query while a consumer works, use the buffer streams (`ToPooledStream` and `ToPooledBufferStream`) in the core package: the connection is released as soon as the last row is read.
+To read a mapped query while a consumer works, use the pooled streams (`ToPooledStream` and `ToPooledBufferStream`) in the core package: the connection is released as soon as the last row is read.
 
 A stream earns its place when a producer and its consumer run at different speeds. After `Map<T>()`, the query is the producer: it reads the rows on a background task, in chunks, and is finished with the connection as soon as the last row is read. The consumer does the slow work (a web call, a file write, a transform) while the query is still being read. The rows are typed, the later result sets are read through, and rows are read with `Read` unless you call `AsyncReads()`.
 
@@ -20,7 +20,7 @@ Which one to use:
 - `ToPooledStream(cancellationToken)` yields the elements one by one, as an `IAsyncEnumerable<T>` that works with `await foreach` and `System.Linq.Async`.
 - `ToPooledBufferStream(cancellationToken)` yields the chunks (`ReadOnlyMemory<T>`) without copying the rows out of them. A chunk is valid only until the next step of the loop: copy what you keep.
 
-Both are lazy and single-use, and a `break` or a dispose cancels the query: it waits for the provider call in progress to return. Always dispose the enumerator (`await foreach` does): one that is abandoned holds the connection until the read ends. The pool (`UsePool` after `Map`), clearing, cancellation and the cost in memory are in [Async buffers and streams](async-buffers.md), which also covers `ToPooledBuffer`.
+Both are lazy and single-use, and a `break` or a dispose cancels the query: it waits for the provider call in progress to return. Always dispose the enumerator (`await foreach` does): one that is abandoned holds the connection until the read ends. The pool (`UsePool` after `Map`), clearing, cancellation and the cost in memory are in [Pooled buffers and streams](async-buffers.md), which also covers `ToPooledBuffer`.
 
 ### One producer, one consumer
 

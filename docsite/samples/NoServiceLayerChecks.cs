@@ -65,13 +65,13 @@ public static class NoServiceLayerChecks
 		string minimalList = await client.GetStringAsync("minimal/posts/by-author/42/list");
 		check(minimal == classic && minimalList == classic, "no service layer: the minimal API endpoints, buffer and list, write the same JSON");
 
-		// The controller of "Returning it from a controller" (async buffers article).
+		// The controller of "Returning it from a controller" (pooled buffers article).
 		string latest = await client.GetStringAsync("posts");
 		List<Post> latestList = await Db.Factory
 			.Command("select * from posts order by id")
 			.Map<Post>()
 			.ToListAsync(CancellationToken.None);
-		check(latest == JsonSerializer.Serialize(latestList, JsonSerializerOptions.Web), "async buffers: the controller that returns Items without awaiting it writes the same JSON as ToListAsync");
+		check(latest == JsonSerializer.Serialize(latestList, JsonSerializerOptions.Web), "pooled buffers: the controller that returns Items without awaiting it writes the same JSON as ToListAsync");
 
 		// ETag: a 200 with the tag, then a 304 for the same tag, with no body.
 		using HttpResponseMessage first = await client.GetAsync("cached/posts/by-author/42");

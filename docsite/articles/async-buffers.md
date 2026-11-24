@@ -1,6 +1,6 @@
-# Async buffers and streams
+# Pooled buffers and streams
 
-`ToPooledBuffer`, `ToPooledBufferStream` and `ToPooledStream` read a query at the provider's pace, into pooled chunks, on their own background producer. The connection is released when the last row is read. What happens to the rows after that, and how slowly, is the consumer's business.
+`ToPooledBuffer`, `ToPooledBufferStream` and `ToPooledStream` read a query at the provider's pace, into pooled chunks, on their own background producer. The connection is released when the last row is read. What happens to the rows after that, and how slowly, is the consumer's business. `ToPooledBuffer` starts reading when you call it and returns a buffer that is already filling; `ToPooledBufferStream` and `ToPooledStream` are lazy and start on the first `MoveNextAsync`, like `Stream` and `StreamBuffered`.
 
 They are on the typed views: `Map<T>()` of a command, and the same view after `Skip` and `Take`. Every example on this page is async. The examples are compiled in the samples project, except the two marked "Not compiled by the docs build".
 
@@ -252,7 +252,7 @@ To keep or change the rows, use `ToArrayAsync` or `ToListAsync`: the copy is you
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_rows_to_keep)]
 
-To read a query while a consumer works, use the buffer streams: the connection is released as soon as the last row is read. See [Channels and Dataflow](channels-and-dataflow.md).
+To read a query while a consumer works, use the pooled streams: the connection is released as soon as the last row is read. See [Channels and Dataflow](channels-and-dataflow.md).
 
 ## Sources
 

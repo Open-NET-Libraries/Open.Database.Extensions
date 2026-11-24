@@ -6,7 +6,7 @@ using Open.Database.Extensions;
 
 namespace Samples;
 
-// The examples of the "Async buffers and streams" article. Every one is
+// The examples of the "Pooled buffers and streams" article. Every one is
 // async, and Program.cs checks what the article says about it.
 public static class AsyncBuffers
 {
