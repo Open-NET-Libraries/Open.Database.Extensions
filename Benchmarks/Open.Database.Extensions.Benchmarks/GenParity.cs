@@ -50,7 +50,7 @@ public static class GenParity
 		public int Mode = 1;
 	}
 
-	static readonly Layout s_layout = new();
+	static readonly Layout SharedLayout = new();
 
 	public static readonly Func<IDataRecord, SynRow> V2n = Read1;
 	public static readonly Func<IDataRecord, SynRow> GP2 = Read2;
@@ -88,7 +88,7 @@ public static class GenParity
 		return item;
 	}
 
-	static SynRow Read2(IDataRecord record) => Fill2((DbDataReader)record, s_layout);
+	static SynRow Read2(IDataRecord record) => Fill2((DbDataReader)record, SharedLayout);
 
 	static SynRow Fill2(DbDataReader r, Layout l)
 	{
@@ -116,7 +116,7 @@ public static class GenParity
 		return item;
 	}
 
-	static SynRow Read3(IDataRecord record) => Fill3((DbDataReader)record, s_layout);
+	static SynRow Read3(IDataRecord record) => Fill3((DbDataReader)record, SharedLayout);
 
 	static SynRow Fill3(DbDataReader r, Layout l)
 	{
@@ -221,11 +221,11 @@ public static class GenParity
 		public int Rows;
 	}
 
-	static readonly RowCount s_rows = new();
+	static readonly RowCount SharedRows = new();
 
 	static SynRow Read6r(IDataRecord r)
 	{
-		RowCount b = s_rows;
+		RowCount b = SharedRows;
 		b.Rows++;
 		try
 		{
@@ -342,12 +342,12 @@ public static class GenParity
 		public SynRow Row(IDataRecord record)
 		{
 			Bound? b = _bound;
-			if (b is null || !ReferenceEquals(b.Record, record) || record.FieldCount != b.Layout.Names.Length) _bound = b = new Bound(record, (DbDataReader)record, s_layout);
-			switch (b.Layout.Mode)
+			if (b is null || !ReferenceEquals(b.Record, record) || record.FieldCount != b.Layout.Names.Length) _bound = b = new Bound(record, (DbDataReader)record, SharedLayout);
+			return b.Layout.Mode switch
 			{
-				case 1: return Fill3(b.Reader, b.Layout);
-				default: throw new InvalidOperationException();
-			}
+				1 => Fill3(b.Reader, b.Layout),
+				_ => throw new InvalidOperationException(),
+			};
 		}
 	}
 }
