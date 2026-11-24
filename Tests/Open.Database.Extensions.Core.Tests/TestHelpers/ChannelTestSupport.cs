@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Threading.Tasks.Dataflow;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
 #nullable enable
@@ -129,6 +130,29 @@ internal static class ChannelWait
 	public static Task<T> Within<T>(this Task<T> task)
 		=> task.WaitAsync(Limit, Ct);
 
+	/// <summary>
+	/// Reads one row, bounded by the limit and watching the pass that feeds the channel: a pass that stopped (a stall, a failure) leaves the channel open
+	/// by default, so an unbounded read would wait forever and hang the run; here the test fails with the pass's own exception (or a timeout) instead.
+	/// </summary>
+	public static async Task<ChannelRow> ReadRow(ChannelReader<ChannelRow> reader, Task pass)
+	{
+		Task<ChannelRow> read = reader.ReadAsync(Ct).AsTask().Within();
+		Task first = await Task.WhenAny(read, pass).ConfigureAwait(false);
+		if (first == pass && !read.IsCompleted) await pass.ConfigureAwait(false); // a failed pass throws here
+		return await read.ConfigureAwait(false);
+	}
+
+
+	/// <summary>
+	/// <see cref="ReadRow"/> for a block: receives one row, bounded by the limit and watching the pass, so a pass that stopped fails the test with its own exception.
+	/// </summary>
+	public static async Task<ChannelRow> ReceiveRow(ISourceBlock<ChannelRow> block, Task pass)
+	{
+		Task<ChannelRow> receive = block.ReceiveAsync(Ct).Within();
+		Task first = await Task.WhenAny(receive, pass).ConfigureAwait(false);
+		if (first == pass && !receive.IsCompleted) await pass.ConfigureAwait(false); // a failed pass throws here
+		return await receive.ConfigureAwait(false);
+	}
 	/// <summary>
 	/// Reads to the end of the channel: the ids of the rows,
 	/// and the exception the channel ended with, if it did.

@@ -94,7 +94,7 @@ public static class ToChannelStreamingTests
 		Assert.False(task.IsCompleted);
 		Assert.Empty(tally.Connections);
 
-		_ = await channel.Reader.ReadAsync(Ct);
+		_ = await channel.Reader.ReadAsync(Ct).AsTask().Within();
 		Assert.Equal([1, 2, 3], await Drain(channel.Reader, 3));
 		Assert.Equal(3, await task.Within());
 	}
@@ -132,9 +132,9 @@ public static class ToChannelStreamingTests
 
 		// The rows written before the stall are still there,
 		// then the channel ends with the timeout.
-		Assert.Equal(1, (await channel.Reader.ReadAsync(Ct)).Id);
+		Assert.Equal(1, (await channel.Reader.ReadAsync(Ct).AsTask().Within()).Id);
 		Exception thrown = await Assert.ThrowsAnyAsync<Exception>(
-			async () => await channel.Reader.ReadAsync(Ct));
+			async () => await channel.Reader.ReadAsync(Ct).AsTask().Within());
 		Assert.True(
 			thrown is TimeoutException || thrown.InnerException is TimeoutException,
 			thrown.ToString());
@@ -153,7 +153,7 @@ public static class ToChannelStreamingTests
 				.Within());
 
 		Assert.False(channel.Reader.Completion.IsCompleted);
-		_ = await channel.Reader.ReadAsync(Ct);
+		_ = await channel.Reader.ReadAsync(Ct).AsTask().Within();
 		Assert.True(channel.Writer.TryWrite(new(99)));
 	}
 
@@ -164,16 +164,16 @@ public static class ToChannelStreamingTests
 		Channel<ChannelRow> channel = Bounded(1);
 
 		Task<long> task = Read(tally)
-			.ToChannelHoldingConnection(channel, TimeSpan.FromMilliseconds(400), Ct)
+			.ToChannelHoldingConnection(channel, TimeSpan.FromMilliseconds(4000), Ct)
 			.AsTask();
 
-		// One row every 40 ms: well over the pass's length against the
-		// timeout, but never a standstill of the timeout.
+		// One row every 150 ms: the whole read (4.5 s) outlasts the 4 s stall timeout, with a 26x margin per pull, so
+		// it tests the per-pull rule and not the scheduler: never a standstill of the timeout.
 		List<int> rows = [];
 		while (rows.Count < 30)
 		{
-			await Task.Delay(40, Ct);
-			rows.Add((await channel.Reader.ReadAsync(Ct)).Id);
+			await Task.Delay(150, Ct);
+			rows.Add((await ChannelWait.ReadRow(channel.Reader, task)).Id);
 		}
 
 		Assert.Equal(ChannelWait.Ids(30), rows);
