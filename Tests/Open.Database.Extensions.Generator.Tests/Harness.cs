@@ -1,8 +1,8 @@
+using Open.Database.Extensions.Generated;
 using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Reflection;
-using Open.Database.Extensions.Generated;
 
 // The counters are process-wide: one test at a time, so each test's deltas are its own.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
@@ -242,6 +242,7 @@ internal sealed class FaultReader(DbDataReader inner, int faultRow, int faultOrd
 }
 
 /// <summary>A provider's own failure: a <see cref="DbException"/>, which the runtime map lets through untouched.</summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1194:Implement exception constructors")]
 internal sealed class TestDbException(string message) : DbException(message);
 
 /// <summary>A reader that forwards to another and calls <see cref="Touch"/> before each cell is read.</summary>

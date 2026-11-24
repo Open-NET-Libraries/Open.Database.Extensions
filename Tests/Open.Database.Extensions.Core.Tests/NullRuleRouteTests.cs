@@ -1,7 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using System.Data.Common;
-using System.Threading.Tasks.Dataflow;
 
 #nullable enable
 
@@ -106,7 +105,7 @@ public static class NullRuleRouteTests
 		// The DbDataReader loop of Stream: only a reader view reaches it, and a view's Read has no skip.
 		NullAssert.Model<Plain>(row, () =>
 		{
-			using TypedReader reader = TypedReader.Create([new ColumnDef("Id", typeof(int))], rows);
+			using var reader = TypedReader.Create([new ColumnDef("Id", typeof(int))], rows);
 			reader.Map<Plain>().Read(items => items.Count());
 		});
 		await NullAssert.ModelAsync<Plain>(row, async () => await Rows().Map<Plain>().Skip(skip).ToListAsync(Ct));
@@ -168,6 +167,7 @@ public static class NullRuleRouteTests
 		public bool Read() => inner.Read();
 	}
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1194:Implement exception constructors")]
 	sealed class ProviderFailure() : DbException("the provider failed");
 
 	// A reader whose typed read of Id fails as the provider would.

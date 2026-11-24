@@ -354,7 +354,7 @@ public static class MappedQueryReadThroughTests
 		FakeExecuteReader command = Command(StallStream.DefaultBufferSize + 500, out Func<MultiSetReader> reader);
 
 		// Bounded: if a dispose failed to unblock the read this fails in seconds, not at the run-level timeout.
-		using CancellationTokenSource bound = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+		using var bound = CancellationTokenSource.CreateLinkedTokenSource(Ct);
 		bound.CancelAfter(TimeSpan.FromSeconds(10));
 
 		await foreach (int _ in Query(command).StreamBuffered(Timeout.InfiniteTimeSpan, bound.Token))

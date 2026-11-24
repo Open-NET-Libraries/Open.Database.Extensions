@@ -66,7 +66,7 @@ public class GeneratedSourceTests
 	{
 		// Declined at generation time: no row reader is written for it, so nothing could bypass its policy.
 		string source = GeneratedSource();
-		Assert.Matches($@"file sealed class M\d+_UnmarkedPost\b", source);
+		Assert.Matches(@"file sealed class M\d+_UnmarkedPost\b", source);
 		Assert.DoesNotMatch($@"file sealed class M\d+_{model}\b", source);
 	}
 

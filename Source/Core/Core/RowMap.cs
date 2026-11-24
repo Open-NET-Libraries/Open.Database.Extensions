@@ -566,7 +566,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	{
 		for (Type? type = typeof(T); type is not null && type != typeof(object); type = type.BaseType)
 		{
-			NullDeclaration declared = NullDeclaration.Of(type);
+			var declared = NullDeclaration.Of(type);
 			if (declared.Invalid is not null)
 			{
 				error ??= $"'{Shape.TypeName(type)}' declares {declared.Invalid}.";
@@ -622,7 +622,10 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 	{
 		Type? underlying = Nullable.GetUnderlyingType(type);
 		if (value is null)
-			return (type.IsValueType && underlying is null) || nonNullableReference ? null : Expression.Constant(null, type);
+		{
+			return nonNullableReference || type.IsValueType && underlying is null
+				? null : Expression.Constant(null, type);
+		}
 
 		try
 		{
@@ -630,6 +633,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 				.GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!
 				.MakeGenericMethod(underlying ?? type)
 				.Invoke(null, [value]);
+
 			return Expression.Constant(converted, type);
 		}
 		catch (Exception ex) when (ex is TargetInvocationException or ArgumentException)
@@ -689,7 +693,7 @@ public sealed class RowMap<T> : IEnumerable<KeyValuePair<string, string?>>, IRow
 
 			// A positional record's parameter takes the declarations on the parameter, else on the property it feeds.
 			bool nonNullableReference = NullAnnotations.IsNonNullableReference(parameter);
-			NullDeclaration own = NullDeclaration.Of(parameter);
+			var own = NullDeclaration.Of(parameter);
 			if (matches[i] is { } fed) own = own.Or(NullDeclaration.Of(fed));
 			NullRule? onNull = RuleOf(own, modelPolicy, name, parameter.ParameterType, nonNullableReference, ref policyError);
 			NullRule? typeOnNull = RuleOf(NullDeclaration.None, modelPolicy, name, parameter.ParameterType, nonNullableReference, ref policyError);

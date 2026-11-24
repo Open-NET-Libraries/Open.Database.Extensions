@@ -1,5 +1,5 @@
-using System.Buffers;
 using Microsoft.Data.Sqlite;
+using System.Buffers;
 
 namespace Open.Database.Extensions.Tests;
 
@@ -183,11 +183,12 @@ public static class PooledBufferFromTests
 		await c.OpenAsync(Ct);
 		RecordingPool<int> pool = new();
 
-		await using PooledBuffer<int> buffer = DbQuery.Text("select 1 where 0")
+		await using var buffer = DbQuery.Text("select 1 where 0")
 			.Map<int>()
 			.UsePool(pool, clearOnReturn: true)
 			.Using(c)
 			.ToPooledBuffer(Ct);
+
 		PooledArray<int> rows = await buffer.Items;
 
 		Assert.Same(PooledArray<int>.Empty, rows);
@@ -201,7 +202,7 @@ public static class PooledBufferFromTests
 		await using SqliteConnection c = new("Data Source=:memory:");
 		await c.OpenAsync(Ct);
 
-		PooledBuffer<int> buffer = DbQuery.Text("select 1 where 0").Map<int>().Using(c).ToPooledBuffer(Ct);
+		var buffer = DbQuery.Text("select 1 where 0").Map<int>().Using(c).ToPooledBuffer(Ct);
 		PooledArray<int> rows = await buffer.Items;
 
 		await buffer.DisposeAsync();
@@ -217,7 +218,7 @@ public static class PooledBufferFromTests
 		await using SqliteConnection c = new("Data Source=:memory:");
 		await c.OpenAsync(Ct);
 
-		await using PooledBuffer<int> buffer = DbQuery.Text("select 1 union all select 2")
+		await using var buffer = DbQuery.Text("select 1 union all select 2")
 			.Map<int>()
 			.Using(c)
 			.ToPooledBuffer(Ct);

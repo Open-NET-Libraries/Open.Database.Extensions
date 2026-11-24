@@ -320,7 +320,7 @@ public static class NullPolicyTests
 	[Fact]
 	public static void AFactoryParameter_TakesItsPolicy_AndAValueThatDoesNotFitThrowsAtFrom()
 	{
-		RowMap<Counted> map = RowMap<Counted>.From(([NullPolicy(NullAction.Default)] int id = 4) => new Counted { Id = id });
+		var map = RowMap<Counted>.From(([NullPolicy(NullAction.Default)] int id = 4) => new Counted { Id = id });
 		object?[] nullRow = [null];
 		Assert.Equal([4, 2], new FakeExecuteReader(["id"], nullRow, [2]).Map(map).ToList().Select(c => c.Id));
 

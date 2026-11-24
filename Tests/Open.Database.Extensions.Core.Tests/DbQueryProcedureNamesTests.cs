@@ -60,7 +60,7 @@ public static class DbQueryProcedureNamesTests
 	public static void ADbQuery_RemembersAnEmptyAnswer_SoARepeatRunDoesNotAskTheProviderAgain()
 	{
 		var connection = new Counting();
-		DbQuery query = DbQuery.Procedure(ParameterNameHarness.NewProcedure());
+		var query = DbQuery.Procedure(ParameterNameHarness.NewProcedure());
 		const int orderId = 1; // a name to derive the parameter name from
 
 		for (int i = 0; i < 2; i++)
@@ -78,7 +78,7 @@ public static class DbQueryProcedureNamesTests
 	public static async Task ADbQuery_RemembersAnEmptyAnswer_OnTheAsyncPathToo()
 	{
 		var connection = new Counting();
-		DbQuery query = DbQuery.Procedure(ParameterNameHarness.NewProcedure());
+		var query = DbQuery.Procedure(ParameterNameHarness.NewProcedure());
 		const int orderId = 1; // a name to derive the parameter name from
 
 		for (int i = 0; i < 2; i++)

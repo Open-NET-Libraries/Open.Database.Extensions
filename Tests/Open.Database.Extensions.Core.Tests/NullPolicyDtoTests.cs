@@ -20,7 +20,7 @@ public static class NullPolicyDtoTests
 	[Fact]
 	public static void OneDto_MapsByOurRules_SerializesByTheJsonAttributes_AndValidatesByTheDataAnnotations()
 	{
-		List<PostDto> mapped = Command(Dto.Rows).Map<PostDto>().ToList();
+		var mapped = Command(Dto.Rows).Map<PostDto>().ToList();
 		Assert.Equal(Dto.Expected.Length, mapped.Count);
 
 		for (int i = 0; i < mapped.Count; i++)

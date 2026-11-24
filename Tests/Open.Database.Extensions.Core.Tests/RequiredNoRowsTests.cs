@@ -50,9 +50,11 @@ public static class RequiredNoRowsTests
 					break;
 				case "ToPooledStream":
 					await foreach (RequiredPost _ in query.ToPooledStream(token)) { }
+
 					break;
 				default:
 					await foreach (RequiredPost _ in query.Stream(Timeout.InfiniteTimeSpan, token)) { }
+
 					break;
 			}
 

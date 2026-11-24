@@ -87,7 +87,7 @@ public class ProviderNullTests
 	{
 		using var connection = new SqliteConnection("Data Source=:memory:");
 		connection.Open();
-		Check("Sqlite", g =>
+		Check("Sqlite", _ =>
 		{
 			SqliteCommand c = connection.CreateCommand();
 			c.CommandText = "SELECT NULL AS v";
