@@ -225,7 +225,7 @@
       </listheader>
       <item>
         <term><c>Stream</c></term>
-        <description>None: no row is read ahead; your own thread, with no producer task and no channel; until you pull the last row; yes, on every pull.</description>
+        <description>None: no row is read ahead; your loop's thread (with <c>AsyncReads()</c>, the thread that finishes each read), with no producer task and no channel; until you pull past the last row; yes, on every pull.</description>
       </item>
       <item>
         <term><c>StreamBuffered</c></term>

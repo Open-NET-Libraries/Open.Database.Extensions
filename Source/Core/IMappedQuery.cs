@@ -30,8 +30,8 @@ public interface IMappedQuery<T>
 	/// If you go <paramref name="stallTimeout"/> without pulling the next row, the read stops, the command is cancelled,
 	/// the connection this library opened is closed, and your next pull throws <see cref="TimeoutException"/>.
 	/// Dispose the enumeration (<c>await foreach</c> does).
-	/// The rows are read with <c>Read()</c> on your thread unless the query asked for <c>AsyncReads()</c>, so a slow database read blocks your thread for its wait; a cancel cannot interrupt a read the provider is blocked in, so the command's <c>CommandTimeout</c> bounds it.
-	/// A timer checks the stall timeout, so an expiry is found within about a quarter of the timeout (never sooner than the timeout itself).
+	/// The rows are read with <c>Read()</c> on your thread unless the query asked for <c>AsyncReads()</c>, so a slow database read blocks your thread for its wait; a cancel cannot interrupt a read the provider is blocked in, so the command's <c>CommandTimeout</c> bounds it, and a cancel while you hold a row is seen at your next pull.
+	/// A timer checks the stall timeout, so an expiry is found up to about a quarter of the timeout (at least 10 ms) after the timeout has passed, never before it.
 	/// <include file="Mapped.docs.xml" path="docs/members[@name='stream-models']/*" />
 	/// </remarks>
 	/// <param name="stallTimeout">
@@ -56,8 +56,8 @@ public interface IMappedQuery<T>
 	/// the connection this library opened is closed, and your next pull throws <see cref="TimeoutException"/>.
 	/// Rows still waiting in the buffer when the stall trips are discarded, not delivered.
 	/// Dispose the enumeration (<c>await foreach</c> does).
-	/// The rows are read with <c>Read()</c> on your thread unless the query asked for <c>AsyncReads()</c>, so a slow database read blocks your thread for its wait; a cancel cannot interrupt a read the provider is blocked in, so the command's <c>CommandTimeout</c> bounds it.
-	/// A timer checks the stall timeout, so an expiry is found within about a quarter of the timeout (never sooner than the timeout itself).
+	/// The rows are read with <c>Read()</c> on your thread unless the query asked for <c>AsyncReads()</c>, so a slow database read blocks your thread for its wait; a cancel cannot interrupt a read the provider is blocked in, so the command's <c>CommandTimeout</c> bounds it, and a cancel while you hold a row is seen at your next pull.
+	/// A timer checks the stall timeout, so an expiry is found up to about a quarter of the timeout (at least 10 ms) after the timeout has passed, never before it.
 	/// <include file="Mapped.docs.xml" path="docs/members[@name='stream-models']/*" />
 	/// </remarks>
 	/// <param name="stallTimeout">

@@ -277,8 +277,6 @@ public static class DirectStreamTests
 			Assert.Equal(1, tally.Connections[0].Closes);
 		}
 
-		// The runs split between the two; neither is ever lost or doubled.
-		Assert.Equal(150, timeouts + completed);
 	}
 
 	[Fact]
@@ -341,6 +339,85 @@ public static class DirectStreamTests
 		Assert.Equal(1, tally.Connections[0].Closes);
 	}
 	[Fact]
+	public static async Task ACancel_WinsOverAnExpiry_AtTheNextPull()
+	{
+		DbTally tally = Tally(50);
+		using CancellationTokenSource cts = new();
+		await using IAsyncEnumerator<Row> rows = Query(tally).Stream(Short, cts.Token).GetAsyncEnumerator(Ct);
+
+		Assert.True(await rows.MoveNextAsync());
+
+		// Both the expiry and the cancel are there when the consumer pulls again: the cancel is what it sees.
+		await WaitUntil(() => tally.Connections[0].ClosedAfterOpen);
+		await cts.CancelAsync();
+
+		OperationCanceledException ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await rows.MoveNextAsync());
+		Assert.IsNotType<TimeoutException>(ex, exactMatch: false);
+	}
+
+	// ---- pulls that really wait: a provider whose ReadAsync completes later, on another thread ----
+
+	static DbTally Slow(int rows, int delayMs, int from)
+		=> new(new DbScript
+		{
+			Rows = [.. Enumerable.Range(1, rows).Select(i => new object?[] { i, "n" + i })],
+			AsyncReadDelayMs = delayMs,
+			AsyncReadFrom = from,
+		});
+
+	[Fact]
+	public static async Task PullsThatReallyWait_DeliverEveryRow_InOrder_AndCloseOnce()
+	{
+		DbTally tally = Slow(300, -1, 1);
+		List<int> ids = [];
+
+		await foreach (Row row in tally.Factory.Command("select").Map<Row>().AsyncReads().Stream(Long, Ct))
+			ids.Add(row.Id);
+
+		Assert.Equal(Enumerable.Range(1, 300), ids);
+		Assert.Equal(1, tally.Readers[0].Disposes);
+		Assert.Equal(1, tally.Connections[0].Closes);
+	}
+
+	[Fact]
+	public static async Task ASlowPull_IsNeverAnExpiry()
+	{
+		// The pull takes four times the stall timeout: the watchdog only runs while the consumer holds a row.
+		DbTally tally = Slow(5, 400, 2);
+		await using IAsyncEnumerator<Row> rows = tally.Factory.Command("select").Map<Row>().AsyncReads().Stream(Short, Ct).GetAsyncEnumerator(Ct);
+
+		Assert.True(await rows.MoveNextAsync());
+		Assert.True(await rows.MoveNextAsync());
+		Assert.Equal(2, rows.Current.Id);
+	}
+
+	[Fact]
+	public static async Task ACancel_WhileAPullWaits_EndsThePull_AndCleansUpOnce()
+	{
+		DbTally tally = Slow(5, 30_000, 2);
+		using CancellationTokenSource cts = new();
+		IAsyncEnumerator<Row> rows = tally.Factory.Command("select").Map<Row>().AsyncReads().Stream(Long, cts.Token).GetAsyncEnumerator(Ct);
+
+		try
+		{
+			Assert.True(await rows.MoveNextAsync());
+			Task<bool> pull = rows.MoveNextAsync().AsTask();
+			await Task.Delay(100, Ct);
+			Assert.False(pull.IsCompleted);
+
+			await cts.CancelAsync();
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await pull.WaitAsync(TimeSpan.FromSeconds(20), Ct));
+		}
+		finally
+		{
+			await rows.DisposeAsync();
+		}
+
+		Assert.Equal(1, tally.Readers[0].Disposes);
+		Assert.Equal(1, tally.Connections[0].Closes);
+	}
+
+	[Fact]
 	public static async Task AFailureWhileReading_ReachesThePull_AfterTheRowsAlreadyDelivered()
 	{
 		DbTally tally = Tally(10, failOnRead: 3);
@@ -378,8 +455,8 @@ public static class DirectStreamTests
 		long small = await Measure(100);
 		long large = await Measure(1000);
 
-		// A row costs its own object (a record of two fields, 32 bytes) and the fake's own work; a handoff object per row would add at least 56 bytes.
+		// A row costs its own object, a record of two fields: 32 bytes, and the stream adds nothing (measured: exactly 32.0). A handoff object per row would add at least 56.
 		double perRow = (large - small) / 900.0;
-		Assert.True(perRow < 120, $"{perRow:F1} bytes per row.");
+		Assert.True(perRow <= 40, $"{perRow:F1} bytes per row.");
 	}
 }

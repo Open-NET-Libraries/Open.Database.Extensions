@@ -329,7 +329,7 @@ To read rows as they arrive there are three ways, and they differ in what they b
 
 | | Buffer | Threads | Connection held until | Stall protection |
 |---|---|---|---|---|
-| `Stream(stallTimeout, ct)` | none: no row is read ahead | your loop alone: no producer task, no channel | you pull the last row | yes, on every pull |
+| `Stream(stallTimeout, ct)` | none: no row is read ahead | your loop's thread, with no producer task and no channel (with `AsyncReads()`, the thread that finishes each read) | you pull past the last row | yes, on every pull |
 | `StreamBuffered(stallTimeout, ct)` | up to 1,024 rows (`bufferSize` sets it; it counts rows, not bytes) | a producer task and your loop | the read ends, or, once the buffer is full, the stall timeout passes without a pull (never with an infinite timeout) | yes, once the buffer is full |
 | `ToPooledStream` | unbounded: pooled chunks, the whole result if you are slow | a producer task and your loop | the read ends, however slowly you read | none |
 
