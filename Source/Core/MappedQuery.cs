@@ -990,7 +990,8 @@ public readonly record struct MappedQuery<T>
 	/// <summary>Reads the rows of an async terminal with <c>ReadAsync</c> instead of <c>Read</c>.</summary>
 	/// <remarks>
 	/// By default every terminal, async ones included, executes asynchronously and reads the rows with <c>Read</c>.
-	/// This opts in to <c>ReadAsync</c> (the getters stay synchronous, and the later result sets are read through with <c>NextResultAsync</c>) for this call only.
+	/// This opts in to <c>ReadAsync</c> (the getters stay synchronous) for this call only.
+	/// It changes only how the rows are read: an async terminal reads through the later result sets with <c>NextResultAsync</c> either way.
 	/// It changes nothing on a synchronous terminal. It can be called in any order with <c>Skip</c>, <c>Take</c> and <c>SingleResult</c>.
 	/// </remarks>
 	/// <returns>The same query, reading its rows asynchronously.</returns>

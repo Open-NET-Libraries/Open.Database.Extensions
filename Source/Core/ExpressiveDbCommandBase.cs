@@ -114,8 +114,8 @@ public abstract partial class ExpressiveDbCommandBase<TConnection, TCommand, TRe
 	/// </summary>
 	/// <remarks>
 	/// By default every terminal, async ones included, executes asynchronously and reads the rows with <c>Read</c>.
-	/// This opts in to <c>ReadAsync</c> for this command only: the getters stay synchronous,
-	/// and the later result sets are read through with <c>NextResultAsync</c>.
+	/// This opts in to <c>ReadAsync</c> for this command only: the getters stay synchronous.
+	/// It changes only how the rows are read: an async terminal reads through the later result sets with <c>NextResultAsync</c> either way.
 	/// It changes nothing on a synchronous terminal. The same call is available on the mapped views (<see cref="MappedQuery{T}.AsyncReads"/>), in any order with <c>Skip</c>, <c>Take</c> and <c>SingleResult</c>.
 	/// </remarks>
 	/// <returns>The same command.</returns>

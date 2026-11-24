@@ -8,7 +8,7 @@ Most of the library is a provider-agnostic set of extension methods on the stand
 
 A connection factory creates connections without the caller knowing a connection string:
 
-- `IDbConnectionFactory` and `IDbConnectionFactory<TConnection>` are the abstractions, which fit dependency injection. The `Async` terminals need a `DbConnection`, so a service that awaits should depend on `IDbConnectionFactory<DbConnection>` (or a factory of a specific `DbConnection` type); commands from the non-generic `IDbConnectionFactory` have no `Async` twins.
+- `IDbConnectionFactory` and `IDbConnectionFactory<TConnection>` are the abstractions, which fit dependency injection. The `Async` terminals need a `DbConnection`, so a service that awaits should depend on `IDbConnectionFactory<DbConnection>` (or a factory of a specific `DbConnection` type); commands from the non-generic `IDbConnectionFactory` have no `Async` twins. A `DbQuery` takes only factories and pools of `DbConnection`s (the compiler rejects another type); a source that supplies something else at run time fails the run with `InvalidOperationException`, after the connection it supplied is disposed (factory) or given back (pool).
 - `DbConnectionFactory<TConnection>` wraps any `Func<TConnection>`.
 - `SqlConnectionFactory` (in the `MSSqlClient` package) wraps a connection string for SQL Server.
 
@@ -37,11 +37,11 @@ Several helpers exist to keep the time a connection is open short:
 
 ## Transactions
 
-`ExecuteTransactionConditional` begins a transaction, runs your action, and commits only if the action returns `true`, nothing throws and the cancellation token was not cancelled. Otherwise it rolls back.
+`ExecuteTransactionConditionalAsync` begins a transaction, runs your action, and commits only if the action returns `true`, nothing throws and the cancellation token was not cancelled. Otherwise it rolls back. A connection that was closed is opened for the transaction and closed again afterwards; one that was open stays open.
 
 [!code-csharp[](../samples/Transactions.cs#transaction)]
 
-The async forms (`ExecuteTransactionAsync`, `ExecuteTransactionConditionalAsync`) take the token too. The token is checked once more after your action returns: a token cancelled by then throws `OperationCanceledException` and nothing commits. The commit itself is sent without the token, so cancelling while it runs does not interrupt it.
+`ExecuteTransactionAsync` is the same without the condition: it commits unless the action throws. The token is checked once more after your action returns: a token cancelled by then throws `OperationCanceledException` and nothing commits. The commit itself is sent without the token, so cancelling while it runs does not interrupt it.
 
 [!code-csharp[](../samples/Transactions.cs#transaction_async)]
 
@@ -49,7 +49,7 @@ The async forms (`ExecuteTransactionAsync`, `ExecuteTransactionConditionalAsync`
 
 The foundation also includes helpers you can use without the expressive syntax: `ForEach` and `ForEachAsync` over a reader, `Select` and `SelectAsync`, `AsAsyncEnumerable`, `ToDataTable` and friends on commands. Buffered reads copy the rows out of the reader first, so the connection can be released early. For rows without a model use `AsObjectArrays()` or `AsDictionaryRows()` (see [Rows without a model](mapping.md#rows-without-a-model)); for typed rows `Map<T>()` is the better route (see [Performance](performance.md#where-it-is-not-faster)).
 
-The reader helpers that take a token (`ForEach`, `ForEachAsync`, `IterateWhile`, `Select`, `SelectAsync`) check it at the top of the loop, before each read (the async forms hand it to `ReadAsync`, so the provider cancels the read itself). A cancel throws `OperationCanceledException` and the read is not made; the rows already handed out stay handed out. A cancel while the last row is handled throws at the next check. Once a read has returned no row the result is complete, and a cancel after that is not an error. To stop early, return `false` from the predicate or `break` out of the loop: do not cancel.
+The reader helpers that take a token (`ForEach`, `ForEachAsync`, `IterateWhile`, `Select`, `SelectAsync`) check it at the top of the loop, before each read (the async forms hand it to `ReadAsync`, so the provider cancels the read itself). A cancel throws `OperationCanceledException` and the read is not made; the rows already handed out stay handed out. A cancel while the last row is handled throws at the next check. Once a read has returned no row the result is complete, and a cancel after that is not an error. To stop early, return `false` from the predicate or `break` out of the loop: do not cancel. `AsAsyncEnumerable` is the exception to the throwing rule: a cancelled token ends its enumeration quietly, and the rows already yielded stay yielded.
 
 [!code-csharp[](../samples/ReaderCancellation.cs#reader_cancellation)]
 

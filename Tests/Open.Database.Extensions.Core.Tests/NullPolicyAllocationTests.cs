@@ -96,4 +96,42 @@ public static class NullPolicyAllocationTests
 
 		Assert.True(Math.Abs(covered - plain) <= SlackPerRow, $"{model} (NULL cells: {nulls}): {covered:0.##} bytes per row; a plain model: {plain:0.##}.");
 	}
+
+	// The stream route: the rows pulled one at a time through the IAsyncEnumerable terminal. The per-row catch of a failing row sits around the map call
+	// inside the iterator, so a row costs the stream no bytes beyond what a hand-written selector's row costs: the model object.
+	static int Drain<T>(IAsyncEnumerable<T> rows)
+	{
+		static async ValueTask<int> Core(IAsyncEnumerable<T> rows)
+		{
+			int n = 0;
+			await foreach (T _ in rows.ConfigureAwait(false)) n++;
+			return n;
+		}
+
+		return Core(rows).AsTask().GetAwaiter().GetResult();
+	}
+
+	static double StreamBytesPerRow(bool handWritten)
+	{
+		object?[][] few = Rows(100, false);
+		object?[][] many = Rows(1000, false);
+		ColumnDef[] columns = [new("A", typeof(int)), new("B", typeof(string))];
+		FakeDbCommand Command(object?[][] rows) => new(new FakeDbConnection(), () => TypedReader.Create([.. columns], rows));
+
+		long Bytes(object?[][] rows)
+			=> handWritten
+			? BytesPerCall(() => Drain(Command(rows).Map(r => new Plain { A = r.GetInt32(0), B = r.GetString(1) }).Stream(Timeout.InfiniteTimeSpan)))
+			: BytesPerCall(() => Drain(Command(rows).Map<Plain>().Stream(Timeout.InfiniteTimeSpan)));
+
+		return (Bytes(many) - Bytes(few)) / 900.0;
+	}
+
+	[Fact]
+	public static void AStreamedRow_CostsNoBytesBeyondAHandWrittenSelectors()
+	{
+		double handWritten = StreamBytesPerRow(true);
+		double mapped = StreamBytesPerRow(false);
+
+		Assert.True(mapped <= handWritten + SlackPerRow, $"A mapped stream costs {mapped:0.##} bytes per row; a hand-written selector's: {handWritten:0.##}.");
+	}
 }

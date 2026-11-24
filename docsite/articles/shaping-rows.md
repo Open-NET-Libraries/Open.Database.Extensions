@@ -77,7 +77,7 @@ You may look for an `Ignore(member)`. It exists as a pair whose column is the C#
 There is no strict mode, because a mode would change every rule. There are three ways to say what you mean, each at the place it applies:
 
 - **A member that must have a column** is `required`. When the columns of a result include none for it, the first row throws `ValueMappingException`, and an empty result never reports it, because no row is read. The routes that know the columns before the first row report it before any row: see [`required` and `init` members](mapping.md#required-and-init-members). This holds for `Map<T>()` without a factory.
-- **A member that must never be filled** is a pair with a `null` column, as above.
+- **A member that must never be filled** is a pair with a `null` column, as above, on a member that is not `required` (a `null` column for a `required` member throws `ArgumentException` when the map is created).
 - **A map that reads only what it lists** is a factory map. Its function takes the columns it names and no member is filled by name afterwards.
 
 [!code-csharp[](../samples/ShapingRows.cs#shape_strict_model)]

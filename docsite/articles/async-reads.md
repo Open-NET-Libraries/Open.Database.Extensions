@@ -6,9 +6,9 @@ Every command-level terminal and mapped view reads its rows with `Read()`, and t
 
 This covers every terminal on a command (`cmd.Map<T>().ToListAsync(token)`, `FirstOrDefaultAsync`, `ToArrayAsync` and the others), and every mapped view: `Map<T>()` and `Map(Func)`, on an expressive command and on a plain `IDbCommand`. The command still executes, and the connection still opens, asynchronously. Only the rows are read with `Read()`.
 
-`AsyncReads()` opts one call in to `ReadAsync(token)`, with synchronous getters, and to `NextResultAsync(token)` for the later result sets.
+`AsyncReads()` opts one call in to `ReadAsync(token)`, with synchronous getters. It changes only the row read: every async terminal reads through the later result sets with `NextResultAsync(token)`, with or without it.
 
-The raw reader extensions stay raw. The async members you call on a reader you opened (`AsAsyncEnumerable`, `SelectAsync`, `ForEachAsync` and `IterateWhileAsync`) read with `ReadAsync` by default: there you opened the reader and asked to iterate it asynchronously.
+The raw reader extensions stay raw. The async members you call on a reader you opened (`AsAsyncEnumerable`, `SelectAsync`, `ForEachAsync` and `IterateWhileAsync`) read with `ReadAsync`: there you opened the reader and asked to iterate it asynchronously. `ForEachAsync` and `IterateWhileAsync` also have a form with a `useReadAsync` flag; pass `false` to read with `Read`.
 
 The same query, both ways:
 
@@ -53,7 +53,7 @@ The default is the right read for most calls. A few callers cannot spend a threa
 
 ### What it does
 
-Rows are read with `ReadAsync(token)` and synchronous getters. Later result sets are read through with `NextResultAsync(token)`. The executing and the opening are asynchronous. It changes nothing on a synchronous terminal.
+Rows are read with `ReadAsync(token)` and synchronous getters. The executing, the opening and the read through the later result sets (`NextResultAsync(token)`) are asynchronous with or without it. It changes nothing on a synchronous terminal.
 
 It is available in these places:
 
@@ -69,6 +69,8 @@ It is available in these places:
 
 A plain `IDataReader` (one that is not a `DbDataReader`) that an async terminal reads checks the cancellation token on every row.
 
+A cancel reaches a buffer or a stream per row with the default read. With `AsyncReads()` the provider sees the token, so a provider that ignores it delays a cancel (or a dispose) to the next chunk: up to the rows of the current chunk.
+
 ### When to use it
 
 Use it when the calling thread must not block on network waits for rows: for example, a slow link with large result sets, where blocked threads are the scarce resource.
@@ -81,7 +83,7 @@ On `Map(Func)`, +73% memory at equal time: 9,713 KB against 16,812 KB, and 538.3
 
 [!code-csharp[](../samples/AsyncReads.cs#asyncreads_func)]
 
-On `Map<T>()`, equal memory (+0.02%, 219.2 against 219.1 KB per 1,000 rows). CPU, with nothing waiting, is +3.4% against the default at width 20 (80.0 against 77.4 µs per 1,000 rows), on a synthetic provider where every `ReadAsync` completes at once. See [Slow links and large values](benchmarks/slow-links-and-large-values.md) and [Sync reads against async reads](benchmarks/sync-vs-async.md).
+On `Map<T>()`, equal memory (219.2 against 219.1 KB per 1,000 rows). CPU, with nothing waiting, is +3.4% against the default at width 20 (80.0 against 77.4 µs per 1,000 rows), on a synthetic provider where every `ReadAsync` completes at once. See [Slow links and large values](benchmarks/slow-links-and-large-values.md) and [Sync reads against async reads](benchmarks/sync-vs-async.md).
 
 ### The busy-pool hazard
 

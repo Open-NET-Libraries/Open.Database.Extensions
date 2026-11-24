@@ -266,6 +266,14 @@ The rule reads the nullable annotations the compiler stores in the assembly, so 
 - **A `RowMap<T>` pair or converter that names the member overrides the member's own declarations** in that map; the type's policy still covers it. A converter whose column type is nullable receives the NULL itself, and no policy applies.
 - **Cost.** `Throw`, `Default` and a null value test the cell for NULL, once per covered member per row; `None` and no declaration add nothing. They are read once per type, when its map is built.
 
+#### Find the NULL in Debug, pay nothing in Release
+
+With no attribute the default read is the fast path, and a NULL into a non-nullable member names only the model and the row. To find the member and the column while you develop, put `[NullPolicy(NullAction.Throw)]` on the model under `#if DEBUG`: Debug builds name the member, the column and the row, and Release builds compile the attribute out and pay nothing.
+
+[!code-csharp[](../samples/NullDebug.cs#null_debug_model)]
+
+[!code-csharp[](../samples/NullDebug.cs#null_debug_use)]
+
 ## Values that cannot be mapped
 
 A row that cannot be mapped (an unconvertible value, an overflow, a NULL into a non-nullable member, a constructor that throws) throws `ValueMappingException`, a `DataException` (not an `InvalidOperationException`). Its message names the model and the 0-based row of the result set (`Unable to map row 0 to 'Post'.`), `TargetType` is the model (the value's type for `Map<int>()`), and the error that stopped the row is its `InnerException`. It names no member or column: the reader reads nothing more once a row fails. To have a NULL named by member and column, give the member `[NullPolicy(NullAction.Throw)]` (see [Null policy](#null-policy)). A `required` property no column feeds throws it too, naming the property and the column, without an inner exception (see [`required` and `init` members](#required-and-init-members)). Provider exceptions (`DbException`) and cancellation pass through unwrapped.

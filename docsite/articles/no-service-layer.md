@@ -61,7 +61,7 @@ Read the controller of the side-by-side from the top:
 
 <div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/no-service-layer-lifetime.svg" alt="A timeline of one request. The action starts the read, registers the buffer and returns at once. The connection is open only while the read runs. The rows stay in pooled arrays from the read until the response is over. The framework awaits the rows, then writes the JSON. When the response is over the framework disposes the buffer and the arrays go back to the pool." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
 
-What was observed on a real server, with a client abort and an action that throws, is on [Returning it from a controller](async-buffers.md#returning-it-from-a-controller). The use case behind the buffer is on [The controller story](async-buffers.md#the-controller-story).
+What was observed on Kestrel and on TestServer, with a client abort and an action that throws, is on [Returning it from a controller](async-buffers.md#returning-it-from-a-controller). The use case behind the buffer is on [The controller story](async-buffers.md#the-controller-story).
 
 ### RegisterForDispose
 
@@ -92,7 +92,7 @@ The hash covers every field the response carries, in order, and it encodes the t
 [!code-csharp[](../samples/NoServiceLayer.cs#nsl_etag_hash)]
 
 - When `Post` gains a field that the response carries, add it to the hash, or clients keep a `304` for rows that changed.
-- A stream from `ToBufferedAsyncStream` can be read once. To hash it and then write it, you would query again or copy the rows first.
+- A stream from `ToBufferedAsyncStream` can be read once: a second enumeration throws `InvalidOperationException`. To hash it and then write it, you would query again or copy the rows first.
 - The query still runs. A `304` saves the serialization and the bytes on the wire, not the read.
 - The `304` carries the ETag, as a `200` would.
 - If you change the JSON options (property names, say), clients keep ETags that still match: put a version string into the hash when you do.
@@ -112,11 +112,11 @@ With no service layer there is no pass-through code to mock. What is left to tes
 - `CountingPool<T>` is the pool on [Your own pool](async-buffers.md#your-own-pool). The test hands it in through the services.
 - The client can see the response before the framework disposes the buffer, so the guard waits for the arrays, with a time limit.
 - The guard is the test that fails when the action on the route it requests does not call `RegisterForDispose`: the response is the same and no array comes back.
-- Run the guard on a request that succeeds. When the action threw, or the client aborted before the response started, the test server did not dispose what the request had registered; Kestrel did. See the note on [Returning it from a controller](async-buffers.md#returning-it-from-a-controller).
+- Run the guard on a request that succeeds. When the action threw, or the client aborted during the read, the test server did not dispose what the request had registered; Kestrel did (the samples project checks both, for this form too). See the note on [Returning it from a controller](async-buffers.md#returning-it-from-a-controller).
 
 ## Caveats
 
 - **Nothing may hold the rows past the response.** Do not keep the `PooledArray<Post>` in a field or a cache, and do not hand it to work that outlives the request: once the buffer is disposed, the view throws `ObjectDisposedException`. Copy what you keep with `ToList()`. See [Lifetime and ownership](async-buffers.md#lifetime-and-ownership).
-- **Register before you return the task.** `RegisterForDispose` does; written by hand, call `Response.RegisterForDispose(buffer)` before `return buffer.Items`, so that the framework disposes it when the request is over. On Kestrel, a registered buffer was still disposed when the client aborted, and a registered object when the action threw; that was observed with an action that awaited `Items`, not yet with this form.
+- **Register before you return the task.** `RegisterForDispose` does; written by hand, call `Response.RegisterForDispose(buffer)` before `return buffer.Items`, so that the framework disposes it when the request is over. On Kestrel, with this form, a registered buffer was disposed when the client aborted during the read and when the action threw after it registered the buffer (before it returned the task, or in an `async` variant after the rows were read): every array went back to the pool. On an abort the action's task faults with `OperationCanceledException`; a throw answers `500`.
 - **Do not dispose it in the action.** A `using` or an `await using` on a buffer whose rows the action returns disposes it before the framework serializes them; with `await using`, the response on Kestrel was a `500`. See [The trap](async-buffers.md#the-trap-dispose-before-the-framework-serializes).
 - **The buffer holds the whole result until the response is written.** For a very large result, return the stream: see [A very large result](async-buffers.md#a-very-large-result-return-the-stream).

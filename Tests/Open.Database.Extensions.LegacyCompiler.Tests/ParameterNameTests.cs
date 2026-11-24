@@ -108,13 +108,15 @@ namespace Open.Database.Extensions.LegacyCompiler.Tests
 			{
 				() => command.AddParam(value: 1, expression: null),
 				() => command.AddParamIf(true, value: 1, expression: null),
-				() => command.AddParamIf(false, value: 1, expression: null),
 			})
 			{
 				ArgumentException ex = Assert.Throws<ArgumentException>(call);
 				Assert.Contains("C# 10", ex.Message);
 				Assert.Contains("AddParam(\"name\", value)", ex.Message);
 			}
+
+			// A false condition adds nothing and does not look at the argument.
+			command.AddParamIf(false, value: 1, expression: null);
 
 			Assert.Empty(command.Params);
 		}

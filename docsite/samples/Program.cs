@@ -101,6 +101,12 @@ Check(connection.Command("select 'Alan' as first_name").Map<Person>(nullPair).Fi
 RowMap<Person> otherPair = new([new(nameof(Person.FirstName), "given_name")]);
 Check(connection.Command("select 'Alan' as first_name").Map<Person>(otherPair).FirstOrDefault()?.FirstName is "", "a property named by a pair is not matched by an underscore column");
 Check((await Mapping.MapNullsAsync(connection, CancellationToken.None)) is { Quantity: 1, Stock: 0, Discount: null, Note: null, Title: "" }, "NullAction.Default keeps the initializer, [NullValue(0)] sets 0 over the initializer, and a nullable property gets null");
+ValueMappingException? nullDebug = await NullDebug.RunAsync(connection, CancellationToken.None);
+#if DEBUG
+Check(nullDebug is { PropertyName: "Likes", ColumnName: "likes", Message: "A NULL was read from column 'likes' into 'Likes' of PostStats at row 0, whose null policy is Throw." }, "a NULL into a non-nullable member names the member and the column in a Debug build, where the model carries [NullPolicy(NullAction.Throw)] under #if DEBUG");
+#else
+Check(nullDebug is { PropertyName: "", TargetType: { Name: "PostStats" } }, "a NULL into a non-nullable member names only the model and the row in a Release build, where the policy is compiled out");
+#endif
 ValueMappingException? nullError = await Mapping.MapNullErrorAsync(connection, CancellationToken.None);
 Check(nullError is { Message: "A NULL was read into a non-nullable member of PostRecord at row 0. Declare the member nullable (int?, string?).", InnerException: System.Data.SqlTypes.SqlNullValueException } && nullError.TargetType == typeof(PostRecord), "a NULL into a non-nullable member throws ValueMappingException naming the model and the row");
 Check(Throws<ValueMappingException>(() => connection.Command("select null").Map<int>().Single()) && connection.Command("select null").Map<int?>().Single() is null && connection.Command("select null").Map<string>().Single() is null, "a single value: NULL into int throws, into int? and string is null");
@@ -632,6 +638,7 @@ Check(
 // No service layer: the controllers and the article's tests, on a test server.
 Db.Seed();
 await NoServiceLayerChecks.RunAsync(Check);
+await NoServiceLayerLifetimeChecks.RunAsync(Check);
 
 Console.WriteLine($"All {checks} sample checks passed.");
 return 0;
