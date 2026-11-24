@@ -8,15 +8,15 @@ namespace Open.Database.Extensions.Benchmarks;
 // back; before, with no clearing asked for, the arrays were disposed
 // directly. CLASS rows (an int and a string) on SQLite in memory, through
 // the two buffer terminals that carry the difference:
-//   Buffer_  ToAsyncBuffer(ct).Items, then dispose the items
-//   Stream_  ToBufferedAsyncStream(ct), consumed whole with await foreach
+//   Buffer_  ToPooledBuffer(ct).Items, then dispose the items
+//   Stream_  ToPooledStream(ct), consumed whole with await foreach
 // Rows come from ODX_SYN_ROWS (default 1,100,10000), as the synthetic
 // suite does. Filters: *PoolBinCostBenchmarks.Buffer_*  *PoolBinCostBenchmarks.Stream_*
 //
 // This file is the AFTER arm. The BEFORE arm is the same file compiled
 // against master f6942a7 with the overloads that took the flag
-// (ToAsyncBuffer(clearOnDispose: false, ct) and
-// ToBufferedAsyncStream(clearOnReturn: false, ct)).
+// (ToPooledBuffer(clearOnDispose: false, ct) and
+// ToPooledStream(clearOnReturn: false, ct)).
 // BytesPerCall and the work-item counts are measured by the PoolBinCostProbe
 // test; here the MemoryDiagnoser only confirms the bytes (the
 // ThreadingDiagnoser is refused by --inprocess, which bench-guard uses).
@@ -59,7 +59,7 @@ public class PoolBinCostBenchmarks
 	{
 		using PooledArray<BinRow> items
 			= await _connection.Command(_sql).Map<BinRow>()
-				.ToAsyncBuffer(CancellationToken.None)
+				.ToPooledBuffer(CancellationToken.None)
 				.Items;
 
 		return items.Count;
@@ -70,7 +70,7 @@ public class PoolBinCostBenchmarks
 	{
 		int count = 0;
 		await foreach (BinRow _ in _connection.Command(_sql).Map<BinRow>()
-			.ToBufferedAsyncStream(CancellationToken.None))
+			.ToPooledStream(CancellationToken.None))
 		{
 			++count;
 		}

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 440" role="img" aria-labelledby="open-title open-desc">
   <title id="open-title">Reader-open time against consumer speed</title>
-  <desc id="open-desc">Three panels, each a pair of bars that start at zero, in milliseconds the reader is held open, for 10,000 rows on a synthetic provider with a 50 microsecond refill every 100 rows, one run. Left bar of each pair: the chunk stream, ToAsyncBufferStream. Right bar: reading the rows with no buffer, the consumer working inside the read. Consumer at 40 nanoseconds per row: 6.19 against 6.39 milliseconds. Consumer at 1 microsecond per row: 6.26 against 16.01 milliseconds. Consumer waiting 20 microseconds per 100 rows: 6.17 against 8.01 milliseconds. The chunk stream holds the reader the same time however slow the consumer is; with no buffer the reader is held as long as the consumer takes.</desc>
+  <desc id="open-desc">Three panels, each a pair of bars that start at zero, in milliseconds the reader is held open, for 10,000 rows on a synthetic provider with a 50 microsecond refill every 100 rows, one run. Left bar of each pair: the chunk stream, ToPooledBufferStream. Right bar: reading the rows with no buffer, the consumer working inside the read. Consumer at 40 nanoseconds per row: 6.19 against 6.39 milliseconds. Consumer at 1 microsecond per row: 6.26 against 16.01 milliseconds. Consumer waiting 20 microseconds per 100 rows: 6.17 against 8.01 milliseconds. The chunk stream holds the reader the same time however slow the consumer is; with no buffer the reader is held as long as the consumer takes.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -82,7 +82,7 @@
   <text class="mid" x="531.5" y="288">no</text>
   <text class="mid" x="531.5" y="304">buffer</text>
 
-  <text x="16" y="358">Left bar: ToAsyncBufferStream. Right bar: no buffer, the consumer works inside the</text>
+  <text x="16" y="358">Left bar: ToPooledBufferStream. Right bar: no buffer, the consumer works inside the</text>
   <text x="16" y="376">read. Every bar starts at zero, on one scale. The slower the consumer, the</text>
   <text x="16" y="394">longer the unbuffered read holds the reader; the chunk stream does not change.</text>
   <text class="muted" x="16" y="418">Source: pooled-buffer-cost.csv (run pbcost-A, 2026-11-23), synthetic provider, net11,</text>

@@ -5,7 +5,7 @@ using static Samples.AsyncBuffers;
 
 namespace Samples.AsyncBuffersArticle;
 
-// The controller of "Returning it from a controller" in the "Async buffers
+// The controller of "Returning it from a controller" in the "Pooled buffers
 // and streams" article. NoServiceLayerChecks requests it.
 #region buffers_aspnet_controller
 [ApiController]

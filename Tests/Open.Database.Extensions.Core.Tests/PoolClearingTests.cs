@@ -60,14 +60,14 @@ public static class PoolClearingTests
 				return (await view.ToDictionaryAsync(id, null, Ct)).Count;
 			case "buffer":
 				{
-					await using var buffer = view.ToAsyncBuffer(Ct);
+					await using var buffer = view.ToPooledBuffer(Ct);
 					return (await buffer.Items.Within()).Count;
 				}
 
 			case "stream":
 				{
 					int rows = 0;
-					await foreach (var chunk in view.ToAsyncBufferStream(Ct))
+					await foreach (var chunk in view.ToPooledBufferStream(Ct))
 						rows += chunk.Length;
 
 					return rows;
@@ -76,7 +76,7 @@ public static class PoolClearingTests
 			default:
 				{
 					int rows = 0;
-					await foreach (var _ in view.ToBufferedAsyncStream(Ct))
+					await foreach (var _ in view.ToPooledStream(Ct))
 						++rows;
 
 					return rows;

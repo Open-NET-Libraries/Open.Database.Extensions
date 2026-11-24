@@ -294,7 +294,7 @@ public static class RowsFormTests
 		await using SqliteConnection c = Open();
 
 		List<object?[]> second = await c.Command(TwoRows).AsObjectArrays().Skip(1).Take(1).ToListAsync(Ct);
-		await using PooledBuffer<DictionaryRow> buffer = c.Command(TwoRows).AsDictionaryRows().ToAsyncBuffer(Ct);
+		await using PooledBuffer<DictionaryRow> buffer = c.Command(TwoRows).AsDictionaryRows().ToPooledBuffer(Ct);
 		PooledArray<DictionaryRow> items = await buffer.Items;
 
 		Assert.Equal([2L, "b", null], Assert.Single(second));

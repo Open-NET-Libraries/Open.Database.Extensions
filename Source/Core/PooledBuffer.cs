@@ -6,7 +6,7 @@ namespace Open.Database.Extensions;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Made by <c>ToAsyncBuffer()</c> on a typed view.
+/// Made by <c>ToPooledBuffer()</c> on a typed view.
 /// The read starts when that method is called,
 /// on a background producer, once,
 /// even if nobody reads the buffer yet; it may finish before anyone
@@ -14,8 +14,8 @@ namespace Open.Database.Extensions;
 /// The rows are reached through <see cref="Items"/>, once the read is
 /// done: the buffer is not readable while it fills.
 /// To read while the query is still running, use
-/// <see cref="MappedCommand{T}.ToAsyncBufferStream(CancellationToken)"/> or
-/// <see cref="MappedCommand{T}.ToBufferedAsyncStream(CancellationToken)"/>.
+/// <see cref="MappedCommand{T}.ToPooledBufferStream(CancellationToken)"/> or
+/// <see cref="MappedCommand{T}.ToPooledStream(CancellationToken)"/>.
 /// The connection ODX opened is closed by the query when the read ends,
 /// which is before the result is complete: slow readers never hold it.
 /// </para>

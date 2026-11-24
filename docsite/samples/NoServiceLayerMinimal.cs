@@ -23,7 +23,7 @@ public static class PostEndpoints
 			static (int author, PostCommands commands, HttpContext http)
 				=> commands
 					.ByAuthor(author)
-					.ToAsyncBuffer(http.RequestAborted)
+					.ToPooledBuffer(http.RequestAborted)
 					.RegisterForDispose(http.Response));
 
 		// A list: one expression, nothing to register.

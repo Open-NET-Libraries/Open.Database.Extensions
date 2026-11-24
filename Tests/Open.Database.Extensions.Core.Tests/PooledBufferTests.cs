@@ -8,9 +8,9 @@ using static Open.Database.Extensions.Tests.ReaderFixtures;
 
 namespace Open.Database.Extensions.Tests;
 
-// The two buffer terminals of the typed views (ToAsyncBuffer and
-// ToAsyncBufferStream) and the flattened stream over the second
-// (ToBufferedAsyncStream), through the public surface only:
+// The two buffer terminals of the typed views (ToPooledBuffer and
+// ToPooledBufferStream) and the flattened stream over the second
+// (ToPooledStream), through the public surface only:
 // the arrays' return to the pool cannot be observed from here.
 // Every wait is bounded.
 [ExcludeFromCodeCoverage]
@@ -128,7 +128,7 @@ public static class PooledBufferTests
 	public static async Task Items_HoldsEveryRow_AndIndexesAcrossSegments()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
@@ -155,7 +155,7 @@ public static class PooledBufferTests
 	public static async Task Items_OfAnEmptyResult_HasCountZero()
 	{
 		var run = Run.Create(() => new ChannelTestReader(0));
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		Assert.True(items.Count is 0);
@@ -166,10 +166,10 @@ public static class PooledBufferTests
 	// ---- 2: Mode 1, lazy, one fill -------------------------------------
 
 	[Fact]
-	public static async Task ToAsyncBuffer_StartsAtTheCall_AndFillsOnce()
+	public static async Task ToPooledBuffer_StartsAtTheCall_AndFillsOnce()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 
 		// Nobody reads: the read runs, and the connection closes.
 		await Until(() => run.Closed, "the connection closed");
@@ -185,12 +185,12 @@ public static class PooledBufferTests
 	}
 
 	[Fact]
-	public static async Task ToAsyncBuffer_OfADefaultView_ThrowsAtTheCall()
+	public static async Task ToPooledBuffer_OfADefaultView_ThrowsAtTheCall()
 	{
 		MappedCommand<ChannelRow> view = default;
 
 		Assert.Throws<InvalidOperationException>(
-			() => view.ToAsyncBuffer(Ct));
+			() => view.ToPooledBuffer(Ct));
 		await Task.CompletedTask;
 	}
 
@@ -200,7 +200,7 @@ public static class PooledBufferTests
 	public static async Task DisposingTheItems_DisposesTheBuffer()
 	{
 		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		items.Dispose();
@@ -225,7 +225,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 20),
 			asyncReads: true);
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 
@@ -245,7 +245,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 20),
 			asyncReads: true);
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		_ = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 
@@ -266,7 +266,7 @@ public static class PooledBufferTests
 	public static async Task Stream_YieldsExactSlices_Lazy_AndSingleShot()
 	{
 		var run = Rows100();
-		var stream = run.View.ToAsyncBufferStream(Ct);
+		var stream = run.View.ToPooledBufferStream(Ct);
 
 		await Task.Delay(200, Ct);
 		Assert.Equal(0, run.Executes);
@@ -294,7 +294,7 @@ public static class PooledBufferTests
 	{
 		var run = Rows100();
 		await using var e = run.View
-			.ToAsyncBufferStream(Ct)
+			.ToPooledBufferStream(Ct)
 			.GetAsyncEnumerator(Ct);
 
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
@@ -320,7 +320,7 @@ public static class PooledBufferTests
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
 
-		await foreach (var chunk in run.View.ToAsyncBufferStream(Ct))
+		await foreach (var chunk in run.View.ToPooledBufferStream(Ct))
 		{
 			Assert.Equal(16, chunk.Length);
 			await Until(() => reader is { Stalled: true }, "the stall");
@@ -346,7 +346,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 20),
 			asyncReads: true);
-		var stream = run.View.ToAsyncBufferStream(cts.Token);
+		var stream = run.View.ToPooledBufferStream(cts.Token);
 		await using var e = stream.GetAsyncEnumerator(Ct);
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 
@@ -366,7 +366,7 @@ public static class PooledBufferTests
 			asyncReads: true);
 		using var cts2 = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
-		await using var buffer = run2.View.ToAsyncBuffer(cts2.Token);
+		await using var buffer = run2.View.ToPooledBuffer(cts2.Token);
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 		cts2.Cancel();
@@ -382,7 +382,7 @@ public static class PooledBufferTests
 		static Run Faulty() => Run.Create(
 			() => new ChannelTestReader(40, failAtRow: 30));
 
-		var stream = Faulty().View.ToAsyncBufferStream(Ct);
+		var stream = Faulty().View.ToPooledBufferStream(Ct);
 		List<int[]> chunks = [];
 		await using (var e = stream.GetAsyncEnumerator(Ct))
 		{
@@ -401,7 +401,7 @@ public static class PooledBufferTests
 
 		// The buffer is not readable while it fills, and a faulted read
 		// has no view: Items faults, every time it is asked.
-		await using var buffer = Faulty().View.ToAsyncBuffer(Ct);
+		await using var buffer = Faulty().View.ToPooledBuffer(Ct);
 		await Assert.ThrowsAsync<InvalidOperationException>(
 			() => buffer.Items.Within());
 		await Assert.ThrowsAsync<InvalidOperationException>(
@@ -435,10 +435,10 @@ public static class PooledBufferTests
 		Thread thread = new(() =>
 		{
 			SynchronizationContext.SetSynchronizationContext(context);
-			var buffer = run.View.ToAsyncBuffer();
+			var buffer = run.View.ToPooledBuffer();
 			completed = buffer.Items.Wait(TimeSpan.FromSeconds(20));
 
-			var e = run.View.ToAsyncBufferStream().GetAsyncEnumerator();
+			var e = run.View.ToPooledBufferStream().GetAsyncEnumerator();
 			completed &= e.MoveNextAsync().AsTask()
 				.Wait(TimeSpan.FromSeconds(20));
 		});
@@ -455,7 +455,7 @@ public static class PooledBufferTests
 	public static async Task AfterDispose_TheEnumeratorIndexerAndCopyTo_Throw()
 	{
 		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		// Created, and moved once, before the dispose.
@@ -479,7 +479,7 @@ public static class PooledBufferTests
 		// Arrays of 16, 32, 64 ... rows start at 0, 16, 48, 112, 240,
 		// 496, 1008 (the last array is not full).
 		var run = Run.Create(() => new ChannelTestReader(1100));
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		int[] at = [0, 15, 16, 47, 48, 111, 112, 239, 240, 495, 496,
@@ -501,7 +501,7 @@ public static class PooledBufferTests
 			async () =>
 			{
 				await foreach (var _ in run.View
-					.ToAsyncBufferStream(Ct)
+					.ToPooledBufferStream(Ct)
 					.WithCancellation(cts.Token)) { }
 			});
 	}
@@ -517,7 +517,7 @@ public static class PooledBufferTests
 	public static async Task TheItems_AreAFastPathCollection_ForLinq(int n)
 	{
 		var run = Run.Create(() => new ChannelTestReader(n));
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		Assert.True(items.TryGetNonEnumeratedCount(out int c));
@@ -541,7 +541,7 @@ public static class PooledBufferTests
 	public static async Task TheCollectionView_IsReadOnly_AndSearchable()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		ICollection<ChannelRow> collection = items;
 
@@ -565,7 +565,7 @@ public static class PooledBufferTests
 	public static async Task TheCollectionCopyTo_ValidatesAndCopiesInOrder()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		ICollection<ChannelRow> collection = items;
 
@@ -590,7 +590,7 @@ public static class PooledBufferTests
 	public static async Task TheCollectionMembers_ThrowAfterDispose()
 	{
 		var run = Rows100();
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		ICollection<ChannelRow> collection = items;
 
@@ -639,14 +639,14 @@ public static class PooledBufferTests
 		{
 			case "buffer":
 				{
-					await using var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+					await using var buffer = view.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 					rows = (await buffer.Items.Within()).Count;
 					break;
 				}
 
 			case "stream":
 				await foreach (var chunk in view
-					.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
+					.UsePool(pool, clearOnReturn: false).ToPooledBufferStream(Ct))
 				{
 					rows += chunk.Length;
 				}
@@ -655,7 +655,7 @@ public static class PooledBufferTests
 
 			default:
 				await foreach (var _ in view
-					.UsePool(pool, clearOnReturn: false).ToBufferedAsyncStream(Ct))
+					.UsePool(pool, clearOnReturn: false).ToPooledStream(Ct))
 				{
 					++rows;
 				}
@@ -687,12 +687,12 @@ public static class PooledBufferTests
 
 		foreach (Action call in new Action[]
 		{
-			() => run.View.UsePool(none, clearOnReturn: false).ToAsyncBuffer(Ct),
-			() => run.View.UsePool(none, clearOnReturn: true).ToAsyncBuffer(Ct),
-			() => run.View.UsePool(none, clearOnReturn: false).ToAsyncBufferStream(Ct),
-			() => run.View.UsePool(none, clearOnReturn: true).ToAsyncBufferStream(Ct),
-			() => run.View.UsePool(none, clearOnReturn: false).ToBufferedAsyncStream(Ct),
-			() => run.View.UsePool(none, clearOnReturn: true).ToBufferedAsyncStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToPooledBuffer(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToPooledBuffer(Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToPooledBufferStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToPooledBufferStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: false).ToPooledStream(Ct),
+			() => run.View.UsePool(none, clearOnReturn: true).ToPooledStream(Ct),
 		})
 		{
 			var ex = Assert.Throws<ArgumentNullException>(call);
@@ -714,14 +714,14 @@ public static class PooledBufferTests
 			case "buffer":
 				{
 					await using var buffer = run.View
-						.ToAsyncBuffer(Ct);
+						.ToPooledBuffer(Ct);
 					rows = (await buffer.Items.Within()).Count;
 					break;
 				}
 
 			case "stream":
 				await foreach (var chunk in run.View
-					.ToAsyncBufferStream(Ct))
+					.ToPooledBufferStream(Ct))
 				{
 					rows += chunk.Length;
 				}
@@ -730,7 +730,7 @@ public static class PooledBufferTests
 
 			default:
 				await foreach (var _ in run.View
-					.ToBufferedAsyncStream(Ct))
+					.ToPooledStream(Ct))
 				{
 					++rows;
 				}
@@ -756,7 +756,7 @@ public static class PooledBufferTests
 		if (terminal == "stream")
 		{
 			await foreach (var chunk in run.View
-				.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
+				.UsePool(pool, clearOnReturn: false).ToPooledBufferStream(Ct))
 			{
 				await Until(() => reader is { Stalled: true }, "the stall");
 				break;
@@ -765,7 +765,7 @@ public static class PooledBufferTests
 		else
 		{
 			await foreach (ChannelRow row in run.View
-				.UsePool(pool, clearOnReturn: false).ToBufferedAsyncStream(Ct))
+				.UsePool(pool, clearOnReturn: false).ToPooledStream(Ct))
 			{
 				if (row.Id != 5) continue;
 
@@ -788,7 +788,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 		_ = buffer.Items;
 		await Until(() => reader is { Stalled: true }, "the stall");
 
@@ -802,7 +802,7 @@ public static class PooledBufferTests
 		var run2 = Run.Create(
 			() => reader2 = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer2 = run2.View.UsePool(pool2, clearOnReturn: false).ToAsyncBuffer(Ct);
+		var buffer2 = run2.View.UsePool(pool2, clearOnReturn: false).ToPooledBuffer(Ct);
 		_ = buffer2.Items;
 		await Until(
 			() => reader2 is { Stalled: true },
@@ -836,7 +836,7 @@ public static class PooledBufferTests
 	public static async Task ADrainedEnumerator_ThrowsAfterDispose(int n)
 	{
 		var run = Run.Create(() => new ChannelTestReader(n));
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		var e = items.GetEnumerator();
 		for (int i = 0; i < n; ++i) Assert.True(e.MoveNext());
@@ -859,7 +859,7 @@ public static class PooledBufferTests
 			asyncReads: true);
 
 		// No access at all: the fill started at the call.
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		await buffer.DisposeAsync().AsTask().Within();
@@ -873,7 +873,7 @@ public static class PooledBufferTests
 	{
 		var pool = new CountingPool<ChannelRow>();
 		var run = Rows100();
-		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 
 		Task<PooledArray<ChannelRow>> items = buffer.Items;
 		await items.Within();
@@ -900,7 +900,7 @@ public static class PooledBufferTests
 			asyncReads: true);
 
 		// Nobody has touched the buffer when the token fires.
-		await using var buffer = run.View.ToAsyncBuffer(cts.Token);
+		await using var buffer = run.View.ToPooledBuffer(cts.Token);
 		await Until(() => reader is { Stalled: true }, "the stall");
 		cts.Cancel();
 		await Until(() => run.Closed, "the connection closed");
@@ -928,7 +928,7 @@ public static class PooledBufferTests
 		{
 			var run = Run.Create(
 				() => new ChannelTestReader(40, failAtRow: 30));
-			var buffer = run.View.ToAsyncBuffer(Ct);
+			var buffer = run.View.ToPooledBuffer(Ct);
 
 			// Nobody reads: the fill ends with the fault, stored.
 			await Until(() => run.Closed, "the connection closed");
@@ -942,7 +942,7 @@ public static class PooledBufferTests
 			// And a buffer nobody ever touched.
 			var run2 = Run.Create(
 				() => new ChannelTestReader(40, failAtRow: 30));
-			var untouched = run2.View.ToAsyncBuffer(Ct);
+			var untouched = run2.View.ToPooledBuffer(Ct);
 			await Until(() => run2.Closed, "the second close");
 			await Task.Delay(100, Ct);
 			await untouched.DisposeAsync();
@@ -975,7 +975,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 20, true),
 			asyncReads: true);
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		Assert.Null(Record.Exception(() => buffer.Dispose()));
@@ -992,7 +992,7 @@ public static class PooledBufferTests
 			() => reader = new StallingReader(100, 40, true),
 			asyncReads: true);
 		var e = run.View
-			.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
+			.UsePool(pool, clearOnReturn: false).ToPooledBufferStream(Ct)
 			.GetAsyncEnumerator(Ct);
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 		await Until(() => reader is { Stalled: true }, "the stall");
@@ -1015,7 +1015,7 @@ public static class PooledBufferTests
 		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
 		await using var e = run.View
-			.ToAsyncBufferStream(cts.Token)
+			.ToPooledBufferStream(cts.Token)
 			.GetAsyncEnumerator(Ct);
 		Assert.True(await e.MoveNextAsync().AsTask().Within());
 		await Until(() => reader is { Stalled: true }, "the stall");
@@ -1039,7 +1039,7 @@ public static class PooledBufferTests
 			asyncReads: true);
 		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
-		await using var buffer = run.View.ToAsyncBuffer(cts.Token);
+		await using var buffer = run.View.ToPooledBuffer(cts.Token);
 		await Until(() => reader is { Stalled: true }, "the stall");
 		cts.Cancel();
 
@@ -1064,7 +1064,7 @@ public static class PooledBufferTests
 		{
 			var run = Run.Create(
 				() => new ChannelTestReader(40, failAtRow: 30));
-			var buffer = run.View.ToAsyncBuffer(Ct);
+			var buffer = run.View.ToPooledBuffer(Ct);
 			_ = buffer.Items;
 			await Until(() => run.Closed, "the connection closed");
 			await Task.Delay(100, Ct);
@@ -1097,7 +1097,7 @@ public static class PooledBufferTests
 		var pool = new CountingPool<ChannelRow> { RoundUp = true };
 		var run = Rows100();
 
-		await using (var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct))
+		await using (var buffer = run.View.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct))
 		{
 			PooledArray<ChannelRow> items = await buffer.Items.Within();
 			Assert.Equal(100, items.Count);
@@ -1120,7 +1120,7 @@ public static class PooledBufferTests
 		var run2 = Rows100();
 		List<int> sizes = [];
 		List<int> ids = [];
-		await foreach (var chunk in run2.View.UsePool(pool2, clearOnReturn: false).ToAsyncBufferStream(Ct))
+		await foreach (var chunk in run2.View.UsePool(pool2, clearOnReturn: false).ToPooledBufferStream(Ct))
 		{
 			sizes.Add(chunk.Length);
 			ids.AddRange(chunk.ToArray().Select(r => r.Id));
@@ -1135,7 +1135,7 @@ public static class PooledBufferTests
 	public static async Task Release_DoesNotClearRowsWithNoReferences_ByDefault()
 	{
 		var pool = new CountingPool<int>();
-		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 		await buffer.Items.Within();
 		await buffer.DisposeAsync();
 
@@ -1154,7 +1154,7 @@ public static class PooledBufferTests
 			() => new ChannelTestReader(100))
 			.Map<int>()
 			.AsyncReads();
-		var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+		var buffer = view.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 		PooledArray<int> items = await buffer.Items.Within();
 		Assert.Equal(Enumerable.Range(1, 100), items);
 
@@ -1169,7 +1169,7 @@ public static class PooledBufferTests
 	public static async Task APoolWhoseReturnThrows_PropagatesFromDisposeAsync()
 	{
 		var pool = new CountingPool<int>();
-		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+		var buffer = Ints100().UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 		await buffer.Items.Within();
 		pool.ThrowOnReturn = true;
 
@@ -1192,7 +1192,7 @@ public static class PooledBufferTests
 
 		for (int i = 0; i < Iterations; ++i)
 		{
-			var buffer = view.ToAsyncBuffer(Ct);
+			var buffer = view.ToPooledBuffer(Ct);
 			int round = i;
 
 			// The first accesses land before, during and after the
@@ -1234,7 +1234,7 @@ public static class PooledBufferTests
 
 		for (int i = 0; i < Iterations; ++i)
 		{
-			var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+			var buffer = view.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 			int round = i;
 			var touch = Task.Run(
 				async () =>
@@ -1303,7 +1303,7 @@ public static class PooledBufferTests
 			.Map<int>();
 		var pool = new CountingPool<int>();
 
-		await using var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+		await using var buffer = view.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 		PooledArray<int> items = await buffer.Items.Within();
 		Assert.Equal(rows, items.Count);
 
@@ -1341,7 +1341,7 @@ public static class PooledBufferTests
 		var run = Run.Create(
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
-		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+		var buffer = run.View.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 		await Until(() => reader is { Stalled: true }, "the stall");
 
 		await Record.ExceptionAsync(
@@ -1372,12 +1372,12 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 					await buffer.Items.Within();
 				}
 				else
 				{
-					await foreach (var _ in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)) { }
+					await foreach (var _ in run.View.UsePool(pool, clearOnReturn: false).ToPooledBufferStream(Ct)) { }
 				}
 			});
 
@@ -1403,12 +1403,12 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 					await buffer.Items.Within();
 				}
 				else
 				{
-					await foreach (var chunk in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct))
+					await foreach (var chunk in run.View.UsePool(pool, clearOnReturn: false).ToPooledBufferStream(Ct))
 					{
 						seen.AddRange(chunk.ToArray().Select(r => r.Id));
 					}
@@ -1448,7 +1448,7 @@ public static class PooledBufferTests
 			for (int i = 0; i < 20; ++i)
 			{
 				await foreach (var _ in Rows100().View
-					.ToAsyncBufferStream(Ct)) { }
+					.ToPooledBufferStream(Ct)) { }
 			}
 		}
 		finally
@@ -1492,13 +1492,13 @@ public static class PooledBufferTests
 			{
 				if (terminal == "buffer")
 				{
-					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+					await using var buffer = run.View.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 					items = buffer.Items;
 					await items.Within();
 				}
 				else
 				{
-					await foreach (var _ in run.View.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)) { }
+					await foreach (var _ in run.View.UsePool(pool, clearOnReturn: false).ToPooledBufferStream(Ct)) { }
 				}
 			});
 
@@ -1520,7 +1520,7 @@ public static class PooledBufferTests
 
 		for (int i = 0; i < 1_000; ++i)
 		{
-			var buffer = view.UsePool(pool, clearOnReturn: false).ToAsyncBuffer(Ct);
+			var buffer = view.UsePool(pool, clearOnReturn: false).ToPooledBuffer(Ct);
 
 			// Half the rounds dispose a finished buffer, half a filling one.
 			if (i % 2 == 0) await buffer.Items.Within();
@@ -1544,7 +1544,7 @@ public static class PooledBufferTests
 		var run = Run.Create(() => new ChannelTestReader(40, failAtRow: 30));
 
 		await using (var e = run.View
-			.UsePool(pool, clearOnReturn: false).ToAsyncBufferStream(Ct)
+			.UsePool(pool, clearOnReturn: false).ToPooledBufferStream(Ct)
 			.GetAsyncEnumerator(Ct))
 		{
 			await Assert.ThrowsAsync<InvalidOperationException>(
@@ -1591,7 +1591,7 @@ public static class PooledBufferTests
 		int n)
 	{
 		var run = Run.Create(() => new ChannelTestReader(n));
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		List<int> viaForeach = [];
@@ -1620,7 +1620,7 @@ public static class PooledBufferTests
 	public static async Task TheStructEnumerator_ThrowsOnTheNextMoveNext_AfterADispose()
 	{
 		var run = Run.Create(() => new ChannelTestReader(100));
-		var buffer = run.View.ToAsyncBuffer(Ct);
+		var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		var e = items.GetEnumerator();
 		for (int i = 0; i < 40; ++i) Assert.True(e.MoveNext());
@@ -1637,7 +1637,7 @@ public static class PooledBufferTests
 	public static async Task TheEnumerator_Current_AndReset_Behave()
 	{
 		var run = Run.Create(() => new ChannelTestReader(20));
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		// Deliberately the interface: Reset is an explicit member, and this
 		// is the boxed enumerator that foreach over IEnumerable<T> uses.
@@ -1669,7 +1669,7 @@ public static class PooledBufferTests
 	public static async Task TheEnumeratorCopies_AreIndependent()
 	{
 		var run = Rows100();
-		await using var buffer = run.View.ToAsyncBuffer(Ct);
+		await using var buffer = run.View.ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 
 		var one = items.GetEnumerator();
@@ -1732,7 +1732,7 @@ public static class PooledBufferTests
 					async () =>
 					{
 						await foreach (var _ in Rows100().View
-							.ToAsyncBufferStream(cts.Token)) { }
+							.ToPooledBufferStream(cts.Token)) { }
 					});
 			}
 		}
@@ -1744,13 +1744,13 @@ public static class PooledBufferTests
 		Assert.Equal(0, thrown);
 	}
 
-	// ---- ToBufferedAsyncStream ------------------------------------------
+	// ---- ToPooledStream ------------------------------------------
 
 	[Fact]
 	public static async Task Buffered_YieldsEveryRowInOrder_Once()
 	{
 		var run = Rows100();
-		var stream = run.View.ToBufferedAsyncStream(Ct);
+		var stream = run.View.ToPooledStream(Ct);
 
 		await Task.Delay(100, Ct);
 		Assert.Equal(0, run.Executes);
@@ -1777,7 +1777,7 @@ public static class PooledBufferTests
 			() => reader = new StallingReader(100, 40),
 			asyncReads: true);
 
-		await foreach (ChannelRow row in run.View.ToBufferedAsyncStream(Ct))
+		await foreach (ChannelRow row in run.View.ToPooledStream(Ct))
 		{
 			if (row.Id != 5) continue;
 

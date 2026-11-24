@@ -3,8 +3,8 @@ using System.Threading.Channels;
 namespace Open.Database.Extensions.Core;
 
 /// <summary>
-/// The chunk stream behind <c>ToAsyncBufferStream</c> (and, flattened,
-/// behind <c>ToBufferedAsyncStream</c>): one consumer, one chunk at a time.
+/// The chunk stream behind <c>ToPooledBufferStream</c> (and, flattened,
+/// behind <c>ToPooledStream</c>): one consumer, one chunk at a time.
 /// </summary>
 /// <remarks>
 /// Reads the query into pooled chunks for one consumer. The connection is
@@ -123,7 +123,7 @@ internal sealed class ChunkStream<T>(
 		{
 			throw new InvalidOperationException(
 				"This stream can be enumerated only once."
-				+ " Call ToAsyncBuffer() to read it many times.");
+				+ " Call ToPooledBuffer() to read it many times.");
 		}
 
 		return Read(cancellationToken);

@@ -18,7 +18,7 @@ namespace Open.Database.Extensions.Core;
 /// </remarks>
 /// <include file="Internals.docs.xml" path="docs/members[@name='row']/*" />
 // The read runs on the caller's own flow: there is no producer task (that is
-// the job of ToAsyncBuffer, for a consumer that works while the read is
+// the job of ToPooledBuffer, for a consumer that works while the read is
 // still running).
 // Absorbing the read costs one store per row and no growth copy.
 // Chunk sizes start at the configuration's collect-first value and grow by

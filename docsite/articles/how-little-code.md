@@ -59,7 +59,7 @@ One author's posts, each turned into a headline string by a small C# method (`He
 
 [!code-csharp[](../samples/HowLittleCode.cs#little_stream_odx)]
 
-The method has no `async`, no `await` and no `using`. The stream opens the connection when it is first enumerated, reads the rows and releases the connection when the last row is read, so there is nothing for the method to dispose. A stream is single-use: it can be enumerated once, and a second enumeration throws `InvalidOperationException`. See [Async buffers and streams](async-buffers.md).
+The method has no `async`, no `await` and no `using`. The stream opens the connection when it is first enumerated, reads the rows and releases the connection when the last row is read, so there is nothing for the method to dispose. A stream is single-use: it can be enumerated once, and a second enumeration throws `InvalidOperationException`. See [Pooled buffers and streams](async-buffers.md).
 
 **Dapper**
 
@@ -87,7 +87,7 @@ Read one author's rows (the filter is in the SQL again), then build the headline
 
 [!code-csharp[](../samples/HowLittleCode.cs#little_buffer_odx)]
 
-`ToAsyncBuffer` reads into pooled arrays and `Items` is a read-only list over them. Disposing the view disposes the buffer and returns the arrays to the pool. See [Lifetime and ownership](async-buffers.md#lifetime-and-ownership).
+`ToPooledBuffer` reads into pooled arrays and `Items` is a read-only list over them. Disposing the view disposes the buffer and returns the arrays to the pool. See [Lifetime and ownership](async-buffers.md#lifetime-and-ownership).
 
 **Dapper**
 

@@ -61,22 +61,22 @@ public class PoolEndToEndBenchmarks
 	}
 
 	[Benchmark]
-	public async Task<int> ToAsyncBuffer_Items()
+	public async Task<int> ToPooledBuffer_Items()
 	{
 		using PooledArray<EndRow> items
 			= await _connection.Command(_sql).Map<EndRow>()
-				.ToAsyncBuffer(CancellationToken.None)
+				.ToPooledBuffer(CancellationToken.None)
 				.Items;
 
 		return items.Count;
 	}
 
 	[Benchmark]
-	public async Task<int> ToAsyncBufferStream()
+	public async Task<int> ToPooledBufferStream()
 	{
 		int count = 0;
 		await foreach (ReadOnlyMemory<EndRow> chunk in _connection.Command(_sql).Map<EndRow>()
-			.ToAsyncBufferStream(CancellationToken.None))
+			.ToPooledBufferStream(CancellationToken.None))
 		{
 			count += chunk.Length;
 		}

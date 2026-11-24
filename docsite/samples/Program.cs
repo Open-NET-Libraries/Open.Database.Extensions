@@ -203,13 +203,13 @@ List<string> pcLines = await ChannelsAndDataflow
 	.ProducerConsumerSample(connection, CancellationToken.None);
 Check(
 	pcLines.SequenceEqual(expectedLines),
-	"a producer/consumer over ToBufferedAsyncStream() handles every row, in order");
+	"a producer/consumer over ToPooledStream() handles every row, in order");
 
 List<string> pipelineLines = await ChannelsAndDataflow
 	.PipelineSample(connection, CancellationToken.None);
 Check(
 	pipelineLines.SequenceEqual(expectedLines),
-	"query -> ToBufferedAsyncStream() -> transform -> channel -> final consumer delivers every row in order");
+	"query -> ToPooledStream() -> transform -> channel -> final consumer delivers every row in order");
 
 List<string> bufferLines = await ChannelsAndDataflow
 	.BufferSample(connection, CancellationToken.None);
@@ -217,7 +217,7 @@ Check(
 	bufferLines.SequenceEqual(expectedLines),
 	"buffering with ToListAsync returns the same rows as the stream");
 
-// Async buffers and streams.
+// Pooled buffers and streams.
 string rendered = await AsyncBuffers
 	.RenderPostsAsync(factory, CancellationToken.None);
 Check(
@@ -244,25 +244,25 @@ Check(
 Check(
 	(await AsyncBuffers.SkipTakeAsync(factory, CancellationToken.None))
 		.SequenceEqual([2, 3]),
-	"ToAsyncBuffer after Skip(1).Take(2) holds posts 2 and 3");
+	"ToPooledBuffer after Skip(1).Take(2) holds posts 2 and 3");
 
 Check(
 	(await AsyncBuffers.ChunkStreamAsync(factory, CancellationToken.None))
 		.SequenceEqual([1, 2, 3, 4, 5]),
-	"ToAsyncBufferStream yields every row in order");
+	"ToPooledBufferStream yields every row in order");
 
 (List<int> elementIds, bool secondThrew) = await AsyncBuffers
 	.ElementStreamAsync(factory, CancellationToken.None);
 Check(
 	elementIds.SequenceEqual([1, 2, 3, 4, 5]) && secondThrew,
-	"ToBufferedAsyncStream yields every row in order and is single-use");
+	"ToPooledStream yields every row in order and is single-use");
 
 Check(
 	(await AsyncBuffers
 		.PostLabelsAsync(factory, 42, CancellationToken.None)
 		.ToListAsync())
 		.SequenceEqual(["1: Post 1", "2: Post 2", "3: Post 3"]),
-	"System.Linq over ToBufferedAsyncStream, returned with no await, projects the filtered rows");
+	"System.Linq over ToPooledStream, returned with no await, projects the filtered rows");
 
 Check(
 	(await AsyncBuffers.PostsToKeepAsync(factory, CancellationToken.None))

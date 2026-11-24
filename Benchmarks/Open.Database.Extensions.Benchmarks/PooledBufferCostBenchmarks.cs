@@ -9,13 +9,13 @@ namespace Open.Database.Extensions.Benchmarks;
 // Run it in process (--inprocess) so the ReaderOpen column is filled; Mean is
 // the total. AsyncReads() is on unless ODX_SYN_ASYNCREADS=0.
 //
-//  ChunkStream_*  ToAsyncBufferStream: the consumer works on each chunk
+//  ChunkStream_*  ToPooledBufferStream: the consumer works on each chunk
 //                 after it has been handed over (the reader is closed by
 //                 the producer, whatever the consumer does).
 //  NoBuffer_*     the plain read (ReadAsync per row when AsyncReads is on):
 //                 the consumer works on each row inside the read, so it
 //                 holds the reader open. Hand-mapped rows, see NoBuffer.
-//  Buffer_Dump    ToAsyncBuffer(...).Items, then dispose; ToArray_Dump the
+//  Buffer_Dump    ToPooledBuffer(...).Items, then dispose; ToArray_Dump the
 //                 same rows with ToArrayAsync.
 //
 // The consumers (a busy wait, as the provider's refill is):
@@ -147,7 +147,7 @@ public class PooledBufferCostBenchmarks
 		_label = nameof(Buffer_Dump);
 		await using PooledBuffer<SynRow> buffer = Command()
 			.Map<SynRow>()
-			.ToAsyncBuffer(CancellationToken.None);
+			.ToPooledBuffer(CancellationToken.None);
 
 		PooledArray<SynRow> items = await buffer
 			.Items
@@ -177,7 +177,7 @@ public class PooledBufferCostBenchmarks
 		int pending = 0;
 		await foreach (ReadOnlyMemory<SynRow> chunk in Command()
 			.Map<SynRow>()
-			.ToAsyncBufferStream(CancellationToken.None)
+			.ToPooledBufferStream(CancellationToken.None)
 			.ConfigureAwait(false))
 		{
 			sum += SumIds(chunk.Span);

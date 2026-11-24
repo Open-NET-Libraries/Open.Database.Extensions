@@ -214,4 +214,36 @@
     <param name="state">The state to pass to the transform.</param>
     <param name="transform">The function that processes the data reader.</param>
   </members>
+  <members name="stream-models">
+    <para>
+      Three ways to read the rows as they arrive; pick by what the connection and your loop need:
+    </para>
+    <list type="table">
+      <listheader>
+        <term>Method</term>
+        <description>Buffer; threads; connection held until; stall protection</description>
+      </listheader>
+      <item>
+        <term><c>Stream</c></term>
+        <description>None: one row at a time, a row or two read ahead; a producer task and your loop, handing off every row; until you pull the last row; yes, on every pull.</description>
+      </item>
+      <item>
+        <term><c>StreamBuffered</c></term>
+        <description>Up to <c>bufferSize</c> rows (default 1,024; it counts rows, not bytes); a producer task and your loop; until the read ends, or, once the buffer is full, until the stall timeout passes without a pull (never with an infinite timeout); yes, once the buffer is full.</description>
+      </item>
+      <item>
+        <term><c>ToPooledStream</c></term>
+        <description>Unbounded: pooled chunks, the whole result if you are slow; a producer task and your loop; until the read ends, however slowly you read; none.</description>
+      </item>
+    </list>
+    <para>
+      Which to use: a fast loop, <c>Stream</c> (it can also stop early); slow or async work per row, <c>StreamBuffered</c>; to free the connection as soon as possible, <c>ToPooledStream</c>.
+    </para>
+    <para>
+      All three are lazy: calling one does nothing until the first <c>MoveNextAsync</c>.
+      A slow or hung database read is bounded by the command's <c>CommandTimeout</c> and your cancellation token on every one of them;
+      the stall timeout is only about a slow consumer.
+      A cancel or a dispose stops the read promptly only as far as the provider honors the cancellation.
+    </para>
+  </members>
 </docs>

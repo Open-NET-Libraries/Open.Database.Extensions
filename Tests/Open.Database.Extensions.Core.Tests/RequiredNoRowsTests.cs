@@ -27,7 +27,7 @@ public static class RequiredNoRowsTests
 		return connection;
 	}
 
-	static readonly string[] Names = ["ToListAsync", "ToArrayAsync", "ToAsyncBuffer", "FirstOrDefaultAsync", "Stream", "ToBufferedAsyncStream"];
+	static readonly string[] Names = ["ToListAsync", "ToArrayAsync", "ToPooledBuffer", "FirstOrDefaultAsync", "Stream", "ToPooledStream"];
 
 	static async Task<Exception?> RunAsync(string name, string sql)
 	{
@@ -41,15 +41,15 @@ public static class RequiredNoRowsTests
 				case "ToListAsync": _ = await query.ToListAsync(token); break;
 				case "ToArrayAsync": _ = await query.ToArrayAsync(token); break;
 				case "FirstOrDefaultAsync": _ = await query.FirstOrDefaultAsync(token); break;
-				case "ToAsyncBuffer":
-					await using (var buffer = query.ToAsyncBuffer(token))
+				case "ToPooledBuffer":
+					await using (var buffer = query.ToPooledBuffer(token))
 					{
 						_ = await buffer.Items;
 					}
 
 					break;
-				case "ToBufferedAsyncStream":
-					await foreach (RequiredPost _ in query.ToBufferedAsyncStream(token)) { }
+				case "ToPooledStream":
+					await foreach (RequiredPost _ in query.ToPooledStream(token)) { }
 					break;
 				default:
 					await foreach (RequiredPost _ in query.Stream(Timeout.InfiniteTimeSpan, token)) { }

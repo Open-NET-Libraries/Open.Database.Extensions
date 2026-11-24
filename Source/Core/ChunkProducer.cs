@@ -3,8 +3,8 @@ namespace Open.Database.Extensions.Core;
 /// <summary>
 /// Reads a query into pooled chunks and hands each filled chunk to an
 /// <see cref="IChunkTarget{T}"/>: the one producer behind the buffer
-/// terminals (<c>ToAsyncBuffer</c>, <c>ToAsyncBufferStream</c> and
-/// <c>ToBufferedAsyncStream</c>).
+/// terminals (<c>ToPooledBuffer</c>, <c>ToPooledBufferStream</c> and
+/// <c>ToPooledStream</c>).
 /// </summary>
 /// <remarks>
 /// Start it once; it runs on a thread of the ambient task scheduler.

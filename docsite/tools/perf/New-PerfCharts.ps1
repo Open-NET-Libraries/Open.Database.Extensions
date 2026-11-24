@@ -603,7 +603,7 @@ foreach ($el in 'int', 'class') {
 Write-Table 'pool-clear-speed' $t
 
 $t = @('| Call | Rows | Bin: time | Inline always: time | Time, bin against inline (3 runs) | Bin: CPU | Inline always: CPU | CPU, bin against inline (3 runs) |', '|---|---:|---:|---:|---:|---:|---:|---:|')
-foreach ($term in 'ToListAsync', 'ToAsyncBufferStream') { foreach ($n in 10000, 100000) {
+foreach ($term in 'ToListAsync', 'ToPooledBufferStream') { foreach ($n in 10000, 100000) {
   $g = @($ppe | Where-Object { $_.terminal -eq $term -and $_.rows -eq "$n" })
   $b = @($g | Where-Object { $_.arm -eq 'bin' } | Sort-Object { [int]$_.run }); $i = @($g | Where-Object { $_.arm -eq 'inline-always' } | Sort-Object { [int]$_.run })
   $tr = for ($k = 0; $k -lt 3; $k++) { [double]$b[$k].median_ms / [double]$i[$k].median_ms }
@@ -649,7 +649,7 @@ foreach ($p in @(
     @('pool-bin-cpu', 'pooling and clearing', $pcpuSrc),
     @('pool-e2e', 'pooling and clearing', $peSrc),
     @('pool-bin-cost', 'pooling and clearing', $pbcSrc),
-    @('pooled-buffer-cost', 'async buffers and streams (what it costs)', $pbcostSrc))) {
+    @('pooled-buffer-cost', 'pooled buffers and streams (what it costs)', $pbcostSrc))) {
   $bld = ($p[2].Build -split ' \(')[0]
   $t += "| ``$($p[0]).csv`` | $($p[1]) | ``$bld`` | $($p[2].Date) | $(M $p[2].Machine) | $(M $p[2].Runtime.Replace('[Host] : ', '')) |"
 }

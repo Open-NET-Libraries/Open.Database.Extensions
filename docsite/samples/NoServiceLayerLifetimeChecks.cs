@@ -70,7 +70,7 @@ public sealed class AbortedPostsController(HeldPostCommands commands, LifetimePr
 		probe.Started.TrySetResult();
 		return commands
 			.Held(author)
-			.ToAsyncBuffer(HttpContext.RequestAborted)
+			.ToPooledBuffer(HttpContext.RequestAborted)
 			.RegisterForDispose(Response);
 	}
 }
@@ -86,7 +86,7 @@ public sealed class ThrowingPostsController(HeldPostCommands commands)
 	{
 		Task<PooledArray<Post>> rows = commands
 			.ByAuthor(author)
-			.ToAsyncBuffer(HttpContext.RequestAborted)
+			.ToPooledBuffer(HttpContext.RequestAborted)
 			.RegisterForDispose(Response);
 
 		await rows;
@@ -107,7 +107,7 @@ public sealed class SyncThrowingPostsController(HeldPostCommands commands, Array
 	{
 		Task<PooledArray<Post>> rows = commands
 			.Held(author)
-			.ToAsyncBuffer(HttpContext.RequestAborted)
+			.ToPooledBuffer(HttpContext.RequestAborted)
 			.RegisterForDispose(Response);
 
 		CountingPool<Post> counting = (CountingPool<Post>)pool;

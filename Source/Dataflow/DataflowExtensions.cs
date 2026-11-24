@@ -69,7 +69,7 @@ public static partial class DataflowExtensions
 	// The produce shape: the package makes the block, starts at the call,
 	// and always finishes it.
 	// Not async: the guards, and a default struct (which Core refuses in
-	// ToAsyncBufferStream), throw at the call.
+	// ToPooledBufferStream), throw at the call.
 	static BufferBlock<T> Produce<T>(
 		IMappedQuery<T> source,
 		DataflowBlockOptions? options,
@@ -80,7 +80,7 @@ public static partial class DataflowExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 		IAsyncEnumerable<ReadOnlyMemory<T>> chunks
-			= source.ToAsyncBufferStream(cancellationToken);
+			= source.ToPooledBufferStream(cancellationToken);
 
 		BufferBlock<T> block = options is null
 			? new()
@@ -188,7 +188,7 @@ public static partial class DataflowExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 		return BlockPump.Run<T, ChunkFeed<T>>(
-			new(source.ToAsyncBufferStream(cancellationToken)),
+			new(source.ToPooledBufferStream(cancellationToken)),
 			target,
 			complete,
 			checkOpen: true,

@@ -347,7 +347,7 @@ public static class ArrayLeaseTests
 			.AsyncReads()
 			.UsePool(pool, clearOnReturn: false);
 
-		var buffer = view.ToAsyncBuffer(Ct);
+		var buffer = view.ToPooledBuffer(Ct);
 		await buffer.Items.Within();
 		pool.ThrowOnReturn = true;
 
@@ -397,11 +397,11 @@ public static class ArrayLeaseTests
 			{
 				if (terminal == "stream")
 				{
-					await foreach (var _ in view.ToAsyncBufferStream(Ct)) { }
+					await foreach (var _ in view.ToPooledBufferStream(Ct)) { }
 				}
 				else
 				{
-					await foreach (var _ in view.ToBufferedAsyncStream(Ct)) { }
+					await foreach (var _ in view.ToPooledStream(Ct)) { }
 				}
 			});
 

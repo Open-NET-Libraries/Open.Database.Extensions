@@ -90,7 +90,7 @@ internal static class ChannelFixtures
 		public CancellationToken StreamToken { get; private set; }
 		public int ChunkStreams { get; private set; }
 
-		public IAsyncEnumerable<ReadOnlyMemory<ChannelRow>> ToAsyncBufferStream(
+		public IAsyncEnumerable<ReadOnlyMemory<ChannelRow>> ToPooledBufferStream(
 			CancellationToken cancellationToken = default)
 		{
 			++ChunkStreams;
@@ -117,6 +117,17 @@ internal static class ChannelFixtures
 				? Rows()
 				: stream(stallTimeout, cancellationToken);
 		}
+
+		public IAsyncEnumerable<ChannelRow> StreamBuffered(
+			TimeSpan stallTimeout,
+			CancellationToken cancellationToken = default)
+			=> Stream(stallTimeout, cancellationToken);
+
+		public IAsyncEnumerable<ChannelRow> StreamBuffered(
+			TimeSpan stallTimeout,
+			int bufferSize,
+			CancellationToken cancellationToken = default)
+			=> Stream(stallTimeout, cancellationToken);
 
 		async IAsyncEnumerable<ChannelRow> Rows()
 		{

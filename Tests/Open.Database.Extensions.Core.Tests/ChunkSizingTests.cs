@@ -33,7 +33,7 @@ public static class ChunkSizingTests
 	static async Task<List<int>> StreamSizes(int rows, ChunkSizes? sizes = null)
 	{
 		List<int> chunks = [];
-		await foreach (var chunk in Rows(rows, sizes).ToAsyncBufferStream(Ct))
+		await foreach (var chunk in Rows(rows, sizes).ToPooledBufferStream(Ct))
 			chunks.Add(chunk.Length);
 
 		return chunks;
@@ -59,7 +59,7 @@ public static class ChunkSizingTests
 			await StreamSizes(9000));
 
 		// The buffer: 16, 32, 64 ... and the indexer agrees.
-		await using var buffer = Rows(100).ToAsyncBuffer(Ct);
+		await using var buffer = Rows(100).ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		foreach (int i in new[] { 0, 15, 16, 47, 48, 99 })
 			Assert.Equal(i + 1, items[i].Id);
@@ -74,7 +74,7 @@ public static class ChunkSizingTests
 
 		// The buffer doubles from 4 without a stop: 4, 8, 16, 32, 64.
 		int[] checkedAt = [0, 3, 4, 11, 12, 27, 28, 59, 60, 99];
-		await using var buffer = Rows(100, sizes).ToAsyncBuffer(Ct);
+		await using var buffer = Rows(100, sizes).ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		Assert.Equal(100, items.Count);
 		foreach (int i in checkedAt) Assert.Equal(i + 1, items[i].Id);
@@ -91,7 +91,7 @@ public static class ChunkSizingTests
 		int first)
 	{
 		var sizes = new ChunkSizes(firstRows: first);
-		await using var buffer = Rows(100, sizes).ToAsyncBuffer(Ct);
+		await using var buffer = Rows(100, sizes).ToPooledBuffer(Ct);
 		PooledArray<ChannelRow> items = await buffer.Items.Within();
 		Assert.Equal(100, items.Count);
 		for (int i = 0; i < 100; ++i)

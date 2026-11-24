@@ -191,7 +191,7 @@ public static partial class ChannelDbExtensions
 	// no synchronous continuations: a consumer's code never runs inside
 	// the write loop), starts at the call, and always completes it.
 	// Not async: the guards, and a default struct (which Core refuses in
-	// ToAsyncBufferStream), throw at the call.
+	// ToPooledBufferStream), throw at the call.
 	static Channel<T> Produce<T>(
 		IMappedQuery<T> source,
 		bool singleReader,
@@ -204,7 +204,7 @@ public static partial class ChannelDbExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 		IAsyncEnumerable<ReadOnlyMemory<T>> chunks
-			= source.ToAsyncBufferStream(cancellationToken);
+			= source.ToPooledBufferStream(cancellationToken);
 
 		Channel<T> channel = capacity > 0
 			? Channel.CreateBounded<T>(

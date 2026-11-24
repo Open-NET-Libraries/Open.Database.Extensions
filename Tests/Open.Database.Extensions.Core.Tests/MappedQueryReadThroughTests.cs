@@ -1,3 +1,4 @@
+using Open.Database.Extensions.Core;
 using static Open.Database.Extensions.Tests.ReaderFixtures;
 
 #nullable enable
@@ -30,7 +31,7 @@ public static class MappedQueryReadThroughTests
 		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "First", "Single", "ToDictionary", "ToDictionaryValues", "ToHashSet"];
 
 	public static TheoryData<string> AsyncTerminals
-		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "First", "Single", "ToDictionary", "ToDictionaryValues", "ToHashSet", "Stream"];
+		=> ["ToList", "ToArray", "ToImmutableArray", "FirstOrDefault", "SingleOrDefault", "First", "Single", "ToDictionary", "ToDictionaryValues", "ToHashSet", "Stream", "StreamBuffered"];
 
 	static void RunSync(MappedQuery<int> query, string terminal)
 	{
@@ -65,6 +66,7 @@ public static class MappedQueryReadThroughTests
 			case "ToDictionaryValues": await query.ToDictionaryAsync(i => i, i => i * 2, null, token); break;
 			case "ToHashSet": await query.ToHashSetAsync(null, token); break;
 			case "Stream": await foreach (int _ in query.Stream(Timeout.InfiniteTimeSpan, token)) { } break;
+			case "StreamBuffered": await foreach (int _ in query.StreamBuffered(Timeout.InfiniteTimeSpan, token)) { } break;
 			default: throw new ArgumentOutOfRangeException(nameof(terminal));
 		}
 	}
@@ -101,7 +103,7 @@ public static class MappedQueryReadThroughTests
 		Assert.Equal(LaterSets + 1, reader().NextResultCalls);
 		Assert.Equal(LaterSets + 1, reader().AsyncCalls);
 		// A stream hands the read a token linked to the caller's, so the caller's own token is not the one it sees.
-		if (terminal == "Stream") Assert.True(reader().LastToken.CanBeCanceled);
+		if (terminal is "Stream" or "StreamBuffered") Assert.True(reader().LastToken.CanBeCanceled);
 		else Assert.Equal(cts.Token, reader().LastToken);
 		Assert.Equal(0, reader().ReadsAfterNextResult);
 	}
@@ -319,5 +321,93 @@ public static class MappedQueryReadThroughTests
 		Assert.Equal([7], new PlainReaderCommand(() => reader).Map(_ => 7).SingleResult().ToList());
 
 		reader.DidNotReceive().NextResult();
+	}
+
+	// ---- StreamBuffered at the default buffer size: the read runs ahead (up to 1,024 rows), and an early break still reads nothing the consumer reached for ----
+
+	static async Task WaitUntil(Func<bool> condition)
+	{
+		for (int i = 0; i < 500 && !condition(); i++)
+			await Task.Delay(10, Ct);
+
+		Assert.True(condition(), "The condition did not become true in time.");
+	}
+
+	[Fact]
+	public static async Task AStreamBuffered_OfAResultThatFits_IsReadWhole_IncludingTheLaterSets_WhileTheConsumerHoldsAtTheFirstRow()
+	{
+		FakeExecuteReader command = Command(3, out Func<MultiSetReader> reader);
+
+		await foreach (int _ in Query(command).StreamBuffered(Timeout.InfiniteTimeSpan, Ct))
+		{
+			// The consumer has taken one row; the read runs ahead, finishes the rows and reads through the later sets.
+			await WaitUntil(() => reader().NextResultCalls == LaterSets + 1);
+			break;
+		}
+
+		Assert.Equal(0, reader().ReadsAfterNextResult);
+	}
+
+	[Fact]
+	public static async Task AStreamBuffered_OfALargeResult_BrokenEarly_NeverReachesTheLaterSets_AndReleasesTheReader()
+	{
+		FakeExecuteReader command = Command(StallStream.DefaultBufferSize + 500, out Func<MultiSetReader> reader);
+
+		// Bounded: if a dispose failed to unblock the read this fails in seconds, not at the run-level timeout.
+		using CancellationTokenSource bound = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+		bound.CancelAfter(TimeSpan.FromSeconds(10));
+
+		await foreach (int _ in Query(command).StreamBuffered(Timeout.InfiniteTimeSpan, bound.Token))
+		{
+			// The buffer fills and the read waits: it is nowhere near the end of the rows.
+			await Task.Delay(200, Ct);
+			break;
+		}
+
+		Assert.Equal(0, reader().NextResultCalls);
+	}
+
+	[Fact]
+	public static async Task AStreamBuffered_BrokenEarly_DoesNotThrowALaterSetFailure_TheConsumerNeverReached()
+	{
+		FakeExecuteReader command = Command(3, out Func<MultiSetReader> reader, failAt: 1);
+
+		// No exception reaches the caller: the failure is in a set the consumer never got to, as with a buffer of one row.
+		await foreach (int _ in Query(command).StreamBuffered(Timeout.InfiniteTimeSpan, Ct))
+		{
+			await WaitUntil(() => reader().NextResultCalls >= 1); // the read has run ahead into the failing set
+			break;
+		}
+	}
+
+	[Fact]
+	public static async Task AStreamBuffered_AConsumerThatThrows_IsNotReplacedByALaterSetFailure()
+	{
+		FakeExecuteReader command = Command(3, out Func<MultiSetReader> reader, failAt: 1);
+
+		FormatException ex = await Assert.ThrowsAsync<FormatException>(async () =>
+		{
+			await foreach (int _ in Query(command).StreamBuffered(Timeout.InfiniteTimeSpan, Ct))
+			{
+				await WaitUntil(() => reader().NextResultCalls >= 1);
+				throw new FormatException("mine");
+			}
+		});
+
+		Assert.Equal("mine", ex.Message);
+	}
+
+	[Fact]
+	public static async Task AStreamBuffered_ReadToTheEnd_ThrowsTheLaterSetFailure_AfterTheRows()
+	{
+		FakeExecuteReader command = Command(3, out Func<MultiSetReader> _, failAt: 1);
+		int rows = 0;
+
+		await Assert.ThrowsAsync<LaterSetFailure>(async () =>
+		{
+			await foreach (int _ in Query(command).StreamBuffered(Timeout.InfiniteTimeSpan, Ct)) rows++;
+		});
+
+		Assert.Equal(3, rows);
 	}
 }
