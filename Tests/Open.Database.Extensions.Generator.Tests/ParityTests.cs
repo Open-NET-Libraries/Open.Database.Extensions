@@ -43,11 +43,11 @@ public partial class ParityTests
 	static void SameThrow<T>(Func<List<T>> runtime, Func<List<T>> generated)
 		=> Parity.SameError(Catch(() => runtime()), Catch(() => generated()));
 
-	/// <summary>Intercepted and served by generated code; by default no row was handed to the runtime.</summary>
-	static void Served(Counts c, int sets = 1, int rowsDeclined = 0)
+	/// <summary>Intercepted and served by generated code.</summary>
+	static void Served(Counts c, int sets = 1)
 		=> Assert.True(
-			c.Intercepted == sets && c.Served == sets && c.Declined == 0 && c.RowsDeclined == rowsDeclined,
-			$"expected {sets} intercepted and served, {rowsDeclined} rows declined: {c}");
+			c.Intercepted == sets && c.Served == sets && c.Declined == 0,
+			$"expected {sets} intercepted and served: {c}");
 
 	static void Declined(Counts c)
 		=> Assert.True(c.Intercepted == 1 && c.Served == 0 && c.Declined == 1 && c.RowsServed == 0, $"expected 1 intercepted and declined: {c}");
@@ -74,8 +74,9 @@ public partial class ParityTests
 	static readonly object?[][] PostRows =
 	[
 		[1, Day, "first", 1.25m, 3, true, KeyA, 0.5, "a note", new byte[] { 1, 2, 3 }, 10L, 2, "one"],
-		// Every cell NULL: value types keep their default, Title keeps its initializer, nullable members and [AllowNull] Label get null.
-		[null, null, null, null, null, null, null, null, null, null, null, null, null],
+		// NULL in every nullable member (Qty, Note, Blob and the [AllowNull] Label): null. A non-nullable member is never NULL here: the generated
+		// reader reads it as a hand-written selector does, and a NULL there throws (see ParityTests.Null.cs).
+		[2, Day, "second", 0m, null, false, KeyA, 0.0, null, null, 0L, 1, null],
 		[3, Day.AddDays(1), "third", -7m, null, false, KeyB, -1.5, null, Array.Empty<byte>(), long.MaxValue, 0, null],
 	];
 
@@ -91,9 +92,9 @@ public partial class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Served(c);
-		Assert.Equal(1, c.Full);
+		// The columns are the members in their declared order: the identity layout, read at constant ordinals (mode 5).
+		Assert.Equal(1, c.Identity);
 		Assert.Equal(PostRows.Length, c.RowsServed);
-		Assert.Equal("untitled", generated[1].Title);
 		Assert.Null(generated[1].Label);
 	}
 
@@ -110,7 +111,7 @@ public partial class ParityTests
 				Col.Of<decimal>("price"),
 			],
 			["n", true, 5, "t", 1, 2.5m],
-			[null, false, 6, null, 2, 0m]);
+			[null, false, 6, "u", 2, 0m]);
 		var runtime = q.Map(RowMap<PlainPost>.Default).ToList();
 
 		var start = Counts.Now();
@@ -127,7 +128,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<int>("Id"), Col.Of<string>("Unused"), Col.Of<string>("Title"), Col.Of<int>("Other")],
 			[1, "x", "one", 9],
-			[2, null, null, null]);
+			[2, null, "two", null]);
 		var runtime = q.Map(RowMap<PlainPost>.Default).ToList();
 
 		var start = Counts.Now();
@@ -154,8 +155,7 @@ public partial class ParityTests
 				Col.Of<long>("State"), // long → enum
 			],
 			[7L, "2026-03-04T05:06:07", "12.50", (short)4, 1, 3, 11, 2L],
-			[8L, "2026-03-05", "-0.01", null, 0, -2, int.MinValue, 0L],
-			[null, null, null, null, null, null, null, null]);
+			[8L, "2026-03-05", "-0.01", null, 0, -2, int.MinValue, 0L]);
 
 		var runtime = q.Map(RowMap<PlainPost>.Default).ToList();
 
@@ -168,16 +168,17 @@ public partial class ParityTests
 	}
 
 	[Fact]
-	public void Plain_overflow_throws_the_runtime_exception()
+	public void Plain_overflow_reports_the_row_with_the_runtime_inner_exception()
 	{
 		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<long>("Big"), Col.Of<long>("Qty")], [1, 2L, 5_000_000_000L]);
 
 		var start = Counts.Now();
-		SameThrow(
-			() => q.Map(RowMap<PlainPost>.Default).ToList(),
-			() => q.Map<PlainPost>().ToList());
+		Exception? generated = Catch(() => q.Map<PlainPost>().ToList());
 		Counts c = Counts.Now().Since(start);
 
+		// Both name the model and the row, the conversion's exception inside.
+		RowError<OverflowException>(generated, typeof(PlainPost), 0);
+		Parity.SameError(Catch(() => q.Map(RowMap<PlainPost>.Default).ToList()), generated);
 		Served(c);
 	}
 
@@ -300,7 +301,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<string>("NOTE"), Col.Of<string>("Title"), Col.Of<int>("POST_ID"), Col.Of<int>("Id")],
 			["n", "t", 4, 99],
-			[null, null, 5, 98]);
+			[null, "u", 5, 98]);
 		var runtime = q.Map(RowMap<NamedPost>.Default).ToList();
 
 		var start = Counts.Now();
@@ -331,7 +332,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<int>("Qty"), Col.Of<int>("State"), Col.Of<string>("Tag"), Col.Of<string>("Note")],
 			[1, "one", 2, 1, "t", "n"],
-			[null, null, null, null, null, null]);
+			[2, "two", null, 2, "b", null]);
 		var runtime = q.Map(RowMap<PlainRecord>.Default).ToList();
 
 		var start = Counts.Now();
@@ -345,7 +346,7 @@ public partial class ParityTests
 	[Fact]
 	public void Record_absent_parameters_take_their_defaults()
 	{
-		var q = new TableQuery([Col.Of<string>("title"), Col.Of<int>("ID")], ["one", 1], [null, 2]);
+		var q = new TableQuery([Col.Of<string>("title"), Col.Of<int>("ID")], ["one", 1], ["two", 2]);
 		var runtime = q.Map(RowMap<PlainRecord>.Default).ToList();
 
 		var start = Counts.Now();
@@ -364,7 +365,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<int>("post_id"), Col.Of<string>("title"), Col.Of<int>("qty"), Col.Of<int>("state"), Col.Of<string>("Note")],
 			[1, "one", 2, 1, "from the result"],
-			[2, null, null, null, null]);
+			[2, "two", null, 0, null]);
 		var runtime = q.Map(RowMap<DecoratedRecord>.Default).ToList();
 
 		var start = Counts.Now();
@@ -384,7 +385,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<string>("Note"), Col.Of<decimal>("Price")],
 			[1, "one", "n", 2m],
-			[2, "two", null, null]);
+			[2, "two", null, 0m]);
 		var runtime = q.Map(RowMap<PlainInit>.Default).ToList();
 
 		var start = Counts.Now();
@@ -393,26 +394,6 @@ public partial class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Served(c);
-	}
-
-	[Fact]
-	public void Init_kept_null_row_is_built_by_the_runtime()
-	{
-		// A NULL into a non-nullable init-only member keeps what the type gives it: an object initializer cannot leave it out, so that row goes to the runtime.
-		// Every init-only member has a column (one with none declines the layout: see Init_absent_member_declines_the_layout).
-		var q = new TableQuery(
-			[Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<string>("Note"), Col.Of<decimal>("Price")],
-			[1, "one", null, 1m],
-			[null, "two", null, null],
-			[3, null, "n", 2m]);
-
-		var start = Counts.Now();
-		SameOutcome(
-			() => q.Map(RowMap<PlainInit>.Default).ToList(),
-			() => q.Map<PlainInit>().ToList());
-		Counts c = Counts.Now().Since(start);
-
-		Served(c, rowsDeclined: 2);
 	}
 
 	[Fact]
@@ -448,7 +429,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<int>("post_id"), Col.Of<string>("title"), Col.Of<string>("note"), Col.Of<decimal>("price")],
 			[1, "one", "n", 2m],
-			[2, "two", null, null]);
+			[2, "two", null, 0m]);
 		var runtime = q.Map(RowMap<DecoratedInit>.Default).ToList();
 
 		var start = Counts.Now();
@@ -464,7 +445,7 @@ public partial class ParityTests
 	[Fact]
 	public void Struct_and_derived_models_are_served()
 	{
-		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<string>("Note")], [1, "one", "n"], [null, null, null]);
+		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<string>("Note")], [1, "one", "n"], [2, null, null]);
 		var runtimeStruct = q.Map(RowMap<PlainStruct>.Default).ToList();
 		var runtimeDerived = q.Map(RowMap<DerivedPost>.Default).ToList();
 
@@ -506,7 +487,7 @@ public partial class ParityTests
 			setup.CommandText = """
 				CREATE TABLE post (Id INTEGER, Title TEXT, Qty INTEGER, State INTEGER, Tag TEXT, Note TEXT);
 				INSERT INTO post VALUES (1, 'one', 2, 1, 'a', 'n');
-				INSERT INTO post VALUES (2, NULL, NULL, 2, NULL, NULL);
+				INSERT INTO post VALUES (2, 'two', NULL, 2, 'b', NULL);
 				""";
 			setup.ExecuteNonQuery();
 		}
@@ -561,7 +542,7 @@ public partial class ParityTests
 		var reordered = new TableQuery(
 			[Col.Of<string>("Title"), Col.Of<long>("Id"), Col.Of<string>("Unused")],
 			["one", 1L, "x"],
-			[null, null, null]);
+			["two", 2L, null]);
 		TableQuery[] queries = [byName, reordered, byName, reordered];
 
 		var start = Counts.Now();

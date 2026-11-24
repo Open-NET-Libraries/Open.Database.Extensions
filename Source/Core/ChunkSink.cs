@@ -19,4 +19,8 @@ internal readonly struct ChunkSink<T>(ChunkProducer<T> producer)
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public void Add(T item)
 		=> producer.Add(item);
+
+	/// <summary>Gets the number of rows the producer has stored.</summary>
+	public int Count
+		=> producer.Count;
 }

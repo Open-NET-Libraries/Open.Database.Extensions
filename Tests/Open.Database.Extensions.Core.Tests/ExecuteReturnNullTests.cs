@@ -2,8 +2,9 @@
 
 namespace Open.Database.Extensions.Tests;
 
-// ExecuteReturn<T>() / ExecuteReturnAsync<T>() with a NULL return value (the provider leaves null or DBNull in the return parameter):
-// default(T) for every T, the same rule as ExecuteScalar<T>(). A value converts as Map<T>() does (ExecuteScalarConversionTests).
+// ExecuteReturn<T>() / ExecuteReturnAsync<T>() with a NULL return value, the same rule as ExecuteScalar<T>():
+// DBNull into a non-nullable value type is a ValueMappingException; into a nullable type it is null; a null left in the parameter is default(T).
+// A value converts as Map<T>() does (ExecuteScalarConversionTests).
 [ExcludeFromCodeCoverage]
 public static class ExecuteReturnNullTests
 {
@@ -26,11 +27,12 @@ public static class ExecuteReturnNullTests
 	// ---- sync ----
 
 	[Fact]
-	public static void ExecuteReturn_Null_ReturnsDefault()
+	public static void ExecuteReturn_Null_IsAnErrorForANonNullableValueType_AndNullForTheRest()
 	{
+		NullAssert.Scalar<int>(() => Returning(DBNull.Value).ExecuteReturn<int>());
+		Assert.Equal(0, Returning(null).ExecuteReturn<int>());
 		foreach (object? none in NoValue)
 		{
-			Assert.Equal(0, Returning(none).ExecuteReturn<int>());
 			Assert.Null(Returning(none).ExecuteReturn<int?>());
 			Assert.Null(Returning(none).ExecuteReturn<string>());
 			Assert.Null(Returning(none).ExecuteReturn<object>());
@@ -50,15 +52,18 @@ public static class ExecuteReturnNullTests
 	// ---- async ----
 
 	[Fact]
-	public static async Task ExecuteReturnAsync_Null_ReturnsDefault()
+	public static async Task ExecuteReturnAsync_Null_IsAnErrorForANonNullableValueType_AndNullForTheRest()
 	{
+		await NullAssert.ScalarAsync<int>(async () => await Returning(DBNull.Value)
+			.ExecuteReturnAsync<int>(
+				cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal(
+			0,
+			await Returning(null)
+				.ExecuteReturnAsync<int>(
+					cancellationToken: TestContext.Current.CancellationToken));
 		foreach (object? none in NoValue)
 		{
-			Assert.Equal(
-				0,
-				await Returning(none)
-					.ExecuteReturnAsync<int>(
-						cancellationToken: TestContext.Current.CancellationToken));
 			Assert.Null(
 				await Returning(none)
 					.ExecuteReturnAsync<int?>(

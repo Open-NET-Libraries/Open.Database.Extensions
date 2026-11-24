@@ -38,6 +38,9 @@ internal sealed class TableQuery(Col[] columns, params object?[][] rows) : IExec
 	/// <summary>Every reader it opens allows each cell once, in ascending column order (as a SequentialAccess reader does).</summary>
 	public bool Sequential { get; init; }
 
+	/// <summary>Wraps every reader it opens (after <see cref="Sequential"/>): for example a <see cref="FaultReader"/>.</summary>
+	public Func<DbDataReader, DbDataReader>? Wrap { get; init; }
+
 	/// <summary>The table, for the <see cref="DataTable"/> receiver.</summary>
 	public DataTable Data { get; } = Table(columns, rows);
 
@@ -48,8 +51,9 @@ internal sealed class TableQuery(Col[] columns, params object?[][] rows) : IExec
 
 	DbDataReader Open()
 	{
-		DataTableReader reader = Data.CreateDataReader();
-		return Sequential ? new SequentialReader(reader) : reader;
+		DbDataReader reader = Data.CreateDataReader();
+		if (Sequential) reader = new SequentialReader(reader);
+		return Wrap is null ? reader : Wrap(reader);
 	}
 
 	public void ExecuteReader(Action<IDataReader> handler, CommandBehavior behavior = CommandBehavior.Default)
@@ -102,33 +106,33 @@ internal readonly record struct Counts(
 	long Served,
 	long Declined,
 	long RowsServed,
-	long RowsDeclined,
 	long Full,
 	long Guarded,
 	long Literal,
-	long Converting)
+	long Converting,
+	long Identity)
 {
 	public static Counts Now() => new(
 		Interlocked.Read(ref OdxGeneratedCounters.Intercepted),
 		Interlocked.Read(ref OdxGeneratedCounters.Served),
 		Interlocked.Read(ref OdxGeneratedCounters.Declined),
 		Interlocked.Read(ref OdxGeneratedCounters.RowsServed),
-		Interlocked.Read(ref OdxGeneratedCounters.RowsDeclined),
 		Interlocked.Read(ref OdxGeneratedCounters.Modes[1]),
 		Interlocked.Read(ref OdxGeneratedCounters.Modes[2]),
 		Interlocked.Read(ref OdxGeneratedCounters.Modes[3]),
-		Interlocked.Read(ref OdxGeneratedCounters.Modes[4]));
+		Interlocked.Read(ref OdxGeneratedCounters.Modes[4]),
+		Interlocked.Read(ref OdxGeneratedCounters.Modes[5]));
 
 	public Counts Since(Counts start) => new(
 		Intercepted - start.Intercepted,
 		Served - start.Served,
 		Declined - start.Declined,
 		RowsServed - start.RowsServed,
-		RowsDeclined - start.RowsDeclined,
 		Full - start.Full,
 		Guarded - start.Guarded,
 		Literal - start.Literal,
-		Converting - start.Converting);
+		Converting - start.Converting,
+		Identity - start.Identity);
 }
 
 /// <summary>The parity checks: the generated path against the runtime map, row by row and member by member, or exception against exception.</summary>
@@ -196,11 +200,11 @@ internal static class Parity
 /// A reader that allows each cell once, in ascending column order, as a provider's SequentialAccess reader does: reading a column before the last one read throws.
 /// IsDBNull and then a getter on the same column is allowed.
 /// </summary>
-internal sealed class SequentialReader(DbDataReader inner) : DbDataReader
+internal sealed class SequentialReader(DbDataReader inner) : ProxyReader(inner)
 {
 	int _last = -1;
 
-	void Touch(int ordinal)
+	protected override void Touch(int ordinal)
 	{
 		if (ordinal < _last)
 			throw new InvalidOperationException($"Sequential access: column {ordinal} was read after column {_last}.");
@@ -210,21 +214,49 @@ internal sealed class SequentialReader(DbDataReader inner) : DbDataReader
 	public override bool Read()
 	{
 		_last = -1;
-		return inner.Read();
+		return base.Read();
 	}
 
 	public override bool NextResult()
 	{
 		_last = -1;
-		return inner.NextResult();
+		return base.NextResult();
 	}
+}
+
+/// <summary>A provider failure in the middle of a row: any read of the cell at <paramref name="faultRow"/> (0-based) and <paramref name="faultOrdinal"/> throws what <paramref name="fault"/> makes.</summary>
+internal sealed class FaultReader(DbDataReader inner, int faultRow, int faultOrdinal, Func<Exception> fault) : ProxyReader(inner)
+{
+	int _row = -1;
+
+	protected override void Touch(int ordinal)
+	{
+		if (_row == faultRow && ordinal == faultOrdinal) throw fault();
+	}
+
+	public override bool Read()
+	{
+		_row++;
+		return base.Read();
+	}
+}
+
+/// <summary>A provider's own failure: a <see cref="DbException"/>, which the runtime map lets through untouched.</summary>
+internal sealed class TestDbException(string message) : DbException(message);
+
+/// <summary>A reader that forwards to another and calls <see cref="Touch"/> before each cell is read.</summary>
+internal abstract class ProxyReader(DbDataReader inner) : DbDataReader
+{
+	protected abstract void Touch(int ordinal);
+
+	public override bool Read() => inner.Read();
+
+	public override bool NextResult() => inner.NextResult();
 
 	public override int GetValues(object[] values)
 	{
-		Touch(0);
-		int n = inner.GetValues(values);
-		_last = inner.FieldCount - 1;
-		return n;
+		for (int i = 0; i < inner.FieldCount; i++) Touch(i);
+		return inner.GetValues(values);
 	}
 
 	public override bool IsDBNull(int ordinal)

@@ -23,6 +23,8 @@ internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) 
 
 	object? Cell(int ordinal) => rows[_row][ordinal];
 
+	object Typed(int ordinal) => Cell(ordinal) is { } value and not DBNull ? value : throw new System.Data.SqlTypes.SqlNullValueException();
+
 	public override bool Read()
 	{
 		if (++_row >= rows.Length) return false;
@@ -51,19 +53,19 @@ internal class TypedReader(ImmutableArray<ColumnDef> columns, object?[][] rows) 
 		throw new IndexOutOfRangeException(name);
 	}
 
-	// The typed getters cast directly (like a provider), so a NULL cell raises InvalidCastException/NullReferenceException.
-	public override bool GetBoolean(int ordinal) => (bool)Cell(ordinal)!;
-	public override byte GetByte(int ordinal) => (byte)Cell(ordinal)!;
-	public override char GetChar(int ordinal) => (char)Cell(ordinal)!;
-	public override short GetInt16(int ordinal) => (short)Cell(ordinal)!;
-	public override int GetInt32(int ordinal) => (int)Cell(ordinal)!;
-	public override long GetInt64(int ordinal) => (long)Cell(ordinal)!;
-	public override float GetFloat(int ordinal) => (float)Cell(ordinal)!;
-	public override double GetDouble(int ordinal) => (double)Cell(ordinal)!;
-	public override decimal GetDecimal(int ordinal) => (decimal)Cell(ordinal)!;
-	public override DateTime GetDateTime(int ordinal) => (DateTime)Cell(ordinal)!;
-	public override Guid GetGuid(int ordinal) => (Guid)Cell(ordinal)!;
-	public override string GetString(int ordinal) => (string)Cell(ordinal)!;
+	// A typed getter on a NULL cell throws SqlNullValueException, as SqlClient's do (Microsoft.Data.Sqlite throws InvalidOperationException).
+	public override bool GetBoolean(int ordinal) => (bool)Typed(ordinal);
+	public override byte GetByte(int ordinal) => (byte)Typed(ordinal);
+	public override char GetChar(int ordinal) => (char)Typed(ordinal);
+	public override short GetInt16(int ordinal) => (short)Typed(ordinal);
+	public override int GetInt32(int ordinal) => (int)Typed(ordinal);
+	public override long GetInt64(int ordinal) => (long)Typed(ordinal);
+	public override float GetFloat(int ordinal) => (float)Typed(ordinal);
+	public override double GetDouble(int ordinal) => (double)Typed(ordinal);
+	public override decimal GetDecimal(int ordinal) => (decimal)Typed(ordinal);
+	public override DateTime GetDateTime(int ordinal) => (DateTime)Typed(ordinal);
+	public override Guid GetGuid(int ordinal) => (Guid)Typed(ordinal);
+	public override string GetString(int ordinal) => (string)Typed(ordinal);
 
 	public override int GetValues(object[] values)
 	{

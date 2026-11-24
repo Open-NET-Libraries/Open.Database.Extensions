@@ -14,12 +14,17 @@ static class ModelReader
 	const string NotMappedAttribute = "System.ComponentModel.DataAnnotations.Schema.NotMappedAttribute";
 	const string SetsRequiredMembersAttribute = "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute";
 	const string AllowNullAttribute = "System.Diagnostics.CodeAnalysis.AllowNullAttribute";
+	const string NullPolicyAttribute = "Open.Database.Extensions.NullPolicyAttribute";
+	const string NullValueAttribute = "Open.Database.Extensions.NullValueAttribute";
 
 	static readonly SymbolDisplayFormat Fq = SymbolDisplayFormat.FullyQualifiedFormat;
 
 	public static ModelSpec? Read(INamedTypeSymbol t, Compilation compilation)
 	{
 		if (!IsMappableShape(t, compilation)) return null;
+
+		// The generated readers do not apply a NULL policy: a model that declares one is left to the runtime map, so the policy is never silently ignored.
+		if (DeclaresNullPolicy(t)) return null;
 
 		// Shape.Choose: the constructor a model is built through.
 		var constructors = t.InstanceConstructors
@@ -135,6 +140,7 @@ static class ModelReader
 
 		return new ModelSpec(
 			t.ToDisplayString(Fq),
+			t.MetadataName, // Type.Name, the runtime's name for a model in a message (Shape.TypeName): Inner, Page`1.
 			constructor is not null,
 			create,
 			constructor?.Parameters.Length ?? 0,
@@ -209,8 +215,10 @@ static class ModelReader
 		bool nullableValue = type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 		ITypeSymbol underlying = nullableValue ? ((INamedTypeSymbol)type).TypeArguments[0] : type;
 
-		// Slot.KeepsOnNull: a value type other than Nullable<T>, or a reference type the source declares non-nullable.
-		bool keeps = type.IsValueType ? !nullableValue : nonNullableReference;
+		// Slot.IsNonNullable: a value type other than Nullable<T>, or a reference type the source declares non-nullable (oblivious: nullable), object and
+		// the interfaces DBNull implements included. Such a member is read without a NULL test on a typed getter (the getter throws on a NULL), and with
+		// the runtime's ConvertRequired check on a general read (GetValue), where the cast of DBNull may succeed.
+		bool nonNullable = type.IsValueType ? !nullableValue : nonNullableReference;
 
 		ImmutableArray<ReadCase> cases = Cases(underlying);
 		if (cases.IsEmpty) return null;
@@ -218,10 +226,43 @@ static class ModelReader
 		return new SlotSpec(
 			name, parameter, position,
 			type.ToDisplayString(Fq), underlying.ToDisplayString(Fq), nullableValue,
-			keeps, initBound, required,
+			nonNullable, initBound, required,
 			declared.Column, declared.Order, declared.NotMapped,
 			fallback,
 			new EquatableArray<ReadCase>(cases));
+	}
+
+	// NullPolicyAttribute (Inherited: on the type or any base type, on a property, on a constructor parameter) or NullValueAttribute (a property or a
+	// parameter) anywhere the runtime map reads one. Over-inclusive on purpose (every public constructor, every property of the chain): declining costs
+	// speed, never correctness. A positional record's parameter carries its own attributes, and a [property:] target lands on the property: both are seen.
+	static bool DeclaresNullPolicy(INamedTypeSymbol t)
+	{
+		for (INamedTypeSymbol? c = t; c is not null; c = c.BaseType)
+		{
+			if (HasAttribute(c.GetAttributes(), NullPolicyAttribute)) return true;
+
+			foreach (ISymbol m in c.GetMembers())
+			{
+				ImmutableArray<AttributeData> attributes = m switch
+				{
+					IPropertySymbol p => p.GetAttributes(),
+					IFieldSymbol f => f.GetAttributes(),
+					_ => [],
+				};
+				if (HasAttribute(attributes, NullPolicyAttribute) || HasAttribute(attributes, NullValueAttribute)) return true;
+			}
+		}
+
+		foreach (IMethodSymbol constructor in t.InstanceConstructors)
+		{
+			foreach (IParameterSymbol p in constructor.Parameters)
+			{
+				ImmutableArray<AttributeData> attributes = p.GetAttributes();
+				if (HasAttribute(attributes, NullPolicyAttribute) || HasAttribute(attributes, NullValueAttribute)) return true;
+			}
+		}
+
+		return false;
 	}
 
 	// RowMap.TypedGetters, in the order the reads are offered when no exact read exists.

@@ -162,7 +162,7 @@ To get the id an insert generated, select it in the same command and read it wit
 
 ### Return values and output parameters
 
-`ExecuteReturnAsync<T>()` runs the command and returns the value of its return-value parameter, which it adds itself (you do not call `AddReturnParam` for it). As with `ExecuteScalarAsync<T>()`, the value is converted to `T` the way `Map<T>()` converts a column, and a NULL gives `default(T)`. A SQL Server stored procedure returns an `int`, its `RETURN` code:
+`ExecuteReturnAsync<T>()` runs the command and returns the value of its return-value parameter, which it adds itself (you do not call `AddReturnParam` for it). As with `ExecuteScalarAsync<T>()`, the value is converted to `T` the way `Map<T>()` converts a column: a NULL is `null` for a nullable `T` and throws `ValueMappingException` for a non-nullable value type. A SQL Server stored procedure returns an `int`, its `RETURN` code:
 
 [!code-csharp[](../samples/SqlServer.cs#sql_server_return)]
 
@@ -192,12 +192,12 @@ The `Async` terminals honor the command's cancellation token (`UseCancellationTo
 
 ### Which scalar form
 
-- **`ExecuteScalarAsync<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). A `NULL` or no rows gives `default(T)`.
+- **`ExecuteScalarAsync<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). No rows gives `default(T)`; a `NULL` is `null` for a nullable `T` (`int?`, `string`) and throws `ValueMappingException` for a non-nullable value type.
 - **`ExecuteScalarAsync(value => ...)`** to convert in your own way. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
 - **`ExecuteScalarAsync()`** for the raw value: `DBNull.Value` for a `NULL`, `null` for no rows.
 - **`Map<T>()` then `ToListAsync(token)`** (or `ToArrayAsync(token)`, ...) for many rows of one column: it converts like a property, as `ExecuteScalarAsync<T>()` does. See [One value per row](mapping.md#one-value-per-row).
 
-`ExecuteScalarAsync<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. To tell a `NULL` from 0, ask for the nullable type: `int?` or `long?`.
+`ExecuteScalarAsync<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. A `NULL` into a non-nullable value type throws `ValueMappingException`; ask for the nullable type, `int?` or `long?`, when a NULL is expected.
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#scalar_read_as_int)]
 

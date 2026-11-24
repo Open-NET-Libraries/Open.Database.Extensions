@@ -83,38 +83,49 @@ public static class NullRuleMatrixTests
 
 	// ---- the table ----
 
+	/// <summary>What a NULL into a member that rejects it gives: no value, the row throws.</summary>
+	static readonly object Rejected = new();
+
 	// One member of one model: how to map a row whose only column is that member's (NULL, or a real cell) and read the member back, and what it must be in each case.
 	sealed record Case(string Name, Func<Route, bool, object?> Read, object? OnNull, object? OnValue);
 
 	// `cell` is the real value the column carries; the typed reader reports `columnType`, the others object.
+	// A member that rejects NULL is read through NullAssert: the row throws, naming the model and row 0.
 	static Case Of<TModel>(string name, string column, Type columnType, object cell, Func<TModel, object?> member, object? onNull)
 		=> new(name,
-			(route, isNull) => member(Assert.Single(Read<TModel>(route, [new ColumnDef(column, columnType)], [isNull ? null : cell]))),
+			(route, isNull) =>
+			{
+				List<TModel> Rows() => Read<TModel>(route, [new ColumnDef(column, columnType)], [isNull ? null : cell]);
+				if (!isNull || onNull != Rejected) return member(Assert.Single(Rows()));
+
+				NullAssert.Model<TModel>(0, () => Rows());
+				return Rejected;
+			},
 			onNull,
 			cell);
 
 	static readonly Case[] Cases =
 	[
-		// properties: what the model's initializer gave stays when the type declares the property non-nullable
-		Of<PropsOn>("property: non-nullable value", nameof(PropsOn.Value), typeof(int), 1, m => m.Value, 7),
+		// properties: a non-nullable one rejects NULL, whatever its initializer
+		Of<PropsOn>("property: non-nullable value", nameof(PropsOn.Value), typeof(int), 1, m => m.Value, Rejected),
 		Of<PropsOn>("property: Nullable<T>", nameof(PropsOn.Maybe), typeof(int), 2, m => m.Maybe, null),
-		Of<PropsOn>("property: non-nullable reference with initializer", nameof(PropsOn.KeepsInit), typeof(string), "v", m => m.KeepsInit, "init"),
-		Of<PropsOn>("property: non-nullable reference without initializer", nameof(PropsOn.NoInit), typeof(string), "v", m => m.NoInit, null),
+		Of<PropsOn>("property: non-nullable reference with initializer", nameof(PropsOn.KeepsInit), typeof(string), "v", m => m.KeepsInit, Rejected),
+		Of<PropsOn>("property: non-nullable reference without initializer", nameof(PropsOn.NoInit), typeof(string), "v", m => m.NoInit, Rejected),
 		Of<PropsOn>("property: nullable reference", nameof(PropsOn.Nullable), typeof(string), "v", m => m.Nullable, null),
 		Of<PropsOff>("property: oblivious reference", nameof(PropsOff.Oblivious), typeof(string), "v", m => m.Oblivious, null),
 		Of<PropsGeneric<string>>("property: generic type parameter", nameof(PropsGeneric<>.Value), typeof(string), "v", m => m.Value, null),
 		Of<PropsOn>("property: [AllowNull]", nameof(PropsOn.Allowed), typeof(string), "v", m => m.Allowed, null),
 
-		// constructor parameters: the fallback (the declared default, else default) when the type declares the parameter non-nullable
-		Of<ParamsOn>("parameter: non-nullable value", nameof(ParamsOn.Value), typeof(int), 1, m => m.Value, 7),
+		// constructor parameters: a non-nullable one rejects NULL, whatever its declared default (which feeds only a parameter no column feeds)
+		Of<ParamsOn>("parameter: non-nullable value", nameof(ParamsOn.Value), typeof(int), 1, m => m.Value, Rejected),
 		Of<ParamsOn>("parameter: Nullable<T>", nameof(ParamsOn.Maybe), typeof(int), 2, m => m.Maybe, null),
-		Of<ParamsOn>("parameter: non-nullable reference with default", nameof(ParamsOn.Keeps), typeof(string), "v", m => m.Keeps, "d"),
-		Of<ParamsOn>("parameter: non-nullable reference without default", nameof(ParamsOn.NoDefault), typeof(string), "v", m => m.NoDefault, null),
+		Of<ParamsOn>("parameter: non-nullable reference with default", nameof(ParamsOn.Keeps), typeof(string), "v", m => m.Keeps, Rejected),
+		Of<ParamsOn>("parameter: non-nullable reference without default", nameof(ParamsOn.NoDefault), typeof(string), "v", m => m.NoDefault, Rejected),
 		Of<ParamsOn>("parameter: nullable reference", nameof(ParamsOn.Nullable), typeof(string), "v", m => m.Nullable, null),
 		Of<ParamsOff>("parameter: oblivious reference", nameof(ParamsOff.Oblivious), typeof(string), "v", m => m.Oblivious, null),
 		Of<ParamsGeneric<string>>("parameter: generic type parameter", nameof(ParamsGeneric<>.Value), typeof(string), "v", m => m.Value, null),
-		Of<Defaulted>("parameter: positional record, non-nullable reference with default", nameof(Defaulted.Title), typeof(string), "v", m => m.Title, "n/a"),
-		Of<Titled>("parameter: positional record, non-nullable reference without default", nameof(Titled.Title), typeof(string), "v", m => m.Title, null),
+		Of<Defaulted>("parameter: positional record, non-nullable reference with default", nameof(Defaulted.Title), typeof(string), "v", m => m.Title, Rejected),
+		Of<Titled>("parameter: positional record, non-nullable reference without default", nameof(Titled.Title), typeof(string), "v", m => m.Title, Rejected),
 	];
 
 	static readonly Dictionary<string, Case> ByName = Cases.ToDictionary(c => c.Name);
@@ -153,7 +164,7 @@ public static class NullRuleMatrixTests
 		=> new NullabilityInfoContext().Create(typeof(T).GetConstructors().Single().GetParameters().Single(p => p.Name == parameter)).WriteState;
 
 	// The members the brief names: a string, a string? and an oblivious property, a record positional parameter, a string and a string? constructor parameter (and [AllowNull], which counts as nullable).
-	// A member declared as a type parameter is left out on purpose: the library calls it oblivious, which is today's rule, whatever NullabilityInfoContext says of the closed type.
+	// A member declared as a type parameter is left out on purpose: the library calls it oblivious, whatever NullabilityInfoContext says of the closed type.
 	static readonly Dictionary<string, Func<NullabilityState>> Runtime = new()
 	{
 		["property: non-nullable reference with initializer"] = () => WriteState(typeof(PropsOn).GetProperty(nameof(PropsOn.KeepsInit))!),
@@ -183,13 +194,11 @@ public static class NullRuleMatrixTests
 
 	[Theory]
 	[MemberData(nameof(Agreement))]
-	public static void ANullKeepsAMember_ExactlyWhenNullabilityInfoContextSaysItIsNotNull(string name, Route route)
+	public static void ANullIsRejected_ExactlyWhenNullabilityInfoContextSaysTheMemberIsNotNull(string name, Route route)
 	{
 		bool declaredNotNull = Runtime[name]() == NullabilityState.NotNull;
-
-		// Every one of these has a non-null initializer or default, so a result that is not null is a NULL that kept it.
-		bool kept = ByName[name].Read(route, true) is not null;
-		Assert.Equal(declaredNotNull, kept);
+		bool rejected = ByName[name].Read(route, true) == Rejected;
+		Assert.Equal(declaredNotNull, rejected);
 	}
 
 	// The two states NullabilityInfoContext reports for a plain `string` and `string?`, so the table above cannot pass by agreeing on Unknown for everything.
@@ -218,15 +227,14 @@ public static class NullRuleMatrixTests
 		("NoDefault", typeof(string)), ("Value", typeof(int)), ("Maybe", typeof(int)), ("Keeps", typeof(string)), ("Nullable", typeof(string)),
 	];
 
-	static readonly object?[] PropsOnNulls = [null, null, null, null, null, null];
-	static readonly object?[] ParamsOnNulls = [null, null, null, null, null];
-
 	[Theory]
 	[MemberData(nameof(Routes), MemberType = typeof(ConstructorBindingTests))]
-	public static void EveryPropertyNull_KeepsWhatTheTypeDeclaresNonNullable(Route route)
+	public static void EveryPropertyNull_IsAnError_AndEveryNullableOneNull_IsNull(Route route)
 	{
-		PropsOn item = Assert.Single(Read<PropsOn>(route, PropsOnColumns, PropsOnNulls));
-		Assert.Equal((7, null, "init", null, null, null), (item.Value, item.Maybe, item.KeepsInit, item.NoInit, item.Nullable, item.Allowed));
+		NullAssert.Model<PropsOn>(0, () => Read<PropsOn>(route, PropsOnColumns, [null, null, null, null, null, null]));
+
+		PropsOn item = Assert.Single(Read<PropsOn>(route, PropsOnColumns, [1, null, "k", "n", null, null]));
+		Assert.Equal((1, null, "k", "n", null, null), (item.Value, item.Maybe, item.KeepsInit, item.NoInit, item.Nullable, item.Allowed));
 
 		PropsOff off = Assert.Single(Read<PropsOff>(route, [("Oblivious", typeof(string))], [null]));
 		Assert.Null(off.Oblivious);
@@ -234,10 +242,12 @@ public static class NullRuleMatrixTests
 
 	[Theory]
 	[MemberData(nameof(Routes), MemberType = typeof(ConstructorBindingTests))]
-	public static void EveryParameterNull_GetsTheFallbackOfWhatTheTypeDeclaresNonNullable(Route route)
+	public static void EveryParameterNull_IsAnError_AndEveryNullableOneNull_IsNull(Route route)
 	{
-		ParamsOn item = Assert.Single(Read<ParamsOn>(route, ParamsOnColumns, ParamsOnNulls));
-		Assert.Equal((null, 7, null, "d", null), (item.NoDefault, item.Value, item.Maybe, item.Keeps, item.Nullable));
+		NullAssert.Model<ParamsOn>(0, () => Read<ParamsOn>(route, ParamsOnColumns, [null, null, null, null, null]));
+
+		ParamsOn item = Assert.Single(Read<ParamsOn>(route, ParamsOnColumns, ["n", 1, null, "k", null]));
+		Assert.Equal(("n", 1, null, "k", null), (item.NoDefault, item.Value, item.Maybe, item.Keeps, item.Nullable));
 
 		ParamsOff off = Assert.Single(Read<ParamsOff>(route, [("Oblivious", typeof(string))], [null]));
 		Assert.Null(off.Oblivious);
@@ -247,41 +257,43 @@ public static class NullRuleMatrixTests
 
 	[Theory]
 	[MemberData(nameof(Routes), MemberType = typeof(ConstructorBindingTests))]
-	public static void AStringPropertyWithAnEmptyInitializer_KeepsItWhenTheColumnIsNull(Route route)
+	public static void AStringPropertyWithAnInitializer_RejectsANullColumn_NamingTheRow(Route route)
 	{
 		ImmutableArray<ColumnDef> columns = [("Name", typeof(string))];
-		Assert.Equal(["", "given"], ReadRows<Named>(route, columns, [[null], ["given"]]).Select(n => n.Name));
+		NullAssert.Model<Named>(0, () => ReadRows<Named>(route, columns, [[null], ["given"]]));
+		NullAssert.Model<Named>(2, () => ReadRows<Named>(route, columns, [["a"], ["b"], [null]]));
 	}
 
 	[Theory]
 	[MemberData(nameof(Routes), MemberType = typeof(ConstructorBindingTests))]
-	public static void APositionalRecord_WithAStringParameter_GetsNull_WhenTheColumnIsNull(Route route)
+	public static void APositionalRecord_WithAStringParameter_RejectsANullColumn(Route route)
 	{
 		ImmutableArray<ColumnDef> columns = [("Id", typeof(int)), ("Title", typeof(string))];
-		Assert.Equal<Titled>([new(1, null!), new(2, "given")], ReadRows<Titled>(route, columns, [[1, null], [2, "given"]])); // no declared default: the fallback is default(string)
+		NullAssert.Model<Titled>(1, () => ReadRows<Titled>(route, columns, [[2, "given"], [1, null]]));
 	}
 
+	// The declared default feeds a parameter only when no column feeds it: a NULL in a column that does is an error.
 	[Theory]
 	[MemberData(nameof(Routes), MemberType = typeof(ConstructorBindingTests))]
-	public static void APositionalRecord_WithADefaultedStringParameter_GetsTheDefault_WhenTheColumnIsNull(Route route)
+	public static void APositionalRecord_WithADefaultedStringParameter_GetsTheDefault_OnlyWhenNoColumnFeedsIt(Route route)
 	{
 		ImmutableArray<ColumnDef> columns = [("Id", typeof(int)), ("Title", typeof(string))];
-		Assert.Equal<Defaulted>([new(1, "n/a"), new(2, "given")], ReadRows<Defaulted>(route, columns, [[1, null], [2, "given"]]));
+		NullAssert.Model<Defaulted>(0, () => ReadRows<Defaulted>(route, columns, [[1, null], [2, "given"]]));
+		Assert.Equal(new Defaulted(2, "given"), Assert.Single(Read<Defaulted>(route, columns, [2, "given"])));
 
-		// No column at all gets the default too, as before.
+		// No column at all gets the default.
 		Assert.Equal(new Defaulted(3, "n/a"), Assert.Single(Read<Defaulted>(route, [("Id", typeof(int))], [3])));
 	}
 
-	// Phase D enforces that the COLUMN is there; a NULL in it is not an error, and a required property is a property like any other: it keeps its initializer, else it stays null.
+	// A required property needs its column, and a NULL in it is the NULL error like any other non-nullable member's.
 	[Theory]
 	[MemberData(nameof(Routes), MemberType = typeof(ConstructorBindingTests))]
-	public static void ARequiredStringProperty_WithANullCell_IsNotAnError_AndKeepsWhatItHad(Route route)
+	public static void ARequiredStringProperty_WithANullCell_IsAnError(Route route)
 	{
 		ImmutableArray<ColumnDef> columns = [("Name", typeof(string)), ("Label", typeof(string))];
 
-		RequiredNotNull item = Assert.Single(Read<RequiredNotNull>(route, columns, [null, null]));
-		Assert.Null(item.Name);          // nothing assigned it: it is null, as it was
-		Assert.Equal("init", item.Label); // the initializer stays
+		NullAssert.Model<RequiredNotNull>(0, () => Read<RequiredNotNull>(route, columns, [null, "l"]));
+		NullAssert.Model<RequiredNotNull>(0, () => Read<RequiredNotNull>(route, columns, ["n", null]));
 
 		RequiredNotNull given = Assert.Single(Read<RequiredNotNull>(route, columns, ["n", "l"]));
 		Assert.Equal(("n", "l"), (given.Name, given.Label));
@@ -293,9 +305,9 @@ public static class NullRuleMatrixTests
 	public static void ADeclaredMap_FollowsTheSameRule(Route route)
 	{
 		RowMap<Named> named = [new(nameof(Named.Name), "full_name")];
-		Assert.Equal("", Assert.Single(Read(route, [("full_name", typeof(string))], [null], named)).Name);
+		NullAssert.Model<Named>(0, () => Read(route, [("full_name", typeof(string))], [null], named));
 
 		RowMap<Defaulted> defaulted = [new(nameof(Defaulted.Title), "post_title")];
-		Assert.Equal("n/a", Assert.Single(Read(route, [("Id", typeof(int)), ("post_title", typeof(string))], [1, null], defaulted)).Title);
+		NullAssert.Model<Defaulted>(0, () => Read(route, [("Id", typeof(int)), ("post_title", typeof(string))], [1, null], defaulted));
 	}
 }

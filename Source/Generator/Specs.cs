@@ -44,7 +44,7 @@ readonly struct EquatableArray<T>(ImmutableArray<T> items) : IEquatable<Equatabl
 
 /// <summary>
 /// One way to read a column into a slot, for one reported column type.
-/// <see cref="Expression"/> holds <c>{0}</c> for the ordinal; a general read (<see cref="General"/>) is a cast of <c>GetValue</c>, its NULL tested on the value.
+/// <see cref="Expression"/> holds <c>{0}</c> for the ordinal; a general read (<see cref="General"/>) is a cast of <c>GetValue</c> (for a nullable member its NULL is tested on the value).
 /// </summary>
 sealed record ReadCase(string ColumnType, string Expression, bool General);
 
@@ -59,8 +59,8 @@ sealed record SlotSpec(
 	string Type,
 	string Underlying,
 	bool NullableValue,
-	// A NULL leaves the member alone (a property keeps its value, a parameter gets its fallback): a non-nullable value type or reference.
-	bool Keeps,
+	// Declared non-nullable (a value type other than Nullable<T>, or a reference annotated non-nullable): read without a NULL test.
+	bool NonNullable,
 	// A property that can only be set in an object initializer: init-only, or required while the constructor does not set the required members.
 	bool InitBound,
 	// A column must feed it in every result set.
@@ -76,6 +76,8 @@ sealed record SlotSpec(
 
 sealed record ModelSpec(
 	string Type,
+	// The type's name for a message, as the runtime map names it (Shape.TypeName: Type.Name, so Inner, Page`1): the same text on both paths.
+	string Name,
 	// Built through its one public constructor (true) or created then set (false).
 	bool UseConstructor,
 	// How a created model starts: "new T()" or "default(T)" (a struct with no public parameterless constructor).

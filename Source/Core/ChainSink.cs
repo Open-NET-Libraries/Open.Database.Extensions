@@ -18,4 +18,8 @@ internal readonly struct ChainSink<T>(ChunkChain<T> chain)
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public void Add(T item)
 		=> chain.Add(item);
+
+	/// <summary>Gets the number of rows in the chain.</summary>
+	public int Count
+		=> chain.Count;
 }

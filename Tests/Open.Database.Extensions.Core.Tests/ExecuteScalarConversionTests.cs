@@ -168,16 +168,19 @@ public static class ExecuteScalarConversionTests
 	// ---- NULL ----
 
 	[Fact]
-	public static async Task NullDbNullAndNoRow_AreDefault_WhateverT()
+	public static async Task NoRowIsDefault_ANullIsNullForANullableType_AndAnErrorOtherwise()
 	{
+		await Reads(null, 0);
+		await Reads(null, 0L);
+		await Reads(null, Level.None);
+		await Reads(null, default(DateTime));
+		NullAssert.Scalar<int>(() => ExecuteScalarNullTests.Sync(DBNull.Value).ExecuteScalar<int>());
+		NullAssert.Scalar<Level>(() => ExecuteScalarNullTests.Sync(DBNull.Value).ExecuteScalar<Level>());
+		await NullAssert.ScalarAsync<long>(async () => await ExecuteScalarNullTests.Async(DBNull.Value).ExecuteScalarAsync<long>(Ct));
 		foreach (object? none in new object?[] { null, DBNull.Value })
 		{
-			await Reads(none, 0);
-			await Reads(none, 0L);
 			await Reads<int?>(none, null);
 			await Reads<long?>(none, null);
-			await Reads(none, Level.None);
-			await Reads(none, default(DateTime));
 			await Reads<Guid?>(none, null);
 			await Reads<string?>(none, null);
 			await Reads<byte[]?>(none, null);

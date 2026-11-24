@@ -17,7 +17,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<long>("Id"), Col.Of<string>("Title"), Col.Of<long>("Qty"), Col.Of<int>("State"), Col.Of<string>("Tag"), Col.Of<string>("Note")],
 			[1L, "one", 2L, 1, "t", "n"],
-			[2L, null, null, null, null, null]);
+			[2L, "two", null, 2, "b", null]);
 		var runtime = q.Map(RowMap<PlainRecord>.Default).ToList();
 
 		var start = Counts.Now();
@@ -76,23 +76,6 @@ public partial class ParityTests
 	}
 
 	[Fact]
-	public void Decorated_required_null_row_is_built_by_the_runtime()
-	{
-		var q = new TableQuery(
-			[Col.Of<int>("post_id"), Col.Of<string>("title"), Col.Of<string>("note"), Col.Of<decimal>("price")],
-			[1, "one", "n", 2m],
-			[2, null, null, null]);
-		var runtime = q.Map(RowMap<DecoratedInit>.Default).ToList();
-
-		var start = Counts.Now();
-		var generated = q.Map<DecoratedInit>().ToList();
-		Counts c = Counts.Now().Since(start);
-
-		Parity.SameRows(runtime, generated);
-		Served(c, rowsDeclined: 1);
-	}
-
-	[Fact]
 	public void Keyword_named_members_are_served()
 	{
 		var q = new TableQuery([Col.Of<int>("event"), Col.Of<string>("class")], [1, "a"], [2, null]);
@@ -109,13 +92,13 @@ public partial class ParityTests
 	// ---- SequentialAccess: each cell once, in ascending column order ----
 
 	[Fact]
-	public void Sequential_reader_kept_null_rows_are_not_read_twice()
+	public void Sequential_reader_init_model_is_served()
 	{
-		// The NULL Title (init-only, non-nullable) row goes to the runtime: from the values already read, never by reading the row again.
+		// Read into locals in column order, each cell once, then built by an object initializer.
 		var q = new TableQuery(
 			[Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<string>("Note"), Col.Of<decimal>("Price")],
 			[1, "one", null, 1m],
-			[2, null, "n", 2m])
+			[2, "two", "n", 2m])
 		{ Sequential = true };
 
 		List<PlainInit> runtime;
@@ -129,7 +112,7 @@ public partial class ParityTests
 
 		Parity.SameRows(runtime, generated);
 		Parity.SameRows(runtime, query);
-		Served(c, sets: 2, rowsDeclined: 2);
+		Served(c, sets: 2);
 	}
 
 	[Fact]
@@ -138,7 +121,7 @@ public partial class ParityTests
 		var q = new TableQuery(
 			[Col.Of<string>("Note"), Col.Of<bool>("IsActive"), Col.Of<int>("Id"), Col.Of<string>("Title")],
 			["n", true, 5, "t"],
-			[null, false, 6, null])
+			[null, false, 6, "u"])
 		{ Sequential = true };
 		var runtime = q.Map(RowMap<PlainPost>.Default).ToList();
 
@@ -164,7 +147,7 @@ public partial class ParityTests
 		{
 			var set = new DataSet();
 			set.Tables.Add(TableQuery.Table(PostColumns, PostRows));
-			set.Tables.Add(TableQuery.Table([Col.Of<string>("Title"), Col.Of<long>("Id")], ["second", 7L], [null, 8L]));
+			set.Tables.Add(TableQuery.Table([Col.Of<string>("Title"), Col.Of<long>("Id")], ["second", 7L], ["third", 8L]));
 			return set;
 		}
 
@@ -200,7 +183,8 @@ public partial class ParityTests
 	{
 		// THE KNOWN SILENT DIFFERENCE (README, "Known limits"; a ship blocker until Core has a per-result-set hook). Same reader, one query value
 		// run again after NextResult, the second set with the same column count in another order: the runtime reads it right, the generated
-		// reader keeps the first set's ordinals and swaps the values. When a hook closes this, this test fails: turn it into a parity test.
+		// reader keeps the first set's ordinals and swaps the values (WRONG VALUES, silently). A row-index restart cannot be detected either, without
+		// a check on every row: see the next test. When a hook closes this, this test fails: turn it into a parity test.
 		static DataSet Sets()
 		{
 			var set = new DataSet();
@@ -228,6 +212,37 @@ public partial class ParityTests
 
 		Assert.Equal((2, 20), (runtimeSecond.Id, runtimeSecond.Qty));
 		Assert.Equal((20, 2), (generatedSecond.Id, generatedSecond.Qty)); // Pinned: wrong, silently.
+	}
+
+	[Fact]
+	public void Known_limit_a_next_set_with_the_same_column_count_continues_the_row_count()
+	{
+		// The second set has the layout of the first, so the binding is kept and so is its row counter: a NULL in the second set's first row is
+		// reported as row 2 (after the first set's two rows), not row 0. With another column count the binding is renewed and the count restarts.
+		static DataSet Sets(int secondColumns)
+		{
+			var set = new DataSet();
+			set.Tables.Add(TableQuery.Table([Col.Of<int>("Id"), Col.Of<int>("Qty")], [1, 10], [2, 11]));
+			set.Tables.Add(secondColumns == 2
+				? TableQuery.Table([Col.Of<int>("Id"), Col.Of<int>("Qty")], [null, 5])
+				: TableQuery.Table([Col.Of<int>("Id"), Col.Of<int>("Qty"), Col.Of<string>("Extra")], [null, 5, "x"]));
+			return set;
+		}
+
+		Exception? Report(int secondColumns, bool generated)
+		{
+			using DataTableReader reader = Sets(secondColumns).CreateDataReader();
+			MappedReader<PlainPost> view = generated ? reader.Map<PlainPost>() : reader.Map(RowMap<PlainPost>.Default);
+			Assert.Equal(2, view.ToList().Count);
+			Assert.True(reader.NextResult());
+			return Catch(() => view.ToList());
+		}
+
+		// The difference, pinned on both sides: the generated reader says row 2 where the runtime map says row 0.
+		RowError<InvalidCastException>(Report(2, generated: true), typeof(PlainPost), 2);
+		RowError<InvalidCastException>(Report(2, generated: false), typeof(PlainPost), 0);
+		// Another column count renews the binding: the same report as the runtime's.
+		Parity.SameError(Report(3, generated: false), RowError<InvalidCastException>(Report(3, generated: true), typeof(PlainPost), 0));
 	}
 
 	// ---- left to the runtime: not intercepted ----
@@ -320,9 +335,9 @@ public partial class ParityTests
 		Parity.SameRows(w20.Map(RowMap<GenRowD20>.Default).ToList(), w20.Map<GenRowD20>().ToList());
 		Counts c = Counts.Now().Since(start);
 
-		// The undecorated twins read every catalog column exactly, in order (mode 1); the decorated ones at constant ordinals (mode 3).
+		// The undecorated twins read every catalog column exactly, at their declaration positions (mode 5); the decorated ones at their declared ordinals (mode 3).
 		Served(c, sets: 10);
-		Assert.Equal(5, c.Full);
+		Assert.Equal(5, c.Identity);
 		Assert.Equal(5, c.Literal);
 	}
 }

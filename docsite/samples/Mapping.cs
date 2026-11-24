@@ -232,7 +232,7 @@ public static class Mapping
 		SqliteConnection connection,
 		CancellationToken cancellationToken)
 		=> connection
-			.Command("select null as quantity, null as discount, null as note, null as title")
+			.Command("select null as quantity, null as stock, null as discount, null as note, null as title")
 			.Map<OrderLine>()
 			.FirstOrDefaultAsync(cancellationToken);
 
@@ -330,8 +330,8 @@ public static class Mapping
 		CancellationToken cancellationToken)
 	{
 		#region map_ctor_null_column
-		// A NULL into the non-nullable title and stars
-		// takes their declared defaults ("untitled", 3);
+		// Title and Stars are NullAction.Default:
+		// a NULL takes their declared defaults ("untitled", 3);
 		// a NULL into the nullable rating is null.
 		Review? withNulls = await connection
 			.Command("select 7 as id, null as title, null as stars, null as rating")
@@ -388,11 +388,33 @@ public static class Mapping
 		}
 		catch (ValueMappingException ex)
 		{
-			// ex.PropertyName is "Id", ex.ColumnName is "id",
-			// ex.TargetType is typeof(int);
+			// The message names the model and the row:
+			// Unable to map row 0 to 'Post'.
+			// ex.TargetType is typeof(Post);
 			// the overflow is ex.InnerException.
-			// The message names all three:
-			// Unable to set value of property 'Id' (Int32) from column 'id'.
+			return ex;
+		}
+		#endregion
+	}
+
+	public static async Task<ValueMappingException?> MapNullErrorAsync(
+		SqliteConnection connection,
+		CancellationToken cancellationToken)
+	{
+		#region map_null_error
+		try
+		{
+			// PostRecord.Title is a non-nullable string.
+			_ = await connection
+				.Command("select 1 as id, 42 as author, null as title, null as body")
+				.Map<PostRecord>()
+				.ToArrayAsync(cancellationToken);
+			return null;
+		}
+		catch (ValueMappingException ex)
+		{
+			// A NULL was read into a non-nullable member of PostRecord
+			// at row 0. Declare the member nullable (int?, string?).
 			return ex;
 		}
 		#endregion
@@ -703,7 +725,7 @@ public static class OrderMaps
 	// which matches no property.
 	// The delegate runs inside the compiled row reader, once per row,
 	// and is never called for a NULL cell:
-	// that property keeps its initial value.
+	// PlacedAt and Customer are string?, so a NULL gives null.
 	public static RowMap<Order> OrderMap
 		=> field ??= RowMap<Order>.Default
 			.Convert<long, string>(

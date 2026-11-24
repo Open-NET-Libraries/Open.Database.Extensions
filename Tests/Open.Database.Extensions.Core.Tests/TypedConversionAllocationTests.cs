@@ -182,24 +182,31 @@ public static class TypedConversionAllocationTests
 	}
 
 	[Fact]
-	public static void Null_KeepsTheValueOfAMemberThatIsNotNullable()
+	public static void Null_InAMemberThatIsNotNullable_IsAnError()
 	{
-		Assert.Equal(default, Read<DateCell>("text", "null").Single().Value);
-		Assert.Equal(0m, Read<DecimalCell>("text", "null").Single().Value);
-		Assert.False(Read<BoolCell>("integer", "null").Single().Value);
+		// Microsoft.Data.Sqlite: a typed getter on NULL throws InvalidOperationException, so the message is the general one.
+		NullAssert.Check<DateCell, InvalidOperationException>(
+			"Unable to map row 0 to 'DateCell'.",
+			Assert.Throws<ValueMappingException>(() => Read<DateCell>("text", "null")));
+		NullAssert.Check<DecimalCell, InvalidOperationException>(
+			"Unable to map row 0 to 'DecimalCell'.",
+			Assert.Throws<ValueMappingException>(() => Read<DecimalCell>("text", "null")));
+		NullAssert.Check<BoolCell, InvalidOperationException>(
+			"Unable to map row 0 to 'BoolCell'.",
+			Assert.Throws<ValueMappingException>(() => Read<BoolCell>("integer", "null")));
 	}
 
 	[Fact]
 	public static void ABadValue_IsAValueMappingException_WithTheCauseOfTheParse()
 	{
-		ValueMappingException date = Assert.Throws<ValueMappingException>(() => Read<DateCell>("text", "'not a date'"));
-		Assert.IsType<FormatException>(date.InnerException);
-		Assert.Equal("Value", date.PropertyName);
-
-		ValueMappingException number = Assert.Throws<ValueMappingException>(() => Read<DecimalCell>("text", "'12,5x'"));
-		Assert.IsType<FormatException>(number.InnerException);
-
-		ValueMappingException big = Assert.Throws<ValueMappingException>(() => Read<DecimalCell>("text", "'99999999999999999999999999999999'"));
-		Assert.IsType<OverflowException>(big.InnerException);
+		NullAssert.Check<DateCell, FormatException>(
+			"Unable to map row 0 to 'DateCell'.",
+			Assert.Throws<ValueMappingException>(() => Read<DateCell>("text", "'not a date'")));
+		NullAssert.Check<DecimalCell, FormatException>(
+			"Unable to map row 0 to 'DecimalCell'.",
+			Assert.Throws<ValueMappingException>(() => Read<DecimalCell>("text", "'12,5x'")));
+		NullAssert.Check<DecimalCell, OverflowException>(
+			"Unable to map row 0 to 'DecimalCell'.",
+			Assert.Throws<ValueMappingException>(() => Read<DecimalCell>("text", "'99999999999999999999999999999999'")));
 	}
 }

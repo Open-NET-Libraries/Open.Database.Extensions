@@ -58,6 +58,11 @@ internal interface IRowSink<in T>
 	/// <summary>Receives one mapped row.</summary>
 	/// <param name="item">The mapped row.</param>
 	void Add(T item);
+
+	/// <summary>Gets the number of rows received.</summary>
+	// Read by the read loop's handler to name the failing row, so the loop
+	// keeps no counter of its own that the handler reads.
+	int Count { get; }
 }
 
 /// <summary>
@@ -94,12 +99,21 @@ internal static class RowReader
 
 		Func<DbDataReader, T> map = source.Mapper(db);
 		int n = 0;
-		do
+		try
 		{
-			sink.Add(map(db));
-			if (++n == take) break;
+			do
+			{
+				sink.Add(map(db));
+				if (++n == take) break;
+			}
+			while (db.Read());
 		}
-		while (db.Read());
+		catch (RowMappingFailure failure)
+		{
+			// The handler reads the sink's count, not n: a local the handler
+			// reads is stored to the frame on every update, once per row.
+			throw failure.At(skip + sink.Count);
+		}
 	}
 
 	/// <summary>Reads the rows into a <see cref="List{T}"/>.</summary>
@@ -123,12 +137,21 @@ internal static class RowReader
 
 		Func<DbDataReader, T> map = source.Mapper(db);
 		int n = 0;
-		do
+		try
 		{
-			list.Add(map(db));
-			if (++n == take) break;
+			do
+			{
+				list.Add(map(db));
+				if (++n == take) break;
+			}
+			while (db.Read());
 		}
-		while (db.Read());
+		catch (RowMappingFailure failure)
+		{
+			// The list's count, not n (see Fill).
+			throw failure.At(skip + list.Count);
+		}
+
 		return list;
 	}
 
@@ -209,6 +232,11 @@ internal static class RowReader
 			while (db.Read());
 			return buffer.ToArray();
 		}
+		catch (RowMappingFailure failure)
+		{
+			// The buffer's count, not n (see Fill).
+			throw failure.At(skip + buffer.Count);
+		}
 		finally
 		{
 			buffer.Dispose();
@@ -221,7 +249,7 @@ internal static class RowReader
 		{
 			if (take != 0 && SkipRows(db, skip) && db.Read())
 			{
-				item = source.Mapper(db)(db);
+				item = MapAt(source.Mapper(db), db, skip);
 				return true;
 			}
 
@@ -249,7 +277,7 @@ internal static class RowReader
 				return false;
 			}
 
-			item = source.Mapper(db)(db);
+			item = MapAt(source.Mapper(db), db, skip);
 			if (take != 1 && db.Read()) throw MoreThanOne();
 			return true;
 		}
@@ -284,6 +312,7 @@ internal static class RowReader
 	/// <returns>A lazy sequence of the mapped rows.</returns>
 	public static IEnumerable<T> Stream<T>(IRowSource<T> source, IDataReader reader, int skip, int take, bool readThrough = false, CancellationToken token = default)
 	{
+		int first = skip; // The row number of the first row mapped: skip counts down below.
 		bool skipped = take != 0;
 		if (skipped)
 		{
@@ -306,7 +335,20 @@ internal static class RowReader
 				while (db.Read())
 				{
 					dbMap ??= source.Mapper(db);
-					yield return dbMap(db);
+					// A try cannot hold a yield: it holds the map call only. The
+					// handler reads the iterator's fields; the row does nothing
+					// for it.
+					T item;
+					try
+					{
+						item = dbMap(db);
+					}
+					catch (RowMappingFailure failure)
+					{
+						throw failure.At(first + n);
+					}
+
+					yield return item;
 					if (++n == take) break;
 				}
 			}
@@ -318,7 +360,17 @@ internal static class RowReader
 					token.ThrowIfCancellationRequested();
 					if (!reader.Read()) break;
 					map ??= source.Mapper(reader);
-					yield return map(reader);
+					T item;
+					try
+					{
+						item = map(reader);
+					}
+					catch (RowMappingFailure failure)
+					{
+						throw failure.At(first + n);
+					}
+
+					yield return item;
 				}
 				while (++n != take);
 			}
@@ -354,6 +406,28 @@ internal static class RowReader
 		for (; skip > 0; skip--)
 			if (!reader.Read()) return false;
 		return true;
+	}
+
+	// The loops that fill a collection catch around the loop: one try region for the whole loop. The iterators (Stream, StreamAsync) cannot catch around a yield, so they catch around the map call. The one-row terminals (First, Single) catch here.
+	/// <summary>
+	/// Maps the current row, and reports a failure of a row reader of the library for the row.
+	/// </summary>
+	/// <typeparam name="TReader">The type of the reader.</typeparam>
+	/// <typeparam name="T">The type of a mapped row.</typeparam>
+	/// <param name="map">The mapper.</param>
+	/// <param name="reader">The reader positioned on the row.</param>
+	/// <param name="row">The 0-based row in the result set.</param>
+	/// <returns>The mapped row.</returns>
+	static T MapAt<TReader, T>(Func<TReader, T> map, TReader reader, int row)
+	{
+		try
+		{
+			return map(reader);
+		}
+		catch (RowMappingFailure failure)
+		{
+			throw failure.At(row);
+		}
 	}
 
 	static InvalidOperationException MoreThanOne() => new("Sequence contains more than one element.");
@@ -401,12 +475,21 @@ internal static class RowReader
 
 		Func<DbDataReader, T> map = source.Mapper(reader);
 		int n = 0;
-		do
+		try
 		{
-			sink.Add(map(reader));
-			if (++n == take) break;
+			do
+			{
+				sink.Add(map(reader));
+				if (++n == take) break;
+			}
+			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
 		}
-		while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
+		catch (RowMappingFailure failure)
+		{
+			// The sink's count, as in Fill.
+			throw failure.At(skip + sink.Count);
+		}
+
 		return sink;
 	}
 
@@ -443,12 +526,20 @@ internal static class RowReader
 		{
 			Func<DbDataReader, T> map = source.Mapper(reader);
 			int n = 0;
-			do
+			try
 			{
-				chain.Add(map(reader));
-				if (++n == take) break;
+				do
+				{
+					chain.Add(map(reader));
+					if (++n == take) break;
+				}
+				while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
 			}
-			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false));
+			catch (RowMappingFailure failure)
+			{
+				// The chain's count, as in Fill.
+				throw failure.At(skip + chain.Count);
+			}
 		}
 
 		return build.Build(chain);
@@ -459,7 +550,7 @@ internal static class RowReader
 		=> take != 0
 		&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 		&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)
-		? (true, source.Mapper(reader)(reader))
+		? (true, MapAt(source.Mapper(reader), reader, skip))
 		: (false, default);
 
 	public static async ValueTask<(bool Found, T? Item)> TrySingleAsync<T>(
@@ -469,7 +560,7 @@ internal static class RowReader
 			&& await SkipRowsAsync(reader, skip, useReadAsync, cancellationToken).ConfigureAwait(false)
 			&& await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 		{
-			T item = source.Mapper(reader)(reader);
+			T item = MapAt(source.Mapper(reader), reader, skip);
 			if (take != 1 && await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false)) throw MoreThanOne();
 			return (true, item);
 		}
@@ -504,7 +595,18 @@ internal static class RowReader
 			while (await ReadRowAsync(reader, useReadAsync, cancellationToken).ConfigureAwait(false))
 			{
 				map ??= source.Mapper(reader);
-				yield return map(reader);
+				T item;
+				try
+				{
+					item = map(reader);
+				}
+				catch (RowMappingFailure failure)
+				{
+					// As in Stream: the handler reads the iterator's fields.
+					throw failure.At(skip + n);
+				}
+
+				yield return item;
 				if (++n == take) break;
 			}
 		}
@@ -569,6 +671,7 @@ internal readonly struct ListSink<T>(List<T> list) : IRowSink<T>
 {
 	public List<T> List { get; } = list;
 	public void Add(T item) => List.Add(item);
+	public int Count => List.Count;
 }
 
 /// <summary>
@@ -652,16 +755,17 @@ internal readonly struct DictionaryValueBuild<T, TKey, TValue>(
 internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 {
 	T[]? _items;
-	int _count;
+	/// <summary>Gets the number of rows added.</summary>
+	public int Count { readonly get; private set; }
 
 	public void Add(T item)
 	{
 		T[]? items = _items;
-		int count = _count;
+		int count = Count;
 		if (items is not null && (uint)count < (uint)items.Length)
 		{
 			items[count] = item;
-			_count = count + 1;
+			Count = count + 1;
 			return;
 		}
 
@@ -677,7 +781,7 @@ internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 	void AddSlow(T item)
 	{
 		T[]? old = _items;
-		int rows = _count;
+		int rows = Count;
 		T[] bigger = config.Rent(old is null ? 16 : old.Length * 2);
 		if (old is not null) Array.Copy(old, bigger, rows);
 
@@ -687,7 +791,7 @@ internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 		// one is never released a second time.
 		_items = bigger;
 		bigger[rows] = item;
-		_count = rows + 1;
+		Count = rows + 1;
 
 		// The rows were copied: the old array goes back, its rows cleared
 		// first when the rule says so (they are alive in the new one, so the
@@ -697,10 +801,10 @@ internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 
 	public readonly T[] ToArray()
 	{
-		if (_count == 0) return [];
+		if (Count == 0) return [];
 
-		var result = new T[_count];
-		Array.Copy(_items!, result, _count);
+		var result = new T[Count];
+		Array.Copy(_items!, result, Count);
 		return result;
 	}
 
@@ -710,6 +814,6 @@ internal struct ArraySink<T>(ChunkConfig<T> config) : IRowSink<T>
 		if (items is null) return;
 
 		_items = null;
-		config.Seal(items, _count).Release();
+		config.Seal(items, Count).Release();
 	}
 }

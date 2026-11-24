@@ -20,7 +20,7 @@ public sealed class PlainPost
 
 	public DateTime Created { get; set; }
 
-	// Non-nullable: a NULL keeps the initializer.
+	// Non-nullable: read as a hand-written selector reads it; a NULL throws, on the runtime map and the generated reader alike.
 	public string Title { get; set; } = "untitled";
 
 	public decimal Price { get; set; }
@@ -128,7 +128,7 @@ public sealed record DecoratedRecord(
 
 // ---- init-only and required members: an object initializer ----
 
-/// <summary>The undecorated init model: required members need a column; a NULL into a non-nullable one keeps what the type gives it.</summary>
+/// <summary>The undecorated init model: required members need a column.</summary>
 public sealed class PlainInit
 {
 	public required int Id { get; init; }
@@ -226,6 +226,17 @@ public sealed class OrderOnlyPost
 	public string? Title { get; set; }
 }
 
+/// <summary>An undecorated model with a member not mapped between two mapped ones: its identity layout is Id at 0, Title at 1.</summary>
+public sealed class SkippedPost
+{
+	public int Id { get; set; }
+
+	[NotMapped]
+	public string Display { get; set; } = "kept";
+
+	public string? Title { get; set; }
+}
+
 /// <summary>Members declared in another order than their Order: still read at constant ordinals, in column order.</summary>
 public sealed class ReorderedPost
 {
@@ -265,3 +276,46 @@ public sealed class OverridePost : VirtualPost
 
 	public string? Title { get; set; }
 }
+
+/// <summary>A generic model closed over a marker type: a message names it as the runtime does, by Type.Name ("TaggedPost`1").</summary>
+public sealed class TaggedPost<TMarker>
+{
+	public int Id { get; set; }
+
+	public string Title { get; set; } = "untitled";
+}
+
+/// <summary>Holds a nested model: a message names it as the runtime does, by Type.Name ("Inner").</summary>
+public sealed class PostHolder
+{
+	public sealed class Inner
+	{
+		public int Id { get; set; }
+
+		public string Title { get; set; } = "untitled";
+	}
+}
+
+/// <summary>
+/// Non-nullable interface members, read by GetValue: a NULL in either is the runtime's NULL report (SqlNullValueException inside), the one in
+/// Other too, although DBNull implements IConvertible and its cast would succeed.
+/// </summary>
+public sealed class InterfacePost
+{
+	public int Id { get; set; }
+
+	public IComparable Value { get; set; } = "";
+
+	public IConvertible Other { get; set; } = "";
+}
+#nullable disable
+
+/// <summary>A model in code with nullable annotations off: its string is oblivious, nullable to the map and to the generator (tested, a NULL gives null).</summary>
+public sealed class ObliviousPost
+{
+	public int Id { get; set; }
+
+	public string Title { get; set; }
+}
+
+#nullable restore

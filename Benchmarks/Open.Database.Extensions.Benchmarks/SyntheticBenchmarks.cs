@@ -227,6 +227,37 @@ public class SyntheticBenchmarks
 	[Benchmark(Baseline = true)]
 	public List<SynRow> V1_Sync() { _label = nameof(V1_Sync); return SyntheticVariants.V1(Connection); }
 
+	// V1 with a NULL policy (SynRowPolicy.cs): the cost of testing members for NULL. Throw is on each non-nullable member, Default is on the class.
+	[Benchmark]
+	public List<SynRowThrow> V1_Throw_Sync() { _label = nameof(V1_Throw_Sync); return Connection.Command(SyntheticVariants.Sql).Map<SynRowThrow>().ToList(); }
+
+	[Benchmark]
+	public List<SynRowDefault> V1_Default_Sync() { _label = nameof(V1_Default_Sync); return Connection.Command(SyntheticVariants.Sql).Map<SynRowDefault>().ToList(); }
+
+	// ---- The NULL-rule merge-gate ladder, width 20 x 1,000 rows (ODX_SYN_WIDTHS=20 ODX_SYN_ROWS=1000) ----
+	// Buffered: V1_Sync (runtime map, no policy) against V2_Sync (hand-written, no NULL test but the nullable members' own); V1_Throw_Sync and V1_Default_Sync (the runtime map on
+	// the policy rows) against their hand-written bars V2_Throw_Sync and V2_Default_Sync, which build the same row types over the same typed getters (SyntheticVariantsNull.cs).
+	// Throw on every non-nullable member / Default on every member: the two twins test that many members for NULL, so the pairs are like-for-like.
+	[Benchmark]
+	public List<SynRowThrow> V2_Throw_Sync() { _label = nameof(V2_Throw_Sync); WidthTwenty(); return SyntheticVariantsNull.V2Throw(Connection); }
+
+	[Benchmark]
+	public List<SynRowDefault> V2_Default_Sync() { _label = nameof(V2_Default_Sync); WidthTwenty(); return SyntheticVariantsNull.V2Default(Connection); }
+
+	// Streaming: the same four rungs through Map(...).Stream(Timeout.InfiniteTimeSpan), consumed whole (SyntheticVariantsStream.cs; the library's default reads, no AsyncReads()).
+	// Each returns the checksum of its loop. V2_Stream_Async is the bar of the other three.
+	[Benchmark]
+	public ValueTask<long> V1_Stream_Async() { _label = nameof(V1_Stream_Async); return SyntheticVariantsStream.V1(Connection); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Throw_Stream_Async() { _label = nameof(V1_Throw_Stream_Async); return SyntheticVariantsStream.V1Throw(Connection); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Default_Stream_Async() { _label = nameof(V1_Default_Stream_Async); return SyntheticVariantsStream.V1Default(Connection); }
+
+	[Benchmark]
+	public ValueTask<long> V2_Stream_Async() { _label = nameof(V2_Stream_Async); return SyntheticVariantsStream.V2(Connection, _hand); }
+
 	[Benchmark]
 	public ValueTask<List<SynRow>> V1_Async() { _label = nameof(V1_Async); return SyntheticVariants.V1Async(Connection); }
 
@@ -240,12 +271,86 @@ public class SyntheticBenchmarks
 	public ValueTask<List<SynRow>> V2_Async() { _label = nameof(V2_Async); return SyntheticVariants.V2Async(Connection, _hand); }
 
 	// ---- Gen and GenD (SG.md 5f): the prototype source generator's plain Map<T>() on the undecorated and the decorated twin (SyntheticGenerated.cs) ----
+	// Not a like-for-like of V2 even at width 20: Gen and GenD build a twin class (GenRow20, GenRowD20) whose Title, Body, Tag and Blob are nullable, so the generated
+	// reader tests those four for NULL and V2 (SynRow.Title etc. are also nullable, but V2 reads them with no test) does not. The like-for-like bars are Gen_T and Ctl_T
+	// (the non-nullable twin) against V2 (see Gen_T below), and Gen against Ctl (the hand-written selector of the same twin, tests included). At widths 1 to 10 the twins
+	// also have fewer members than the SynRow V2 builds, so they allocate less: no comparison with V2 there.
 	[Benchmark]
 	public object Gen_Sync() { _label = nameof(Gen_Sync); return SyntheticGenerated.Gen(Connection, Width); }
 
 	[Benchmark]
 	public object GenD_Sync() { _label = nameof(GenD_Sync); return SyntheticGenerated.GenD(Connection, Width); }
 
+	// ---- The control and the decomposition of Gen against V2 (WIDTH 20 ONLY; GenParity.cs) ----
+	// Ctl, Ctl_T, Gen_T, V2n and GP2 to GP7c read the 20 catalog columns at fixed ordinals, so at the catalog's other widths (1, 3, 5, 10) the provider has fewer
+	// columns and they cannot run: each throws NotSupportedException (WidthTwenty) there, which BenchmarkDotNet reports as a failed case. Run them as
+	//   ODX_SYN_WIDTHS=20 and a method filter (the names above), e.g. --filter "*SyntheticBenchmarks.Gen_T_Sync" "*SyntheticBenchmarks.Ctl_T_Sync"
+	// (GenParity.cs, "Running these", has the list). The verify sweep (--verify) skips them at the other widths on its own.
+	void WidthTwenty()
+	{
+		if (Width != 20)
+			throw new NotSupportedException($"This method reads 20 columns at fixed ordinals: width 20 only (this case has width {Width}). Run with ODX_SYN_WIDTHS=20 and a method filter.");
+	}
+
+	[Benchmark]
+	public object Ctl_Sync() { _label = nameof(Ctl_Sync); WidthTwenty(); return SyntheticGenerated.Ctl(Connection); }
+
+	// Why can a COPY of V2 read slower? Three controls (width 20), each isolating one candidate, all measured with time AND allocation (MemoryDiagnoser):
+	//   V2b_Sync   V2's exact code path a SECOND time under another name (same selector, same delegate): V2_Sync against V2b_Sync is the noise of the run itself
+	//              (ordering, tiering, the JIT's profile data); a difference between Ctl and V2 inside that gap is not a finding.
+	//   CtlB_Sync  V2's selector copied into THIS assembly, producing GenRow20, Map(static readonly delegate): isolates the ROW TYPE (GenRow20 against SynRow) from the assembly.
+	//   CtlS_Sync  Ctl's selector in the Generated assembly through a static readonly Func field, not a method group at each call: isolates DELEGATE CREATION per call.
+	// (A fourth, V2's selector in the Generated assembly on SynRow, is impossible: SynRow is not visible there, the Generated project does not reference this one.)
+	[Benchmark]
+	public List<SynRow> V2b_Sync() { _label = nameof(V2b_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, _hand); }
+
+	[Benchmark]
+	public object CtlB_Sync() { _label = nameof(CtlB_Sync); WidthTwenty(); return SyntheticGenerated.CtlB(Connection); }
+
+	[Benchmark]
+	public object CtlS_Sync() { _label = nameof(CtlS_Sync); WidthTwenty(); return SyntheticGenerated.CtlS(Connection); }
+
+	// The ladder at width 20: Gen_T is the generated reader on the twin whose Title, Body and Tag are non-nullable (read without a NULL test, as V2 reads
+	// them), Ctl_T is the hand-written selector of that twin in the same assembly (GeneratedControl.cs). Gen_T and Ctl_T differ from V2 by Blob (byte[]?: a NULL
+	// test on the value, one compare per row; V2 casts GetValue alone), and they build a GenRowT20, not a SynRow: compare Gen_T with Ctl_T for the generated
+	// code's own cost, and with V2 only to that extent. Expected: Gen_T = Ctl_T, up to the binder and try regions.
+	[Benchmark]
+	public object Gen_T_Sync() { _label = nameof(Gen_T_Sync); WidthTwenty(); return SyntheticGenerated.GenT(Connection); }
+
+	[Benchmark]
+	public object Ctl_T_Sync() { _label = nameof(Ctl_T_Sync); WidthTwenty(); return SyntheticGenerated.CtlT(Connection); }
+
+	// V2 with IsDBNull on every member: the check-every-member reader (the generator's former NULL semantics, GP1 in the first decomposition run). The generator
+	// now reads a non-nullable member without a NULL test, as V2 does, so V2 (with Ctl_T) is the bar for Gen_T and Ctl (not V2n) is the bar for Gen; V2n is the
+	// bar of GP2 to GP5 and stays for comparison with earlier runs.
+	[Benchmark]
+	public List<SynRow> V2n_Sync() { _label = nameof(V2n_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.V2n); }
+
+	[Benchmark]
+	public List<SynRow> GP2_Sync() { _label = nameof(GP2_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP2); }
+
+	[Benchmark]
+	public List<SynRow> GP3_Sync() { _label = nameof(GP3_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP3); }
+
+	[Benchmark]
+	public List<SynRow> GP4_Sync() { _label = nameof(GP4_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP4()); }
+
+	[Benchmark]
+	public List<SynRow> GP5_Sync() { _label = nameof(GP5_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP5); }
+
+	// GP6/GP6r: V2's read in one try/catch per row, without and with the row counter (the generated reader's error shape); equal to V2 if a try is free.
+	[Benchmark]
+	public List<SynRow> GP6_Sync() { _label = nameof(GP6_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP6); }
+
+	[Benchmark]
+	public List<SynRow> GP6r_Sync() { _label = nameof(GP6r_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.GP6r); }
+
+	// GP7/GP7c: the raw loop (as V10r) with one try around it, and without: the loop placement, measurable only (no Core hook for a selector).
+	[Benchmark]
+	public List<SynRow> GP7_Sync() { _label = nameof(GP7_Sync); WidthTwenty(); return GenParity.GP7(Connection); }
+
+	[Benchmark]
+	public List<SynRow> GP7c_Sync() { _label = nameof(GP7c_Sync); WidthTwenty(); return GenParity.GP7c(Connection); }
 	// ---- V3 to V6 (BS-B): the domain object is SynItem; Pace applies to V3, V3s, V4a, V4b, V6c only ----------------------------------------------------------------
 	[Benchmark]
 	public List<SynItem> V3_Sync() { _label = nameof(V3_Sync); return SyntheticVariantsB.V3(Connection, Pace); }

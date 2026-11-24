@@ -253,16 +253,14 @@ public static class MappedQueryFirstSingleTests
 	[Fact]
 	public static async Task ANullValue_IsARow_NotNoRows()
 	{
-		Assert.Equal(0, One(typeof(int), null).Map<int>().First());
-		Assert.Equal(0, One(typeof(int), null).Map<int>().Single());
+		NullAssert.Value<int>(0, () => One(typeof(int), null).Map<int>().First());
+		NullAssert.Value<int>(0, () => One(typeof(int), null).Map<int>().Single());
 		Assert.Null(One(typeof(int), null).Map<int?>().First());
 		Assert.Null(One(typeof(int), null).Map<int?>().Single());
 		Assert.Null(One(typeof(string), null).Map<string?>().First());
 		Assert.Null(One(typeof(string), null).Map<string?>().Single());
 
-		Assert.Equal(
-			0,
-			await One(typeof(int), null).Map<int>().FirstAsync(Ct));
+		await NullAssert.ValueAsync<int>(0, async () => await One(typeof(int), null).Map<int>().FirstAsync(Ct));
 		Assert.Null(
 			await One(typeof(int), null).Map<int?>().SingleAsync(Ct));
 		Assert.Null(

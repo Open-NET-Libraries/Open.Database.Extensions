@@ -6,7 +6,7 @@ Every shape below has a recipe, and none of them needs a new API. Where the libr
 
 | You want | Write |
 |---|---|
-| A NULL to become an empty string | The member's initializer, or a [factory map](#nulls-that-mean-an-empty-string) |
+| A NULL to become an empty string | `[NullValue("")]`, or `[NullPolicy(NullAction.Default)]` and the member's initializer, or a [factory map](#nulls-that-mean-an-empty-string) |
 | A value that is not in the row | Set it [after the close](#a-value-that-is-not-in-the-row), or return it from the query |
 | A column to be left alone | A pair with a `null` column |
 | A mapping that fails when a column is missing | A `required` member (not with a factory map) |
@@ -22,13 +22,13 @@ A constructor makes a `T` from the columns of a row, matching each parameter to 
 
 - **The parameters are matched to columns by name,** with the three tiers a constructor parameter uses: exactly, ignoring case, then ignoring case and underscores. `tag_name` feeds `tagName`. A pair renames one, and in a factory map the pair's key is the name of the **parameter**.
 - **It maps only its parameters.** No member of the `T` is set from a column afterwards. What the function does not take, the map does not read.
-- **A NULL and a missing column follow the constructor rule.** A nullable parameter (`string?`, `int?`) receives `null`. A NULL into a non-nullable parameter, and a parameter no column feeds, get the declared default value, else `default`. Nothing throws. A function that must tell NULL from a value declares the parameter nullable, because a non-nullable `DateTime` receives `0001-01-01` for a NULL.
+- **A NULL and a missing column follow the constructor rule.** A parameter no column feeds gets its declared default value, else `default`. A NULL into a nullable parameter (`string?`, `int?`) is `null`, and into a non-nullable one throws `ValueMappingException` naming the model and the row, unless the model type's [null policy](mapping.md#null-policy) says otherwise. A function that must see a NULL declares the parameter nullable.
 - **Declare it once.** A map builds its row reader on first use and keeps it, so it belongs in a `static` property, not in the call.
 - **It is checked when `From` runs,** not by the compiler: a function that returns another type, a pair that names no parameter, and a single value as the `T` (`RowMap<long>.From(...)`) each throw there. For a map held in a property, that is the first use of the property.
 
 ## NULLs that mean an empty string
 
-You may look for a `WhenNull(member, "")`, or for a `string?` converter that is called for NULL, so that `Label` gets `""` when the column is NULL. Neither exists, and neither is needed: a NULL never overwrites a member the C# type declares non-nullable, and a converter is not called for it. The member's declaration is where its NULL value lives, so write the value there:
+You may look for a `WhenNull(member, "")`, or for a `string?` converter that is called for NULL, so that `Label` gets `""` when the column is NULL. Neither exists: the member's declaration is where its NULL value lives. Write the value in its initializer and declare `[NullPolicy(NullAction.Default)]` (or `[NullValue("")]` on the member); a converter is not called for the NULL:
 
 [!code-csharp[](../samples/ShapingRows.cs#shape_plant_model)]
 

@@ -105,26 +105,19 @@ public static class RowMapperTests
 	}
 
 	[Fact]
-	public static void Typed_NullInNonNullableValueProperty_LeavesTheDefault()
+	public static void Typed_NullInNonNullableValueProperty_IsAnError()
 	{
 		var cmd = Cmd([("Id", typeof(int)), ("Name", typeof(string))], [null, "x"]);
-
-		Simple item = Assert.Single(cmd.Map<Simple>().ToList());
-		Assert.Equal(0, item.Id);
-		Assert.Equal("x", item.Name);
+		NullAssert.Model<Simple>(0, () => cmd.Map<Simple>().ToList());
 	}
 
 	[Fact]
-	public static void Conversion_AFailure_ThrowsValueMappingException_WithThePropertyColumnTypeAndCause()
+	public static void Conversion_AFailure_ThrowsValueMappingException_WithTheModelRowAndCause()
 	{
 		var cmd = Cmd([("Id", typeof(string)), ("Name", typeof(string))], ["abc", "x"]); // text that is not an int
 
 		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Simple>().ToList());
-		Assert.Contains("Unable to set value of property 'Id' (Int32) from column 'Id'.", ex.Message);
-		Assert.Equal("Id", ex.PropertyName);
-		Assert.Equal("Id", ex.ColumnName);
-		Assert.Equal(typeof(int), ex.TargetType);
-		Assert.IsType<FormatException>(ex.InnerException);
+		NullAssert.Check<Simple, FormatException>("Unable to map row 0 to 'Simple'.", ex);
 	}
 
 	// Application code often catches InvalidOperationException as a business-rule failure and reports its message; a data failure must not be one.
@@ -241,8 +234,7 @@ public static class RowMapperTests
 	{
 		var cmd = Cmd([("Id", typeof(long)), ("Name", typeof(string))], [4_294_967_301L, "x"]);
 		var ex = Assert.Throws<ValueMappingException>(() => cmd.Map<Simple>().ToList());
-		Assert.Contains("Id", ex.Message);
-		Assert.IsType<OverflowException>(ex.InnerException);
+		NullAssert.Check<Simple, OverflowException>("Unable to map row 0 to 'Simple'.", ex);
 	}
 
 	[Fact]

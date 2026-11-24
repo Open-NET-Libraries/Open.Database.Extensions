@@ -10,8 +10,12 @@ namespace Open.Database.Extensions.Benchmarks.Generated;
 /// </summary>
 /// <remarks>
 /// The generated reader enters ODX's loop through the public selector overload, <c>Map(Func&lt;IDataRecord, T&gt;)</c>, the entry V2 uses;
-/// it tests IsDBNull on every member whose NULL the runtime map would keep or assign (V2 tests the nullable members only) and binds its layout once per result set.
+/// it tests IsDBNull on the members the types declare nullable and reads a non-nullable member unchecked (GenRowN declares Title, Body, Tag and Blob nullable,
+/// which V2 reads with no test; GenRowT20 declares the strings non-nullable, as V2 reads them)
+/// and binds its layout once per result set.
 /// Twins exist for the catalog widths (1, 3, 5, 10, 20), as V2's hand-written selectors do; another width (ODX_SYN_WIDTHS, --widths) throws, as V2's Hand does.
+/// The twins of widths 1 to 10 have only that many members, while V2 builds a full SynRow at every width. At width 20, Gen tests four members V2 does not:
+/// the like-for-like bars are Gen_T against V2 and Ctl_T, and Gen against Ctl.
 /// </remarks>
 public static class GeneratedReads
 {
@@ -37,7 +41,10 @@ public static class GeneratedReads
 		_ => throw new ArgumentOutOfRangeException(nameof(width), "Generated twins exist for widths 1, 3, 5, 10 and 20."),
 	};
 
-	/// <summary>How many Map&lt;T&gt;() calls of this assembly the generator intercepted: the methods of its generated interceptor class (10 when it ran).</summary>
+	/// <summary>Gen_T: the width-20 twin whose member types are V2's assumptions (non-nullable Title, Body, Tag): the generated reads are V2's reads.</summary>
+	public static object GenT20(IExecuteReader command) => command.Map<GenRowT20>().ToList();
+
+	/// <summary>How many Map&lt;T&gt;() calls of this assembly the generator intercepted: the methods of its generated interceptor class (11 when it ran).</summary>
 	public static int InterceptedCallSites()
 	{
 		foreach (Type type in typeof(GeneratedReads).Assembly.GetTypes())

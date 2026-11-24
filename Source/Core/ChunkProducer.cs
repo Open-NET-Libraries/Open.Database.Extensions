@@ -136,6 +136,15 @@ internal sealed class ChunkProducer<T>(
 	int _index;
 	int _ended;
 
+	/// <summary>The rows in the buffers already handed on.</summary>
+	/// <remarks>Moves once per buffer, in <see cref="Take"/>, never per row.</remarks>
+	int _taken;
+
+	/// <summary>Gets the number of rows stored so far.</summary>
+	// Read when a row fails to map, to name the row.
+	public int Count
+		=> _taken + _next;
+
 	/// <summary>
 	/// Starts the producer, once. A token that is already cancelled
 	/// starts nothing: the target ends with that cancel.
@@ -318,6 +327,7 @@ internal sealed class ChunkProducer<T>(
 	ArrayLease<T> Take()
 	{
 		ArrayLease<T> lease = config.Seal(_array!, _next);
+		_taken += _next;
 		_array = null;
 		_next = 0;
 		_limit = 0;

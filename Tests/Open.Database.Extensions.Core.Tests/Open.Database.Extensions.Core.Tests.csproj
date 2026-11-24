@@ -41,6 +41,11 @@
     <Compile Include="..\..\Benchmarks\Open.Database.Extensions.Benchmarks\BenchProvider.cs" Link="TestHelpers\Synthetic\BenchProvider.cs" />
   </ItemGroup>
 
+  <!-- The NullPolicy parity matrix: data only, shared with the generator's tests so both readers answer the same cases. -->
+  <ItemGroup>
+    <Compile Include="..\Shared\NullPolicyMatrix\*.cs" Link="Shared\NullPolicyMatrix\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <Folder Include="IDbCommand\" />
   </ItemGroup>

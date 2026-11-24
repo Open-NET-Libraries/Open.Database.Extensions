@@ -172,15 +172,12 @@ public static class RowMapConverterTests
 	}
 
 	[Fact]
-	public static void AValueTheConverterCannotParse_NamesThePropertyAndColumn()
+	public static void AValueTheConverterCannotParse_NamesTheModelAndRow()
 	{
 		var ex = Assert.Throws<ValueMappingException>(
 			() => One(Full, Columns, With(QuantityAt, "twelve")));
 
-		Assert.Equal(nameof(Order.Quantity), ex.PropertyName);
-		Assert.Equal("Quantity", ex.ColumnName);
-		Assert.Equal(typeof(int), ex.TargetType);
-		Assert.IsType<FormatException>(ex.InnerException);
+		NullAssert.Check<Order, FormatException>("Unable to map row 0 to 'Order'.", ex);
 	}
 
 	// ---- NULL ----
@@ -195,14 +192,19 @@ public static class RowMapConverterTests
 			.Convert<string, string>(nameof(Order.Customer), _ => { calls++; return "x"; })
 			.Convert<string, int>(nameof(Order.Quantity), _ => { calls++; return 1; });
 
-		Order order = One(map, Columns, [7, null, null, null, null, 9, null]);
+		Order order = One(map, Columns, [7, null, null, "c", "q", 9, null]);
 
-		Assert.Equal(0, calls);
+		Assert.Equal(2, calls);                 // Customer and Quantity, never a NULL
 		Assert.Null(order.OrderNum);            // a nullable member: null
 		Assert.Null(order.FirstLoad);
-		Assert.Equal("unknown", order.Customer); // a non-nullable member keeps its initializer
-		Assert.Equal(5, order.Quantity);
+		Assert.Equal("x", order.Customer);
+		Assert.Equal(1, order.Quantity);
 		Assert.Equal(9, order.Count);
+
+		// A non-nullable member rejects NULL, and its converter is not called.
+		NullAssert.Model<Order>(0, () => One(map, Columns, [7, null, null, null, "q", 9, null]));
+		NullAssert.Model<Order>(0, () => One(map, Columns, [7, null, null, "c", null, 9, null]));
+		Assert.Equal(3, calls); // the Customer converter of the second row ran before its Quantity NULL
 	}
 
 	[Fact]
@@ -232,11 +234,15 @@ public static class RowMapConverterTests
 			.Convert<string?, string>(nameof(Order.Customer), s => { calls++; return s ?? "null"; })
 			.Convert<string?, string?>(nameof(Order.Note), s => { calls++; return s ?? "null"; });
 
-		Order order = One(map, Columns, [7, 42L, Start, null, "12", 9, null]);
+		Order order = One(map, Columns, [7, 42L, Start, "c", "12", 9, null]);
 
-		Assert.Equal(0, calls);
-		Assert.Equal("unknown", order.Customer);
+		Assert.Equal(1, calls); // Customer only: Note's NULL never reaches its converter
+		Assert.Equal("c", order.Customer);
 		Assert.Null(order.Note);
+
+		// A non-nullable member rejects NULL before its converter is called.
+		NullAssert.Model<Order>(0, () => One(map, Columns, [7, 42L, Start, null, "12", 9, null]));
+		Assert.Equal(1, calls);
 	}
 
 	[Fact]
@@ -263,9 +269,7 @@ public static class RowMapConverterTests
 
 		var ex = Assert.Throws<ValueMappingException>(
 			() => One(map, Columns, With(OrderNumAt, long.MaxValue)));
-		Assert.IsType<OverflowException>(ex.InnerException);
-		Assert.Equal(nameof(Order.OrderNum), ex.PropertyName);
-		Assert.Equal("order_num", ex.ColumnName);
+		NullAssert.Check<Order, OverflowException>("Unable to map row 0 to 'Order'.", ex);
 	}
 
 	[Fact]
@@ -346,18 +350,15 @@ public static class RowMapConverterTests
 	}
 
 	[Fact]
-	public static void ANullIntoAConstructorParameter_GetsItsDefault_NotTheConverter()
+	public static void ANullIntoANonNullableConstructorParameter_IsAnError_AndTheConverterIsNotCalled()
 	{
 		int calls = 0;
 		RowMap<Line> map = RowMap<Line>.Default
 			.Convert<string, string>(nameof(Line.Label), _ => { calls++; return "x"; })
 			.Convert<string, string>(nameof(Line.Code), _ => { calls++; return "x"; });
 
-		Line line = One(map, LineColumns, [1, null, null, null]);
-
+		NullAssert.Model<Line>(0, () => One(map, LineColumns, [1, null, null, null]));
 		Assert.Equal(0, calls);
-		Assert.Null(line.Label);
-		Assert.Null(line.Code);
 	}
 
 	[Fact]
@@ -382,10 +383,11 @@ public static class RowMapConverterTests
 		Assert.Equal(12, point.X);
 		Assert.Equal(3, point.Y);
 
-		// NULL: a nullable parameter gets null, a non-nullable one its declared default; the converter is not called.
-		Point nulls = One(map, columns, [null, null]);
+		// NULL: a nullable parameter gets null and the converter is not called; a non-nullable one is an error, its declared default notwithstanding.
+		Point nulls = One(map, columns, [null, "3"]);
 		Assert.Null(nulls.X);
-		Assert.Equal(4, nulls.Y);
+		Assert.Equal(3, nulls.Y);
+		NullAssert.Model<Point>(0, () => One(map, columns, [null, null]));
 	}
 
 	[Fact]
@@ -677,15 +679,21 @@ public static class RowMapConverterTests
 	[Fact]
 	public static void ANullRowThroughATable_FollowsTheNullRules()
 	{
-		using DataTable table = Table([7, null, null, null, null, null, null]);
+		using DataTable table = Table([7, null, null, "Ann", "12", null, null]);
 
 		Order order = Assert.Single(table.Map(Full).ToList());
 
 		Assert.Null(order.OrderNum);
 		Assert.Null(order.FirstLoad);
-		Assert.Equal("unknown", order.Customer);
-		Assert.Equal(5, order.Quantity);
+		Assert.Equal("Ann", order.Customer);
+		Assert.Equal(12, order.Quantity);
 		Assert.Equal(-1, order.Count); // the nullable TColumn was called with null
+
+		// A NULL into a non-nullable member: DataTableReader's typed getter throws InvalidCastException.
+		using DataTable nulls = Table([7, null, null, null, null, null, null]);
+		var ex = Assert.Throws<ValueMappingException>(() => nulls.Map(Full).ToList());
+		Assert.IsType<InvalidCastException>(ex.InnerException);
+		Assert.StartsWith("Unable to map row 0 to 'Order': a NULL was read into a non-nullable member, or a column's type does not convert", ex.Message);
 	}
 
 	// The buffered object[] route was removed in 11; the row is read through a typed reader.
@@ -703,16 +711,18 @@ public static class RowMapConverterTests
 			.Convert<string, string>(nameof(Order.Customer), _ => { calls++; return "x"; })
 			.Convert<int?, int>(nameof(Order.Count), c => c ?? -1);
 
-		Order order = Assert.Single(Buffered(map, [7, null, null, null, "12", null, null]));
+		Order order = Assert.Single(Buffered(map, [7, null, null, "c", "12", null, null]));
 
-		Assert.Equal(0, calls);
+		Assert.Equal(1, calls);
 		Assert.Null(order.OrderNum);
-		Assert.Equal("unknown", order.Customer);
+		Assert.Equal("x", order.Customer);
 		Assert.Equal(-1, order.Count);
+
+		NullAssert.Model<Order>(0, () => Buffered(map, [7, null, null, null, "12", null, null]));
 
 		var ex = Assert.Throws<ValueMappingException>(
 			() => Buffered(RowMap<Order>.Default.Convert<int, string>(nameof(Order.OrderNum), n => n.ToString(Invariant)), With(OrderNumAt, long.MaxValue)));
-		Assert.Equal(nameof(Order.OrderNum), ex.PropertyName);
+		NullAssert.Check<Order, OverflowException>("Unable to map row 0 to 'Order'.", ex);
 	}
 
 	[Fact]
@@ -727,7 +737,7 @@ public static class RowMapConverterTests
 	// ---- exceptions and cancellation ----
 
 	[Fact]
-	public static void AConverterThatThrows_IsReportedWithThePropertyAndColumn()
+	public static void AConverterThatThrows_IsReportedWithTheModelAndRow()
 	{
 		RowMap<Order> map = RowMap<Order>.Default.Convert<string, string>(
 			nameof(Order.Customer),
@@ -735,8 +745,7 @@ public static class RowMapConverterTests
 
 		var ex = Assert.Throws<ValueMappingException>(() => One(map, Columns, Valid()));
 
-		Assert.Equal(nameof(Order.Customer), ex.PropertyName);
-		Assert.Equal("Customer", ex.ColumnName);
+		NullAssert.Check<Order, InvalidOperationException>("Unable to map row 0 to 'Order'.", ex);
 		Assert.Equal("boom", ex.InnerException!.Message);
 	}
 

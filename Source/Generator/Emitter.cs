@@ -5,10 +5,26 @@ namespace Open.Database.Extensions.Generator;
 // Writes the one generated file. Shape (SG.md section 2, through the existing public overloads only: no hook in Core):
 //   - per call site, an interceptor: Map_n(this <receiver> x) => CoreExtensions.Map<T>(x, new M_T().Row), the existing Map(Func<IDataRecord, T>) overload;
 //   - per model type, a binder class M_T: its Row method is the selector. It binds once per reader (and again when the column count changes),
-//     against a small static cache of the layouts met lately, and then reads every row with typed getters in one of four read modes.
-//   - a layout the generated code does not serve, and a row an object initializer cannot build (an init-only or required member whose cell is a
-//     NULL that must keep its value), is mapped by the runtime RowMap<T> (through its public, hidden ArrayMapper, the route to its object[] row reader),
-//     so the rows, and the exceptions, are the runtime's.
+//     against a small static cache of the layouts met lately, and then reads every row with typed getters in one of five read modes.
+//   - errors: each row reader (one per read mode) is ONE try region around the whole row (reads, construction, sets), entered once per row; its
+//     handler is cold and does no reader work. Anything but a DbException or an OperationCanceledException (RowMap.Guard's filter: those pass
+//     through untouched) is thrown as a ValueMappingException naming the model type and the row (its 0-based index among the rows this binding
+//     mapped: Bound.Rows, one increment per row), the exception inside, in Core's words (RowErrors). No member or column is named, as the runtime
+//     names none, and the report is the same on a SequentialAccess reader. A layout the runtime serves (mode 0) reports the same way.
+//     The one difference: after Skip(n) the runtime counts the skipped rows and the generated reader cannot see them (Core skips without calling
+//     the selector), so its row is n lower.
+//   - the row index and a next result set: the binding is per reader and is renewed when the column count changes, which is the only change a row
+//     reader can see without a per-row check (a check per row would cost every row). A next result set (NextResult on the same reader) with the SAME
+//     column count keeps the previous binding, so (1) it reads the new set at the FIRST set's ordinals: WRONG VALUES, silently (or a cast error), where
+//     the runtime map re-checks the layout per result set; and (2) the row index continues from the first set instead of restarting at 0.
+//     Pinned by tests; closing it needs a per-result-set hook in Core, which this generator does not use.
+//   - NULL, by the member's type: a member declared non-nullable (a value type other than Nullable<T>, a reference annotated non-nullable) is read
+//     with its typed getter alone, as a hand-written selector and the runtime map read it; a NULL there is exceptional: the provider's getter throws
+//     (ProviderNullTests) and the row's handler reports it. A general read (GetValue) of such a member checks for NULL as the runtime does and throws
+//     SqlNullValueException. A nullable member (int?, string?, a reference in code with nullable annotations off) is tested with IsDBNull and gets
+//     null. A model that declares NullPolicy or NullValue is not intercepted (ModelReader): the runtime map applies the policy.
+//   - a layout the generated code does not serve is mapped by the runtime RowMap<T> (through its public, hidden ArrayMapper, the route to its
+//     object[] row reader), so the rows, and the exceptions, are the runtime's.
 static class Emitter
 {
 	const string Ns = "global::Open.Database.Extensions";
@@ -77,12 +93,10 @@ static class Emitter
 		sb.AppendLine("\t\tpublic static long Served;");
 		sb.AppendLine("\t\t/// <summary>Result sets bound and declined to the runtime map.</summary>");
 		sb.AppendLine("\t\tpublic static long Declined;");
-		sb.AppendLine("\t\t/// <summary>Rows of a served result set the runtime map built (an init-only or required member whose cell was a kept NULL).</summary>");
-		sb.AppendLine("\t\tpublic static long RowsDeclined;");
 		sb.AppendLine("\t\t/// <summary>Rows read by generated row readers.</summary>");
 		sb.AppendLine("\t\tpublic static long RowsServed;");
-		sb.AppendLine("\t\t/// <summary>Result sets bound, by read mode: 0 runtime, 1 full, 2 guarded, 3 constant ordinals, 4 full with converting reads.</summary>");
-		sb.AppendLine("\t\tpublic static readonly long[] Modes = new long[5];");
+		sb.AppendLine("\t\t/// <summary>Result sets bound, by read mode: 0 runtime, 1 full, 2 guarded, 3 constant ordinals, 4 full with converting reads, 5 identity (constant ordinals).</summary>");
+		sb.AppendLine("\t\tpublic static readonly long[] Modes = new long[6];");
 		sb.AppendLine("\t}");
 		sb.AppendLine();
 	}
@@ -130,6 +144,8 @@ static class Emitter
 		// 2: some slots absent, or the columns not in slot order (guarded, read in column order).
 		// 3: as 1, at the constant ordinals the members declare ([Column(Order = n)]), read in Order.
 		// 4: as 1, with a converting read chosen per column once per layout (a switch on it per cell, no presence test).
+		// 5: as 1, each slot at its declaration position among the mapped slots (columns 0..n-1, more columns after them ignored): constant ordinals,
+		//    for a model that does not declare its ordinals. The common shape (SELECT the members in their order) reads like a hand-written selector.
 		public int Mode;
 
 		// The column of each slot, -1 for none (in slot order); null when the runtime serves the layout.
@@ -303,15 +319,27 @@ static class Emitter
 			}
 		}
 
-		// Shape.TypeName: Int32, Int32? for a Nullable<T>.
-		public static string TypeName(global::System.Type type)
-			=> global::System.Nullable.GetUnderlyingType(type) is { } underlying ? underlying.Name + "?" : type.Name;
+		// RowMap.Guard's filter: the provider's own failures and cancellation propagate untouched; everything else is attributed, a ValueMappingException
+		// the model's own code throws included (the runtime wraps it too).
+		public static bool Wraps(global::System.Exception ex)
+			=> ex is not global::System.Data.Common.DbException
+				&& ex is not global::System.OperationCanceledException;
 
-		[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-		public static TValue At<TValue>(ref int slot, int at, TValue value)
+		// The report of a row the generated reader could not map (cold, no reader work): the model type and the row (0-based), worded by the TYPE of
+		// the exception inside, which is kept. The text is Core's RowErrors.Create for a model, word for word (Core's is internal: a parity test pins
+		// the two together): SqlNullValueException is a NULL read (SqlClient's getters, and the general read's own check), InvalidCastException is a
+		// NULL or a column of another type, anything else is not classified. Never a member or column.
+		public static global::System.Exception RowError(global::System.Exception ex, global::System.Type model, string name, int row)
 		{
-			slot = at;
-			return value;
+			string message = ex switch
+			{
+				global::System.Data.SqlTypes.SqlNullValueException
+					=> $"A NULL was read into a non-nullable member of {name} at row {row}. Declare the member nullable (int?, string?).",
+				global::System.InvalidCastException
+					=> $"Unable to map row {row} to '{name}': a NULL was read into a non-nullable member, or a column's type does not convert to its member's. Declare the member nullable (int?, string?), or match the member's type to the column's.",
+				_ => $"Unable to map row {row} to '{name}'.",
+			};
+			return new global::Open.Database.Extensions.ValueMappingException(message, "", "", model, ex);
 		}
 	}
 
@@ -322,6 +350,7 @@ static class Emitter
 		string T = m.Type;
 		var slots = m.Slots.Items;
 		bool styleB = m.UseConstructor || slots.Any(s => s.InitBound && !s.NotMapped);
+		int[] literal = LiteralOrdinals(m);
 
 		sb.AppendLine($"\t// {T}");
 		sb.AppendLine($"\tfile sealed class {id}");
@@ -395,7 +424,7 @@ static class Emitter
 			sb.AppendLine($"\t\t\t\tif (o[{k}] <= last) ascending = false;");
 			sb.AppendLine($"\t\t\t\tlast = o[{k}];");
 			sb.AppendLine($"\t\t\t\tif (l.C{k} != 0) exact = false;");
-			if (s.Order >= 0) sb.AppendLine($"\t\t\t\tif (o[{k}] != {s.Order}) literal = false;");
+			sb.AppendLine($"\t\t\t\tif (o[{k}] != {literal[k]}) literal = false;");
 			sb.AppendLine("\t\t\t}");
 			sb.AppendLine("\t\t\telse");
 			sb.AppendLine("\t\t\t{");
@@ -407,11 +436,12 @@ static class Emitter
 		}
 
 		sb.AppendLine("\t\t\tl.Ordinals = o;");
-		// Every slot fed: constant ordinals when each sits at its declared Order (read in Order, which is column order), else, in ascending column order, exact reads (1)
-		// or a converting read chosen per column (4). Anything else is guarded (2), read in column order.
+		// Every slot fed: constant ordinals when each sits at its declared Order (3, read in Order, which is column order) or, for a model that does not
+		// declare its ordinals, at its declaration position (5, the identity: read in slot order, which is column order); else, in ascending column order,
+		// exact reads (1) or a converting read chosen per column (4). Anything else is guarded (2), read in column order.
 		sb.AppendLine(m.AllOrdered
 			? "\t\t\tl.Mode = !full ? 2 : exact && literal ? 3 : !ascending ? 2 : exact ? 1 : 4;"
-			: "\t\t\tl.Mode = !full || !ascending ? 2 : exact ? 1 : 4;");
+			: "\t\t\tl.Mode = !full || !ascending ? 2 : exact ? literal ? 5 : 1 : 4;");
 		sb.AppendLine("\t\t\tif (l.Mode == 2) l.Sequence = OdxMatch.Sequence(o, Slots);");
 		sb.AppendLine("\t\t\treturn l;");
 		sb.AppendLine("\t\t}");
@@ -433,6 +463,11 @@ static class Emitter
 		sb.AppendLine($"\t\t\tglobal::System.Func<object[], {T}> _runtime;");
 		sb.AppendLine("\t\t\tobject[] _row;");
 		sb.AppendLine();
+		sb.AppendLine("\t\t\t// The rows this binding has started (Row counts each before reading it): the row in flight is Rows - 1, the index a failure reports.");
+		sb.AppendLine("\t\t\t// A new binding (another reader, a new execution of the same query, or a next result set with another column count) starts at 0.");
+		sb.AppendLine("\t\t\t// A next result set with the SAME column count is not seen (see the header): the count continues, and the first set's ordinals are kept.");
+		sb.AppendLine("\t\t\tpublic int Rows;");
+		sb.AppendLine();
 		sb.AppendLine($"\t\t\tpublic Bound({Record} record, {DbReader} reader, Layout layout)");
 		sb.AppendLine("\t\t\t{");
 		sb.AppendLine("\t\t\t\tRecord = record;");
@@ -452,12 +487,23 @@ static class Emitter
 		sb.AppendLine("\t\t\t{");
 		sb.AppendLine("\t\t\t\tvar map = _runtime ??= Runtime.For(Layout.Names);");
 		sb.AppendLine("\t\t\t\tvar row = _row ??= new object[Layout.Names.Length];");
-		sb.AppendLine("\t\t\t\tRecord.GetValues(row);");
-		sb.AppendLine("\t\t\t\treturn map(row);");
+		// The array mapper reports a failed row without its number (its caller owns the loop): the report it wraps is rebuilt here with the row,
+		// so a declined layout reports as the runtime map does. A report with nothing inside (a null policy's own, which a declined model never
+		// reaches here with) is left as it is; a failure of the row read itself is attributed as the runtime's guard attributes it.
+		sb.AppendLine("\t\t\t\ttry");
+		sb.AppendLine("\t\t\t\t{");
+		sb.AppendLine("\t\t\t\t\tRecord.GetValues(row);");
+		sb.AppendLine("\t\t\t\t\treturn map(row);");
+		sb.AppendLine("\t\t\t\t}");
+		sb.AppendLine($"\t\t\t\tcatch ({Ns}.ValueMappingException ex) when (ex.InnerException != null)");
+		sb.AppendLine("\t\t\t\t{");
+		sb.AppendLine("\t\t\t\t\tthrow Fail(ex.InnerException, this);");
+		sb.AppendLine("\t\t\t\t}");
+		sb.AppendLine($"\t\t\t\tcatch (global::System.Exception ex) when (ex is not {Ns}.ValueMappingException && OdxMatch.Wraps(ex))");
+		sb.AppendLine("\t\t\t\t{");
+		sb.AppendLine("\t\t\t\t\tthrow Fail(ex, this);");
+		sb.AppendLine("\t\t\t\t}");
 		sb.AppendLine("\t\t\t}");
-		sb.AppendLine();
-		sb.AppendLine("\t\t\t// A served row the runtime builds from the values already read (never read twice: a SequentialAccess reader allows each cell once).");
-		sb.AppendLine($"\t\t\tpublic {T} ByRuntime(object[] row) => (_runtime ??= Runtime.For(Layout.Names))(row);");
 		sb.AppendLine("\t\t}");
 		sb.AppendLine();
 
@@ -469,12 +515,14 @@ static class Emitter
 		sb.AppendLine("\t\t{");
 		sb.AppendLine("\t\t\tBound b = _bound;");
 		// Bound once per reader, and again when the reader's column count changes: a reader view run again after NextResult (same reader) meets the new set.
-		// A new set with the same column count on the same reader keeps the binding (no per-row layout check; a Core hook per result set would close this).
+		// A new set with the same column count on the same reader keeps the binding: it reads at the first set's ordinals (wrong values, silently) and the
+		// row index continues. Neither is detectable here without a check per row, which every row would pay (see the header).
 		sb.AppendLine("\t\t\tif (b == null || !ReferenceEquals(b.Record, record) || record.FieldCount != b.Layout.Names.Length) _bound = b = Bind(record);");
 		if (options.Counters) sb.AppendLine("\t\t\tif (b.Layout.Mode != 0) global::System.Threading.Interlocked.Increment(ref OdxGeneratedCounters.RowsServed);");
+		sb.AppendLine("\t\t\tb.Rows++;");
 		sb.AppendLine("\t\t\tswitch (b.Layout.Mode)");
 		sb.AppendLine("\t\t\t{");
-		if (m.AllOrdered) sb.AppendLine("\t\t\t\tcase 3: return ReadLiteral(b);");
+		sb.AppendLine(m.AllOrdered ? "\t\t\t\tcase 3: return ReadLiteral(b);" : "\t\t\t\tcase 5: return ReadLiteral(b);");
 		sb.AppendLine("\t\t\t\tcase 1: return ReadFull(b);");
 		sb.AppendLine("\t\t\t\tcase 2: return ReadGuarded(b);");
 		sb.AppendLine("\t\t\t\tcase 4: return ReadConverting(b);");
@@ -503,28 +551,16 @@ static class Emitter
 		sb.AppendLine("\t\t}");
 		sb.AppendLine();
 
-		// The error the runtime's row reader raises (RowMap.MapError).
-		sb.AppendLine("\t\tstatic global::System.Exception Fail(global::System.Exception ex, int slot, Layout l)");
-		sb.AppendLine("\t\t{");
-		sb.AppendLine("\t\t\tif (slot >= 0)");
-		sb.AppendLine("\t\t\t{");
-		sb.AppendLine("\t\t\t\tstring column = l.Names[l.Ordinals[slot]];");
-		sb.AppendLine("\t\t\t\tstring property = Slots[slot].Name;");
-		sb.AppendLine($"\t\t\t\t{TypeT} type = SlotTypes[slot];");
-		sb.AppendLine("\t\t\t\tstring message = SlotParameters[slot] is { } parameter");
-		sb.AppendLine($"\t\t\t\t\t? $\"Unable to pass value of column '{{column}}' to constructor parameter '{{parameter}}' ({{OdxMatch.TypeName(type)}}) of '{{OdxMatch.TypeName(typeof({T}))}}'.\"");
-		sb.AppendLine("\t\t\t\t\t: $\"Unable to set value of property '{property}' ({OdxMatch.TypeName(type)}) from column '{column}'.\";");
-		sb.AppendLine($"\t\t\t\treturn new {Ns}.ValueMappingException(message, property, column, type, ex);");
-		sb.AppendLine("\t\t\t}");
-		sb.AppendLine();
-		sb.AppendLine($"\t\t\treturn ex is global::System.InvalidOperationException ? ex : new global::System.InvalidOperationException($\"Unable to create '{{typeof({T})}}' from the current row.\", ex);");
-		sb.AppendLine("\t\t}");
+		// The error for a row that failed (cold: only the row reader's one handler calls it, and it does no reader work): the model type and the row,
+		// the provider's (or the model's) exception inside. No member or column: the row has one try region, so which cell failed is not tracked
+		// (the runtime map does not track it either: the hot path stays free of that bookkeeping). The same on every reader, SequentialAccess too.
+		sb.AppendLine($"\t\tstatic global::System.Exception Fail(global::System.Exception ex, Bound b) => OdxMatch.RowError(ex, typeof({T}), {Str(m.Name)}, b.Rows - 1);");
 		sb.AppendLine();
 
-		if (m.AllOrdered) EmitRead(sb, m, "ReadLiteral", styleB, ReadMode.Literal, options);
-		EmitRead(sb, m, "ReadFull", styleB, ReadMode.Full, options);
-		EmitRead(sb, m, "ReadGuarded", styleB, ReadMode.Guarded, options);
-		EmitRead(sb, m, "ReadConverting", styleB, ReadMode.Converting, options);
+		EmitRead(sb, m, "ReadLiteral", styleB, ReadMode.Literal, literal);
+		EmitRead(sb, m, "ReadFull", styleB, ReadMode.Full, literal);
+		EmitRead(sb, m, "ReadGuarded", styleB, ReadMode.Guarded, literal);
+		EmitRead(sb, m, "ReadConverting", styleB, ReadMode.Converting, literal);
 
 		sb.AppendLine("\t}");
 		sb.AppendLine();
@@ -532,47 +568,51 @@ static class Emitter
 
 	enum ReadMode { Literal, Full, Guarded, Converting }
 
-	// The order a mode reads (and sets) the slots in: by declared Order at constant ordinals (column order), else slot order (ascending columns,
+	// The constant ordinal of each slot in the literal read mode, -1 for a slot not mapped: the declared Order of a model that declares every ordinal (mode 3),
+	// else the slot's position among the mapped slots (mode 5, the identity). Resolve checks the layout against these before it chooses the mode.
+	static int[] LiteralOrdinals(ModelSpec m)
+	{
+		var slots = m.Slots.Items;
+		int[] literal = new int[slots.Length];
+		int position = 0;
+		for (int k = 0; k < slots.Length; k++)
+		{
+			literal[k] = slots[k].NotMapped
+				? -1
+				: m.AllOrdered
+					? slots[k].Order
+					: position++;
+		}
+
+		return literal;
+	}
+
+	// The order a mode reads (and sets) the slots in: by constant ordinal (column order), else slot order (ascending columns,
 	// or any order for a guarded read, which walks Layout.Sequence instead).
-	static IEnumerable<int> ReadOrder(System.Collections.Immutable.ImmutableArray<SlotSpec> slots, ReadMode mode)
+	static IEnumerable<int> ReadOrder(System.Collections.Immutable.ImmutableArray<SlotSpec> slots, ReadMode mode, int[] literal)
 	{
 		IEnumerable<int> mapped = Enumerable.Range(0, slots.Length).Where(k => !slots[k].NotMapped);
-		return mode == ReadMode.Literal ? mapped.OrderBy(k => slots[k].Order) : mapped;
+		return mode == ReadMode.Literal ? mapped.OrderBy(k => literal[k]) : mapped;
 	}
 
 	// A member name as code: a keyword is escaped (@event).
 	static string Code(string name)
 		=> Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetKeywordKind(name) != Microsoft.CodeAnalysis.CSharp.SyntaxKind.None ? "@" + name : name;
 
-	static void EmitRead(StringBuilder sb, ModelSpec m, string name, bool styleB, ReadMode mode, Options options)
+	// A row reader: the whole row (reads, construction, sets) in one try region, entered once per row, whose cold handler names what failed (Fail).
+	// RowMap.Guard's filter: the provider's DbException and a cancellation pass through untouched.
+	static void EmitRead(StringBuilder sb, ModelSpec m, string name, bool styleB, ReadMode mode, int[] literal)
 	{
 		string T = m.Type;
 		var slots = m.Slots.Items;
+
 		const string I = "\t\t\t\t";
 
 		sb.AppendLine($"\t\tstatic {T} {name}(Bound b)");
 		sb.AppendLine("\t\t{");
 		sb.AppendLine($"\t\t\t{DbReader} r = b.Reader;");
-		sb.AppendLine("\t\t\tLayout l = b.Layout;");
-		sb.AppendLine("\t\t\tint s = -1;");
-		if (styleB)
-		{
-			sb.AppendLine($"\t\t\t{T} item = default;");
-			sb.AppendLine("\t\t\tbool byRuntime = false;");
-
-			// The typed locals live outside the try: the kept-NULL fallback after it builds the runtime's row from them.
-			for (int k = 0; k < slots.Length; k++)
-			{
-				SlotSpec s = slots[k];
-				if (s.NotMapped) continue;
-
-				string init = s.Fallback ?? "default(" + s.Type + ")";
-				sb.Append($"\t\t\t{s.Type} v{k} = {init};");
-				if (s.Keeps) sb.Append($" bool n{k} = false;");
-				sb.AppendLine();
-			}
-		}
-
+		// The literal mode reads at constant ordinals: no layout in its rows.
+		if (mode != ReadMode.Literal) sb.AppendLine("\t\t\tLayout l = b.Layout;");
 		sb.AppendLine("\t\t\ttry");
 		sb.AppendLine("\t\t\t{");
 
@@ -581,39 +621,36 @@ static class Emitter
 			// RowMap.CreateThenSet: new T(), then each fed cell read and set in column order (ascending: slot order).
 			sb.AppendLine($"{I}var item = {m.Create};");
 			string at = OpenSequence(sb, mode, I);
-			foreach (int k in ReadOrder(slots, mode))
+			foreach (int k in ReadOrder(slots, mode, literal))
 			{
 				SlotSpec s = slots[k];
-				EmitSlot(sb, s, k, mode, at, (read, general) => SetStatement(s, read, general));
+				EmitSlot(sb, s, k, mode, at, literal[k], (read, general) => Statement(s, "item." + Code(s.Name), read, general));
 			}
 
 			CloseSequence(sb, mode, I);
-			sb.AppendLine($"{I}return item;");
 		}
 		else
 		{
 			// RowMap.BindConstructor (and CreateThenSet for a model with init-only or required members): every fed cell read into a typed local
-			// in column order, then the model is built, then the members the constructor does not cover are set.
-			string at = OpenSequence(sb, mode, I);
-			foreach (int k in ReadOrder(slots, mode))
+			// in column order (a parameter no column feeds passes its fallback), then the model is built, then the members the constructor does not
+			// cover are set.
+			for (int k = 0; k < slots.Length; k++)
 			{
 				SlotSpec s = slots[k];
-				EmitSlot(sb, s, k, mode, at, (read, general) => LocalStatement(s, k, read, general));
+				if (s.NotMapped) continue;
+
+				sb.AppendLine($"{I}{s.Type} v{k} = {s.Fallback ?? "default(" + s.Type + ")"};");
+			}
+
+			string readAt = OpenSequence(sb, mode, I);
+			foreach (int k in ReadOrder(slots, mode, literal))
+			{
+				SlotSpec s = slots[k];
+				EmitSlot(sb, s, k, mode, readAt, literal[k], (read, general) => Statement(s, "v" + k, read, general));
 			}
 
 			CloseSequence(sb, mode, I);
 
-			// A NULL into an init-only or required member that keeps its value cannot be left out of an object initializer: the runtime builds that row.
-			var mustKeep = Enumerable.Range(0, slots.Length).Where(k => slots[k].InitBound && slots[k].Keeps && !slots[k].NotMapped).ToList();
-			string decline = mustKeep.Count == 0 ? "false" : string.Join(" || ", mustKeep.Select(k => "n" + k));
-			sb.AppendLine($"{I}if ({decline})");
-			sb.AppendLine($"{I}{{");
-			sb.AppendLine($"{I}\tbyRuntime = true;");
-			sb.AppendLine($"{I}}}");
-			sb.AppendLine($"{I}else");
-			sb.AppendLine($"{I}{{");
-
-			const string J = I + "\t";
 			var args = new string[m.ParameterCount];
 			for (int k = 0; k < slots.Length; k++)
 				if (slots[k].Position >= 0) args[slots[k].Position] = "v" + k;
@@ -621,7 +658,7 @@ static class Emitter
 			string create = m.UseConstructor ? $"new {T}({string.Join(", ", args)})" : m.Create;
 			var inits = Enumerable.Range(0, slots.Length)
 				.Where(k => slots[k].InitBound && !slots[k].NotMapped && slots[k].Position < 0)
-				.Select(k => $"{Code(slots[k].Name)} = OdxMatch.At(ref s, {k}, v{k})")
+				.Select(k => $"{Code(slots[k].Name)} = v{k}")
 				.ToList();
 			if (inits.Count > 0)
 			{
@@ -630,77 +667,67 @@ static class Emitter
 				create += " { " + string.Join(", ", inits) + " }";
 			}
 
-			sb.AppendLine($"{J}s = -1; // A constructor that throws is not the fault of the last column read.");
-			sb.AppendLine($"{J}item = {create};");
-			var sets = ReadOrder(slots, mode)
+			sb.AppendLine($"{I}var item = {create};");
+			var sets = ReadOrder(slots, mode, literal)
 				.Where(k => slots[k].Position < 0 && !slots[k].InitBound)
 				.ToList();
 			if (sets.Count > 0)
 			{
-				// The members the constructor does not cover, set in column order.
-				string setAt = OpenSequence(sb, mode, J);
+				string setAt = OpenSequence(sb, mode, I);
 				foreach (int k in sets)
 				{
-					SlotSpec s = slots[k];
-					string member = "item." + Code(s.Name);
-					string set = s.Keeps ? $"s = {k}; if (!n{k}) {member} = v{k};" : $"s = {k}; {member} = v{k};";
-					sb.AppendLine(mode == ReadMode.Guarded ? $"{setAt}case {k}: {set} break;" : $"{J}{set}");
+					string set = $"item.{Code(slots[k].Name)} = v{k};";
+					if (mode == ReadMode.Guarded) sb.AppendLine($"{setAt}case {k}: {set} break;");
+					else sb.AppendLine(setAt + set);
 				}
 
-				CloseSequence(sb, mode, J);
+				CloseSequence(sb, mode, I);
 			}
-
-			sb.AppendLine($"{I}}}");
 		}
 
+		sb.AppendLine($"{I}return item;");
 		sb.AppendLine("\t\t\t}");
-		sb.AppendLine("\t\t\tcatch (global::System.Exception ex) when (ex is not global::System.Data.Common.DbException && ex is not global::System.OperationCanceledException)");
+		sb.AppendLine("\t\t\tcatch (global::System.Exception ex) when (OdxMatch.Wraps(ex))");
 		sb.AppendLine("\t\t\t{");
-		sb.AppendLine("\t\t\t\tthrow Fail(ex, s, l);");
+		sb.AppendLine("\t\t\t\tthrow Fail(ex, b);");
 		sb.AppendLine("\t\t\t}");
-
-		if (styleB)
-		{
-			sb.AppendLine();
-			sb.AppendLine("\t\t\tif (!byRuntime) return item;");
-			if (options.Counters) sb.AppendLine("\t\t\tglobal::System.Threading.Interlocked.Increment(ref OdxGeneratedCounters.RowsDeclined);");
-			// The cells were read once already: the runtime gets them as values (NULL as DBNull), every column it does not feed left NULL.
-			sb.AppendLine("\t\t\tobject[] row = new object[l.Names.Length];");
-			sb.AppendLine("\t\t\tfor (int i = 0; i < row.Length; i++) row[i] = global::System.DBNull.Value;");
-			foreach (int k in ReadOrder(slots, ReadMode.Full))
-			{
-				SlotSpec s = slots[k];
-				string value = s.Keeps
-					? $"n{k} ? global::System.DBNull.Value : (object)v{k}"
-					: $"(object)v{k} ?? global::System.DBNull.Value";
-				sb.AppendLine($"\t\t\tif (l.O{k} >= 0) row[l.O{k}] = {value};");
-			}
-
-			sb.AppendLine("\t\t\treturn b.ByRuntime(row);");
-		}
-
 		sb.AppendLine("\t\t}");
 		sb.AppendLine();
 	}
 
-	// One slot's read, at its ordinal: a constant (Literal), the layout's (Full), or the layout's when the slot is fed, by the read case of its column (Guarded).
-	static void EmitSlot(StringBuilder sb, SlotSpec s, int k, ReadMode mode, string indent, Func<string, bool, string> statement)
+	// One slot's read: at a constant ordinal (Literal), the layout's (Full), or the layout's when the slot is fed, by the read case of its column
+	// (Guarded, Converting).
+	static void EmitSlot(StringBuilder sb, SlotSpec s, int k, ReadMode mode, string indent, int literal, Func<string, bool, string> statement)
 	{
 		var cases = s.Cases.Items;
 		if (mode is ReadMode.Literal or ReadMode.Full || mode == ReadMode.Converting && cases.Length == 1)
 		{
-			string o = mode == ReadMode.Literal ? s.Order.ToString(System.Globalization.CultureInfo.InvariantCulture) : "l.O" + k;
+			string o = mode == ReadMode.Literal ? literal.ToString(System.Globalization.CultureInfo.InvariantCulture) : "l.O" + k;
 			ReadCase c = cases[0];
-			sb.AppendLine(indent + $"s = {k}; " + statement(c.General ? c.Expression : c.Expression.Replace("{0}", o), c.General).Replace("{O}", o));
+			sb.AppendLine(indent + statement(c.General ? c.Expression : c.Expression.Replace("{0}", o), c.General).Replace("{O}", o));
 			return;
 		}
 
-		bool guarded = mode == ReadMode.Guarded;
 		// Guarded: inside the column-order loop (OpenSequence), this slot's case. Converting: every slot is fed, in ascending column order, so no presence test.
 		// Either way the read case was chosen once per layout, by the column's type.
-		sb.AppendLine(indent + (guarded ? $"case {k}:" : "// " + s.Name));
+		if (mode == ReadMode.Guarded)
+		{
+			sb.AppendLine($"{indent}case {k}:");
+			EmitCase(sb, s, k, indent + "\t", statement);
+			sb.AppendLine($"{indent}\tbreak;");
+		}
+		else
+		{
+			sb.AppendLine($"{indent}// {s.Name}");
+			EmitCase(sb, s, k, indent, statement);
+		}
+	}
+
+	// A slot's read by the case its column's type chose: { int o = l.O{k}; switch (l.C{k}) { ... } }.
+	static void EmitCase(StringBuilder sb, SlotSpec s, int k, string indent, Func<string, bool, string> statement)
+	{
+		var cases = s.Cases.Items;
 		sb.AppendLine(indent + "{");
-		sb.AppendLine(indent + $"\ts = {k};");
 		sb.AppendLine(indent + $"\tint o = l.O{k};");
 		sb.AppendLine(indent + $"\tswitch (l.C{k})");
 		sb.AppendLine(indent + "\t{");
@@ -712,7 +739,6 @@ static class Emitter
 		}
 
 		sb.AppendLine(indent + "\t}");
-		if (guarded) sb.AppendLine(indent + "\tbreak;");
 		sb.AppendLine(indent + "}");
 	}
 
@@ -737,38 +763,28 @@ static class Emitter
 		sb.AppendLine(indent + "}");
 	}
 
-	// Create-then-set: the statement that sets the property from its cell ({O} is the ordinal), under the NULL table (RowMap.ReadValue, NullTest).
-	static string SetStatement(SlotSpec s, string read, bool general)
+	// The statement that reads a member's cell into its target (the property, or the local a constructor takes); {O} is the ordinal.
+	// A member its type declares non-nullable is read by its typed getter alone, as a hand-written selector reads it: no IsDBNull, since a NULL there
+	// is exceptional; the provider's typed getter throws on it (ProviderNullTests), and the row's handler reports it. A general read (GetValue) of such
+	// a member makes the runtime's ConvertRequired check: a NULL throws SqlNullValueException (the cast of DBNull may succeed: object, IConvertible),
+	// so the report is the runtime's. A nullable member is tested for NULL first and gets null.
+	static string Statement(SlotSpec s, string target, string read, bool general)
 	{
-		string target = "item." + Code(s.Name);
+		if (s.NonNullable)
+		{
+			if (!general) return target + " = " + read + ";";
+
+			string required = read.Replace("{0}", "c");
+			return $"{{ object c = r.GetValue({{O}}); {target} = c is null || c is global::System.DBNull ? throw new global::System.Data.SqlTypes.SqlNullValueException() : {required}; }}";
+		}
+
 		if (general)
 		{
 			string value = read.Replace("{0}", "c");
 			if (s.NullableValue) value = $"({s.Type})({value})";
-			return s.Keeps
-				? $"{{ object c = r.GetValue({{O}}); if (!(c is null || c is global::System.DBNull)) {target} = {value}; }}"
-				: $"{{ object c = r.GetValue({{O}}); {target} = c is null || c is global::System.DBNull ? default({s.Type}) : {value}; }}";
+			return $"{{ object c = r.GetValue({{O}}); {target} = c is null || c is global::System.DBNull ? default({s.Type}) : {value}; }}";
 		}
 
-		if (s.Keeps) return $"if (!r.IsDBNull({{O}})) {target} = {read};";
-		string present = s.NullableValue ? $"({s.Type})({read})" : read;
-		return $"{target} = r.IsDBNull({{O}}) ? default({s.Type}) : {present};";
-	}
-
-	// Read-into-local: the same reads, into v{k}; n{k} says a kept NULL (the local keeps its fallback or default).
-	static string LocalStatement(SlotSpec s, int k, string read, bool general)
-	{
-		string target = "v" + k;
-		if (general)
-		{
-			string value = read.Replace("{0}", "c");
-			if (s.NullableValue) value = $"({s.Type})({value})";
-			return s.Keeps
-				? $"{{ object c = r.GetValue({{O}}); n{k} = c is null || c is global::System.DBNull; if (!n{k}) {target} = {value}; }}"
-				: $"{{ object c = r.GetValue({{O}}); {target} = c is null || c is global::System.DBNull ? default({s.Type}) : {value}; }}";
-		}
-
-		if (s.Keeps) return $"n{k} = r.IsDBNull({{O}}); if (!n{k}) {target} = {read};";
 		string present = s.NullableValue ? $"({s.Type})({read})" : read;
 		return $"{target} = r.IsDBNull({{O}}) ? default({s.Type}) : {present};";
 	}

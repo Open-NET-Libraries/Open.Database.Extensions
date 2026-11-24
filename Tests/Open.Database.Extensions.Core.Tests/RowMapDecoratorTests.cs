@@ -565,12 +565,31 @@ public static class RowMapDecoratorTests
 		object?[] row = [1, 2, "x", "y", "z"];
 		row[nullAt] = null;
 
-		PlainNulls plain = Assert.Single(Cmd(NullColumns, row).Map<PlainNulls>().ToList());
-		DecoratedNulls decorated = Assert.Single(Cmd(NullColumns, row).Map<DecoratedNulls>().ToList());
-
+		// Both give the same values, or both reject the NULL.
 		Assert.Equal(
-			(plain.Count, plain.Maybe, plain.Text, plain.Free, plain.Allowed),
-			(decorated.Count, decorated.Maybe, decorated.Text, decorated.Free, decorated.Allowed));
+			Outcome(() =>
+			{
+				PlainNulls plain = Assert.Single(Cmd(NullColumns, row).Map<PlainNulls>().ToList());
+				return (plain.Count, plain.Maybe, plain.Text, plain.Free, plain.Allowed);
+			}),
+			Outcome(() =>
+			{
+				DecoratedNulls decorated = Assert.Single(Cmd(NullColumns, row).Map<DecoratedNulls>().ToList());
+				return (decorated.Count, decorated.Maybe, decorated.Text, decorated.Free, decorated.Allowed);
+			}));
+	}
+
+	// What a read gives: its values, or that it rejected a NULL (the model is named in the message, so only the kind of error is compared).
+	static object? Outcome(Func<object?> read)
+	{
+		try
+		{
+			return read();
+		}
+		catch (ValueMappingException ex) when (ex.InnerException is System.Data.SqlTypes.SqlNullValueException)
+		{
+			return "NULL rejected";
+		}
 	}
 
 	[Theory]
@@ -583,9 +602,16 @@ public static class RowMapDecoratorTests
 		object?[] row = [1, "x", "y"];
 		row[nullAt] = null;
 
-		PlainParameters plain = Assert.Single(Cmd(columns, row).Map<PlainParameters>().ToList());
-		DecoratedParameters decorated = Assert.Single(Cmd(columns, row).Map<DecoratedParameters>().ToList());
-
-		Assert.Equal((plain.Count, plain.Text, plain.Required), (decorated.Count, decorated.Text, decorated.Required));
+		Assert.Equal(
+			Outcome(() =>
+			{
+				PlainParameters plain = Assert.Single(Cmd(columns, row).Map<PlainParameters>().ToList());
+				return (plain.Count, plain.Text, plain.Required);
+			}),
+			Outcome(() =>
+			{
+				DecoratedParameters decorated = Assert.Single(Cmd(columns, row).Map<DecoratedParameters>().ToList());
+				return (decorated.Count, decorated.Text, decorated.Required);
+			}));
 	}
 }
