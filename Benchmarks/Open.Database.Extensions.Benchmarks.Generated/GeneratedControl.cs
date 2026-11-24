@@ -35,57 +35,53 @@ public static class GeneratedControl
 	public static object ControlT20(IExecuteReader command)
 		=> command.Map(ReadT20).ToList();
 
-	// The generator's shape: new(), then each member read and set in column order, constant ordinals; a nullable member tested with IsDBNull,
-	// a byte[]? through GetValue (a general read) tested on the value.
-	static GenRow20 Read20(IDataRecord r)
+	// V2's selector on the generated twin: one object initializer, constant ordinals; a nullable member tested with IsDBNull,
+	// a byte[]? through GetValue tested on the cell.
+	static GenRow20 Read20(IDataRecord r) => new()
 	{
-		var item = new GenRow20();
-		item.Id = r.GetInt32(0);
-		item.Created = r.GetDateTime(1);
-		item.Title = r.IsDBNull(2) ? null : r.GetString(2);
-		item.Price = r.GetDecimal(3);
-		item.Qty = r.IsDBNull(4) ? null : r.GetInt32(4);
-		item.IsActive = r.GetBoolean(5);
-		item.Key = r.GetGuid(6);
-		item.Score = r.GetDouble(7);
-		item.Note = r.IsDBNull(8) ? null : r.GetString(8);
-		{ object c = r.GetValue(9); item.Blob = c is null || c is DBNull ? null : (byte[])c; }
-		item.Big = r.GetInt64(10);
-		item.Body = r.IsDBNull(11) ? null : r.GetString(11);
-		item.Amount = r.IsDBNull(12) ? null : r.GetDecimal(12);
-		item.Stamp = r.IsDBNull(13) ? null : r.GetDateTime(13);
-		item.Tag = r.IsDBNull(14) ? null : r.GetString(14);
-		item.Ratio = r.GetDouble(15);
-		item.Flag = r.IsDBNull(16) ? null : r.GetBoolean(16);
-		item.Link = r.IsDBNull(17) ? null : r.GetGuid(17);
-		item.Count = r.GetInt64(18);
-		item.Summary = r.IsDBNull(19) ? null : r.GetString(19);
-		return item;
-	}
+		Id = r.GetInt32(0),
+		Created = r.GetDateTime(1),
+		Title = r.IsDBNull(2) ? null : r.GetString(2),
+		Price = r.GetDecimal(3),
+		Qty = r.IsDBNull(4) ? null : r.GetInt32(4),
+		IsActive = r.GetBoolean(5),
+		Key = r.GetGuid(6),
+		Score = r.GetDouble(7),
+		Note = r.IsDBNull(8) ? null : r.GetString(8),
+		Blob = r.IsDBNull(9) ? null : (byte[])r.GetValue(9),
+		Big = r.GetInt64(10),
+		Body = r.IsDBNull(11) ? null : r.GetString(11),
+		Amount = r.IsDBNull(12) ? null : r.GetDecimal(12),
+		Stamp = r.IsDBNull(13) ? null : r.GetDateTime(13),
+		Tag = r.IsDBNull(14) ? null : r.GetString(14),
+		Ratio = r.GetDouble(15),
+		Flag = r.IsDBNull(16) ? null : r.GetBoolean(16),
+		Link = r.IsDBNull(17) ? null : r.GetGuid(17),
+		Count = r.GetInt64(18),
+		Summary = r.IsDBNull(19) ? null : r.GetString(19),
+	};
 
-	static GenRowT20 ReadT20(IDataRecord r)
+	static GenRowT20 ReadT20(IDataRecord r) => new()
 	{
-		var item = new GenRowT20();
-		item.Id = r.GetInt32(0);
-		item.Created = r.GetDateTime(1);
-		item.Title = r.GetString(2);
-		item.Price = r.GetDecimal(3);
-		item.Qty = r.IsDBNull(4) ? null : r.GetInt32(4);
-		item.IsActive = r.GetBoolean(5);
-		item.Key = r.GetGuid(6);
-		item.Score = r.GetDouble(7);
-		item.Note = r.IsDBNull(8) ? null : r.GetString(8);
-		{ object c = r.GetValue(9); item.Blob = c is null || c is DBNull ? null : (byte[])c; }
-		item.Big = r.GetInt64(10);
-		item.Body = r.GetString(11);
-		item.Amount = r.IsDBNull(12) ? null : r.GetDecimal(12);
-		item.Stamp = r.IsDBNull(13) ? null : r.GetDateTime(13);
-		item.Tag = r.GetString(14);
-		item.Ratio = r.GetDouble(15);
-		item.Flag = r.IsDBNull(16) ? null : r.GetBoolean(16);
-		item.Link = r.IsDBNull(17) ? null : r.GetGuid(17);
-		item.Count = r.GetInt64(18);
-		item.Summary = r.IsDBNull(19) ? null : r.GetString(19);
-		return item;
-	}
+		Id = r.GetInt32(0),
+		Created = r.GetDateTime(1),
+		Title = r.GetString(2),
+		Price = r.GetDecimal(3),
+		Qty = r.IsDBNull(4) ? null : r.GetInt32(4),
+		IsActive = r.GetBoolean(5),
+		Key = r.GetGuid(6),
+		Score = r.GetDouble(7),
+		Note = r.IsDBNull(8) ? null : r.GetString(8),
+		Blob = r.IsDBNull(9) ? null : (byte[])r.GetValue(9),
+		Big = r.GetInt64(10),
+		Body = r.GetString(11),
+		Amount = r.IsDBNull(12) ? null : r.GetDecimal(12),
+		Stamp = r.IsDBNull(13) ? null : r.GetDateTime(13),
+		Tag = r.GetString(14),
+		Ratio = r.GetDouble(15),
+		Flag = r.IsDBNull(16) ? null : r.GetBoolean(16),
+		Link = r.IsDBNull(17) ? null : r.GetGuid(17),
+		Count = r.GetInt64(18),
+		Summary = r.IsDBNull(19) ? null : r.GetString(19),
+	};
 }

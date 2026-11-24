@@ -50,12 +50,10 @@ public class GeneratedSourceTests
 		Assert.DoesNotContain("if (b.Reader.IsDBNull(", source, StringComparison.Ordinal);
 	}
 
+	// Only Core's NullPolicy and NullValue, by full name, make the generator decline a model.
 	[Fact]
 	public void A_model_with_look_alike_attributes_from_another_namespace_gets_a_binder()
-	{
-		// Only Core's NullPolicy and NullValue, by full name, make the generator decline a model.
-		Assert.Matches($@"file sealed class M\d+_LookAlikeAttributes\b", GeneratedSource());
-	}
+		=> Assert.Matches(@"file sealed class M\d+_LookAlikeAttributes\b", GeneratedSource());
 
 	[Theory]
 	[InlineData("PolicyOnType")]
