@@ -32,7 +32,7 @@ public static class RequiredNoRowsTests
 	static async Task<Exception?> RunAsync(string name, string sql)
 	{
 		CancellationToken token = TestContext.Current.CancellationToken;
-		using SqliteConnection connection = await OpenAsync();
+		await using SqliteConnection connection = await OpenAsync();
 		try
 		{
 			var query = connection.Command(sql).Map<RequiredPost>();
@@ -42,7 +42,7 @@ public static class RequiredNoRowsTests
 				case "ToArrayAsync": _ = await query.ToArrayAsync(token); break;
 				case "FirstOrDefaultAsync": _ = await query.FirstOrDefaultAsync(token); break;
 				case "ToAsyncBuffer":
-					using (var buffer = query.ToAsyncBuffer(token))
+					await using (var buffer = query.ToAsyncBuffer(token))
 					{
 						_ = await buffer.Items;
 					}

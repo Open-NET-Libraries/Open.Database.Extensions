@@ -96,7 +96,7 @@ public static class AddParamIfConditionTests
 	[Fact]
 	public static void TrueCondition_WithADerivableArgument_AddsTheParameter_UnderTheLastMember()
 	{
-		int author = 42;
+		const int author = 42;
 		var classic = Classic();
 		var db = Db();
 		var legacy = Legacy();
@@ -120,7 +120,7 @@ public static class AddParamIfConditionTests
 	[Fact]
 	public static void FalseCondition_WithADerivableArgument_AddsNothing()
 	{
-		int author = 42;
+		const int author = 42;
 		var classic = Classic();
 		var db = Db();
 		var legacy = Legacy();
