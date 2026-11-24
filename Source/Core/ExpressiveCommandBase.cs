@@ -1894,11 +1894,11 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	/// <typeparam name="T">The type to convert the value to.</typeparam>
 	/// <returns>
 	/// The value, converted to <typeparamref name="T"/>: a value that is already a <typeparamref name="T"/> is returned as is, an integer is converted to another integer type with a range check (a <see cref="long"/> read as an <see cref="int"/>), and any other value takes the general conversion (a <see cref="decimal"/> read as a <see cref="long"/>).
-	/// <see langword="default"/> when there was no row; <see langword="null"/> when the result is NULL and <typeparamref name="T"/> takes it.
+	/// <see langword="null"/> when there was no row and <typeparamref name="T"/> takes null; an error when there was no row and <typeparamref name="T"/> is a non-nullable value type; <see langword="null"/> when the result is NULL and <typeparamref name="T"/> takes it.
 	/// </returns>
-	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range (the conversion's own error is the inner exception), or it is NULL and <typeparamref name="T"/> is a non-nullable value type.</exception>
+	/// <exception cref="ValueMappingException">The value does not convert to <typeparamref name="T"/>, or is out of its range (the conversion's own error is the inner exception), there was no row or it is NULL and <typeparamref name="T"/> is a non-nullable value type.</exception>
 	internal T ExecuteScalar<T>()
-		=> RowMap<T>.ConvertScalar(ExecuteScalar());
+		=> RowMap<T>.ConvertScalar(ExecuteScalar(), nameof(ExecuteScalar));
 
 	/// <summary>
 	/// Gets what the transform overloads hand to the caller's function.

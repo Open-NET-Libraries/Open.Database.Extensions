@@ -241,7 +241,7 @@ If the type says `int`, it is an `int`. A NULL into a member the C# type declare
 
 [!code-csharp[](../samples/Mapping.cs#map_null_error)]
 
-The same holds for a single value (see [One value per row](#one-value-per-row)): `Map<int>()` over a NULL throws (`A NULL was read into a non-nullable Int32 at row 0. Declare it nullable (Int32?).`), while `Map<int?>()` and `Map<string>()` give `null`. `ExecuteScalarAsync<int>()` over a NULL throws too; no row gives `0`.
+The same holds for a single value (see [One value per row](#one-value-per-row)): `Map<int>()` over a NULL throws (`A NULL was read into a non-nullable Int32 at row 0. Declare it nullable (Int32?).`), while `Map<int?>()` and `Map<string>()` give `null`. `ExecuteScalarAsync<int>()` over a NULL throws too, and so does no row, with a message that asks for `int?`; `ExecuteScalarAsync<int?>()` gives `null` for both.
 
 The rule reads the nullable annotations the compiler stores in the assembly, so it needs `<Nullable>enable</Nullable>` (or `#nullable enable`) in the code that declares the model.
 

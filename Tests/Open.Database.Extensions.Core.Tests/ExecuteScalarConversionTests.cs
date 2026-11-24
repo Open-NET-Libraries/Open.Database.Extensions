@@ -9,7 +9,7 @@ namespace Open.Database.Extensions.Tests;
 // a value that is already a T as it is,
 // an integer into another integer type with a range check,
 // any other value by the general conversion,
-// NULL and no row to default(T);
+// NULL to null for a type that takes it and an error otherwise, and no row the same (ask for int? and use ?? for a default);
 // and a failure is the same ValueMappingException,
 // naming the scalar rather than a column.
 // The fixtures are those of ExecuteScalarNullTests.
@@ -168,15 +168,26 @@ public static class ExecuteScalarConversionTests
 	// ---- NULL ----
 
 	[Fact]
-	public static async Task NoRowIsDefault_ANullIsNullForANullableType_AndAnErrorOtherwise()
+	public static async Task NoRowIsNullForATypeThatTakesIt_ANullIsNullForANullableType_AndBothAreAnErrorForANonNullableValueType()
 	{
-		await Reads(null, 0);
-		await Reads(null, 0L);
-		await Reads(null, Level.None);
-		await Reads(null, default(DateTime));
+		NullAssert.NoRows<int>("ExecuteScalar", () => ExecuteScalarNullTests.Sync(null).ExecuteScalar<int>());
+		await NullAssert.NoRowsAsync<long>("ExecuteScalarAsync", async () => await ExecuteScalarNullTests.Async(null).ExecuteScalarAsync<long>(Ct));
+		NullAssert.NoRows<Level>("ExecuteScalar", () => ExecuteScalarNullTests.Sync(null).ExecuteScalar<Level>());
+		await NullAssert.NoRowsAsync<Level>("ExecuteScalarAsync", async () => await ExecuteScalarNullTests.Async(null).ExecuteScalarAsync<Level>(Ct));
+
+		// The extension on IExecuteCommand (the interface type, not the command class) says the same.
+		IExecuteCommand asInterface = ExecuteScalarNullTests.Sync(null);
+		NullAssert.NoRows<int>("ExecuteScalar", () => asInterface.ExecuteScalar<int>());
+
+		// A real zero is a value, not "no row": it reads as 0.
+		await Reads(0, 0);
+		await Reads(0L, 0L);
+		await Reads(0, Level.None);
+		await NullAssert.NoRowsAsync<DateTime>("ExecuteScalarAsync", async () => await ExecuteScalarNullTests.Async(null).ExecuteScalarAsync<DateTime>(Ct));
 		NullAssert.Scalar<int>(() => ExecuteScalarNullTests.Sync(DBNull.Value).ExecuteScalar<int>());
 		NullAssert.Scalar<Level>(() => ExecuteScalarNullTests.Sync(DBNull.Value).ExecuteScalar<Level>());
 		await NullAssert.ScalarAsync<long>(async () => await ExecuteScalarNullTests.Async(DBNull.Value).ExecuteScalarAsync<long>(Ct));
+		await NullAssert.ScalarAsync<Level>(async () => await ExecuteScalarNullTests.Async(DBNull.Value).ExecuteScalarAsync<Level>(Ct));
 		foreach (object? none in new object?[] { null, DBNull.Value })
 		{
 			await Reads<int?>(none, null);
@@ -184,6 +195,7 @@ public static class ExecuteScalarConversionTests
 			await Reads<Guid?>(none, null);
 			await Reads<string?>(none, null);
 			await Reads<byte[]?>(none, null);
+			await Reads<Level?>(none, null);
 		}
 	}
 

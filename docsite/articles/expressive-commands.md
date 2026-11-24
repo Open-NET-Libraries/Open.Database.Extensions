@@ -194,12 +194,12 @@ The `Async` terminals honor the command's cancellation token (`UseCancellationTo
 
 ### Which scalar form
 
-- **`ExecuteScalarAsync<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). No rows gives `default(T)`; a `NULL` is `null` for a nullable `T` (`int?`, `string`) and throws `ValueMappingException` for a non-nullable value type.
+- **`ExecuteScalarAsync<T>()`** for the value as `T`; it converts the way `Map<T>()` does (a `bigint` read as `int`). No rows and a `NULL` are both `null` for a type that takes null (`int?`, `string`), and both throw `ValueMappingException` for a non-nullable value type, so ask for `int?` and give the default yourself: `(await command.ExecuteScalarAsync<int?>(token)) ?? -1`.
 - **`ExecuteScalarAsync(value => ...)`** to convert in your own way. The function takes the provider's value as an `object?` (`Func<object?, T>`): `null` for a `NULL` or no rows, never `DBNull`.
 - **`ExecuteScalarAsync()`** for the raw value: `DBNull.Value` for a `NULL`, `null` for no rows.
 - **`Map<T>()` then `ToListAsync(token)`** (or `ToArrayAsync(token)`, ...) for many rows of one column: it converts like a property, as `ExecuteScalarAsync<T>()` does. See [One value per row](mapping.md#one-value-per-row).
 
-`ExecuteScalarAsync<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. A `NULL` into a non-nullable value type throws `ValueMappingException`; ask for the nullable type, `int?` or `long?`, when a NULL is expected.
+`ExecuteScalarAsync<T>()` converts the value the provider returns the way `Map<T>()` converts a column. A value that is already a `T` is returned as it is. An integer converts to another integer type with a range check (a `bigint` read as `int`, an `int` read as `long`), and any other value is converted by the same code `Map<T>()` uses (a `numeric`, which is a `decimal`, read as `long`). A value that cannot be converted, or does not fit, throws `ValueMappingException` with the conversion's own error inside. A `NULL` or no row into a non-nullable value type throws `ValueMappingException`; ask for the nullable type, `int?` or `long?`, when a NULL or no row is expected.
 
 [!code-csharp[](../samples/ExpressiveCommands.cs#scalar_read_as_int)]
 

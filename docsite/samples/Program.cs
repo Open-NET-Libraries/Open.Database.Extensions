@@ -49,10 +49,12 @@ Check(await ExpressiveCommands.ScalarReadAsInt(factory, CancellationToken.None) 
 Check(factory.Command("select count(*) from posts").ExecuteScalar<int>() == 5, "ExecuteScalar<int> over a SQLite integer converts, as Map<int>() does");
 Check(Throws<ValueMappingException>(() => factory.Command("select 5000000000").ExecuteScalar<int>()), "ExecuteScalar<int> over a value that does not fit throws ValueMappingException");
 Check(Throws<ValueMappingException>(() => factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long>()), "ExecuteScalar<long> over NULL throws ValueMappingException");
-Check(factory.Command("select id from posts where id > 1000").ExecuteScalar<long>() == 0, "ExecuteScalar<long> over no rows is default");
+Check(Throws<ValueMappingException>(() => factory.Command("select id from posts where id > 1000").ExecuteScalar<long>()), "ExecuteScalar<long> over no rows throws ValueMappingException");
+Check(factory.Command("select id from posts where id > 1000").ExecuteScalar<long?>() is null, "ExecuteScalar<long?> over no rows is null");
 Check(factory.Command("select max(id) from posts where id > 1000").ExecuteScalar<long?>() is null, "ExecuteScalar<long?> over NULL is null");
 Check(factory.Command("select max(id) from posts where id <= 3").ExecuteScalar<long?>() == 3, "ExecuteScalar<long?> reads a value");
-Check(await factory.Command("select id from posts where id > 1000").ExecuteScalarAsync<long>() == 0, "ExecuteScalarAsync<long> over no rows is default");
+Check(await ThrowsAsync<ValueMappingException>(async () => await factory.Command("select id from posts where id > 1000").ExecuteScalarAsync<long>()), "ExecuteScalarAsync<long> over no rows throws ValueMappingException");
+Check(await factory.Command("select id from posts where id > 1000").ExecuteScalarAsync<long?>() is null, "ExecuteScalarAsync<long?> over no rows is null");
 Check(factory.Command(Sql.CountSql).AddParam("author", 42).ExecuteScalar<long>() == 3 && factory.Command(Sql.CountSql).AddParam("@author", 42).ExecuteScalar<long>() == 3, "a parameter name is sent as written: SQLite accepts it with or without the @");
 
 // Mapping.

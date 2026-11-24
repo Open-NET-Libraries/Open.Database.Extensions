@@ -5,7 +5,7 @@ using System.Data.Common;
 namespace Open.Database.Extensions.Tests;
 
 // ExecuteScalar<T>() / ExecuteScalarAsync<T>() with a NULL scalar or a query that returned no row (the provider hands back null or DBNull):
-// no row (null) is default(T) for every T; a NULL (DBNull) is null for a nullable type and a ValueMappingException for a non-nullable value type.
+// no row (null) is null for a type that takes null and a ValueMappingException for a non-nullable value type (ask for int? and use ?? for a default); a NULL (DBNull) is null for a nullable type and a ValueMappingException for a non-nullable value type.
 // A value converts as Map<T>() does (ExecuteScalarConversionTests).
 // The transform overloads get null for both (never DBNull); the raw ExecuteScalar()/ExecuteScalarAsync() stay raw.
 [ExcludeFromCodeCoverage]
@@ -48,11 +48,11 @@ public static class ExecuteScalarNullTests
 	// ---- sync ----
 
 	[Fact]
-	public static void ExecuteScalar_NoRowIsDefault_ANullIsAnErrorForANonNullableValueType()
+	public static void ExecuteScalar_NoRowIsAnErrorForANonNullableValueType_ANullIsToo_AndNullForATypeThatTakesIt()
 	{
-		Assert.Equal(0, Sync(null).ExecuteScalar<int>());
-		Assert.Equal(0L, Sync(null).ExecuteScalar<long>());
-		Assert.Equal(default, Sync(null).ExecuteScalar<DateTime>());
+		NullAssert.NoRows<int>("ExecuteScalar", () => Sync(null).ExecuteScalar<int>());
+		NullAssert.NoRows<long>("ExecuteScalar", () => Sync(null).ExecuteScalar<long>());
+		NullAssert.NoRows<DateTime>("ExecuteScalar", () => Sync(null).ExecuteScalar<DateTime>());
 		NullAssert.Scalar<int>(() => Sync(DBNull.Value).ExecuteScalar<int>());
 		NullAssert.Scalar<long>(() => Sync(DBNull.Value).ExecuteScalar<long>());
 		NullAssert.Scalar<DateTime>(() => Sync(DBNull.Value).ExecuteScalar<DateTime>());
@@ -78,18 +78,17 @@ public static class ExecuteScalarNullTests
 	// ---- async ----
 
 	[Fact]
-	public static async Task ExecuteScalarAsync_NoRowIsDefault_ANullIsAnErrorForANonNullableValueType()
+	public static async Task ExecuteScalarAsync_NoRowIsAnErrorForANonNullableValueType_ANullIsToo_AndNullForATypeThatTakesIt()
 	{
-		Assert.Equal(
-			0,
-			await Async(null)
-				.ExecuteScalarAsync<int>(
-					cancellationToken: TestContext.Current.CancellationToken));
-		Assert.Equal(
-			default,
-			await Async(null)
-				.ExecuteScalarAsync<DateTime>(
-					cancellationToken: TestContext.Current.CancellationToken));
+		await NullAssert.NoRowsAsync<int>("ExecuteScalarAsync", async () => await Async(null)
+			.ExecuteScalarAsync<int>(
+				cancellationToken: TestContext.Current.CancellationToken));
+		await NullAssert.NoRowsAsync<DateTime>("ExecuteScalarAsync", async () => await Async(null)
+			.ExecuteScalarAsync<DateTime>(
+				cancellationToken: TestContext.Current.CancellationToken));
+		await NullAssert.NoRowsAsync<long>("ExecuteScalarAsync", async () => await Async(null)
+			.ExecuteScalarAsync<long>(
+				cancellationToken: TestContext.Current.CancellationToken));
 		await NullAssert.ScalarAsync<int>(async () => await Async(DBNull.Value)
 			.ExecuteScalarAsync<int>(
 				cancellationToken: TestContext.Current.CancellationToken));
