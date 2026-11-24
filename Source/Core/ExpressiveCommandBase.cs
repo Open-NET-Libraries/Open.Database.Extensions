@@ -105,7 +105,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	private protected CommandOptions? _options;
 	private protected CommandOptions EnsureOptions() => _options ??= new();
 
-	static string CheckedCommand(string? command)
+	static string CheckedCommand(string command)
 	{
 		if (command is null) throw new ArgumentNullException(nameof(command));
 		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));

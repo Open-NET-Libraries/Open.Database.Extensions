@@ -141,7 +141,7 @@ public readonly struct DbQueryCall
 	/// <exception cref="ArgumentNullException"><paramref name="text"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException"><paramref name="text"/> is empty or white space.</exception>
 	internal static string CheckedText(
-		string? text,
+		string text,
 		string paramName,
 		string emptyMessage)
 	{

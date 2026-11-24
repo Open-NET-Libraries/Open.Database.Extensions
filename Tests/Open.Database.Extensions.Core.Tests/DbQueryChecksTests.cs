@@ -1,5 +1,7 @@
 using Microsoft.Data.Sqlite;
 
+using System.Data.Common;
+
 namespace Open.Database.Extensions.Tests;
 
 #nullable enable
@@ -15,13 +17,12 @@ public static class DbQueryChecksTests
 
 	static CancellationToken Token => TestContext.Current.CancellationToken;
 
+	// The message of an argument exception, without the argument name the framework appends to it (" (Parameter 'name')").
 	static string Text(ArgumentException ex)
 	{
-		// The message carries the argument name on a second line: compare the first.
 		string message = ex.Message;
-		int end = message.IndexOf('\n');
-		if (end < 0) end = message.IndexOf('\r');
-		return end < 0 ? message : message[..end].TrimEnd();
+		int end = message.IndexOf(" (Parameter '", StringComparison.Ordinal);
+		return end < 0 ? message : message[..end];
 	}
 
 	[Theory]
@@ -164,9 +165,9 @@ public static class DbQueryChecksTests
 
 		// A faulted task would be a different contract: these throw before they return.
 		Assert.Throws<InvalidOperationException>(
-			() => reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default, Token));
+			() => { _ = reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default, Token).AsTask(); });
 		Assert.Throws<InvalidOperationException>(
-			() => reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default));
+			() => { _ = reader.ExecuteReaderAsync(0, static (_, state) => new ValueTask<int>(state), CommandBehavior.Default).AsTask(); });
 	}
 
 	[Fact]
@@ -213,6 +214,10 @@ public static class DbQueryChecksTests
 
 		Assert.Equal(a, b);
 		Assert.Equal(a.GetHashCode(), b.GetHashCode());
+
+		// The target's hash, times 31, plus the values': as it was before the two calls shared it.
+		int target = unchecked(Q.GetHashCode() * 31 + connection.GetHashCode());
+		Assert.Equal(unchecked(target * 31 + a.Params.EntriesHash()), a.GetHashCode());
 		Assert.NotEqual(a, Q.Using(connection).AddParam("x", 2));
 		Assert.NotEqual(a, Q.Using(other).AddParam("x", 1));
 		Assert.NotEqual(a, DbQuery.Text("select 2").Using(connection).AddParam("x", 1));
