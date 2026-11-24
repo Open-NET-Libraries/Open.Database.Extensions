@@ -74,7 +74,7 @@ public static class GenParity
 		if (!r.IsDBNull(6)) item.Key = r.GetGuid(6);
 		if (!r.IsDBNull(7)) item.Score = r.GetDouble(7);
 		item.Note = r.IsDBNull(8) ? null : r.GetString(8);
-		{ object c = r.GetValue(9); item.Blob = c is null || c is DBNull ? null : (byte[])c; }
+		{ object c = r.GetValue(9); item.Blob = c is null or DBNull ? null : (byte[])c; }
 		if (!r.IsDBNull(10)) item.Big = r.GetInt64(10);
 		item.Body = r.IsDBNull(11) ? null : r.GetString(11);
 		item.Amount = r.IsDBNull(12) ? null : r.GetDecimal(12);
@@ -102,7 +102,7 @@ public static class GenParity
 		if (!r.IsDBNull(l.O6)) item.Key = r.GetGuid(l.O6);
 		if (!r.IsDBNull(l.O7)) item.Score = r.GetDouble(l.O7);
 		item.Note = r.IsDBNull(l.O8) ? null : r.GetString(l.O8);
-		{ object c = r.GetValue(l.O9); item.Blob = c is null || c is DBNull ? null : (byte[])c; }
+		{ object c = r.GetValue(l.O9); item.Blob = c is null or DBNull ? null : (byte[])c; }
 		if (!r.IsDBNull(l.O10)) item.Big = r.GetInt64(l.O10);
 		item.Body = r.IsDBNull(l.O11) ? null : r.GetString(l.O11);
 		item.Amount = r.IsDBNull(l.O12) ? null : r.GetDecimal(l.O12);
@@ -133,7 +133,7 @@ public static class GenParity
 			s = 6; if (!r.IsDBNull(l.O6)) item.Key = r.GetGuid(l.O6);
 			s = 7; if (!r.IsDBNull(l.O7)) item.Score = r.GetDouble(l.O7);
 			s = 8; item.Note = r.IsDBNull(l.O8) ? null : r.GetString(l.O8);
-			s = 9; { object c = r.GetValue(l.O9); item.Blob = c is null || c is DBNull ? null : (byte[])c; }
+			s = 9; { object c = r.GetValue(l.O9); item.Blob = c is null or DBNull ? null : (byte[])c; }
 			s = 10; if (!r.IsDBNull(l.O10)) item.Big = r.GetInt64(l.O10);
 			s = 11; item.Body = r.IsDBNull(l.O11) ? null : r.GetString(l.O11);
 			s = 12; item.Amount = r.IsDBNull(l.O12) ? null : r.GetDecimal(l.O12);
@@ -146,7 +146,7 @@ public static class GenParity
 			s = 19; item.Summary = r.IsDBNull(l.O19) ? null : r.GetString(l.O19);
 			return item;
 		}
-		catch (Exception ex) when (ex is not DbException && ex is not OperationCanceledException)
+		catch (Exception ex) when (ex is not (DbException or OperationCanceledException))
 		{
 			throw new InvalidOperationException("member " + s, ex);
 		}
@@ -167,7 +167,7 @@ public static class GenParity
 		try { if (!r.IsDBNull(6)) item.Key = r.GetGuid(6); } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 6); }
 		try { if (!r.IsDBNull(7)) item.Score = r.GetDouble(7); } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 7); }
 		try { item.Note = r.IsDBNull(8) ? null : r.GetString(8); } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 8); }
-		try { object c = r.GetValue(9); item.Blob = c is null || c is DBNull ? null : (byte[])c; } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 9); }
+		try { object c = r.GetValue(9); item.Blob = c is null or DBNull ? null : (byte[])c; } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 9); }
 		try { if (!r.IsDBNull(10)) item.Big = r.GetInt64(10); } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 10); }
 		try { item.Body = r.IsDBNull(11) ? null : r.GetString(11); } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 11); }
 		try { item.Amount = r.IsDBNull(12) ? null : r.GetDecimal(12); } catch (Exception ex) when (Wraps(ex)) { throw Fail(ex, 12); }
@@ -324,7 +324,7 @@ public static class GenParity
 	static InvalidOperationException RowFail(Exception ex, int row)
 		=> new("Unable to map row " + row + ".", ex);
 
-	static bool Wraps(Exception ex) => ex is not DbException && ex is not OperationCanceledException;
+	static bool Wraps(Exception ex) => ex is not (DbException or OperationCanceledException);
 
 	static InvalidOperationException Fail(Exception ex, int member) => new("member " + member, ex);
 
