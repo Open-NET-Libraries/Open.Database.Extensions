@@ -146,8 +146,7 @@ public readonly struct DbQueryUsing
 	/// <paramref name="name"/> is empty or white space.
 	/// </exception>
 	public DbQueryCall AddParam<T>(string name, T value)
-		=> ToCall()
-			.AddParam(name, value);
+		=> ToCall().AddParam(name, value);
 
 	/// <summary>Adds an input parameter with a string value.</summary>
 	/// <inheritdoc cref="AddParam{T}(string, T)"/>
@@ -155,8 +154,7 @@ public readonly struct DbQueryUsing
 	// this overload they would read the name as the value of AddParam<T>(T,
 	// string?).
 	public DbQueryCall AddParam(string name, string? value)
-		=> ToCall()
-			.AddParam(name, value);
+		=> ToCall().AddParam(name, value);
 
 	/// <summary>
 	/// Adds an input parameter named for the argument:
@@ -179,8 +177,7 @@ public readonly struct DbQueryUsing
 	public DbQueryCall AddParam<T>(
 		T value,
 		[CallerArgumentExpression(nameof(value))] string? expression = null)
-		=> ToCall()
-			.AddParam(value, expression);
+		=> ToCall().AddParam(value, expression);
 
 	/// <inheritdoc />
 	public bool Equals(DbQueryUsing other)
