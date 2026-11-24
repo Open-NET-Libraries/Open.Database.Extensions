@@ -89,6 +89,85 @@ public static class NullRuleRouteTests
 		NullAssert.Model<Plain>(2, () => Command([1], [2], [null]).Map<Plain>().Skip(2).First());
 	}
 
+	// Every read loop names the same row after a skip: the NULL is past several
+	// chunk and buffer growths (16, 32, 64...), so a count kept per chunk or per
+	// array is checked too.
+	[Fact]
+	public static async Task TheRow_AfterASkip_IsTheSameOnEveryLoop()
+	{
+		const int skip = 5, row = 100;
+		object?[][] rows = [.. Enumerable.Range(0, 150).Select(i => i == row ? [null] : (object?[])[i])];
+		FakeDbCommand Rows() => Command(rows);
+
+		NullAssert.Model<Plain>(row, () => Rows().Map<Plain>().Skip(skip).ToList());
+		NullAssert.Model<Plain>(row, () => Rows().Map<Plain>().Skip(skip).Take(120).ToList());
+		NullAssert.Model<Plain>(row, () => Rows().Map<Plain>().Skip(skip).ToArray());
+		NullAssert.Model<Plain>(row, () => Rows().Map<Plain>().Skip(skip).ToHashSet());
+		// The DbDataReader loop of Stream: only a reader view reaches it, and a view's Read has no skip.
+		NullAssert.Model<Plain>(row, () =>
+		{
+			using TypedReader reader = TypedReader.Create([new ColumnDef("Id", typeof(int))], rows);
+			reader.Map<Plain>().Read(items => items.Count());
+		});
+		await NullAssert.ModelAsync<Plain>(row, async () => await Rows().Map<Plain>().Skip(skip).ToListAsync(Ct));
+		await NullAssert.ModelAsync<Plain>(row, async () => await Rows().Map<Plain>().Skip(skip).AsyncReads().ToArrayAsync(Ct));
+		await NullAssert.ModelAsync<Plain>(row, async () =>
+		{
+			await foreach (Plain _ in Rows().Map<Plain>().Skip(skip).Stream(Timeout.InfiniteTimeSpan, Ct)) { }
+		});
+		await NullAssert.ModelAsync<Plain>(row, async () =>
+		{
+			await foreach (Plain _ in Rows().Map<Plain>().Skip(skip).ToChannelReader(Ct).ReadAllAsync(Ct)) { }
+		});
+
+		// A reader that is not a DbDataReader: the plain loop of Stream.
+		var plain = new PlainReaderCommand(() => new NotADbDataReader(TypedReader.Create([new ColumnDef("Id", typeof(int))], rows)));
+		NullAssert.Model<Plain>(row, () => plain.Map<Plain>().Skip(skip).ToList());
+		NullAssert.Model<Plain>(row, () => plain.Map<Plain>().Skip(skip).ToArray());
+		await NullAssert.ModelAsync<Plain>(row, async () =>
+		{
+			await foreach (Plain _ in plain.Map<Plain>().Skip(skip).Stream(Timeout.InfiniteTimeSpan, Ct)) { }
+		});
+	}
+
+	// An IDataReader that is not a DbDataReader.
+	sealed class NotADbDataReader(DbDataReader inner) : IDataReader
+	{
+		public object this[int i] => inner[i];
+		public object this[string name] => inner[name];
+		public int Depth => inner.Depth;
+		public bool IsClosed => inner.IsClosed;
+		public int RecordsAffected => inner.RecordsAffected;
+		public int FieldCount => inner.FieldCount;
+		public void Close() => inner.Close();
+		public void Dispose() => inner.Dispose();
+		public bool GetBoolean(int i) => inner.GetBoolean(i);
+		public byte GetByte(int i) => inner.GetByte(i);
+		public long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length) => inner.GetBytes(i, fieldOffset, buffer, bufferoffset, length);
+		public char GetChar(int i) => inner.GetChar(i);
+		public long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length) => inner.GetChars(i, fieldoffset, buffer, bufferoffset, length);
+		public IDataReader GetData(int i) => inner.GetData(i);
+		public string GetDataTypeName(int i) => inner.GetDataTypeName(i);
+		public DateTime GetDateTime(int i) => inner.GetDateTime(i);
+		public decimal GetDecimal(int i) => inner.GetDecimal(i);
+		public double GetDouble(int i) => inner.GetDouble(i);
+		public Type GetFieldType(int i) => inner.GetFieldType(i);
+		public float GetFloat(int i) => inner.GetFloat(i);
+		public Guid GetGuid(int i) => inner.GetGuid(i);
+		public short GetInt16(int i) => inner.GetInt16(i);
+		public int GetInt32(int i) => inner.GetInt32(i);
+		public long GetInt64(int i) => inner.GetInt64(i);
+		public string GetName(int i) => inner.GetName(i);
+		public int GetOrdinal(string name) => inner.GetOrdinal(name);
+		public DataTable? GetSchemaTable() => inner.GetSchemaTable();
+		public string GetString(int i) => inner.GetString(i);
+		public object GetValue(int i) => inner.GetValue(i);
+		public int GetValues(object[] values) => inner.GetValues(values);
+		public bool IsDBNull(int i) => inner.IsDBNull(i);
+		public bool NextResult() => inner.NextResult();
+		public bool Read() => inner.Read();
+	}
+
 	sealed class ProviderFailure() : DbException("the provider failed");
 
 	// A reader whose typed read of Id fails as the provider would.
