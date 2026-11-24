@@ -75,6 +75,33 @@ public static partial class SyntheticChecks
 	static bool WidthTwentyOnly(string method)
 		=> method is "Ctl_Sync" or "Ctl_T_Sync" or "Gen_T_Sync" or "V2n_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
 
+	// The NULL policy twins (SynRowPolicy.cs) against V1, member by member. A narrower table has no column for some members: SynRow leaves those null,
+	// a twin keeps its initializer ("" or an empty array), so a member equal to a fresh twin's where V1 has null is the absent column, not a difference.
+	static void ComparePolicyTwin(Report report, string name, string where, List<SynRow> expected, IList actual)
+	{
+		if (actual.Count != expected.Count)
+		{
+			report.Fail($"{name} {where}: {actual.Count} rows, expected {expected.Count}");
+			return;
+		}
+
+		for (int i = 0; i < expected.Count; i++)
+		{
+			object row = actual[i]!;
+			object fresh = Activator.CreateInstance(row.GetType())!;
+			foreach (PropertyInfo p in row.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+			{
+				object? want = typeof(SynRow).GetProperty(p.Name)!.GetValue(expected[i]);
+				object? got = p.GetValue(row);
+				if (SynRow.Same(want, got) || want is null && SynRow.Same(p.GetValue(fresh), got)) continue;
+				report.Fail($"{name} {where} row {i}, {p.Name}: expected {want ?? "null"}, actual {got ?? "null"}");
+				return;
+			}
+		}
+
+		report.Check(true, name);
+	}
+
 	static void CompareGenerated(Report report, string name, string where, List<SynRow> expected, IList actual)
 	{
 		if (actual.Count != expected.Count)

@@ -176,10 +176,9 @@ public partial class ParityTests
 		Exception? generated = Catch(() => q.Map<PlainPost>().ToList());
 		Counts c = Counts.Now().Since(start);
 
-		// The runtime names the member (Qty); the generated reader names the row. The conversion's exception inside is the same.
-		var runtime = Assert.IsType<ValueMappingException>(Catch(() => q.Map(RowMap<PlainPost>.Default).ToList()));
-		var e = RowError<OverflowException>(generated, typeof(PlainPost), 0);
-		Assert.IsType(runtime.InnerException!.GetType(), e.InnerException);
+		// Both name the model and the row, the conversion's exception inside.
+		RowError<OverflowException>(generated, typeof(PlainPost), 0);
+		Parity.SameError(Catch(() => q.Map(RowMap<PlainPost>.Default).ToList()), generated);
 		Served(c);
 	}
 

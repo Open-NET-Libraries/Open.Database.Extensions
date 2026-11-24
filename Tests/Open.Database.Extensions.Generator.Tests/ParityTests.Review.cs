@@ -229,17 +229,20 @@ public partial class ParityTests
 			return set;
 		}
 
-		string Report(int secondColumns)
+		Exception? Report(int secondColumns, bool generated)
 		{
 			using DataTableReader reader = Sets(secondColumns).CreateDataReader();
-			MappedReader<PlainPost> view = reader.Map<PlainPost>();
+			MappedReader<PlainPost> view = generated ? reader.Map<PlainPost>() : reader.Map(RowMap<PlainPost>.Default);
 			Assert.Equal(2, view.ToList().Count);
 			Assert.True(reader.NextResult());
-			return Assert.IsType<ValueMappingException>(Catch(() => view.ToList())).Message;
+			return Catch(() => view.ToList());
 		}
 
-		Assert.Contains("at row 2", Report(2), StringComparison.Ordinal);
-		Assert.Contains("at row 0", Report(3), StringComparison.Ordinal);
+		// The difference, pinned on both sides: the generated reader says row 2 where the runtime map says row 0.
+		RowError<InvalidCastException>(Report(2, generated: true), typeof(PlainPost), 2);
+		RowError<InvalidCastException>(Report(2, generated: false), typeof(PlainPost), 0);
+		// Another column count renews the binding: the same report as the runtime's.
+		Parity.SameError(Report(3, generated: false), RowError<InvalidCastException>(Report(3, generated: true), typeof(PlainPost), 0));
 	}
 
 	// ---- left to the runtime: not intercepted ----

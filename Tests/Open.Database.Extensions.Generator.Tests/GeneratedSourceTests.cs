@@ -50,18 +50,37 @@ public class GeneratedSourceTests
 	}
 
 	[Theory]
+	[InlineData("PolicyOnType")]
+	[InlineData("PolicyOnMember")]
+	[InlineData("PolicyDerived")]
+	[InlineData("ValueOnMember")]
+	[InlineData("PolicyOnParameter")]
+	[InlineData("PolicyRecord")]
+	public void A_model_with_a_NULL_policy_gets_no_binder(string model)
+	{
+		// Declined at generation time: no row reader is written for it, so nothing could bypass its policy.
+		string source = GeneratedSource();
+		Assert.Matches($@"file sealed class M\d+_UnmarkedPost\b", source);
+		Assert.DoesNotMatch($@"file sealed class M\d+_{model}\b", source);
+	}
+
+	[Theory]
 	[InlineData("GenRowT20", new[] { "Id", "Created", "Title", "Price", "IsActive", "Key", "Score", "Big", "Body", "Tag", "Ratio", "Count" }, new[] { "Qty", "Note", "Blob", "Amount", "Stamp", "Flag", "Link", "Summary" })]
 	[InlineData("PlainPost", new[] { "Id", "Created", "Title", "Price", "IsActive", "Key", "Score", "Big", "State" }, new[] { "Qty", "Note", "Blob", "Label" })]
 	public void A_row_reader_tests_for_NULL_in_the_nullable_members_only(string model, string[] nonNullable, string[] nullable)
 	{
 		string binder = Binder(GeneratedSource(), model);
 
+		// A non-nullable member's typed read has no NULL test; its general read (GetValue: an enum column of the enum type) makes the runtime's
+		// ConvertRequired check, which throws the NULL-read exception and never gives null.
+		const string NullRead = "throw new global::System.Data.SqlTypes.SqlNullValueException()";
 		foreach (string member in nonNullable)
 		{
 			var stores = Stores(binder, member);
 			Assert.NotEmpty(stores);
+			Assert.Contains(stores, store => !store.Contains("DBNull", StringComparison.Ordinal));
 			foreach (string store in stores)
-				Assert.DoesNotContain("DBNull", store, StringComparison.Ordinal);
+				Assert.True(!store.Contains("DBNull", StringComparison.Ordinal) || store.Contains("GetValue(", StringComparison.Ordinal) && store.Contains(NullRead, StringComparison.Ordinal), store);
 		}
 
 		// A nullable member's read tests the cell: IsDBNull for a typed read, a DBNull compare on the value for a general one (byte[]?).
@@ -70,7 +89,10 @@ public class GeneratedSourceTests
 			var stores = Stores(binder, member);
 			Assert.NotEmpty(stores);
 			foreach (string store in stores)
+			{
 				Assert.Contains("DBNull", store, StringComparison.Ordinal);
+				Assert.DoesNotContain(NullRead, store, StringComparison.Ordinal);
+			}
 		}
 	}
 }

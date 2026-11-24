@@ -20,7 +20,7 @@ public sealed class PlainPost
 
 	public DateTime Created { get; set; }
 
-	// Non-nullable: on a NULL the runtime map keeps the initializer; the generated reader reads it as a hand-written selector does, and throws.
+	// Non-nullable: read as a hand-written selector reads it; a NULL throws, on the runtime map and the generated reader alike.
 	public string Title { get; set; } = "untitled";
 
 	public decimal Price { get; set; }
@@ -277,7 +277,7 @@ public sealed class OverridePost : VirtualPost
 	public string? Title { get; set; }
 }
 
-/// <summary>A generic model closed over a marker type: a message names it with its argument (TaggedPost&lt;Int32&gt;), not as a bare "TaggedPost`1".</summary>
+/// <summary>A generic model closed over a marker type: a message names it as the runtime does, by Type.Name ("TaggedPost`1").</summary>
 public sealed class TaggedPost<TMarker>
 {
 	public int Id { get; set; }
@@ -285,7 +285,7 @@ public sealed class TaggedPost<TMarker>
 	public string Title { get; set; } = "untitled";
 }
 
-/// <summary>Holds a nested model: a message names it with its outer type (PostHolder.Inner).</summary>
+/// <summary>Holds a nested model: a message names it as the runtime does, by Type.Name ("Inner").</summary>
 public sealed class PostHolder
 {
 	public sealed class Inner
@@ -297,8 +297,8 @@ public sealed class PostHolder
 }
 
 /// <summary>
-/// Non-nullable interface members. A NULL in Value throws like a class member's (the cast of DBNull to IComparable fails); DBNull implements
-/// IConvertible, so the cast succeeds and Other stays tested: a NULL gives null.
+/// Non-nullable interface members, read by GetValue: a NULL in either is the runtime's NULL report (SqlNullValueException inside), the one in
+/// Other too, although DBNull implements IConvertible and its cast would succeed.
 /// </summary>
 public sealed class InterfacePost
 {

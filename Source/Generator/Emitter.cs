@@ -8,20 +8,21 @@ namespace Open.Database.Extensions.Generator;
 //     against a small static cache of the layouts met lately, and then reads every row with typed getters in one of five read modes.
 //   - errors: each row reader (one per read mode) is ONE try region around the whole row (reads, construction, sets), entered once per row; its
 //     handler is cold and does no reader work. Anything but a DbException or an OperationCanceledException (RowMap.Guard's filter: those pass
-//     through untouched, and a ValueMappingException is already the report) is thrown as a ValueMappingException naming the model type and the row
-//     (its 0-based index among the rows this binding mapped: Bound.Rows, one increment per row), the exception inside. A Release build names no member
-//     or column (tracking the cell would put work on the hot path), and the report is the same on a SequentialAccess reader. A layout the runtime
-//     serves (mode 0) reports as the runtime does.
+//     through untouched) is thrown as a ValueMappingException naming the model type and the row (its 0-based index among the rows this binding
+//     mapped: Bound.Rows, one increment per row), the exception inside, in Core's words (RowErrors). No member or column is named, as the runtime
+//     names none, and the report is the same on a SequentialAccess reader. A layout the runtime serves (mode 0) reports the same way.
+//     The one difference: after Skip(n) the runtime counts the skipped rows and the generated reader cannot see them (Core skips without calling
+//     the selector), so its row is n lower.
 //   - the row index and a next result set: the binding is per reader and is renewed when the column count changes, which is the only change a row
 //     reader can see without a per-row check (a check per row would cost every row). A next result set (NextResult on the same reader) with the SAME
 //     column count keeps the previous binding, so (1) it reads the new set at the FIRST set's ordinals: WRONG VALUES, silently (or a cast error), where
 //     the runtime map re-checks the layout per result set; and (2) the row index continues from the first set instead of restarting at 0.
 //     Pinned by tests; closing it needs a per-result-set hook in Core, which this generator does not use.
 //   - NULL, by the member's type: a member declared non-nullable (a value type other than Nullable<T>, a reference annotated non-nullable) is read
-//     with its typed getter alone, as a hand-written selector reads it; a NULL there is exceptional: the provider's getter throws (ProviderNullTests)
-//     and the row's handler reports it. A nullable member (int?, string?, a reference in code with nullable annotations off, object) is tested
-//     with IsDBNull and gets null. (The runtime map keeps a non-nullable member's value on a NULL instead.) There is no NULL check on a non-nullable
-//     member by default, in any build; an opt-in attribute that checks every non-nullable member is planned.
+//     with its typed getter alone, as a hand-written selector and the runtime map read it; a NULL there is exceptional: the provider's getter throws
+//     (ProviderNullTests) and the row's handler reports it. A general read (GetValue) of such a member checks for NULL as the runtime does and throws
+//     SqlNullValueException. A nullable member (int?, string?, a reference in code with nullable annotations off) is tested with IsDBNull and gets
+//     null. A model that declares NullPolicy or NullValue is not intercepted (ModelReader): the runtime map applies the policy.
 //   - a layout the generated code does not serve is mapped by the runtime RowMap<T> (through its public, hidden ArrayMapper, the route to its
 //     object[] row reader), so the rows, and the exceptions, are the runtime's.
 static class Emitter
@@ -318,24 +319,26 @@ static class Emitter
 			}
 		}
 
-		// RowMap.Guard's filter: the provider's own failures and cancellation propagate untouched; everything else is attributed. A ValueMappingException
-		// is the report already (a model's own setter or constructor may throw one), so it is not wrapped in a second.
+		// RowMap.Guard's filter: the provider's own failures and cancellation propagate untouched; everything else is attributed, a ValueMappingException
+		// the model's own code throws included (the runtime wraps it too).
 		public static bool Wraps(global::System.Exception ex)
 			=> ex is not global::System.Data.Common.DbException
-				&& ex is not global::System.OperationCanceledException
-				&& ex is not global::Open.Database.Extensions.ValueMappingException;
+				&& ex is not global::System.OperationCanceledException;
 
-		// The report of a row the generated reader could not map (cold, no reader work): the model type and the row (0-based among the rows this map
-		// read), worded by the TYPE of the exception inside, which is kept: SqlClient's SqlNullValueException is a NULL read (ProviderNullTests);
-		// InvalidCastException is a NULL or a column of another type (a DataTable reader, a cast of GetValue); anything else is not classified
-		// (Microsoft.Data.Sqlite's NULL read is an InvalidOperationException, a type its other failures share). Never a member or column.
+		// The report of a row the generated reader could not map (cold, no reader work): the model type and the row (0-based), worded by the TYPE of
+		// the exception inside, which is kept. The text is Core's RowErrors.Create for a model, word for word (Core's is internal: a parity test pins
+		// the two together): SqlNullValueException is a NULL read (SqlClient's getters, and the general read's own check), InvalidCastException is a
+		// NULL or a column of another type, anything else is not classified. Never a member or column.
 		public static global::System.Exception RowError(global::System.Exception ex, global::System.Type model, string name, int row)
 		{
-			string message = ex is global::System.Data.SqlTypes.SqlNullValueException
-				? $"A NULL was read into a non-nullable member of {name} at row {row}. Declare the member nullable (int?, string?)."
-				: ex is global::System.InvalidCastException
-					? $"A value at row {row} could not be read into a member of {name}: either a NULL in a non-nullable member (declare the member nullable: int?, string?) or a column whose type does not match the member."
-					: $"Unable to map row {row} to '{name}'.";
+			string message = ex switch
+			{
+				global::System.Data.SqlTypes.SqlNullValueException
+					=> $"A NULL was read into a non-nullable member of {name} at row {row}. Declare the member nullable (int?, string?).",
+				global::System.InvalidCastException
+					=> $"Unable to map row {row} to '{name}': a NULL was read into a non-nullable member, or a column's type does not convert to its member's. Declare the member nullable (int?, string?), or match the member's type to the column's.",
+				_ => $"Unable to map row {row} to '{name}'.",
+			};
 			return new global::Open.Database.Extensions.ValueMappingException(message, "", "", model, ex);
 		}
 	}
@@ -484,8 +487,22 @@ static class Emitter
 		sb.AppendLine("\t\t\t{");
 		sb.AppendLine("\t\t\t\tvar map = _runtime ??= Runtime.For(Layout.Names);");
 		sb.AppendLine("\t\t\t\tvar row = _row ??= new object[Layout.Names.Length];");
-		sb.AppendLine("\t\t\t\tRecord.GetValues(row);");
-		sb.AppendLine("\t\t\t\treturn map(row);");
+		// The array mapper reports a failed row without its number (its caller owns the loop): the report it wraps is rebuilt here with the row,
+		// so a declined layout reports as the runtime map does. A report with nothing inside (a null policy's own, which a declined model never
+		// reaches here with) is left as it is; a failure of the row read itself is attributed as the runtime's guard attributes it.
+		sb.AppendLine("\t\t\t\ttry");
+		sb.AppendLine("\t\t\t\t{");
+		sb.AppendLine("\t\t\t\t\tRecord.GetValues(row);");
+		sb.AppendLine("\t\t\t\t\treturn map(row);");
+		sb.AppendLine("\t\t\t\t}");
+		sb.AppendLine($"\t\t\t\tcatch ({Ns}.ValueMappingException ex) when (ex.InnerException != null)");
+		sb.AppendLine("\t\t\t\t{");
+		sb.AppendLine("\t\t\t\t\tthrow Fail(ex.InnerException, this);");
+		sb.AppendLine("\t\t\t\t}");
+		sb.AppendLine($"\t\t\t\tcatch (global::System.Exception ex) when (ex is not {Ns}.ValueMappingException && OdxMatch.Wraps(ex))");
+		sb.AppendLine("\t\t\t\t{");
+		sb.AppendLine("\t\t\t\t\tthrow Fail(ex, this);");
+		sb.AppendLine("\t\t\t\t}");
 		sb.AppendLine("\t\t\t}");
 		sb.AppendLine("\t\t}");
 		sb.AppendLine();
@@ -536,7 +553,7 @@ static class Emitter
 
 		// The error for a row that failed (cold: only the row reader's one handler calls it, and it does no reader work): the model type and the row,
 		// the provider's (or the model's) exception inside. No member or column: the row has one try region, so which cell failed is not tracked
-		// (the runtime map names it; the generated reader keeps the hot path free of that bookkeeping). The same on every reader, SequentialAccess too.
+		// (the runtime map does not track it either: the hot path stays free of that bookkeeping). The same on every reader, SequentialAccess too.
 		sb.AppendLine($"\t\tstatic global::System.Exception Fail(global::System.Exception ex, Bound b) => OdxMatch.RowError(ex, typeof({T}), {Str(m.Name)}, b.Rows - 1);");
 		sb.AppendLine();
 
@@ -744,13 +761,19 @@ static class Emitter
 	}
 
 	// The statement that reads a member's cell into its target (the property, or the local a constructor takes); {O} is the ordinal.
-	// A member its type declares non-nullable is read alone (a general read casts GetValue), as a hand-written selector reads it: no IsDBNull, since a
-	// NULL there is exceptional; the provider's typed getter throws on it (ProviderNullTests), or the cast of DBNull does, and the row's handler
-	// reports it. A nullable member is tested for NULL first and gets null.
+	// A member its type declares non-nullable is read by its typed getter alone, as a hand-written selector reads it: no IsDBNull, since a NULL there
+	// is exceptional; the provider's typed getter throws on it (ProviderNullTests), and the row's handler reports it. A general read (GetValue) of such
+	// a member makes the runtime's ConvertRequired check: a NULL throws SqlNullValueException (the cast of DBNull may succeed: object, IConvertible),
+	// so the report is the runtime's. A nullable member is tested for NULL first and gets null.
 	static string Statement(SlotSpec s, string target, string read, bool general)
 	{
 		if (s.NonNullable)
-			return target + " = " + (general ? read.Replace("{0}", "r.GetValue({O})") : read) + ";";
+		{
+			if (!general) return target + " = " + read + ";";
+
+			string required = read.Replace("{0}", "c");
+			return $"{{ object c = r.GetValue({{O}}); {target} = c is null || c is global::System.DBNull ? throw new global::System.Data.SqlTypes.SqlNullValueException() : {required}; }}";
+		}
 
 		if (general)
 		{

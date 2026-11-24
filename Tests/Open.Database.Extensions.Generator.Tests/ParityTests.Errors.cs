@@ -4,8 +4,8 @@ using System.Data.SqlTypes;
 namespace Open.Database.Extensions.Generator.Tests;
 
 // The identity read mode (5), and the error report: a generated row reader is one try region per row, so a failure is reported as a
-// ValueMappingException naming the model type and the row (0-based among the rows mapped), the exception inside, worded by that exception's type;
-// no member or column. A DbException and a cancellation pass through untouched, as the runtime map lets them.
+// ValueMappingException naming the model type and the row (0-based), the exception inside, worded by that exception's type; no member or column:
+// the runtime map's report, equal to it. A DbException and a cancellation pass through untouched, as the runtime map lets them.
 public partial class ParityTests
 {
 	// ---- the identity layout: the members in their declared order, read at constant ordinals ----
@@ -84,18 +84,21 @@ public partial class ParityTests
 	// ---- the report ----
 
 	/// <summary>
-	/// The message the generated reader gives a failed row, by the type of the exception inside. <paramref name="name"/> is the model as the generator
-	/// names it (the type's name, its outer types and generic arguments by name); the default is a plain type's name.
+	/// The message a failed row gets, by the type of the exception inside: Core's RowErrors.Create for a model, word for word (it is internal, so it
+	/// is written out here; SameRowError checks the runtime gives it too). The model is named as the runtime names it: Type.Name.
 	/// </summary>
-	static string RowMessage(Exception inner, Type model, int row, string? name = null)
-		=> inner is SqlNullValueException
-			? $"A NULL was read into a non-nullable member of {name ?? model.Name} at row {row}. Declare the member nullable (int?, string?)."
-			: inner is InvalidCastException
-				? $"A value at row {row} could not be read into a member of {name ?? model.Name}: either a NULL in a non-nullable member (declare the member nullable: int?, string?) or a column whose type does not match the member."
-				: $"Unable to map row {row} to '{name ?? model.Name}'.";
+	static string RowMessage(Exception inner, Type model, int row)
+		=> inner switch
+		{
+			SqlNullValueException
+				=> $"A NULL was read into a non-nullable member of {model.Name} at row {row}. Declare the member nullable (int?, string?).",
+			InvalidCastException
+				=> $"Unable to map row {row} to '{model.Name}': a NULL was read into a non-nullable member, or a column's type does not convert to its member's. Declare the member nullable (int?, string?), or match the member's type to the column's.",
+			_ => $"Unable to map row {row} to '{model.Name}'.",
+		};
 
-	/// <summary>The generated reader's report: the model type and the row, no member or column, the exception of this type inside.</summary>
-	static ValueMappingException RowError<TInner>(Exception? error, Type model, int row, string? name = null)
+	/// <summary>The report of a failed row: the model type and the row, no member or column, the exception of this type inside.</summary>
+	static ValueMappingException RowError<TInner>(Exception? error, Type model, int row)
 		where TInner : Exception
 	{
 		var e = Assert.IsType<ValueMappingException>(error);
@@ -103,8 +106,22 @@ public partial class ParityTests
 		Assert.Equal(model, e.TargetType);
 		Assert.Equal("", e.PropertyName);
 		Assert.Equal("", e.ColumnName);
-		Assert.Equal(RowMessage(inner, model, row, name), e.Message);
+		Assert.Equal(RowMessage(inner, model, row), e.Message);
 		return e;
+	}
+
+	/// <summary>
+	/// The generated reader and the runtime map fail the same row the same way: both reports have the row shape (<see cref="RowError{TInner}"/>), and
+	/// they are equal (type, message, inner exception type and message, member, column, target type).
+	/// </summary>
+	static ValueMappingException SameRowError<TInner>(Func<object> runtime, Func<object> generated, Type model, int row)
+		where TInner : Exception
+	{
+		Exception? r = Catch(() => runtime());
+		Exception? g = Catch(() => generated());
+		RowError<TInner>(r, model, row);
+		Parity.SameError(r, g);
+		return RowError<TInner>(g, model, row);
 	}
 
 	// ---- the model's own code throws ----
@@ -120,8 +137,8 @@ public partial class ParityTests
 
 		var e = RowError<ArgumentOutOfRangeException>(generated, typeof(CheckedPost), 1);
 		Assert.StartsWith("Qty cannot be negative.", e.InnerException!.Message, StringComparison.Ordinal);
-		// The runtime map names the member; the generated reader names the row.
-		Assert.Equal("Qty", Assert.IsType<ValueMappingException>(Catch(() => q.Map(RowMap<CheckedPost>.Default).ToList())).PropertyName);
+		// The runtime map reports the same: the model and the row, no member.
+		Parity.SameError(Catch(() => q.Map(RowMap<CheckedPost>.Default).ToList()), generated);
 		Served(c);
 		Assert.Equal(1, c.Identity);
 	}
@@ -132,7 +149,11 @@ public partial class ParityTests
 		var q = new TableQuery([Col.Of<int>("Id")], [1]);
 
 		var start = Counts.Now();
-		var e = RowError<NotSupportedException>(Catch(() => q.Map<FailingPost>().ToList()), typeof(FailingPost), 0);
+		var e = SameRowError<NotSupportedException>(
+			() => q.Map(RowMap<FailingPost>.Default).ToList(),
+			() => q.Map<FailingPost>().ToList(),
+			typeof(FailingPost),
+			0);
 		Served(Counts.Now().Since(start));
 		Assert.Equal("This model cannot be created.", e.InnerException!.Message);
 	}
@@ -143,7 +164,11 @@ public partial class ParityTests
 		var q = new TableQuery([Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<string>("Note")], [1, "a", null], [-1, "b", "n"]);
 
 		var start = Counts.Now();
-		RowError<ArgumentOutOfRangeException>(Catch(() => q.Map<CheckedRecord>().ToList()), typeof(CheckedRecord), 1);
+		SameRowError<ArgumentOutOfRangeException>(
+			() => q.Map(RowMap<CheckedRecord>.Default).ToList(),
+			() => q.Map<CheckedRecord>().ToList(),
+			typeof(CheckedRecord),
+			1);
 		Served(Counts.Now().Since(start));
 	}
 
@@ -156,9 +181,9 @@ public partial class ParityTests
 		var sequential = new TableQuery(columns, [1, "t", ""]) { Sequential = true };
 
 		var start = Counts.Now();
-		RowError<ArgumentOutOfRangeException>(Catch(() => init.Map<CheckedInit>().ToList()), typeof(CheckedInit), 1);
-		RowError<ArgumentException>(Catch(() => set.Map<CheckedInit>().ToList()), typeof(CheckedInit), 2);
-		RowError<ArgumentException>(Catch(() => sequential.Map<CheckedInit>().ToList()), typeof(CheckedInit), 0);
+		SameRowError<ArgumentOutOfRangeException>(() => init.Map(RowMap<CheckedInit>.Default).ToList(), () => init.Map<CheckedInit>().ToList(), typeof(CheckedInit), 1);
+		SameRowError<ArgumentException>(() => set.Map(RowMap<CheckedInit>.Default).ToList(), () => set.Map<CheckedInit>().ToList(), typeof(CheckedInit), 2);
+		SameRowError<ArgumentException>(() => sequential.Map(RowMap<CheckedInit>.Default).ToList(), () => sequential.Map<CheckedInit>().ToList(), typeof(CheckedInit), 0);
 		Served(Counts.Now().Since(start), sets: 3);
 	}
 
@@ -203,11 +228,9 @@ public partial class ParityTests
 			Counts c = Counts.Now().Since(start);
 
 			Exception expected = fault();
-			if (expected is TestDbException or OperationCanceledException)
-			{
-				Parity.SameError(Catch(() => runtime(q)), generated);
-			}
-			else
+			// The runtime map's outcome on the same fault is the generated reader's, whichever it is.
+			Parity.SameError(Catch(() => runtime(q)), generated);
+			if (expected is not (TestDbException or OperationCanceledException))
 			{
 				var e = Assert.IsType<ValueMappingException>(generated);
 				Assert.IsType(expected.GetType(), e.InnerException);
@@ -263,10 +286,12 @@ public partial class ParityTests
 		// The fault sits at the third row the reader reads. One mapped query run twice: each execution binds a new reader, so the count starts again.
 		var q = new TableQuery(PostColumns, PostRows) { Wrap = r => new FaultReader(r, 2, 6, () => new InvalidOperationException("The connection dropped.")) };
 		var mapped = q.Map<PlainPost>();
-		RowError<InvalidOperationException>(Catch(() => mapped.ToList()), typeof(PlainPost), 2);
-		RowError<InvalidOperationException>(Catch(() => mapped.ToList()), typeof(PlainPost), 2);
+		SameRowError<InvalidOperationException>(() => q.Map(RowMap<PlainPost>.Default).ToList(), () => mapped.ToList(), typeof(PlainPost), 2);
+		SameRowError<InvalidOperationException>(() => q.Map(RowMap<PlainPost>.Default).ToList(), () => mapped.ToList(), typeof(PlainPost), 2);
 
-		// Skip does not map the rows it skips: the index counts the rows mapped, so the reader's third row is the second mapped.
+		// A KNOWN DIFFERENCE, pinned on both sides: Core skips rows without calling the selector, so the generated reader counts the rows it mapped
+		// and reports the reader's third row as row 1; the runtime counts the skipped row and reports row 2. Closing it needs a hook in Core.
 		RowError<InvalidOperationException>(Catch(() => q.Map<PlainPost>().Skip(1).ToList()), typeof(PlainPost), 1);
+		RowError<InvalidOperationException>(Catch(() => q.Map(RowMap<PlainPost>.Default).Skip(1).ToList()), typeof(PlainPost), 2);
 	}
 }

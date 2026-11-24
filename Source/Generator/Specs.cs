@@ -76,7 +76,7 @@ sealed record SlotSpec(
 
 sealed record ModelSpec(
 	string Type,
-	// The type's name for a message, made at generation time: its own name, its outer types and its generic arguments by name (Outer.Inner, Page<Int32>).
+	// The type's name for a message, as the runtime map names it (Shape.TypeName: Type.Name, so Inner, Page`1): the same text on both paths.
 	string Name,
 	// Built through its one public constructor (true) or created then set (false).
 	bool UseConstructor,
