@@ -162,17 +162,10 @@ public sealed class DbQuery : IEquatable<DbQuery>
 			null);
 
 	static string Checked(string text, string paramName)
-	{
-		if (text is null) throw new ArgumentNullException(paramName);
-		if (string.IsNullOrWhiteSpace(text))
-		{
-			throw new ArgumentException(
-				"The command cannot be empty or white space.",
-				paramName);
-		}
-
-		return text;
-	}
+		=> DbQueryCall.CheckedText(
+			text,
+			paramName,
+			"The command cannot be empty or white space.");
 
 	/// <summary>
 	/// Returns a new definition with the command timeout set;

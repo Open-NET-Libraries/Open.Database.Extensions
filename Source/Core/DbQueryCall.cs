@@ -128,17 +128,33 @@ public readonly struct DbQueryCall
 	}
 
 	internal static string CheckedName(string name)
-	{
-		if (name is null) throw new ArgumentNullException(nameof(name));
-		if (string.IsNullOrWhiteSpace(name))
-		{
-			throw new ArgumentException(
-				"Parameter names cannot be empty or white space.",
-				nameof(name));
-		}
+		=> CheckedText(
+			name,
+			nameof(name),
+			"Parameter names cannot be empty or white space.");
 
-		return name;
+	/// <summary>Checks a text that must be given and not blank.</summary>
+	/// <param name="text">The text.</param>
+	/// <param name="paramName">The name of the argument, for the exception.</param>
+	/// <param name="emptyMessage">The message when the text is empty or white space.</param>
+	/// <returns><paramref name="text"/>.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="text"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException"><paramref name="text"/> is empty or white space.</exception>
+	internal static string CheckedText(
+		string text,
+		string paramName,
+		string emptyMessage)
+	{
+		if (text is null) throw new ArgumentNullException(paramName);
+		if (string.IsNullOrWhiteSpace(text)) throw Blank(emptyMessage, paramName);
+
+		return text;
 	}
+
+	// Out of line, so the check above stays small enough to inline.
+	[MethodImpl(MethodImplOptions.NoInlining)]
+	static ArgumentException Blank(string message, string paramName)
+		=> new(message, paramName);
 
 	/// <summary>
 	/// Checks the text of the argument of <c>AddParam(value)</c>, which the
@@ -165,8 +181,7 @@ public readonly struct DbQueryCall
 
 	/// <inheritdoc />
 	public bool Equals(DbQueryCall other)
-		=> Equals(_definition, other._definition)
-		&& Equals(_source, other._source)
+		=> SameTarget(_definition, _source, other._definition, other._source)
 		&& Params.SameEntries(other.Params);
 
 	/// <inheritdoc />
@@ -192,9 +207,25 @@ public readonly struct DbQueryCall
 	{
 		unchecked
 		{
-			int h = _definition?.GetHashCode() ?? 0;
-			h = h * 31 + (_source?.GetHashCode() ?? 0);
-			return h * 31 + Params.EntriesHash();
+			return TargetHash(_definition, _source) * 31 + Params.EntriesHash();
+		}
+	}
+
+	// What a bound query and a call share: the definition and the source.
+	internal static bool SameTarget(
+		DbQuery? definition,
+		object? source,
+		DbQuery? otherDefinition,
+		object? otherSource)
+		=> Equals(definition, otherDefinition)
+		&& Equals(source, otherSource);
+
+	internal static int TargetHash(DbQuery? definition, object? source)
+	{
+		unchecked
+		{
+			return (definition?.GetHashCode() ?? 0) * 31
+				+ (source?.GetHashCode() ?? 0);
 		}
 	}
 

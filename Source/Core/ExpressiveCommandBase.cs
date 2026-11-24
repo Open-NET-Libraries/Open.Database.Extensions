@@ -105,6 +105,15 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	private protected CommandOptions? _options;
 	private protected CommandOptions EnsureOptions() => _options ??= new();
 
+	static string CheckedCommand(string command)
+	{
+		if (command is null) throw new ArgumentNullException(nameof(command));
+		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
+		Contract.EndContractBlock();
+
+		return command;
+	}
+
 	/// <summary>
 	/// Gets the transaction the command runs in, or <see langword="null"/>
 	/// when it was not given one.
@@ -125,9 +134,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 		IEnumerable<Param>? @params)
 	{
 		_poolOrConnection = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
-		Command = command ?? throw new ArgumentNullException(nameof(command));
-		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
-		Contract.EndContractBlock();
+		Command = CheckedCommand(command);
 
 		Type = type;
 		if (@params is not null) _params = @params.ToList();
@@ -178,9 +185,7 @@ public abstract partial class ExpressiveCommandBase<TConnection, TCommand, TRead
 	{
 		_poolOrConnection = connection ?? throw new ArgumentNullException(nameof(connection));
 		if (transaction is not null) EnsureOptions().Transaction = transaction;
-		Command = command ?? throw new ArgumentNullException(nameof(command));
-		if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("Cannot be null or whitespace.", nameof(command));
-		Contract.EndContractBlock();
+		Command = CheckedCommand(command);
 
 		Type = type;
 		if (@params is not null) _params = @params.ToList();
