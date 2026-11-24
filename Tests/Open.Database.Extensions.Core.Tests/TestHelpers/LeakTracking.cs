@@ -298,6 +298,9 @@ internal sealed class TrackedReader(DbTally tally, TrackedConnection connection,
 
 	public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
 	{
+		// As the base does for a token that is already canceled.
+		cancellationToken.ThrowIfCancellationRequested();
+
 		int delay = tally.Script.AsyncReadDelayMs;
 		if (delay != 0 && Reads + 1 >= tally.Script.AsyncReadFrom)
 		{

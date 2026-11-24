@@ -188,7 +188,7 @@ internal sealed class DirectStream<T>
 			// The watchdog stopped the read: the pull that follows an expiry is the one that reports it, never a silent end.
 			Expired => throw ToException(),
 			Reading => throw new InvalidOperationException("The previous pull has not finished: pull the next row only after the last one."),
-			Disposed => throw new ObjectDisposedException(nameof(DirectStream<T>)),
+			Disposed => throw new ObjectDisposedException(nameof(DirectStream<>)),
 			_ => default,
 		};
 

@@ -45,7 +45,7 @@ public static class DirectStreamTests
 	{
 		DbTally tally = Tally(50);
 		await using IAsyncEnumerator<Row> rows
-			= Open(Query(tally), viaBuffered, Long).GetAsyncEnumerator(Ct);
+			= Open(Query(tally), viaBuffered, Long, Ct).GetAsyncEnumerator(Ct);
 
 		Assert.True(await rows.MoveNextAsync());
 		Assert.Equal(1, rows.Current.Id);
