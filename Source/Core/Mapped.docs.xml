@@ -232,12 +232,12 @@
         <description>Up to <c>bufferSize</c> rows (default 1,024; it counts rows, not bytes); a producer task and your loop; until the read ends, or, once the buffer is full, until the stall timeout passes without a pull (never with an infinite timeout); yes, once the buffer is full.</description>
       </item>
       <item>
-        <term><c>ToBufferedAsyncStream</c></term>
+        <term><c>ToPooledStream</c></term>
         <description>Unbounded: pooled chunks, the whole result if you are slow; a producer task and your loop; until the read ends, however slowly you read; none.</description>
       </item>
     </list>
     <para>
-      Which to use: a fast loop, <c>Stream</c> (it can also stop early); slow or async work per row, <c>StreamBuffered</c>; to free the connection as soon as possible, <c>ToBufferedAsyncStream</c>.
+      Which to use: a fast loop, <c>Stream</c> (it can also stop early); slow or async work per row, <c>StreamBuffered</c>; to free the connection as soon as possible, <c>ToPooledStream</c>.
     </para>
     <para>
       All three are lazy: calling one does nothing until the first <c>MoveNextAsync</c>.

@@ -98,7 +98,7 @@ internal sealed class StallStream<T> : IAsyncEnumerable<T>, IStallSignal
 		{
 			throw new InvalidOperationException(
 				"This stream can be enumerated only once."
-				+ " Call ToListAsync() or ToAsyncBuffer() to read the rows more than once.");
+				+ " Call ToListAsync() or ToPooledBuffer() to read the rows more than once.");
 		}
 
 		return Read(cancellationToken);

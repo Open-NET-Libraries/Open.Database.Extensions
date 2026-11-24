@@ -10,8 +10,8 @@ namespace Open.Database.Extensions.Tests;
 // the arrays were disposed directly. This probe measures the buffer
 // terminals that carry the difference, with CLASS rows (an int and a
 // string) on SQLite in memory, for 1, 100 and 10,000 rows:
-//   ToAsyncBuffer(...).Items, then dispose the items;
-//   ToBufferedAsyncStream(...), consumed whole with await foreach.
+//   ToPooledBuffer(...).Items, then dispose the items;
+//   ToPooledStream(...), consumed whole with await foreach.
 //
 // Method: the buffer runs a producer on the thread pool, and the bin runs
 // its clears there too, so a thread-local counter would miss both. The
@@ -54,12 +54,12 @@ public sealed class PoolBinCostProbe(ITestOutputHelper output)
 #if BEFORE_API
 		using PooledArray<ClassRow> items
 			= await connection.Command(sql).Map<ClassRow>()
-				.ToAsyncBuffer(clearOnDispose: false, CancellationToken.None)
+				.ToPooledBuffer(clearOnDispose: false, CancellationToken.None)
 				.Items;
 #else
 		using PooledArray<ClassRow> items
 			= await connection.Command(sql).Map<ClassRow>()
-				.ToAsyncBuffer(CancellationToken.None)
+				.ToPooledBuffer(CancellationToken.None)
 				.Items;
 #endif
 		return items.Count;
@@ -70,10 +70,10 @@ public sealed class PoolBinCostProbe(ITestOutputHelper output)
 		int count = 0;
 #if BEFORE_API
 		await foreach (ClassRow _ in connection.Command(sql).Map<ClassRow>()
-			.ToBufferedAsyncStream(clearOnReturn: false, CancellationToken.None))
+			.ToPooledStream(clearOnReturn: false, CancellationToken.None))
 #else
 		await foreach (ClassRow _ in connection.Command(sql).Map<ClassRow>()
-			.ToBufferedAsyncStream(CancellationToken.None))
+			.ToPooledStream(CancellationToken.None))
 #endif
 		{
 			++count;

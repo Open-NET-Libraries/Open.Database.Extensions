@@ -247,7 +247,7 @@ public static class ChunkChainTests
 	public static async Task APooledArray_CopiesItselfToAnExactArrayAndList(
 		int n)
 	{
-		await using var buffer = Rows(n).ToAsyncBuffer(Ct);
+		await using var buffer = Rows(n).ToPooledBuffer(Ct);
 		PooledArray<PoolRow> items = await buffer.Items;
 
 		PoolRow[] array = items.ToArray();
@@ -264,7 +264,7 @@ public static class ChunkChainTests
 	{
 		PoolRow[] array;
 		List<PoolRow> list;
-		await using (var buffer = Rows(100).ToAsyncBuffer(Ct))
+		await using (var buffer = Rows(100).ToPooledBuffer(Ct))
 		{
 			PooledArray<PoolRow> items = await buffer.Items;
 			array = items.ToArray();
@@ -278,7 +278,7 @@ public static class ChunkChainTests
 	[Fact]
 	public static async Task ADisposedView_ThrowsFromBothCopies()
 	{
-		await using var buffer = Rows(10).ToAsyncBuffer(Ct);
+		await using var buffer = Rows(10).ToPooledBuffer(Ct);
 		PooledArray<PoolRow> items = await buffer.Items;
 		items.Dispose();
 

@@ -104,7 +104,7 @@ public static IAsyncEnumerable<string> AuthorHeadlinesOdxAsync(
         .Command(AuthorPostsSql)
         .AddParam(author)
         .Map<Post>()
-        .ToBufferedAsyncStream(ct)
+        .ToPooledStream(ct)
         .Select(static p => Headline(p));
 ```
 
@@ -120,7 +120,7 @@ public static async Task<List<string>> AuthorHeadlinesBufferOdxAsync(
         .Command(AuthorPostsSql)
         .AddParam(author)
         .Map<Post>()
-        .ToAsyncBuffer(ct)
+        .ToPooledBuffer(ct)
         .Items;
 
     return posts

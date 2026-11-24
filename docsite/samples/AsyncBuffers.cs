@@ -19,7 +19,7 @@ public static class AsyncBuffers
 		=> connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 	#endregion
 
 	#region buffers_controller
@@ -130,7 +130,7 @@ public static class AsyncBuffers
 			.Command("select * from posts order by id")
 			.Map<Post>()
 			.Skip(1).Take(2)
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 
 		PooledArray<Post> posts = await buffer.Items;
 		return [.. posts.Select(static p => p.Id)];
@@ -147,7 +147,7 @@ public static class AsyncBuffers
 		IAsyncEnumerable<ReadOnlyMemory<Post>> chunks = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToAsyncBufferStream(cancellationToken);
+			.ToPooledBufferStream(cancellationToken);
 
 		// Each chunk is valid until the next step of the loop:
 		// copy what you keep.
@@ -172,7 +172,7 @@ public static class AsyncBuffers
 		IAsyncEnumerable<Post> posts = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToBufferedAsyncStream(cancellationToken);
+			.ToPooledStream(cancellationToken);
 
 		await foreach (Post post in posts)
 			ids.Add(post.Id);
@@ -204,7 +204,7 @@ public static class AsyncBuffers
 			.Command("select * from posts where author = @author order by id")
 			.AddParam(author)
 			.Map<Post>()
-			.ToBufferedAsyncStream(cancellationToken)
+			.ToPooledStream(cancellationToken)
 			.Select(static post => $"{post.Id}: {post.Title}");
 	#endregion
 
@@ -233,17 +233,17 @@ public static class AsyncBuffers
 	{
 		// The shared pool is the default.
 		await using PooledBuffer<Post> shared = Query(connectionFactory)
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 
 		// Your own pool, chosen after Map. Both arguments are required.
 		await using PooledBuffer<Post> own = Query(connectionFactory)
 			.UsePool(pool, clearOnReturn: false)
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 
 		// The same, and the rows are cleared as the arrays go back.
 		await using PooledBuffer<Post> scrubbed = Query(connectionFactory)
 			.UsePool(pool, clearOnReturn: true)
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 
 		return
 		[
@@ -267,7 +267,7 @@ public static class AsyncBuffers
 			.Command("select id from posts order by id")
 			.Map<int>()
 			.UsePool(pool, clearOnReturn: clearOnReturn)
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 
 		PooledArray<int> ids = await buffer.Items;
 
@@ -287,7 +287,7 @@ public static class AsyncBuffers
 			.Command("select id from posts order by id")
 			.Map<int>()
 			.UsePool(ArrayPool<int>.Shared, clearOnReturn: true)
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 
 		return (await buffer.Items).Count;
 	}
@@ -302,7 +302,7 @@ public static class AsyncBuffers
 	{
 		await using PooledBuffer<Post> buffer = Query(connectionFactory)
 			.UsePool(pool, clearOnReturn: false)
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 		_ = (await buffer.Items).Count;
 	}
 
@@ -335,7 +335,7 @@ public static class AsyncBuffers
 		await using PooledBuffer<Post> buffer = connectionFactory
 			.Command("select * from posts order by id")
 			.Map<Post>()
-			.ToAsyncBuffer(cts.Token);
+			.ToPooledBuffer(cts.Token);
 
 		try
 		{
@@ -357,7 +357,7 @@ public static class AsyncBuffers
 	{
 		PooledBuffer<Post> buffer = Query(connectionFactory)
 			.UsePool(pool, clearOnReturn: false)
-			.ToAsyncBuffer(cancellationToken);
+			.ToPooledBuffer(cancellationToken);
 
 		// Cancels the read if it is still running, waits for the
 		// producer to stop, and returns the arrays to the pool.
@@ -387,7 +387,7 @@ public static class AsyncBuffers
 		try
 		{
 			await foreach (Post _ in Query(connectionFactory)
-				.ToBufferedAsyncStream(cts.Token))
+				.ToPooledStream(cts.Token))
 			{
 			}
 

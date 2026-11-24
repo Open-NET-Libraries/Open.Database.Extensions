@@ -87,7 +87,7 @@ Read one author's rows (the filter is in the SQL again), then build the headline
 
 [!code-csharp[](../samples/HowLittleCode.cs#little_buffer_odx)]
 
-`ToAsyncBuffer` reads into pooled arrays and `Items` is a read-only list over them. Disposing the view disposes the buffer and returns the arrays to the pool. See [Lifetime and ownership](async-buffers.md#lifetime-and-ownership).
+`ToPooledBuffer` reads into pooled arrays and `Items` is a read-only list over them. Disposing the view disposes the buffer and returns the arrays to the pool. See [Lifetime and ownership](async-buffers.md#lifetime-and-ownership).
 
 **Dapper**
 

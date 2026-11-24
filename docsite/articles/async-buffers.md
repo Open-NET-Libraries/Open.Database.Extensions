@@ -1,6 +1,6 @@
 # Async buffers and streams
 
-`ToAsyncBuffer`, `ToAsyncBufferStream` and `ToBufferedAsyncStream` read a query at the provider's pace, into pooled chunks, on their own background producer. The connection is released when the last row is read. What happens to the rows after that, and how slowly, is the consumer's business.
+`ToPooledBuffer`, `ToPooledBufferStream` and `ToPooledStream` read a query at the provider's pace, into pooled chunks, on their own background producer. The connection is released when the last row is read. What happens to the rows after that, and how slowly, is the consumer's business.
 
 They are on the typed views: `Map<T>()` of a command, and the same view after `Skip` and `Take`. Every example on this page is async. The examples are compiled in the samples project, except the two marked "Not compiled by the docs build".
 
@@ -17,17 +17,17 @@ The query is read with the same read as every other terminal: `Read()` by defaul
 
 <div style="overflow-x: auto; margin: 1rem 0;"><img src="../images/async-buffers-reader-open.svg" alt="Three panels of paired bars: reader-open time in milliseconds for 10,000 rows. Consumer at 40 ns per row: chunk stream 6.19, no buffer 6.39. At 1 microsecond per row: 6.26 against 16.01. Waiting 20 microseconds per 100 rows: 6.17 against 8.01." style="display: block; width: 100%; min-width: 600px; height: auto;"></div>
 
-Three panels, each a pair of bars that start at zero, on one scale: how long the reader is held open for a result of 10,000 rows, as the consumer gets slower. The left bar of each pair is `ToAsyncBufferStream`; the right bar is no buffer, the consumer working inside the read. At 40 ns per row the pair is 6.19 and 6.39 ms. At 1 µs per row it is 6.26 and 16.01 ms. With a 20 µs wait per 100 rows it is 6.17 and 8.01 ms. The chunk stream holds the reader the same time however slow the consumer is; without a buffer the reader is held as long as the consumer takes. The source is [pooled-buffer-cost.csv](../perf-data/pooled-buffer-cost.csv) (run pbcost-A, build `6a770e8`, 2026-11-23): a synthetic provider on net11 with a 50 µs refill every 100 rows, one run. It is not a real database.
+Three panels, each a pair of bars that start at zero, on one scale: how long the reader is held open for a result of 10,000 rows, as the consumer gets slower. The left bar of each pair is `ToPooledBufferStream`; the right bar is no buffer, the consumer working inside the read. At 40 ns per row the pair is 6.19 and 6.39 ms. At 1 µs per row it is 6.26 and 16.01 ms. With a 20 µs wait per 100 rows it is 6.17 and 8.01 ms. The chunk stream holds the reader the same time however slow the consumer is; without a buffer the reader is held as long as the consumer takes. The source is [pooled-buffer-cost.csv](../perf-data/pooled-buffer-cost.csv) (run pbcost-A, build `6a770e8`, 2026-11-23): a synthetic provider on net11 with a 50 µs refill every 100 rows, one run. It is not a real database.
 
 ## The three terminals
 
 | Terminal | Returns | Starts | Use it for |
 |---|---|---|---|
-| `ToAsyncBuffer` | `PooledBuffer<T>` | At the call, on its own producer, even if nobody reads yet | A result you hand to another layer, or work with for a while: a reusable list, with an indexer |
-| `ToAsyncBufferStream` | `IAsyncEnumerable<ReadOnlyMemory<T>>`, one chunk per step | At the first `MoveNextAsync`. Single-use | Sequential, read-only access to the rows without copying them twice |
-| `ToBufferedAsyncStream` | `IAsyncEnumerable<T>`, one row per step | At the first `MoveNextAsync`. Single-use | The same, made easy: `await foreach` and `System.Linq.Async` work as they do on any stream |
+| `ToPooledBuffer` | `PooledBuffer<T>` | At the call, on its own producer, even if nobody reads yet | A result you hand to another layer, or work with for a while: a reusable list, with an indexer |
+| `ToPooledBufferStream` | `IAsyncEnumerable<ReadOnlyMemory<T>>`, one chunk per step | At the first `MoveNextAsync`. Single-use | Sequential, read-only access to the rows without copying them twice |
+| `ToPooledStream` | `IAsyncEnumerable<T>`, one row per step | At the first `MoveNextAsync`. Single-use | The same, made easy: `await foreach` and `System.Linq.Async` work as they do on any stream |
 
-`ToAsyncBuffer` returns at once. (A cancellation token that is already cancelled starts nothing.) The read may finish before anyone asks for the rows. The buffer is not readable while it fills: its rows are reached through [`Items`](#the-items-view), once the read is done. To read while the query is still running, use one of the streams. If the command is on a connection you opened yourself, do not use that connection for anything else until the read has finished: the producer reads on it from the call (`ToAsyncBuffer`) or from the first step (the streams).
+`ToPooledBuffer` returns at once. (A cancellation token that is already cancelled starts nothing.) The read may finish before anyone asks for the rows. The buffer is not readable while it fills: its rows are reached through [`Items`](#the-items-view), once the read is done. To read while the query is still running, use one of the streams. If the command is on a connection you opened yourself, do not use that connection for anything else until the read has finished: the producer reads on it from the call (`ToPooledBuffer`) or from the first step (the streams).
 
 The streams do nothing until the first `MoveNextAsync`, and they can be enumerated once. A second `GetAsyncEnumerator` on the chunk stream throws `InvalidOperationException`; on the element stream the same exception comes at the first `MoveNextAsync`.
 
@@ -37,7 +37,7 @@ The same terminals are on a view with `Skip` and `Take`:
 
 ## The controller story
 
-The use case that shaped `ToAsyncBuffer` is a data layer that hands rows up to a layer that does not know about the database. A command factory method returns `PooledBuffer<T>`:
+The use case that shaped `ToPooledBuffer` is a data layer that hands rows up to a layer that does not know about the database. A command factory method returns `PooledBuffer<T>`:
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_data_layer)]
 
@@ -140,7 +140,7 @@ public IAsyncEnumerable<Post> StreamAsync()
 	=> connectionFactory
 		.Command("select * from posts order by id")
 		.Map<Post>()
-		.ToBufferedAsyncStream(HttpContext.RequestAborted);
+		.ToPooledStream(HttpContext.RequestAborted);
 ```
 
 There is nothing to register: the framework enumerates the stream and disposes the enumerator, which returns every array still queued. What was observed:
@@ -153,11 +153,11 @@ A stream still reads ahead without waiting for the client, as [described above](
 
 ## The streams
 
-`ToAsyncBufferStream` yields one chunk at a time as a `ReadOnlyMemory<T>`. A chunk holds exactly the rows of one chunk and is valid until the next step of the loop, when its array goes back to the pool. Copy what you keep, and do not collect the chunks themselves (with `ToListAsync` or `Buffer`, say): nothing guards a memory held longer.
+`ToPooledBufferStream` yields one chunk at a time as a `ReadOnlyMemory<T>`. A chunk holds exactly the rows of one chunk and is valid until the next step of the loop, when its array goes back to the pool. Copy what you keep, and do not collect the chunks themselves (with `ToListAsync` or `Buffer`, say): nothing guards a memory held longer.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_chunk_stream)]
 
-`ToBufferedAsyncStream` flattens each chunk into its rows. Each row is copied out before it is yielded, so a row has no lifetime to mind. A `break` out of `await foreach` disposes the enumerator, which cancels the query and returns every array still queued.
+`ToPooledStream` flattens each chunk into its rows. Each row is copied out before it is yielded, so a row has no lifetime to mind. A `break` out of `await foreach` disposes the enumerator, which cancels the query and returns every array still queued.
 
 [!code-csharp[](../samples/AsyncBuffers.cs#buffers_element_stream)]
 

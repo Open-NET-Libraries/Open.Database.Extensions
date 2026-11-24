@@ -126,6 +126,6 @@ public sealed class ForgotToRegisterController(PostCommands commands)
 	public Task<PooledArray<Post>> ByAuthorAsync(int author)
 		=> commands
 			.ByAuthor(author)
-			.ToAsyncBuffer(HttpContext.RequestAborted)
+			.ToPooledBuffer(HttpContext.RequestAborted)
 			.Items;
 }

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 356" role="img" aria-labelledby="pool-e2e-title pool-e2e-desc">
   <title id="pool-e2e-title">The final design against the Memory chunks build</title>
-  <desc id="pool-e2e-desc">Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced. Every bar starts at zero. ToArrayAsync, 10,000 rows 2.5%; ToAsyncBuffer_Items, 10,000 rows 1.9%; ToAsyncBufferStream, 10,000 rows 3.1%; ToListAsync, 10,000 rows -0.0%; ToArrayAsync, 100 rows 1.7%; ToAsyncBuffer_Items, 100 rows 17.5%; ToAsyncBufferStream, 100 rows 23.0%; ToListAsync, 100 rows 1.6%.</desc>
+  <desc id="pool-e2e-desc">Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced. Every bar starts at zero. ToArrayAsync, 10,000 rows 2.5%; ToPooledBuffer_Items, 10,000 rows 1.9%; ToPooledBufferStream, 10,000 rows 3.1%; ToListAsync, 10,000 rows -0.0%; ToArrayAsync, 100 rows 1.7%; ToPooledBuffer_Items, 100 rows 17.5%; ToPooledBufferStream, 100 rows 23.0%; ToListAsync, 100 rows 1.6%.</desc>
   <style>
     :root {
       --ink: #1f2328;
@@ -79,16 +79,16 @@
     <text class="val" x="279.65" y="83">2.5%</text>
   </g>
   <g>
-    <title>ToAsyncBuffer_Items, 10,000 rows: 3.4 ms before, 3.3 ms after, 1.9% less time.</title>
+    <title>ToPooledBuffer_Items, 10,000 rows: 3.4 ms before, 3.3 ms after, 1.9% less time.</title>
     <rect class="hit" x="0" y="92" width="560" height="26"/>
-    <text class="name" x="240" y="109">ToAsyncBuffer_Items, 10,000 rows</text>
+    <text class="name" x="240" y="109">ToPooledBuffer_Items, 10,000 rows</text>
     <path class="one" d="M250,97 h14.34 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-14.34 z"/>
     <text class="val" x="274.34" y="109">1.9%</text>
   </g>
   <g>
-    <title>ToAsyncBufferStream, 10,000 rows: 3.4 ms before, 3.3 ms after, 3.1% less time.</title>
+    <title>ToPooledBufferStream, 10,000 rows: 3.4 ms before, 3.3 ms after, 3.1% less time.</title>
     <rect class="hit" x="0" y="118" width="560" height="26"/>
-    <text class="name" x="240" y="135">ToAsyncBufferStream, 10,000 rows</text>
+    <text class="name" x="240" y="135">ToPooledBufferStream, 10,000 rows</text>
     <path class="one" d="M250,123 h25.95 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-25.95 z"/>
     <text class="val" x="285.95" y="135">3.1%</text>
   </g>
@@ -107,16 +107,16 @@
     <text class="val" x="272.32" y="187">1.7%</text>
   </g>
   <g>
-    <title>ToAsyncBuffer_Items, 100 rows: 68.4 µs before, 56.5 µs after, 17.5% less time.</title>
+    <title>ToPooledBuffer_Items, 100 rows: 68.4 µs before, 56.5 µs after, 17.5% less time.</title>
     <rect class="hit" x="0" y="196" width="560" height="26"/>
-    <text class="name" x="240" y="213">ToAsyncBuffer_Items, 100 rows</text>
+    <text class="name" x="240" y="213">ToPooledBuffer_Items, 100 rows</text>
     <path class="one" d="M250,201 h162.18 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-162.18 z"/>
     <text class="val" x="422.18" y="213">17.5%</text>
   </g>
   <g>
-    <title>ToAsyncBufferStream, 100 rows: 79.5 µs before, 61.2 µs after, 23.0% less time.</title>
+    <title>ToPooledBufferStream, 100 rows: 79.5 µs before, 61.2 µs after, 23.0% less time.</title>
     <rect class="hit" x="0" y="222" width="560" height="26"/>
-    <text class="name" x="240" y="239">ToAsyncBufferStream, 100 rows</text>
+    <text class="name" x="240" y="239">ToPooledBufferStream, 100 rows</text>
     <path class="one" d="M250,227 h214.56 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-214.56 z"/>
     <text class="val" x="474.56" y="239">23.0%</text>
   </g>

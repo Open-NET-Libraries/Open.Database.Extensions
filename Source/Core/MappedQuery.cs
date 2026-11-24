@@ -856,7 +856,7 @@ readonly struct MappedQueryCore<T>(
 	/// </summary>
 	/// <remarks>
 	/// The buffer terminals of every view run the query through the sink path above.
-	/// <c>ToAsyncBuffer</c> starts at the call; the two streams start at the
+	/// <c>ToPooledBuffer</c> starts at the call; the two streams start at the
 	/// first <see cref="IAsyncEnumerator{T}.MoveNextAsync"/>.
 	/// A default struct is refused here, at the call, as everywhere else.
 	/// They rent from the pool of <c>UsePool</c> (the shared array pool when
@@ -865,21 +865,21 @@ readonly struct MappedQueryCore<T>(
 	/// <param name="cancellationToken">The token that cancels the read.</param>
 	/// <returns>The buffer, already reading.</returns>
 	// The producer is in ChunkProducer.cs; the clear follows the rule of PoolClearing.
-	public PooledBuffer<T> ToAsyncBuffer(
+	public PooledBuffer<T> ToPooledBuffer(
 		CancellationToken cancellationToken)
 	{
 		EnsureCommand();
 		return new(this, Config, cancellationToken);
 	}
 
-	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToPooledBufferStream(
 		CancellationToken cancellationToken)
 	{
 		EnsureCommand();
 		return new ChunkStream<T>(this, Config, cancellationToken);
 	}
 
-	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+	public IAsyncEnumerable<T> ToPooledStream(
 		CancellationToken cancellationToken)
 	{
 		EnsureCommand();
@@ -1054,9 +1054,9 @@ public readonly record struct MappedQuery<T>
 	/// <item><description><see cref="ToHashSetAsync(IEqualityComparer{T}, CancellationToken)"/></description></item>
 	/// <item><description><see cref="ToDictionaryAsync{TKey}(Func{T, TKey}, IEqualityComparer{TKey}, CancellationToken)"/></description></item>
 	/// <item><description><see cref="ToDictionaryAsync{TKey, TValue}(Func{T, TKey}, Func{T, TValue}, IEqualityComparer{TKey}, CancellationToken)"/></description></item>
-	/// <item><description><see cref="ToAsyncBuffer(CancellationToken)"/></description></item>
-	/// <item><description><see cref="ToAsyncBufferStream(CancellationToken)"/></description></item>
-	/// <item><description><see cref="ToBufferedAsyncStream(CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToPooledBuffer(CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToPooledBufferStream(CancellationToken)"/></description></item>
+	/// <item><description><see cref="ToPooledStream(CancellationToken)"/></description></item>
 	/// </list>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
 	/// </remarks>
@@ -1313,8 +1313,8 @@ public readonly record struct MappedQuery<T>
 	/// Await <see cref="PooledBuffer{T}.Items"/> for the complete
 	/// result. The buffer is not readable while it fills: to read
 	/// while the query is still running, use
-	/// <see cref="ToAsyncBufferStream(CancellationToken)"/> or
-	/// <see cref="ToBufferedAsyncStream(CancellationToken)"/>.
+	/// <see cref="ToPooledBufferStream(CancellationToken)"/> or
+	/// <see cref="ToPooledStream(CancellationToken)"/>.
 	/// </para>
 	/// <para>
 	/// The rows stay valid until the buffer is disposed:
@@ -1333,10 +1333,10 @@ public readonly record struct MappedQuery<T>
 	/// <para>
 	/// Use it for a reusable, potentially indexable list to work with
 	/// for a while.
-	/// <see cref="ToAsyncBufferStream(CancellationToken)"/> reads
+	/// <see cref="ToPooledBufferStream(CancellationToken)"/> reads
 	/// the elements once, through the buffers, without copying them
 	/// twice;
-	/// <see cref="ToBufferedAsyncStream(CancellationToken)"/> is
+	/// <see cref="ToPooledStream(CancellationToken)"/> is
 	/// the same without buffers.
 	/// </para>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
@@ -1350,9 +1350,9 @@ public readonly record struct MappedQuery<T>
 	// An array of ChunkConfig<T>.DefaultDeferFromClearedBytes (128 KB) or more, value rows included, goes to the background RecycleBin
 	// (RecycleBin.DefaultCapacity, 10,240 entries); a smaller one is cleared where it is released.
 	// A full bin, or one that cannot take the work, clears where it is released too, so a dirty array never reaches the pool.
-	public PooledBuffer<T> ToAsyncBuffer(
+	public PooledBuffer<T> ToPooledBuffer(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(cancellationToken);
+		=> _core.ToPooledBuffer(cancellationToken);
 
 	/// <summary>
 	/// Reads the query in a rolling stream of pooled arrays,
@@ -1390,9 +1390,9 @@ public readonly record struct MappedQuery<T>
 	/// </para>
 	/// <para>
 	/// Use it for sequential, read-only access to the elements through the buffers.
-	/// <see cref="ToBufferedAsyncStream(CancellationToken)"/> is
+	/// <see cref="ToPooledStream(CancellationToken)"/> is
 	/// the same without buffers;
-	/// <see cref="ToAsyncBuffer(CancellationToken)"/> keeps the
+	/// <see cref="ToPooledBuffer(CancellationToken)"/> keeps the
 	/// rows as a list.
 	/// </para>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
@@ -1406,19 +1406,19 @@ public readonly record struct MappedQuery<T>
 	// A chunk of ChunkConfig<T>.DefaultDeferFromClearedBytes (128 KB) or more, value rows included, goes to the background RecycleBin
 	// (RecycleBin.DefaultCapacity, 10,240 entries); a smaller one is cleared where it is released.
 	// A full bin, or one that cannot take the work, clears where it is released too, so a dirty array never reaches the pool.
-	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToPooledBufferStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(cancellationToken);
+		=> _core.ToPooledBufferStream(cancellationToken);
 
 	/// <summary>
 	/// Reads the rows one at a time off the open reader, lazily, handing each to your loop as it is read (one row at a time, with a row or two read ahead).
 	/// </summary>
 	/// <remarks>
 	/// While you pull rows, this holds the reader and the connection open, and each row is handed from the read to your loop one at a time.
-	/// That is not the best way to read rows: to read all of them use <c>ToArrayAsync</c> or <c>ToListAsync</c>; to read while the query runs use <c>StreamBuffered</c> or <c>ToBufferedAsyncStream</c>.
+	/// That is not the best way to read rows: to read all of them use <c>ToArrayAsync</c> or <c>ToListAsync</c>; to read while the query runs use <c>StreamBuffered</c> or <c>ToPooledStream</c>.
 	/// To read the rows as a list or an array, use <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>
 	/// or <see cref="MappedQuery{T}.ToArrayAsync(CancellationToken)"/>: they release the connection before the task completes.
-	/// To read while the query runs, use <see cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>, which releases it when the read ends.
+	/// To read while the query runs, use <see cref="MappedQuery{T}.ToPooledBufferStream(CancellationToken)"/>, which releases it when the read ends.
 	/// If you go <paramref name="stallTimeout"/> without pulling the next row, the read stops, the command is cancelled,
 	/// the connection this library opened is closed, and your next pull throws <see cref="TimeoutException"/>.
 	/// Dispose the enumeration (<c>await foreach</c> does).
@@ -1492,7 +1492,7 @@ public readonly record struct MappedQuery<T>
 	/// <remarks>
 	/// <para>
 	/// The same pipeline as
-	/// <see cref="ToAsyncBufferStream(CancellationToken)"/>
+	/// <see cref="ToPooledBufferStream(CancellationToken)"/>
 	/// (lazy, one consumer, a background producer, rolling pooled
 	/// chunks, a <see langword="break"/> or a dispose cancels the query),
 	/// but each chunk is flattened into its elements,
@@ -1508,11 +1508,11 @@ public readonly record struct MappedQuery<T>
 	/// </para>
 	/// <para>
 	/// Which one to use:
-	/// <see cref="ToAsyncBufferStream(CancellationToken)"/> is
+	/// <see cref="ToPooledBufferStream(CancellationToken)"/> is
 	/// sequential, read-only access to the elements through the
 	/// buffers;
 	/// this method is the same, without buffers;
-	/// <see cref="ToAsyncBuffer(CancellationToken)"/> is a
+	/// <see cref="ToPooledBuffer(CancellationToken)"/> is a
 	/// reusable, potentially indexable list to work with for a while.
 	/// </para>
 	/// <include file="PooledMemory.docs.xml" path="docs/members[@name='pooled']/*" />
@@ -1527,9 +1527,9 @@ public readonly record struct MappedQuery<T>
 	// A chunk of ChunkConfig<T>.DefaultDeferFromClearedBytes (128 KB) or more, value rows included, goes to the background RecycleBin
 	// (RecycleBin.DefaultCapacity, 10,240 entries); a smaller one is cleared where it is released.
 	// A full bin, or one that cannot take the work, clears where it is released too, so a dirty array never reaches the pool.
-	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+	public IAsyncEnumerable<T> ToPooledStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(cancellationToken);
+		=> _core.ToPooledStream(cancellationToken);
 
 	#endregion
 }
@@ -1629,15 +1629,15 @@ public readonly record struct MappedQueryWithSkip<T>
 
 	#region Buffer terminals
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
-	public PooledBuffer<T> ToAsyncBuffer(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledBuffer(CancellationToken)"/>
+	public PooledBuffer<T> ToPooledBuffer(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(cancellationToken);
+		=> _core.ToPooledBuffer(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
-	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledBufferStream(CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToPooledBufferStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(cancellationToken);
+		=> _core.ToPooledBufferStream(cancellationToken);
 
 	/// <inheritdoc cref="MappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>
 	public IAsyncEnumerable<T> Stream(
@@ -1658,10 +1658,10 @@ public readonly record struct MappedQueryWithSkip<T>
 		CancellationToken cancellationToken = default)
 		=> _core.StreamBuffered(stallTimeout, bufferSize, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
-	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledStream(CancellationToken)"/>
+	public IAsyncEnumerable<T> ToPooledStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(cancellationToken);
+		=> _core.ToPooledStream(cancellationToken);
 
 	#endregion
 }
@@ -1758,15 +1758,15 @@ public readonly record struct MappedQueryWithTake<T>
 
 	#region Buffer terminals
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
-	public PooledBuffer<T> ToAsyncBuffer(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledBuffer(CancellationToken)"/>
+	public PooledBuffer<T> ToPooledBuffer(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(cancellationToken);
+		=> _core.ToPooledBuffer(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
-	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledBufferStream(CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToPooledBufferStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(cancellationToken);
+		=> _core.ToPooledBufferStream(cancellationToken);
 
 	/// <inheritdoc cref="MappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>
 	public IAsyncEnumerable<T> Stream(
@@ -1787,10 +1787,10 @@ public readonly record struct MappedQueryWithTake<T>
 		CancellationToken cancellationToken = default)
 		=> _core.StreamBuffered(stallTimeout, bufferSize, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
-	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledStream(CancellationToken)"/>
+	public IAsyncEnumerable<T> ToPooledStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(cancellationToken);
+		=> _core.ToPooledStream(cancellationToken);
 
 	#endregion
 }

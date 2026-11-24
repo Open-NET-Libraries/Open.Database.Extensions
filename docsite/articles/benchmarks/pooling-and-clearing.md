@@ -47,7 +47,7 @@ A struct lease costs nothing to hold. An owner object costs 32 bytes for every c
 
 ## End to end
 
-<div class="perf-chart"><img src="../../images/perf/perf-pool-e2e.svg" alt="Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced. At 10,000 rows ToArrayAsync 2.5 percent, ToAsyncBuffer Items 1.9, ToAsyncBufferStream 3.1, ToListAsync -0.0 (the same time). At 100 rows ToArrayAsync 1.7, ToAsyncBuffer Items 17.5, ToAsyncBufferStream 23.0, ToListAsync 1.6 percent."></div>
+<div class="perf-chart"><img src="../../images/perf/perf-pool-e2e.svg" alt="Eight bars, one per terminal and row count: how much less time the final arrays design takes than the Memory chunks build it replaced. At 10,000 rows ToArrayAsync 2.5 percent, ToPooledBuffer Items 1.9, ToPooledBufferStream 3.1, ToListAsync -0.0 (the same time). At 100 rows ToArrayAsync 1.7, ToPooledBuffer Items 17.5, ToPooledBufferStream 23.0, ToListAsync 1.6 percent."></div>
 
 The same benchmark, run against the `Memory<T>` chunks build (`3c05c47`, 2026-11-20) and the arrays build (`6a770e8`, 2026-11-23), on SQLite in memory with class rows. Each bar is how much less time the call took on the later build. Longer is better. At 10,000 rows the collectors and the buffer terminals took 0.0 (`ToListAsync`) to 3.1% less; at 100 rows 1.6 to 23.0% less (the two buffer terminals 17.5 and 23.0%). Memory is within 1 KB of the same. The later build holds other changes too, so the bars are not the store alone.
 

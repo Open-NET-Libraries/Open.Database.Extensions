@@ -2,9 +2,9 @@
 
 | Call | Rows | Before | After | Change | Error margins | Memory before | Memory after |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `ToAsyncBuffer(...).Items` | 1 | 23.5 µs | 23.0 µs | 2.0% less | ±1.1%, ±1.0% | 2.21 KB | 2.16 KB |
-| `ToBufferedAsyncStream` | 1 | 31.6 µs | 22.7 µs | 28.1% less | ±1.0%, ±0.9% | 3.64 KB | 4.18 KB |
-| `ToAsyncBuffer(...).Items` | 100 | 69.0 µs | 57.9 µs | 16.2% less | ±1.3%, ±1.1% | 9.26 KB | 9.13 KB |
-| `ToBufferedAsyncStream` | 100 | 80.8 µs | 61.6 µs | 23.7% less | ±2.8%, ±1.5% | 10.60 KB | 11.12 KB |
-| `ToAsyncBuffer(...).Items` | 10,000 | 3,495.0 µs | 3,281.4 µs | 6.1% less | ±2.4%, ±0.4% | 705.91 KB | 706.02 KB |
-| `ToBufferedAsyncStream` | 10,000 | 3,820.0 µs | 3,278.4 µs | 14.2% less | ±0.5%, ±0.5% | 706.87 KB | 707.22 KB |
+| `ToPooledBuffer(...).Items` | 1 | 23.5 µs | 23.0 µs | 2.0% less | ±1.1%, ±1.0% | 2.21 KB | 2.16 KB |
+| `ToPooledStream` | 1 | 31.6 µs | 22.7 µs | 28.1% less | ±1.0%, ±0.9% | 3.64 KB | 4.18 KB |
+| `ToPooledBuffer(...).Items` | 100 | 69.0 µs | 57.9 µs | 16.2% less | ±1.3%, ±1.1% | 9.26 KB | 9.13 KB |
+| `ToPooledStream` | 100 | 80.8 µs | 61.6 µs | 23.7% less | ±2.8%, ±1.5% | 10.60 KB | 11.12 KB |
+| `ToPooledBuffer(...).Items` | 10,000 | 3,495.0 µs | 3,281.4 µs | 6.1% less | ±2.4%, ±0.4% | 705.91 KB | 706.02 KB |
+| `ToPooledStream` | 10,000 | 3,820.0 µs | 3,278.4 µs | 14.2% less | ±0.5%, ±0.5% | 706.87 KB | 707.22 KB |

@@ -90,7 +90,7 @@ internal static class ChannelFixtures
 		public CancellationToken StreamToken { get; private set; }
 		public int ChunkStreams { get; private set; }
 
-		public IAsyncEnumerable<ReadOnlyMemory<ChannelRow>> ToAsyncBufferStream(
+		public IAsyncEnumerable<ReadOnlyMemory<ChannelRow>> ToPooledBufferStream(
 			CancellationToken cancellationToken = default)
 		{
 			++ChunkStreams;

@@ -53,7 +53,7 @@ The entry point of the app provides the connection factory (SQLite in these samp
 
 Read the controller of the side-by-side from the top:
 
-1. `ToAsyncBuffer(HttpContext.RequestAborted)` starts the read and returns the buffer at once; the read stops when the client leaves.
+1. `ToPooledBuffer(HttpContext.RequestAborted)` starts the read and returns the buffer at once; the read stops when the client leaves.
 2. [`RegisterForDispose(Response)`](#registerfordispose) hands the buffer to the framework, which disposes it when the request is over, and returns the task of the rows. [Caveats](#caveats) says what was observed when a request fails.
 3. The action returns that task as it is: nothing in the action runs after the rows are ready, so there is no `async` and no `await`. The framework awaits it. The task completes when the read is over and the connection released, so nothing waits on the database while the JSON is written.
 4. The declared type is `Task<PooledArray<Post>>`. A `PooledArray<Post>` is an `IReadOnlyList<Post>`, so the JSON is the same: `System.Text.Json` writes it as an array.
@@ -69,7 +69,7 @@ Copy this extension into your app. The framework disposes the buffer after the r
 
 [!code-csharp[](../samples/NoServiceLayer.cs#nsl_register_for_dispose)]
 
-The action then reads as above: `commands.ByAuthor(author).ToAsyncBuffer(HttpContext.RequestAborted).RegisterForDispose(Response)`.
+The action then reads as above: `commands.ByAuthor(author).ToPooledBuffer(HttpContext.RequestAborted).RegisterForDispose(Response)`.
 
 ### Or a list
 
@@ -92,7 +92,7 @@ The hash covers every field the response carries, in order, and it encodes the t
 [!code-csharp[](../samples/NoServiceLayer.cs#nsl_etag_hash)]
 
 - When `Post` gains a field that the response carries, add it to the hash, or clients keep a `304` for rows that changed.
-- A stream from `ToBufferedAsyncStream` can be read once: a second enumeration throws `InvalidOperationException`. To hash it and then write it, you would query again or copy the rows first.
+- A stream from `ToPooledStream` can be read once: a second enumeration throws `InvalidOperationException`. To hash it and then write it, you would query again or copy the rows first.
 - The query still runs. A `304` saves the serialization and the bytes on the wire, not the read.
 - The `304` carries the ETag, as a `200` would.
 - If you change the JSON options (property names, say), clients keep ETags that still match: put a version string into the hash when you do.

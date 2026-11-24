@@ -603,7 +603,7 @@ foreach ($el in 'int', 'class') {
 Write-Table 'pool-clear-speed' $t
 
 $t = @('| Call | Rows | Bin: time | Inline always: time | Time, bin against inline (3 runs) | Bin: CPU | Inline always: CPU | CPU, bin against inline (3 runs) |', '|---|---:|---:|---:|---:|---:|---:|---:|')
-foreach ($term in 'ToListAsync', 'ToAsyncBufferStream') { foreach ($n in 10000, 100000) {
+foreach ($term in 'ToListAsync', 'ToPooledBufferStream') { foreach ($n in 10000, 100000) {
   $g = @($ppe | Where-Object { $_.terminal -eq $term -and $_.rows -eq "$n" })
   $b = @($g | Where-Object { $_.arm -eq 'bin' } | Sort-Object { [int]$_.run }); $i = @($g | Where-Object { $_.arm -eq 'inline-always' } | Sort-Object { [int]$_.run })
   $tr = for ($k = 0; $k -lt 3; $k++) { [double]$b[$k].median_ms / [double]$i[$k].median_ms }

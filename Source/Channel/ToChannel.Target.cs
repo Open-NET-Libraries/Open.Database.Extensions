@@ -119,7 +119,7 @@ public static partial class ChannelDbExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 		return ChannelPump.Run<T, ChunkFeed<T>>(
-			new(source.ToAsyncBufferStream(cancellationToken)),
+			new(source.ToPooledBufferStream(cancellationToken)),
 			writer,
 			complete,
 			waitFirst: true,

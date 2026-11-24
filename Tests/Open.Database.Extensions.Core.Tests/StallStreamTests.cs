@@ -552,7 +552,7 @@ public static class StallStreamTests
 	// ---- every streaming terminal is lazy: calling it does nothing until the first MoveNextAsync ----
 
 	public static TheoryData<string> StreamingTerminals
-		=> ["Stream", "StreamBuffered", "StreamBufferedSized", "ToAsyncBufferStream", "ToBufferedAsyncStream"];
+		=> ["Stream", "StreamBuffered", "StreamBufferedSized", "ToPooledBufferStream", "ToPooledStream"];
 
 	[Theory]
 	[MemberData(nameof(StreamingTerminals))]
@@ -566,8 +566,8 @@ public static class StallStreamTests
 			case "Stream": await AssertLazy(tally, query.Stream(Long, Ct)); break;
 			case "StreamBuffered": await AssertLazy(tally, query.StreamBuffered(Long, Ct)); break;
 			case "StreamBufferedSized": await AssertLazy(tally, query.StreamBuffered(Long, 8, Ct)); break;
-			case "ToAsyncBufferStream": await AssertLazy(tally, query.ToAsyncBufferStream(Ct)); break;
-			case "ToBufferedAsyncStream": await AssertLazy(tally, query.ToBufferedAsyncStream(Ct)); break;
+			case "ToPooledBufferStream": await AssertLazy(tally, query.ToPooledBufferStream(Ct)); break;
+			case "ToPooledStream": await AssertLazy(tally, query.ToPooledStream(Ct)); break;
 			default: throw new ArgumentOutOfRangeException(nameof(terminal));
 		}
 	}

@@ -8,9 +8,9 @@ Benchmark: PooledBufferCostBenchmarks on the synthetic provider (in process, no 
   pbcost-B: zero latency (no refill), AsyncReads() on, the buffer and ToArrayAsync only
   pbcost-C: the same link as A, default Read() (AsyncReads off), the buffer and ToArrayAsync only
 Methods (the path and consumer columns):
-  chunk stream = ToAsyncBufferStream, the consumer works on each chunk after it is read: 1 SpinWait iteration per row (40 ns per row; the calibration printed in the log was 39.5 to 40.9 ns), 1 us of spinning per row, or a 20 us busy wait per 100 rows
+  chunk stream = ToPooledBufferStream, the consumer works on each chunk after it is read: 1 SpinWait iteration per row (40 ns per row; the calibration printed in the log was 39.5 to 40.9 ns), 1 us of spinning per row, or a 20 us busy wait per 100 rows
   no buffer = a plain read inside ExecuteReaderAsync with the hand-written selector, the same consumer working per row inside the read
-  buffer = ToAsyncBuffer(ct).Items awaited, the count checked, then DisposeAsync
+  buffer = ToPooledBuffer(ct).Items awaited, the count checked, then DisposeAsync
   ToArrayAsync = ToArrayAsync(ct), the count checked
 Columns: reader_open_us = the ReaderOpen (us) column, the time the reader was open, as printed; total_us and error_us = BenchmarkDotNet Mean and Error (half-width of the 99.9% confidence interval), converted from the printed ms to microseconds (ms x 1000) or kept where printed in microseconds; allocated_kb = BenchmarkDotNet Allocated, printed in MB with two decimals, converted at 1024 KB per MB and rounded (good to about 5 KB)
 Caveats:

@@ -15,7 +15,7 @@ public interface IMappedQuery<T>
 	/// </summary>
 	/// <param name="cancellationToken">Cancels the read.</param>
 	/// <returns>The chunks, in order. A chunk is valid until the enumeration moves on, so copy what you keep. The enumeration can be taken once.</returns>
-	IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+	IAsyncEnumerable<ReadOnlyMemory<T>> ToPooledBufferStream(
 		CancellationToken cancellationToken = default);
 
 	/// <summary>
@@ -23,10 +23,10 @@ public interface IMappedQuery<T>
 	/// </summary>
 	/// <remarks>
 	/// While you pull rows, this holds the reader and the connection open, and each row is handed from the read to your loop one at a time.
-	/// That is not the best way to read rows: to read all of them use <c>ToArrayAsync</c> or <c>ToListAsync</c>; to read while the query runs use <c>StreamBuffered</c> or <c>ToBufferedAsyncStream</c>.
+	/// That is not the best way to read rows: to read all of them use <c>ToArrayAsync</c> or <c>ToListAsync</c>; to read while the query runs use <c>StreamBuffered</c> or <c>ToPooledStream</c>.
 	/// To read the rows as a list or an array, use <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>
 	/// or <see cref="MappedQuery{T}.ToArrayAsync(CancellationToken)"/>: they release the connection before the task completes.
-	/// To read while the query runs, use <see cref="ToAsyncBufferStream(CancellationToken)"/>, which releases it when the read ends.
+	/// To read while the query runs, use <see cref="ToPooledBufferStream(CancellationToken)"/>, which releases it when the read ends.
 	/// If you go <paramref name="stallTimeout"/> without pulling the next row, the read stops, the command is cancelled,
 	/// the connection this library opened is closed, and your next pull throws <see cref="TimeoutException"/>.
 	/// Dispose the enumeration (<c>await foreach</c> does).

@@ -993,15 +993,15 @@ public readonly record struct MappedCommand<T>
 
 	#region Buffer terminals
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBuffer(CancellationToken)"/>
-	public PooledBuffer<T> ToAsyncBuffer(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledBuffer(CancellationToken)"/>
+	public PooledBuffer<T> ToPooledBuffer(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBuffer(cancellationToken);
+		=> _core.ToPooledBuffer(cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToAsyncBufferStream(CancellationToken)"/>
-	public IAsyncEnumerable<ReadOnlyMemory<T>> ToAsyncBufferStream(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledBufferStream(CancellationToken)"/>
+	public IAsyncEnumerable<ReadOnlyMemory<T>> ToPooledBufferStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToAsyncBufferStream(cancellationToken);
+		=> _core.ToPooledBufferStream(cancellationToken);
 
 	/// <inheritdoc cref="MappedQuery{T}.Stream(TimeSpan, CancellationToken)"/>
 	public IAsyncEnumerable<T> Stream(
@@ -1022,10 +1022,10 @@ public readonly record struct MappedCommand<T>
 		CancellationToken cancellationToken = default)
 		=> _core.StreamBuffered(stallTimeout, bufferSize, cancellationToken);
 
-	/// <inheritdoc cref="MappedQuery{T}.ToBufferedAsyncStream(CancellationToken)"/>
-	public IAsyncEnumerable<T> ToBufferedAsyncStream(
+	/// <inheritdoc cref="MappedQuery{T}.ToPooledStream(CancellationToken)"/>
+	public IAsyncEnumerable<T> ToPooledStream(
 		CancellationToken cancellationToken = default)
-		=> _core.ToBufferedAsyncStream(cancellationToken);
+		=> _core.ToPooledStream(cancellationToken);
 
 	#endregion
 }

@@ -68,7 +68,7 @@ public sealed class PostsController(PostCommands commands)
 		int author)
 		=> commands
 			.ByAuthor(author)
-			.ToAsyncBuffer(HttpContext.RequestAborted)
+			.ToPooledBuffer(HttpContext.RequestAborted)
 			// The framework disposes it after the response,
 			// and awaits the rows, then writes them.
 			.RegisterForDispose(Response);
@@ -139,7 +139,7 @@ public sealed class CachedPostsController(PostCommands commands)
 	{
 		PooledArray<Post> posts = await commands
 			.ByAuthor(author)
-			.ToAsyncBuffer(HttpContext.RequestAborted)
+			.ToPooledBuffer(HttpContext.RequestAborted)
 			.RegisterForDispose(Response);
 
 		// First pass: a weak ETag of the values. A 304 carries it too.
