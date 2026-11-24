@@ -1,8 +1,19 @@
 # Release notes
 
-Version 11 is `11.0.0-rc.13`. For moving a 10.x codebase, read [Coming from earlier versions](whats-new-11.md) first; this page lists each release.
+Version 11 is `11.0.0-rc.14`. For moving a 10.x codebase, read [Coming from earlier versions](whats-new-11.md) first; this page lists each release.
 
 ## Version 11 release candidates
+
+### Changes since rc.13
+
+- **A NULL into a non-nullable member is an error.** It used to leave the member at its initializer or default. A NULL into `int Likes` or `string Title` now throws `ValueMappingException` naming the model and the 0-based row; a nullable member (`int?`, `string?`) gets `null`. The typed read has no NULL check, so the rule costs nothing per cell. The same holds for a single value (`Map<int>()`) and `ExecuteScalarAsync<int>()`.
+- **`ExecuteScalarAsync<T>()` and `ExecuteScalar<T>()` throw `ValueMappingException` when the query returns no rows and `T` cannot hold `null`.** They used to return `default`. A nullable or reference `T` still gets `null`: for a fallback, ask for `int?` and write `(await command.ExecuteScalarAsync<int?>()) ?? -1`.
+- **New: `[NullPolicy]` and `[NullValue]`** say otherwise, on the model type or on one member. `NullAction.Throw` checks and names the member, the column and the row; `NullAction.Default` keeps the initializer (a constructor parameter's declared default); `NullAction.None` is no check. `[NullValue(0)]` replaces a NULL with a constant. Each check costs one NULL test per covered member per row; a model without them reads at full speed. See [the NULL rules](mapping.md#null-in-a-non-nullable-column).
+- **Renamed, with no `[Obsolete]` step: `ToAsyncBuffer` is `ToPooledBuffer`, `ToAsyncBufferStream` is `ToPooledBufferStream`, and `ToBufferedAsyncStream` is `ToPooledStream`.** They behave as before; a call to an old name no longer compiles. `Stream` keeps its name.
+- **New: `StreamBuffered(stallTimeout, cancellationToken)`**, and an overload that takes a `bufferSize`, on every typed view and `IMappedQuery<T>`. The read runs up to 1,024 rows ahead of your loop (`bufferSize` sets it; it counts rows, not bytes), so a loop that does slow or async work per row does not hold the read back on every row. A stall is measured once the buffer is full. A size of 0 reads as `Stream` does; a negative size throws `ArgumentOutOfRangeException`. A custom `IMappedQuery<T>` implements both overloads. See [the three ways to read rows as they arrive](mapping.md#terminals).
+- **A `DbQuery` procedure whose parameter names the provider does not report is asked again only after a short while**, as a command does; it used to ask on every run.
+- **`AddParamIf(false, value)` adds nothing and does not look at the argument.** It used to throw `ArgumentException` when no parameter name could be derived from the argument, even when the condition was false.
+- **Docs.** The guide's statements were checked against the code, and each mismatch found is fixed.
 
 ### Changes since rc.12
 

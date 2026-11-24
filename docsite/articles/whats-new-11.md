@@ -37,12 +37,12 @@ List<Person> people = await command
 What behaves differently without a compile error, most likely first:
 
 - **Later result sets are read.** A failure in a later statement is thrown, where 10.x returned the rows and lost it. `.SingleResult()` before `Map` reads only the first set.
-- **NULL.** A NULL never overwrites a member the C# type declares non-nullable: `string Name { get; set; } = "";` keeps `""`. Declare `string?` to get `null`.
+- **NULL.** A NULL into a member the C# type declares non-nullable throws `ValueMappingException`, naming the model and the row. Declare `string?` or `int?` to get `null`, or say otherwise with `[NullPolicy]` or `[NullValue]` on the member or the model: see [the NULL rules](mapping.md#null-in-a-non-nullable-column).
 - **`ValueMappingException`** (a `DataException` that names the property, the column and the target type) replaces `InvalidOperationException` for a value that cannot be mapped.
 - **Columns match properties ignoring underscores:** `q_type` feeds `QType`. A property is opted out with a `null` column in a declared `RowMap<T>`.
 - **A `RowMap<T>` is checked when it is created:** a property listed twice, an empty column name, two properties on one column, or a property that does not exist or is static throws `ArgumentException`.
 - **`Map<T>()` of a single value such as `int` reads the first column.** `Map<int>([])` throws: an empty collection expression is a `RowMap<int>`.
-- **`ExecuteScalar<T>()` converts** the way `Map<T>()` does (a `bigint` to `int` with a range check) instead of throwing `InvalidCastException`. The `Func<object?, T>` overloads receive `null`, not `DBNull`, for a NULL.
+- **`ExecuteScalar<T>()` converts** the way `Map<T>()` does (a `bigint` to `int` with a range check) instead of throwing `InvalidCastException`. No rows into a non-nullable value type (`ExecuteScalarAsync<int>()`) throws `ValueMappingException`; ask for `int?` and use `??` for a default. The `Func<object?, T>` overloads receive `null`, not `DBNull`, for a NULL.
 - **`First` and `Single` throw `InvalidOperationException` on no row;** `FirstOrDefault` and `SingleOrDefault` return `default`.
 - **A struct with one declared public constructor is built through it,** and a `required` property that no column feeds throws on the first row.
 - **A model decorated with `[Column]` or `[NotMapped]`** is read as declared: a declared column that is missing throws `ValueMappingException`.
@@ -69,9 +69,9 @@ A database NULL is `null` in a row (it was `DBNull`). A column subset is chosen 
 
 ## Buffered terminals, and `Stream(stallTimeout)`
 
-A buffered terminal (`ToListAsync`, `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `ToDictionaryAsync`, `ToAsyncBuffer`) reads every row, releases the connection, then hands the result over. It is the way to read rows.
+A buffered terminal (`ToListAsync`, `ToArrayAsync`, `ToImmutableArrayAsync`, `ToHashSetAsync`, `ToDictionaryAsync`, `ToPooledBuffer`) reads every row, releases the connection, then hands the result over. It is the way to read rows.
 
-`Stream(stallTimeout, cancellationToken)` is for stopping early: it hands rows to your loop while the reader is open, and a consumer that stalls longer than the timeout is stopped.
+`Stream(stallTimeout, cancellationToken)` hands rows to your loop while the reader is open, and a consumer that stalls longer than the timeout is stopped. `StreamBuffered(stallTimeout, cancellationToken)` reads up to 1,024 rows ahead of your loop, for slow or async work per row. `ToPooledStream` reads every row into pooled memory as fast as the reader goes and releases the connection, however slowly you loop. See [the three ways to read rows as they arrive](mapping.md#terminals).
 
 ```cs
 // 10.x: handler-based row reads
@@ -89,11 +89,12 @@ await foreach (Post post in command
 | In 10.x | In 11 |
 |---|---|
 | `Read`, `ReadAsync`, `ForEachAsync`, `IterateReader*` handlers on a command or mapped query | `Stream(stallTimeout, ct)`, or a buffered terminal |
-| `ToAsyncBuffer(pool, clearOnReturn, ct)` and the flag and pool overloads of the buffer streams | `.UsePool(pool, clearOnReturn).ToAsyncBuffer(ct)` |
+| `ToAsyncBuffer(pool, clearOnReturn, ct)` and the flag and pool overloads of the buffer streams | `.UsePool(pool, clearOnReturn).ToPooledBuffer(ct)` |
+| `ToAsyncBuffer`, `ToAsyncBufferStream`, `ToBufferedAsyncStream` (11.0 release candidates) | `ToPooledBuffer`, `ToPooledBufferStream`, `ToPooledStream` |
 | `EnableAsyncRead(bool)`, `UseAsyncRead`, the `useReadAsync` argument | `AsyncReads()` before or after `Map` |
 | a reader helper's `throwOnCancellation` argument | delete it: a cancel that cuts the read short throws `OperationCanceledException` |
 
-Rows are read with `Read()` by default, on async terminals too; `AsyncReads()` opts in to `ReadAsync()`. The token can be passed positionally after the other optional arguments of every terminal, so `reader.ForEachAsync(handler, default)` binds the token and reads with `ReadAsync`. See [Async buffers and streams](async-buffers.md) and [AsyncReads()](async-reads.md).
+Rows are read with `Read()` by default, on async terminals too; `AsyncReads()` opts in to `ReadAsync()`. The token can be passed positionally after the other optional arguments of every terminal, so `reader.ForEachAsync(handler, default)` binds the token and reads with `ReadAsync`. See [Pooled buffers and streams](async-buffers.md) and [AsyncReads()](async-reads.md).
 
 ## The Synchronous namespace
 
@@ -128,7 +129,7 @@ See [Parameters](expressive-commands.md#name-a-parameter-from-its-argument).
 
 ## Pooling and clearing
 
-Rows that hold references are always cleared before their array goes back to the pool. Rows without references are cleared only when asked: per query with `.UsePool(pool, clearOnReturn)` after `Map`, or for the whole app with the switch `Open.Database.Extensions.ClearPooledArrays`. A chunk of 128 KB or more of rows (rows times row size, value rows included) is cleared off the read path. A read that finds no rows completes `Items` with a shared empty view, which keeps working after the buffer is disposed. See [Async buffers and streams](async-buffers.md#pooled-memory).
+Rows that hold references are always cleared before their array goes back to the pool. Rows without references are cleared only when asked: per query with `.UsePool(pool, clearOnReturn)` after `Map`, or for the whole app with the switch `Open.Database.Extensions.ClearPooledArrays`. A chunk of 128 KB or more of rows (rows times row size, value rows included) is cleared off the read path. A read that finds no rows completes `Items` with a shared empty view, which keeps working after the buffer is disposed. See [Pooled buffers and streams](async-buffers.md#pooled-memory).
 
 ## Transactions and connections
 
@@ -138,7 +139,7 @@ The `ExecuteTransaction*` overloads that took the token right after the connecti
 
 ## Channel and Dataflow
 
-Every mapped overload takes one `RowMap<T>? map` where 10.x took key/value pairs or tuples; a caller that passed the argument by name renames it `map`. On the mapped overloads a mapping failure faults the target when `complete` is `true`, and the target is never completed or faulted before the reader is released. The typed `ToChannelReader()` and `ToChannel()` are not on the typed views of Core: use `ToBufferedAsyncStream` or `ToAsyncBufferStream`. See [Channels and Dataflow](channels-and-dataflow.md).
+Every mapped overload takes one `RowMap<T>? map` where 10.x took key/value pairs or tuples; a caller that passed the argument by name renames it `map`. On the mapped overloads a mapping failure faults the target when `complete` is `true`, and the target is never completed or faulted before the reader is released. The typed `ToChannelReader()` and `ToChannel()` are not on the typed views of Core: use `ToPooledStream` or `ToPooledBufferStream`. See [Channels and Dataflow](channels-and-dataflow.md).
 
 ## Removed members
 
@@ -147,7 +148,7 @@ Every mapped overload takes one `RowMap<T>? map` where 10.x took key/value pairs
 - `QueryResultCollection<T>`: a list holds the same rows.
 - `reader.AsAsyncEnumerable(n, others...)`: `reader.AsAsyncEnumerable([n, ..others])`.
 - `record.GetMatchingOrdinals(names, sort)`: `record.MatchingOrdinals(names, sort).ToArray()`.
-- A custom `IExecuteReader` must implement the state-passing `ExecuteReader` overloads and an `ExecuteReaderAsync` that takes the call's token; a custom `IMappedQuery<T>` implements `ToAsyncBufferStream` and `Stream`.
+- A custom `IExecuteReader` must implement the state-passing `ExecuteReader` overloads and an `ExecuteReaderAsync` that takes the call's token; a custom `IMappedQuery<T>` implements `ToPooledBufferStream`, `Stream` and both `StreamBuffered` overloads.
 - A static property is not mapped.
 
 ## Known limitations
