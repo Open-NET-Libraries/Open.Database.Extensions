@@ -286,7 +286,7 @@ public static partial class SyntheticChecks
 							report.Check(boxed.Count == rows, $"{name} {where}: {boxed.Count} rows, expected {rows}");
 							break;
 						case System.Collections.IList policy when method.Name is "V1_Throw_Sync" or "V1_Default_Sync":
-							ComparePolicyTwin(report, name, where, v1, policy);
+							ComparePolicyTwin(report, name, where, table, v1, policy);
 							break;
 						case System.Collections.IList generated when method.Name.StartsWith("Gen", StringComparison.Ordinal) || method.Name is "Ctl_Sync" or "Ctl_T_Sync":
 							CompareGenerated(report, name, where, v1, generated);

@@ -247,7 +247,10 @@ public class SyntheticBenchmarks
 	public ValueTask<List<SynRow>> V2_Async() { _label = nameof(V2_Async); return SyntheticVariants.V2Async(Connection, _hand); }
 
 	// ---- Gen and GenD (SG.md 5f): the prototype source generator's plain Map<T>() on the undecorated and the decorated twin (SyntheticGenerated.cs) ----
-	// Comparable with V2 at width 20 only: the narrower twins (widths 1 to 10) have fewer members than the SynRow V2 builds, so they allocate less.
+	// Not a like-for-like of V2 even at width 20: Gen and GenD build a twin class (GenRow20, GenRowD20) whose Title, Body, Tag and Blob are nullable, so the generated
+	// reader tests those four for NULL and V2 (SynRow.Title etc. are also nullable, but V2 reads them with no test) does not. The like-for-like bars are Gen_T and Ctl_T
+	// (the non-nullable twin) against V2 (see Gen_T below), and Gen against Ctl (the hand-written selector of the same twin, tests included). At widths 1 to 10 the twins
+	// also have fewer members than the SynRow V2 builds, so they allocate less: no comparison with V2 there.
 	[Benchmark]
 	public object Gen_Sync() { _label = nameof(Gen_Sync); return SyntheticGenerated.Gen(Connection, Width); }
 
@@ -278,8 +281,9 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public object Ctl_T_Sync() { _label = nameof(Ctl_T_Sync); WidthTwenty(); return SyntheticGenerated.CtlT(Connection); }
 
-	// V2 with IsDBNull on every member: the generated reader's former NULL semantics (GP1 in the first decomposition run). The generator now reads a
-	// non-nullable member without a NULL test, as V2 does, so V2 (with Ctl_T) is the bar for Gen_T; V2n stays for comparison with earlier runs.
+	// V2 with IsDBNull on every member: the check-every-member reader (the generator's former NULL semantics, GP1 in the first decomposition run). The generator
+	// now reads a non-nullable member without a NULL test, as V2 does, so V2 (with Ctl_T) is the bar for Gen_T and Ctl (not V2n) is the bar for Gen; V2n is the
+	// bar of GP2 to GP5 and stays for comparison with earlier runs.
 	[Benchmark]
 	public List<SynRow> V2n_Sync() { _label = nameof(V2n_Sync); WidthTwenty(); return SyntheticVariants.V2(Connection, GenParity.V2n); }
 

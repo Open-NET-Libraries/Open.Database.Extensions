@@ -5,10 +5,16 @@ using Open.Database.Extensions.Core;
 
 namespace Open.Database.Extensions.Benchmarks;
 
-// The decomposition of the gap between V2 (the hand-written selector) and the generated reader (Gen), at width 20: each step adds one thing the generated
-// reader does and V2 does not, through the same Map(Func<IDataRecord, SynRow>) entry V2 uses (SyntheticVariants.V2).
-//   V2n  V2 plus IsDBNull on every member (the NULL rule of the runtime map: a NULL leaves the member's default), constant ordinals: the hand-written
-//        selector with the generated reader's former NULL semantics (named GP1 in the first decomposition run; the generator now tests nullable members only).
+// The ladder of the generated reader's row shape, at width 20, through the same Map(Func<IDataRecord, SynRow>) entry V2 uses (SyntheticVariants.V2).
+// WHAT THE GENERATED READER DOES NOW: a non-nullable member is read UNCHECKED (no IsDBNull; a NULL there throws ValueMappingException through the row's
+// error path), a nullable member is tested for NULL, and there is ONE try region per row. The GP steps below are HISTORICAL steps toward V2n, built when
+// the generator still tested every member; they decompose the cost of that former shape, not of today's Gen.
+//   V2n  V2 plus IsDBNull on EVERY member (the former NULL rule: a NULL leaves the member's default), constant ordinals: the hand-written equal of a
+//        check-every-member reader (named GP1 in the first decomposition run). GP2 to GP5 are V2n plus one thing each.
+// THE FAIR BARS NOW (width 20): for the unchecked non-nullable members, V2 (reads them unchecked) against Gen_T and Ctl_T (SyntheticBenchmarks.cs: the
+// twin whose Title, Body and Tag are non-nullable; its Blob is tested, V2's is not). For a reader that tests the nullable members (Gen, whose Title, Body,
+// Tag and Blob are nullable), V2n is the hand-written equal only of a check-every-member reader: Gen tests four members V2 does not, and V2n tests all twenty,
+// so neither is an exact bar of Gen; Ctl (the hand-written selector of Gen's twin) is.
 //   GP2  V2n with the ordinals read from a layout object (resolved once per result set), as the generated reader's mode 1 reads them. THE STEP BUNDLES
 //        TWO CHANGES: Read2 also takes the reader as a DbDataReader (a cast, then virtual calls on the abstract class) where V2n calls the IDataRecord
 //        interface, so the V2n -> GP2 difference is the ordinal source AND the interface-versus-virtual call, not the layout alone.

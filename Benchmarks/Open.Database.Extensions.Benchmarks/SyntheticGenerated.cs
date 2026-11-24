@@ -9,8 +9,10 @@ namespace Open.Database.Extensions.Benchmarks;
 //   Gen   command.Map<GenRowN>().ToList(): an undecorated twin of SynRow's first N members, matched by name, read by the generated row reader.
 //   GenD  command.Map<GenRowDN>().ToList(): the decorated twin ([Column(Name, Order)] on every member), read at constant ordinals.
 //
-// Comparing Gen and GenD with V2: only at width 20. The twins of widths 1, 3, 5 and 10 have only that many members, while V2's Hand(width) builds a full
-// SynRow, so at those widths the twin allocates less (fewer members) and Gen is not comparable with V2 in time or in allocation.
+// Gen and GenD against V2: not like-for-like even at width 20. GenRow20 and GenRowD20 declare Title, Body, Tag and Blob nullable, so the generated reader
+// tests those four for NULL where V2 reads them with no test. The like-for-like bars are Gen_T and Ctl_T (the non-nullable twin) against V2, and Gen against Ctl.
+// The twins of widths 1, 3, 5 and 10 have only that many members, while V2's Hand(width) builds a full SynRow, so at those widths the twin also allocates less
+// (fewer members) and nothing compares with V2 in time or in allocation.
 //
 // The intercepted call sites are in Open.Database.Extensions.Benchmarks.Generated (GeneratedReads): the generator intercepts every plain Map<T>()
 // of the project it runs in, and this project's V1 and the other runtime variants must stay the runtime map. The command is built here, as V2 builds it.
@@ -75,9 +77,11 @@ public static partial class SyntheticChecks
 	static bool WidthTwentyOnly(string method)
 		=> method is "Ctl_Sync" or "Ctl_T_Sync" or "Gen_T_Sync" or "V2n_Sync" || method.StartsWith("GP", StringComparison.Ordinal);
 
-	// The NULL policy twins (SynRowPolicy.cs) against V1, member by member. A narrower table has no column for some members: SynRow leaves those null,
-	// a twin keeps its initializer ("" or an empty array), so a member equal to a fresh twin's where V1 has null is the absent column, not a difference.
-	static void ComparePolicyTwin(Report report, string name, string where, List<SynRow> expected, IList actual)
+	// The NULL policy twins (SynRowPolicy.cs) against V1, member by member. A narrower table has no column for some members: SynRow leaves a reference-typed
+	// one null, a twin keeps its initializer ("" or an empty array). That tolerance holds ONLY for a member whose column is missing from the table (not in
+	// table.Names) while V1 has null and the twin has exactly its fresh initializer. A member whose column is present is compared strictly at every width:
+	// at width 20 (every column present) nothing is tolerated.
+	static void ComparePolicyTwin(Report report, string name, string where, SyntheticTable table, List<SynRow> expected, IList actual)
 	{
 		if (actual.Count != expected.Count)
 		{
@@ -93,7 +97,8 @@ public static partial class SyntheticChecks
 			{
 				object? want = typeof(SynRow).GetProperty(p.Name)!.GetValue(expected[i]);
 				object? got = p.GetValue(row);
-				if (SynRow.Same(want, got) || want is null && SynRow.Same(p.GetValue(fresh), got)) continue;
+				bool absent = !table.Names.Contains(p.Name, StringComparer.OrdinalIgnoreCase);
+				if (SynRow.Same(want, got) || absent && want is null && SynRow.Same(p.GetValue(fresh), got)) continue;
 				report.Fail($"{name} {where} row {i}, {p.Name}: expected {want ?? "null"}, actual {got ?? "null"}");
 				return;
 			}

@@ -10,10 +10,12 @@ namespace Open.Database.Extensions.Benchmarks.Generated;
 /// </summary>
 /// <remarks>
 /// The generated reader enters ODX's loop through the public selector overload, <c>Map(Func&lt;IDataRecord, T&gt;)</c>, the entry V2 uses;
-/// it tests IsDBNull on the members the types declare nullable, as V2 does (GenRowN declares SynRow's string? members; GenRowT20 the strings V2 reads alone)
+/// it tests IsDBNull on the members the types declare nullable and reads a non-nullable member unchecked (GenRowN declares Title, Body, Tag and Blob nullable,
+/// which V2 reads with no test; GenRowT20 declares the strings non-nullable, as V2 reads them)
 /// and binds its layout once per result set.
 /// Twins exist for the catalog widths (1, 3, 5, 10, 20), as V2's hand-written selectors do; another width (ODX_SYN_WIDTHS, --widths) throws, as V2's Hand does.
-/// The twins of widths 1 to 10 have only that many members, while V2 builds a full SynRow at every width: Gen is comparable with V2 at width 20 only.
+/// The twins of widths 1 to 10 have only that many members, while V2 builds a full SynRow at every width. At width 20, Gen tests four members V2 does not:
+/// the like-for-like bars are Gen_T against V2 and Ctl_T, and Gen against Ctl.
 /// </remarks>
 public static class GeneratedReads
 {

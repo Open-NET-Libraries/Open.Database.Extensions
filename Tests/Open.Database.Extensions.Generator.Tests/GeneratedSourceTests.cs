@@ -41,12 +41,20 @@ public class GeneratedSourceTests
 	{
 		string source = GeneratedSource();
 
-		// The helper and its call sites are gone, and no row reader reads a cell for NULL on its own line before a read.
+		// The helper and its call sites are gone, and no generated line tests a cell in the old form (if (b.Reader.IsDBNull(...)).
+		// This pins those texts only; which members ARE tested is pinned by the test further down.
 		Assert.DoesNotContain("NotNull(", source, StringComparison.Ordinal);
 		Assert.DoesNotContain("NullRead(", source, StringComparison.Ordinal);
 		Assert.DoesNotContain("Conditional(\"DEBUG\")", source, StringComparison.Ordinal);
 		Assert.DoesNotContain("Debug.Assert", source, StringComparison.Ordinal);
 		Assert.DoesNotContain("if (b.Reader.IsDBNull(", source, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void A_model_with_look_alike_attributes_from_another_namespace_gets_a_binder()
+	{
+		// Only Core's NullPolicy and NullValue, by full name, make the generator decline a model.
+		Assert.Matches($@"file sealed class M\d+_LookAlikeAttributes\b", GeneratedSource());
 	}
 
 	[Theory]

@@ -76,6 +76,19 @@ public sealed class PolicyOnParameter(int id, [NullPolicy(NullAction.Default)] s
 /// <summary>A value on a positional record's parameter.</summary>
 public sealed record PolicyRecord(int Id, [NullValue("none")] string Title, int Qty);
 
+/// <summary>Look-alike attributes (the simple names of Core's, another namespace: LookAlikeAttributes.cs) on the type and on members: no policy, so it IS served.</summary>
+[LookAlike.NullPolicy(1)]
+public sealed class LookAlikeAttributes
+{
+	public int Id { get; set; }
+
+	[LookAlike.NullPolicy(2)]
+	public string Title { get; set; } = "untitled";
+
+	[LookAlike.NullValue(-1)]
+	public int Qty { get; set; }
+}
+
 public partial class ParityTests
 {
 	static readonly Col[] PolicyColumns = [Col.Of<int>("Id"), Col.Of<string>("Title"), Col.Of<int>("Qty")];
@@ -104,6 +117,24 @@ public partial class ParityTests
 
 		Parity.SameRows(q.Map(RowMap<UnmarkedPost>.Default).ToList(), generated);
 		Served(c);
+	}
+
+	[Fact]
+	public void An_attribute_named_like_a_policy_in_another_namespace_is_not_a_policy_and_is_served()
+	{
+		// Only Core's attributes, by full name, count: these share the simple names and must not make the generator decline.
+		var q = new TableQuery(PolicyColumns, PolicyRows[0], [2, "two", 3]);
+
+		var start = Counts.Now();
+		var generated = q.Map<LookAlikeAttributes>().ToList();
+		Counts c = Counts.Now().Since(start);
+
+		Parity.SameRows(q.Map(RowMap<LookAlikeAttributes>.Default).ToList(), generated);
+		Served(c);
+
+		// And no policy applies: a NULL is the runtime's NULL report, as for an unmarked model.
+		var withNull = new TableQuery(PolicyColumns, PolicyRows[0], [2, "two", null]);
+		SameRowError<InvalidCastException>(() => withNull.Map(RowMap<LookAlikeAttributes>.Default).ToList(), () => withNull.Map<LookAlikeAttributes>().ToList(), typeof(LookAlikeAttributes), 1);
 	}
 
 	[Fact]

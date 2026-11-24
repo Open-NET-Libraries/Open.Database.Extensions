@@ -21,10 +21,10 @@ The generated reader follows the runtime `RowMap<T>` rules. Anything it does not
   changes. On the same reader, a query value kept and run again after `NextResult` (`var q = reader.Map<T>(); q.ToList(); reader.NextResult(); q.ToList();`)
   whose second set has the same column count but another layout (other column order or names) reads the second set at the FIRST set's ordinals: values
   land in the wrong members, or a cast error is thrown, where the runtime map re-checks the layout per result set and reads it right.
-  The row index in an error report also continues from the first set instead of restarting at 0 (a different column count restarts it).
-  Neither can be detected without a check on every row, which this generator does not make; a per-result-set hook in Core would close both.
-  Pinned by tests.
-- **The row after `Skip(n)`.** Core skips rows without calling the row reader, so the generated report counts only the rows it mapped: n lower than the
+  This cannot be detected without a check on every row, which this generator does not make; a per-result-set hook in Core would close it. Pinned by a test.
+- **The row number continues after `NextResult`.** For the same reason, the row index in an error report continues from the previous set instead of
+  restarting at 0 when the second set has the same column count (a different column count restarts it). Pinned by a test; the same hook would close it.
+- **The row number after `Skip(n)`.** Core skips rows without calling the row reader, so the generated report counts only the rows it mapped: n lower than the
   runtime's row. Pinned by a test; a hook in Core would close it.
 - **NULL policies are not generated.** A model with `NullPolicy` or `NullValue` is declined to the runtime map (below) until a later change teaches the
   generator those attributes.
