@@ -249,6 +249,30 @@ public class SyntheticBenchmarks
 	[Benchmark]
 	public ValueTask<long> V1_Stream_Async() { _label = nameof(V1_Stream_Async); return SyntheticVariantsStream.V1(Connection); }
 
+	// The stream models (SyntheticVariantsStream.Models): fast consumer, then a consumer that awaits Task.Yield() per row.
+	[Benchmark]
+	public ValueTask<long> V1_Model_Stream_Async() { _label = nameof(V1_Model_Stream_Async); return SyntheticVariantsStream.Models(Connection, SyntheticVariantsStream.Model.Stream, false); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Model_OneRowChannel_Async() { _label = nameof(V1_Model_OneRowChannel_Async); return SyntheticVariantsStream.Models(Connection, SyntheticVariantsStream.Model.OneRowChannel, false); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Model_Buffered_Async() { _label = nameof(V1_Model_Buffered_Async); return SyntheticVariantsStream.Models(Connection, SyntheticVariantsStream.Model.Buffered, false); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Model_Pooled_Async() { _label = nameof(V1_Model_Pooled_Async); return SyntheticVariantsStream.Models(Connection, SyntheticVariantsStream.Model.Pooled, false); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Model_Stream_Yield_Async() { _label = nameof(V1_Model_Stream_Yield_Async); return SyntheticVariantsStream.Models(Connection, SyntheticVariantsStream.Model.Stream, true); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Model_OneRowChannel_Yield_Async() { _label = nameof(V1_Model_OneRowChannel_Yield_Async); return SyntheticVariantsStream.Models(Connection, SyntheticVariantsStream.Model.OneRowChannel, true); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Model_Buffered_Yield_Async() { _label = nameof(V1_Model_Buffered_Yield_Async); return SyntheticVariantsStream.Models(Connection, SyntheticVariantsStream.Model.Buffered, true); }
+
+	[Benchmark]
+	public ValueTask<long> V1_Model_Pooled_Yield_Async() { _label = nameof(V1_Model_Pooled_Yield_Async); return SyntheticVariantsStream.Models(Connection, SyntheticVariantsStream.Model.Pooled, true); }
 	[Benchmark]
 	public ValueTask<long> V1_Throw_Stream_Async() { _label = nameof(V1_Throw_Stream_Async); return SyntheticVariantsStream.V1Throw(Connection); }
 

@@ -143,7 +143,7 @@ internal readonly struct ChunkFeed<T>(
 }
 
 /// <summary>
-/// The streaming feed: Core's <c>Stream</c>, one row at a time.
+/// The streaming feed: Core's <c>StreamBuffered</c> with a channel of one row.
 /// </summary>
 /// <remarks>
 /// The next row is pulled only after the current one was written, so a

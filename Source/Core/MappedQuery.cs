@@ -903,14 +903,14 @@ readonly struct MappedQueryCore<T>(
 	public IAsyncEnumerable<T> Stream(
 		TimeSpan stallTimeout,
 		CancellationToken cancellationToken)
-		=> StreamCore(stallTimeout, 1, cancellationToken);
+		=> StreamCore(stallTimeout, 0, cancellationToken);
 
 	/// <summary>
 	/// Reads the rows lazily through a bounded buffer of <paramref name="bufferSize"/> rows,
 	/// stopping the read when the consumer goes <paramref name="stallTimeout"/> without a pull once the buffer is full.
 	/// </summary>
 	/// <param name="stallTimeout">The longest the consumer may go without pulling the next row once the buffer is full, or <see cref="Timeout.InfiniteTimeSpan"/>.</param>
-	/// <param name="bufferSize">The most rows the read runs ahead of the consumer; 0 reads one row at a time, as <c>Stream</c>, and a negative size throws.</param>
+	/// <param name="bufferSize">The most rows the read runs ahead of the consumer; 0 reads as <c>Stream</c> does (no channel, nothing ahead), and a negative size throws.</param>
 	/// <param name="cancellationToken">The caller's token.</param>
 	/// <returns>The rows.</returns>
 	public IAsyncEnumerable<T> StreamBuffered(
@@ -926,11 +926,11 @@ readonly struct MappedQueryCore<T>(
 				"The buffer size must be 0 or more rows.");
 		}
 
-		// 0 asks for no buffer: that is Stream, one row at a time.
-		return StreamCore(stallTimeout, bufferSize == 0 ? 1 : bufferSize, cancellationToken);
+		// 0 asks for no buffer: that is Stream, with no channel and no producer task.
+		return StreamCore(stallTimeout, bufferSize, cancellationToken);
 	}
 
-	StallStream<T> StreamCore(
+	IAsyncEnumerable<T> StreamCore(
 		TimeSpan stallTimeout,
 		int bufferSize,
 		CancellationToken cancellationToken)
@@ -944,7 +944,9 @@ readonly struct MappedQueryCore<T>(
 		}
 
 		EnsureCommand();
-		return new StallStream<T>(this, stallTimeout, bufferSize, cancellationToken);
+		return bufferSize == 0
+			? new DirectStream<T>(this, stallTimeout, cancellationToken)
+			: new StallStream<T>(this, stallTimeout, bufferSize, cancellationToken);
 	}
 
 	/// <summary>
@@ -1411,10 +1413,10 @@ public readonly record struct MappedQuery<T>
 		=> _core.ToPooledBufferStream(cancellationToken);
 
 	/// <summary>
-	/// Reads the rows one at a time off the open reader, lazily, handing each to your loop as it is read (one row at a time, with a row or two read ahead).
+	/// Reads the rows one at a time off the open reader, lazily, as you pull them: on your own thread, with nothing read ahead.
 	/// </summary>
 	/// <remarks>
-	/// While you pull rows, this holds the reader and the connection open, and each row is handed from the read to your loop one at a time.
+	/// While you pull rows, this holds the reader and the connection open, and each row is read when you pull it, on your own thread: there is no producer task and no channel.
 	/// That is not the best way to read rows: to read all of them use <c>ToArrayAsync</c> or <c>ToListAsync</c>; to read while the query runs use <c>StreamBuffered</c> or <c>ToPooledStream</c>.
 	/// To read the rows as a list or an array, use <see cref="MappedQuery{T}.ToListAsync(CancellationToken)"/>
 	/// or <see cref="MappedQuery{T}.ToArrayAsync(CancellationToken)"/>: they release the connection before the task completes.
@@ -1422,6 +1424,8 @@ public readonly record struct MappedQuery<T>
 	/// If you go <paramref name="stallTimeout"/> without pulling the next row, the read stops, the command is cancelled,
 	/// the connection this library opened is closed, and your next pull throws <see cref="TimeoutException"/>.
 	/// Dispose the enumeration (<c>await foreach</c> does).
+	/// The rows are read with <c>Read()</c> on your thread unless the query asked for <c>AsyncReads()</c>, so a slow database read blocks your thread for its wait; a cancel cannot interrupt a read the provider is blocked in, so the command's <c>CommandTimeout</c> bounds it, and a cancel while you hold a row is seen at your next pull.
+	/// A timer checks the stall timeout, so an expiry is found up to about a quarter of the timeout (at least 10 ms) after the timeout has passed, never before it.
 	/// <include file="Mapped.docs.xml" path="docs/members[@name='stream-models']/*" />
 	/// </remarks>
 	/// <param name="stallTimeout">
@@ -1451,6 +1455,8 @@ public readonly record struct MappedQuery<T>
 	/// the connection this library opened is closed, and your next pull throws <see cref="TimeoutException"/>.
 	/// Rows still waiting in the buffer when the stall trips are discarded, not delivered.
 	/// Dispose the enumeration (<c>await foreach</c> does).
+	/// The rows are read with <c>Read()</c> on your thread unless the query asked for <c>AsyncReads()</c>, so a slow database read blocks your thread for its wait; a cancel cannot interrupt a read the provider is blocked in, so the command's <c>CommandTimeout</c> bounds it, and a cancel while you hold a row is seen at your next pull.
+	/// A timer checks the stall timeout, so an expiry is found up to about a quarter of the timeout (at least 10 ms) after the timeout has passed, never before it.
 	/// <include file="Mapped.docs.xml" path="docs/members[@name='stream-models']/*" />
 	/// </remarks>
 	/// <param name="stallTimeout">
@@ -1467,14 +1473,14 @@ public readonly record struct MappedQuery<T>
 		=> _core.StreamBuffered(stallTimeout, StallStream.DefaultBufferSize, cancellationToken);
 
 	/// <summary>
-	/// Reads the rows lazily through a bounded channel that buffers up to <paramref name="bufferSize"/> rows; a size of 0 reads one row at a time, as <c>Stream</c>.
+	/// Reads the rows lazily through a bounded channel that buffers up to <paramref name="bufferSize"/> rows; a size of 0 reads as <c>Stream</c> does, with no channel.
 	/// </summary>
 	/// <remarks>
 	/// As <see cref="StreamBuffered(TimeSpan, CancellationToken)"/>, with a buffer size of your choice.
 	/// <paramref name="bufferSize"/> counts rows, not bytes.
 	/// </remarks>
 	/// <param name="stallTimeout">The longest you may go without pulling the next row once the buffer is full. Required; there is no default.</param>
-	/// <param name="bufferSize">The most rows the read runs ahead of your loop; 0 reads one row at a time, as <c>Stream</c>, and a negative size throws.</param>
+	/// <param name="bufferSize">The most rows the read runs ahead of your loop; 0 reads as <c>Stream</c> does (no channel, nothing ahead), and a negative size throws.</param>
 	/// <param name="cancellationToken">Cancels the read; the enumeration then throws <see cref="OperationCanceledException"/>.</param>
 	/// <returns>The rows, in the order the reader returns them. The enumeration can be taken once.</returns>
 	/// <exception cref="ArgumentOutOfRangeException"><paramref name="stallTimeout"/> is zero or negative and not <see cref="Timeout.InfiniteTimeSpan"/>, or <paramref name="bufferSize"/> is negative.</exception>

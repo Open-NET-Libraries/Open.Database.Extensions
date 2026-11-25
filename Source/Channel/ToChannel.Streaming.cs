@@ -15,7 +15,7 @@ public static partial class ChannelDbExtensions
 	/// Use <see cref="ToChannel{T}(IMappedQuery{T}, Channel{T}, CancellationToken)"/>,
 	/// which frees the connection first, unless the rows must be pulled one at a time;
 	/// otherwise it behaves as that member.
-	/// See <see cref="IMappedQuery{T}.Stream(TimeSpan, CancellationToken)"/> for the stall rules.
+	/// See <see cref="IMappedQuery{T}.StreamBuffered(TimeSpan, int, CancellationToken)"/> (with a buffer of one row) for the stall rules.
 	/// </remarks>
 	/// <typeparam name="T">The type of each row.</typeparam>
 	/// <param name="source">The mapped query to read.</param>
@@ -129,7 +129,7 @@ public static partial class ChannelDbExtensions
 
 		cancellationToken.ThrowIfCancellationRequested();
 		return ChannelPump.Run<T, RowFeed<T>>(
-			new(source.Stream(stallTimeout, cancellationToken)),
+			new(source.StreamBuffered(stallTimeout, 1, cancellationToken)),
 			writer,
 			complete,
 			waitFirst: true,

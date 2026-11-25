@@ -336,7 +336,7 @@ public static class StallStreamTests
 	public static async Task TheStallSignal_IsCanceledAtExpiry_AndOnlyThen()
 	{
 		DbTally tally = Tally(50);
-		IAsyncEnumerable<Row> stream = Query(tally).Stream(Short, Ct);
+		IAsyncEnumerable<Row> stream = Query(tally).StreamBuffered(Short, 1, Ct);
 		IStallSignal signal = Assert.IsType<IStallSignal>(stream, exactMatch: false);
 
 		await using IAsyncEnumerator<Row> rows = stream.GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -354,7 +354,7 @@ public static class StallStreamTests
 	public static async Task TheStallSignal_NeverFires_WhenTheConsumerKeepsUp()
 	{
 		DbTally tally = Tally(5);
-		IStallSignal signal = Assert.IsType<IStallSignal>(Query(tally).Stream(Long, Ct), exactMatch: false);
+		IStallSignal signal = Assert.IsType<IStallSignal>(Query(tally).StreamBuffered(Long, 1, Ct), exactMatch: false);
 		var stream = (IAsyncEnumerable<Row>)signal;
 
 		Assert.Equal(5, (await Collect(stream)).Count);
@@ -369,7 +369,7 @@ public static class StallStreamTests
 		DbTally tally = Tally(1);
 		TimeSpan timeout = days < 0 ? Timeout.InfiniteTimeSpan : TimeSpan.FromDays(days);
 
-		IStallSignal signal = Assert.IsType<IStallSignal>(Query(tally).Stream(timeout, Ct), exactMatch: false);
+		IStallSignal signal = Assert.IsType<IStallSignal>(Query(tally).StreamBuffered(timeout, 1, Ct), exactMatch: false);
 
 		Assert.False(signal.Expired.CanBeCanceled);
 	}
@@ -439,9 +439,9 @@ public static class StallStreamTests
 	}
 
 	[Fact]
-	public static async Task ABufferSizeOfZero_IsStream_OneRowAtATime_AndAStalledConsumerStopsTheRead()
+	public static async Task ABufferSizeOfOne_IsAChannelOfOneRow_AndAStalledConsumerStopsTheRead()
 	{
-		// 0 asks for no buffer: it routes to Stream, so the read stays at most a couple of rows ahead (one pulled, one waiting in the channel, one held for room).
+		// One row in the channel: the read stays at most a couple of rows ahead (one pulled, one waiting in the channel, one held for room).
 		int reads = 0;
 		DbTally tally = new(new DbScript
 		{
@@ -450,7 +450,7 @@ public static class StallStreamTests
 		});
 
 		await using IAsyncEnumerator<Row> rows
-			= Query(tally).StreamBuffered(Short, 0, Ct).GetAsyncEnumerator(Ct);
+			= Query(tally).StreamBuffered(Short, 1, Ct).GetAsyncEnumerator(Ct);
 
 		Assert.True(await rows.MoveNextAsync());
 		await WaitUntil(() => tally.Connections[0].ClosedAfterOpen);

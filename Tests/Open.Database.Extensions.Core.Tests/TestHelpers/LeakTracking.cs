@@ -24,6 +24,15 @@ internal sealed class DbScript
 	/// <summary>Called with the 1-based number of each <c>Read()</c> before it is served (to cancel in the middle of a read).</summary>
 	public Action<int>? OnRead { get; init; }
 
+	/// <summary>
+	/// Makes <c>ReadAsync</c> really asynchronous from the read numbered <see cref="AsyncReadFrom"/> on: a positive value waits that many milliseconds
+	/// (and ends with the token's cancel, as a provider does), a negative one yields once; 0 completes at once.
+	/// </summary>
+	public int AsyncReadDelayMs { get; init; }
+
+	/// <summary>The 1-based number of the first read that <see cref="AsyncReadDelayMs"/> applies to.</summary>
+	public int AsyncReadFrom { get; init; } = 1;
+
 	/// <summary>When set, <c>CreateParameter</c> throws (a provider rejecting a parameter).</summary>
 	public bool FailCreateParameter { get; init; }
 }
@@ -285,6 +294,21 @@ internal sealed class TrackedReader(DbTally tally, TrackedConnection connection,
 		tally.Script.OnRead?.Invoke(n);
 		if (n == tally.Script.FailOnRead) throw new InvalidOperationException("The provider failed while reading.");
 		return base.Read();
+	}
+
+	public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
+	{
+		// As the base does for a token that is already canceled.
+		cancellationToken.ThrowIfCancellationRequested();
+
+		int delay = tally.Script.AsyncReadDelayMs;
+		if (delay != 0 && Reads + 1 >= tally.Script.AsyncReadFrom)
+		{
+			if (delay > 0) await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+			else await Task.Yield();
+		}
+
+		return Read();
 	}
 
 	protected override void Dispose(bool disposing)
