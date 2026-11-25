@@ -12,30 +12,21 @@ namespace Open.Database.Extensions;
 /// and a method that reads columns throws <see cref="ArgumentException"/> when it is given one.
 /// </para>
 /// </remarks>
-public readonly struct ColumnOrdinal : IEquatable<ColumnOrdinal>
+/// <param name="name">The column's name.</param>
+/// <param name="ordinal">The column's zero-based ordinal.</param>
+/// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
+public readonly struct ColumnOrdinal(string name, int ordinal) : IEquatable<ColumnOrdinal>
 {
-	/// <summary>
-	/// Creates the value for one column.
-	/// </summary>
-	/// <param name="name">The column's name.</param>
-	/// <param name="ordinal">The column's zero-based ordinal.</param>
-	/// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
-	public ColumnOrdinal(string name, int ordinal)
-	{
-		Name = name ?? throw new ArgumentNullException(nameof(name));
-		Ordinal = ordinal;
-	}
-
 	/// <summary>
 	/// The column's name.
 	/// </summary>
 	/// <value><see langword="null"/> only for a <see langword="default"/> value.</value>
-	public string Name { get; }
+	public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
 	/// <summary>
 	/// The column's zero-based ordinal.
 	/// </summary>
-	public int Ordinal { get; }
+	public int Ordinal { get; } = ordinal;
 
 	/// <summary>
 	/// Splits the value, as in <c>var (name, ordinal) = column;</c>.
@@ -47,6 +38,13 @@ public readonly struct ColumnOrdinal : IEquatable<ColumnOrdinal>
 		name = Name;
 		ordinal = Ordinal;
 	}
+
+	/// <summary>
+	/// The value as <c>(name, ordinal)</c>, such as <c>(Id, 0)</c>.
+	/// </summary>
+	/// <returns>The text. A <see langword="default"/> value has an empty name: <c>(, 0)</c>.</returns>
+	public override string ToString()
+		=> $"({Name}, {Ordinal})";
 
 	/// <inheritdoc />
 	public bool Equals(ColumnOrdinal other)

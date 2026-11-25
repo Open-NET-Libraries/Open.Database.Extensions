@@ -368,9 +368,10 @@ public static partial class DataRecordExtensions
 	/// <param name="columnMap">The ordinals to read, paired with the key to store each value under.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentException">Two entries have the same key.</exception>
-	/// <exception cref="ArgumentNullException"><paramref name="columnMap"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnMap"/> is <see langword="null"/>.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<KeyValuePair<int, string>> columnMap)
 	{
+		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (columnMap is null) throw new ArgumentNullException(nameof(columnMap));
 		Contract.EndContractBlock();
 
@@ -387,9 +388,10 @@ public static partial class DataRecordExtensions
 	/// <param name="ordinalMapping">The columns to read, as produced by <see cref="OrdinalMapping(IDataRecord)"/>.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentException">Two entries have the same name, or an entry is a <see langword="default"/> <see cref="ColumnOrdinal"/>.</exception>
-	/// <exception cref="ArgumentNullException"><paramref name="ordinalMapping"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinalMapping"/> is <see langword="null"/>.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<ColumnOrdinal> ordinalMapping)
 	{
+		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
 		Contract.EndContractBlock();
 

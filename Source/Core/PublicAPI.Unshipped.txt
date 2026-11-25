@@ -24,5 +24,6 @@ Open.Database.Extensions.ColumnOrdinal.Name.get -> string!
 Open.Database.Extensions.ColumnOrdinal.Ordinal.get -> int
 override Open.Database.Extensions.ColumnOrdinal.Equals(object? obj) -> bool
 override Open.Database.Extensions.ColumnOrdinal.GetHashCode() -> int
+override Open.Database.Extensions.ColumnOrdinal.ToString() -> string!
 static Open.Database.Extensions.ColumnOrdinal.operator !=(Open.Database.Extensions.ColumnOrdinal left, Open.Database.Extensions.ColumnOrdinal right) -> bool
 static Open.Database.Extensions.ColumnOrdinal.operator ==(Open.Database.Extensions.ColumnOrdinal left, Open.Database.Extensions.ColumnOrdinal right) -> bool

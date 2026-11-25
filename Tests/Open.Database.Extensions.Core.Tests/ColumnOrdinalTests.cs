@@ -64,6 +64,15 @@ public static class ColumnOrdinalTests
 		Assert.Equal(column.GetHashCode(), default(ColumnOrdinal).GetHashCode());
 	}
 
+	[Fact]
+	public static void ToString_PrintsAsTheTupleDid()
+	{
+		Assert.Equal("(Id, 0)", new ColumnOrdinal("Id", 0).ToString());
+		Assert.Equal(("Title", -1).ToString(), new ColumnOrdinal("Title", -1).ToString());
+		Assert.Equal("(, 0)", default(ColumnOrdinal).ToString());
+		Assert.Equal(((string?)null, 0).ToString(), default(ColumnOrdinal).ToString());
+	}
+
 	// The owner's decision: no conversion to or from a tuple, or anything else.
 	[Fact]
 	public static void HasNoConversionOperators()
@@ -81,16 +90,33 @@ public static class ColumnOrdinalTests
 		ColumnOrdinal[] columns = [new("Title", 1), default];
 
 		// Throws<T> is exact: neither ArgumentNullException (the dictionary's null key) nor NullReferenceException.
-		var ex = Assert.Throws<ArgumentException>(() => overload switch
-		{
-			"Enumerable" => record.ToDictionary(columns.Select(c => c)),
-			"List" => record.ToDictionary((IReadOnlyList<ColumnOrdinal>)columns),
-			_ => record.ToDictionary(new ReadOnlySpan<ColumnOrdinal>(columns)),
-		});
+		var ex = Assert.Throws<ArgumentException>(() => ReadWith(overload, record, columns));
 
 		Assert.Equal("ordinalMapping", ex.ParamName);
 		Assert.Contains("default ColumnOrdinal", ex.Message);
 	}
+
+	[Theory]
+	[InlineData("Enumerable")]
+	[InlineData("List")]
+	[InlineData("Span")]
+	public static void ToDictionary_ADefaultEntry_IsRefusedBeforeTheRecordIsRead(string overload)
+	{
+		IDataRecord record = Record();
+
+		Assert.Throws<ArgumentException>(() => ReadWith(overload, record, [default]));
+
+		record.DidNotReceive().GetValue(0);
+		_ = record.DidNotReceive()[0];
+	}
+
+	static Dictionary<string, object?> ReadWith(string overload, IDataRecord record, ColumnOrdinal[] columns)
+		=> overload switch
+		{
+			"Enumerable" => record.ToDictionary(columns.Select(c => c)),
+			"List" => record.ToDictionary((IReadOnlyList<ColumnOrdinal>)columns),
+			_ => record.ToDictionary(new ReadOnlySpan<ColumnOrdinal>(columns)),
+		};
 
 	[Fact]
 	public static void ToDictionary_ReadsWhatTheMappingsReturn()
