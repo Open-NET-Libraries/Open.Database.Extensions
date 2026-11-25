@@ -39,9 +39,9 @@ public static class ScalarAndNonQueryTests
 
 		public Db()
 		{
-			string connectionString
+			ConnectionString
 				= $"Data Source=scalar{Interlocked.Increment(ref _count)};Mode=Memory;Cache=Shared";
-			Connection = new SqliteConnection(connectionString);
+			Connection = new SqliteConnection(ConnectionString);
 			Connection.Open();
 			using SqliteCommand command = Connection.CreateCommand();
 			command.CommandText = """
@@ -50,6 +50,8 @@ public static class ScalarAndNonQueryTests
 				""";
 			command.ExecuteNonQuery();
 		}
+
+		public string ConnectionString { get; }
 
 		public SqliteConnection Connection { get; }
 
@@ -150,6 +152,22 @@ public static class ScalarAndNonQueryTests
 		Assert.Equal(3, await pendingAll.Using(db.Connection).ExecuteScalarAsync(Token));
 		Assert.Equal(1, await pendingPopular.Using(db.Connection).ExecuteScalarAsync(Token));
 		Assert.Equal(3, await pendingAll.Using(db.Connection).ExecuteScalarAsync(Token));
+	}
+
+	[Fact]
+	public static async Task AFactory_RunsAWriteAndAScalar()
+	{
+		using var db = new Db();
+		var factory = new DbConnectionFactory<SqliteConnection>(
+			() => new SqliteConnection(db.ConnectionString));
+		const int id = 1;
+		const string title = "factory";
+		const int authorId = 7;
+		const int views = 0;
+
+		Assert.Equal(1, await SetTitle.Using(factory).AddParam(id).AddParam(title).ExecuteNonQueryAsync(Token));
+		Assert.Equal(title, db.Title(id));
+		Assert.Equal(3, await Count.Using(factory).AddParam(authorId).AddParam(views).ExecuteScalarAsync(Token));
 	}
 
 	// ---- what a scalar converts: the rule of the command ----
