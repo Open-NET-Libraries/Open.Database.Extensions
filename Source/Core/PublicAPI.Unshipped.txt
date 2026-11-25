@@ -1,4 +1,83 @@
 #nullable enable
+Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.BoundCall<TKind>.AddParam(string! name, string? value) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.BoundCall<TKind>.AddParam<TValue>(string! name, TValue value) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.BoundCall<TKind>.AddParam<TValue>(TValue value, string? expression = null) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.BoundCall<TKind>.AddParams<TValues>(TValues values) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.BoundCall<TKind>.BoundCall() -> void
+Open.Database.Extensions.BoundCall<TKind>.Equals(Open.Database.Extensions.BoundCall<TKind> other) -> bool
+Open.Database.Extensions.BoundCall<TKind>.Source.get -> object!
+Open.Database.Extensions.BoundCallExtensions
+Open.Database.Extensions.BoundParams<TKind, TParams>
+Open.Database.Extensions.BoundParams<TKind, TParams>.AddParams(TParams values) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.BoundParams<TKind, TParams>.BoundParams() -> void
+Open.Database.Extensions.DbNonQuery
+Open.Database.Extensions.DbNonQuery.AddParam(string! name, string? value) -> Open.Database.Extensions.PendingCall<Open.Database.Extensions.NonQueryKind>
+Open.Database.Extensions.DbNonQuery.AddParam<TValue>(string! name, TValue value) -> Open.Database.Extensions.PendingCall<Open.Database.Extensions.NonQueryKind>
+Open.Database.Extensions.DbNonQuery.AddParam<TValue>(TValue value, string? expression = null) -> Open.Database.Extensions.PendingCall<Open.Database.Extensions.NonQueryKind>
+Open.Database.Extensions.DbNonQuery.AddParams<TValues>(TValues values) -> Open.Database.Extensions.PendingCall<Open.Database.Extensions.NonQueryKind>
+Open.Database.Extensions.DbNonQuery.Equals(Open.Database.Extensions.DbNonQuery? other) -> bool
+Open.Database.Extensions.DbNonQuery.Params<TParams>() -> Open.Database.Extensions.DbNonQuery<TParams>!
+Open.Database.Extensions.DbNonQuery.SetTimeout(ushort seconds) -> Open.Database.Extensions.DbNonQuery!
+Open.Database.Extensions.DbNonQuery.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.BoundCall<Open.Database.Extensions.NonQueryKind>
+Open.Database.Extensions.DbNonQuery.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.BoundCall<Open.Database.Extensions.NonQueryKind>
+Open.Database.Extensions.DbNonQuery.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.BoundCall<Open.Database.Extensions.NonQueryKind>
+Open.Database.Extensions.DbNonQuery.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.BoundCall<Open.Database.Extensions.NonQueryKind>
+Open.Database.Extensions.DbNonQuery<TParams>
+Open.Database.Extensions.DbNonQuery<TParams>.AddParams(TParams values) -> Open.Database.Extensions.PendingParams<Open.Database.Extensions.NonQueryKind, TParams>
+Open.Database.Extensions.DbNonQuery<TParams>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.BoundParams<Open.Database.Extensions.NonQueryKind, TParams>
+Open.Database.Extensions.DbNonQuery<TParams>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.BoundParams<Open.Database.Extensions.NonQueryKind, TParams>
+Open.Database.Extensions.DbNonQuery<TParams>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.BoundParams<Open.Database.Extensions.NonQueryKind, TParams>
+Open.Database.Extensions.DbNonQuery<TParams>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.BoundParams<Open.Database.Extensions.NonQueryKind, TParams>
+Open.Database.Extensions.DbQuery.Scalar<T>() -> Open.Database.Extensions.ScalarDbQuery<T>!
+Open.Database.Extensions.DbQuery<TParams>.Scalar<T>() -> Open.Database.Extensions.ScalarDbQuery<TParams, T>!
+Open.Database.Extensions.MappedDbQuery<T>.Params<TParams>() -> Open.Database.Extensions.MappedDbQuery<TParams, T>!
+Open.Database.Extensions.NonQueryKind
+Open.Database.Extensions.NonQueryKind.NonQueryKind() -> void
+Open.Database.Extensions.PendingCall<TKind>
+Open.Database.Extensions.PendingCall<TKind>.AddParam(string! name, string? value) -> Open.Database.Extensions.PendingCall<TKind>
+Open.Database.Extensions.PendingCall<TKind>.AddParam<TValue>(string! name, TValue value) -> Open.Database.Extensions.PendingCall<TKind>
+Open.Database.Extensions.PendingCall<TKind>.AddParam<TValue>(TValue value, string? expression = null) -> Open.Database.Extensions.PendingCall<TKind>
+Open.Database.Extensions.PendingCall<TKind>.AddParams<TValues>(TValues values) -> Open.Database.Extensions.PendingCall<TKind>
+Open.Database.Extensions.PendingCall<TKind>.PendingCall() -> void
+Open.Database.Extensions.PendingCall<TKind>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.PendingCall<TKind>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.PendingCall<TKind>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.PendingCall<TKind>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.PendingParams<TKind, TParams>
+Open.Database.Extensions.PendingParams<TKind, TParams>.PendingParams() -> void
+Open.Database.Extensions.PendingParams<TKind, TParams>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.PendingParams<TKind, TParams>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.PendingParams<TKind, TParams>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.PendingParams<TKind, TParams>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.BoundCall<TKind>
+Open.Database.Extensions.ScalarDbQuery<T>
+Open.Database.Extensions.ScalarDbQuery<T>.AddParam(string! name, string? value) -> Open.Database.Extensions.PendingCall<Open.Database.Extensions.ScalarKind<T>>
+Open.Database.Extensions.ScalarDbQuery<T>.AddParam<TValue>(string! name, TValue value) -> Open.Database.Extensions.PendingCall<Open.Database.Extensions.ScalarKind<T>>
+Open.Database.Extensions.ScalarDbQuery<T>.AddParam<TValue>(TValue value, string? expression = null) -> Open.Database.Extensions.PendingCall<Open.Database.Extensions.ScalarKind<T>>
+Open.Database.Extensions.ScalarDbQuery<T>.AddParams<TValues>(TValues values) -> Open.Database.Extensions.PendingCall<Open.Database.Extensions.ScalarKind<T>>
+Open.Database.Extensions.ScalarDbQuery<T>.Params<TParams>() -> Open.Database.Extensions.ScalarDbQuery<TParams, T>!
+Open.Database.Extensions.ScalarDbQuery<T>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.BoundCall<Open.Database.Extensions.ScalarKind<T>>
+Open.Database.Extensions.ScalarDbQuery<T>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.BoundCall<Open.Database.Extensions.ScalarKind<T>>
+Open.Database.Extensions.ScalarDbQuery<T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.BoundCall<Open.Database.Extensions.ScalarKind<T>>
+Open.Database.Extensions.ScalarDbQuery<T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.BoundCall<Open.Database.Extensions.ScalarKind<T>>
+Open.Database.Extensions.ScalarDbQuery<TParams, T>
+Open.Database.Extensions.ScalarDbQuery<TParams, T>.AddParams(TParams values) -> Open.Database.Extensions.PendingParams<Open.Database.Extensions.ScalarKind<T>, TParams>
+Open.Database.Extensions.ScalarDbQuery<TParams, T>.Using(System.Data.Common.DbConnection! connection) -> Open.Database.Extensions.BoundParams<Open.Database.Extensions.ScalarKind<T>, TParams>
+Open.Database.Extensions.ScalarDbQuery<TParams, T>.Using(System.Data.Common.DbTransaction! transaction) -> Open.Database.Extensions.BoundParams<Open.Database.Extensions.ScalarKind<T>, TParams>
+Open.Database.Extensions.ScalarDbQuery<TParams, T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionFactory<TConnection!>! factory) -> Open.Database.Extensions.BoundParams<Open.Database.Extensions.ScalarKind<T>, TParams>
+Open.Database.Extensions.ScalarDbQuery<TParams, T>.Using<TConnection>(Open.Database.Extensions.IDbConnectionPool<TConnection!>! pool) -> Open.Database.Extensions.BoundParams<Open.Database.Extensions.ScalarKind<T>, TParams>
+Open.Database.Extensions.ScalarKind<T>
+Open.Database.Extensions.ScalarKind<T>.ScalarKind() -> void
+override Open.Database.Extensions.BoundCall<TKind>.Equals(object? obj) -> bool
+override Open.Database.Extensions.BoundCall<TKind>.GetHashCode() -> int
+override Open.Database.Extensions.DbNonQuery.Equals(object? obj) -> bool
+override Open.Database.Extensions.DbNonQuery.GetHashCode() -> int
+static Open.Database.Extensions.BoundCall<TKind>.operator !=(Open.Database.Extensions.BoundCall<TKind> left, Open.Database.Extensions.BoundCall<TKind> right) -> bool
+static Open.Database.Extensions.BoundCall<TKind>.operator ==(Open.Database.Extensions.BoundCall<TKind> left, Open.Database.Extensions.BoundCall<TKind> right) -> bool
+static Open.Database.Extensions.BoundCallExtensions.ExecuteNonQueryAsync(this Open.Database.Extensions.BoundCall<Open.Database.Extensions.NonQueryKind> call, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+static Open.Database.Extensions.BoundCallExtensions.ExecuteScalarAsync<T>(this Open.Database.Extensions.BoundCall<Open.Database.Extensions.ScalarKind<T>> call, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+static Open.Database.Extensions.DbNonQuery.Procedure(string! name) -> Open.Database.Extensions.DbNonQuery!
+static Open.Database.Extensions.DbNonQuery.Text(string! sql) -> Open.Database.Extensions.DbNonQuery!
 *REMOVED*static Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> (string! Name, int Ordinal)[]!
 *REMOVED*static Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
 *REMOVED*static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!

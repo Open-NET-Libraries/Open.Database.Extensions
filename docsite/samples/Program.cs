@@ -379,6 +379,13 @@ Check(mapFirstBefore.Count == 3 && mapFirstBefore.Select(p => p.Id).SequenceEqua
 Check((await new PostQueriesBefore(factory).FirstByAuthorAsync(42, CancellationToken.None))?.Id == (await new PostQueriesAfter(factory).FirstByAuthorAsync(42, CancellationToken.None))?.Id, "a mapped definition and the command built on every call return the same first row");
 Check((await MapFirstSamples.ValuesFirstAsync(factory, 42, CancellationToken.None)).Select(p => p.Id).SequenceEqual([1, 2, 3]), "the values can come before the source");
 Check((await MapFirstSamples.PagedAsync(factory, mapFirstByAuthor, 42, CancellationToken.None)).Select(p => p.Id).SequenceEqual([2]), "Skip and Take are chosen where the definition runs");
+// Writes and scalars, declared once.
+PostWrites postWrites = new(factory);
+Check(await postWrites.CountAsync(42, CancellationToken.None) == 3 && await postWrites.LastIdAsync(42, CancellationToken.None) == 3, "a scalar definition reads one value");
+Check(await postWrites.LastIdAsync(99, CancellationToken.None) is null, "a scalar of a nullable type is null for a NULL");
+Check(await postWrites.SetTitleAsync(1, "Renamed", CancellationToken.None) == 1 && factory.Command("select title from posts where id = 1").ExecuteScalar<string>() == "Renamed", "a write returns the rows affected");
+Check(await postWrites.AddAsync(99, "Added", CancellationToken.None) == 6 && await postWrites.CountAsync(99, CancellationToken.None) == 1, "an insert reads its new id as a scalar");
+Db.Seed();
 Check((await ConnectionPattern.RenamedColumnsAsync(connection, CancellationToken.None)) is [{ FirstName: "Ada" }, { FirstName: "Alan" }], "renamed columns with nameof");
 Check(Throws<InvalidOperationException>(() => connection.Command("select * from posts").Map<Post>().SingleOrDefault()), "SingleOrDefault throws for more than one row (again)");
 Check(factory.Command("select * from posts where id = 999").Map<Post>().FirstOrDefault() is null, "FirstOrDefault is null for no rows");
