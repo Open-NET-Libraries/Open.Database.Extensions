@@ -30,6 +30,10 @@ namespace Open.Database.Extensions;
 /// Declare the type of the values with <see cref="Params{TParams}"/> to have
 /// them checked at compile time.
 /// </para>
+/// <para>
+/// A query reads: rows with <c>Map</c>, or one value with
+/// <see cref="Scalar{T}"/>. A write is a <see cref="DbNonQuery"/>.
+/// </para>
 /// </remarks>
 public sealed class DbQuery : IEquatable<DbQuery>
 {
@@ -235,6 +239,20 @@ public sealed class DbQuery : IEquatable<DbQuery>
 		=> new(this, DictionaryRowSource.Instance);
 
 	/// <summary>
+	/// Reads one value, the first column of the first row, as a <typeparamref name="T"/>,
+	/// and returns the scalar definition.
+	/// </summary>
+	/// <remarks>
+	/// The result is immutable and has no connection yet, so it can be held in a static field;
+	/// give it a source with <c>Using</c> and run it with <c>ExecuteScalarAsync</c>.
+	/// It keeps the timeout of this definition.
+	/// </remarks>
+	/// <typeparam name="T">The type of the value.</typeparam>
+	/// <returns>The scalar definition.</returns>
+	public ScalarDbQuery<T> Scalar<T>()
+		=> new(this);
+
+	/// <summary>
 	/// Declares the type of the values: a <see langword="struct"/>
 	/// (a <see langword="readonly"/> <see langword="record"/>
 	/// <see langword="struct"/> is the intended shape)
@@ -403,6 +421,11 @@ public sealed class DbQuery<TParams>
 	/// <returns>The mapped definition, whose parameters are the struct.</returns>
 	public MappedDbQuery<TParams, DictionaryRow> AsDictionaryRows()
 		=> new(_definition.AsDictionaryRows());
+
+	/// <inheritdoc cref="DbQuery.Scalar{T}"/>
+	/// <returns>The scalar definition, whose parameters are the struct.</returns>
+	public ScalarDbQuery<TParams, T> Scalar<T>()
+		=> new(this);
 
 	/// <inheritdoc cref="DbQuery.Using(DbConnection)"/>
 	public DbQueryUsing<TParams> Using(DbConnection connection)

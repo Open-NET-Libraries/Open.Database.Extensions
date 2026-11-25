@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		Program.cs holds call sites that consumers wrote for DbNonQuery and DbQuery.Scalar<T>() before the library had them.
+		The shape they use is frozen: do not edit Program.cs. Building this project is the compile check;
+		DbNonQueryCallSiteTests in the Core tests runs it on SQLite in memory.
+	-->
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<IsPackable>false</IsPackable>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Source\Core\Open.Database.Extensions.Core.csproj" />
+	</ItemGroup>
+
+</Project>

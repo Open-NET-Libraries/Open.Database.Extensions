@@ -95,6 +95,12 @@ public sealed class MappedDbQuery<T>
 		return new(Query, _source, _singleResult, _asyncReads, pool, clearOnReturn);
 	}
 
+	/// <inheritdoc cref="DbQuery.Params{TParams}"/>
+	/// <returns>The typed definition, with the map and the options of this one.</returns>
+	public MappedDbQuery<TParams, T> Params<TParams>()
+		where TParams : struct, IEquatable<TParams>
+		=> new(this);
+
 	/// <summary>Reads the query on a connection the caller owns.</summary>
 	/// <param name="connection">The connection. It is opened if it is not open, and closed again if the query opened it.</param>
 	/// <returns>The mapped query, to be read with a terminal.</returns>

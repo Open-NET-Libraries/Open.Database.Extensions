@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\Source\Extensions\Open.Database.Extensions.csproj" />
     <ProjectReference Include="..\..\Source\SqlClient\Open.Database.Extensions.SqlClient.csproj" />
     <ProjectReference Include="..\..\Source\MSSqlClient\Open.Database.Extensions.MSSqlClient.csproj" Aliases="mssql" />
+    <ProjectReference Include="..\Open.Database.Extensions.WriteScalarCompat\Open.Database.Extensions.WriteScalarCompat.csproj" />
   </ItemGroup>
 
   <!-- The benchmark project's synthetic provider, linked so the allocation tests measure on the provider the design numbers were taken on. -->

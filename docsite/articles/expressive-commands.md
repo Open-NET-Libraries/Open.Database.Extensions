@@ -93,6 +93,16 @@ Everything after `Using` is what a command does: `Map<T>()` is the same extensio
 
 A call allocates less than the command builder and within 7 bytes of ADO.NET written by hand (within 23 bytes at a single value). Names are resolved as a command resolves them (see [Name a parameter from its argument](#name-a-parameter-from-its-argument)): `AddParam(authorId)` finds `@author_id`, and the typed form matches each member of the values type the same way and, when the names are known, does not send a member the query does not declare. A text definition finds its `@name` markers once, when it is made; a procedure's names are remembered for five minutes per connection source (the factory, the pool or the connection, also for a transaction) and per server and database, and read again only when they do not fit.
 
+### Writes and scalars
+
+A `DbQuery` reads. For one value, `Scalar<T>()` on the definition gives a `ScalarDbQuery<T>`, run with `ExecuteScalarAsync`: the first column of the first row, converted as `Map<T>()` converts a column. A NULL, or no row, is `null` for a nullable or reference `T`, and throws `ValueMappingException` for a non-nullable value type.
+
+A write is a `DbNonQuery`, made with `Text` or `Procedure` and run with `ExecuteNonQueryAsync`, which returns the number of rows affected as the provider reports it (it can be -1, for example for a procedure that sets `NOCOUNT ON`).
+
+[!code-csharp[](../samples/WritesAndScalars.cs#writes_and_scalars)]
+
+Both take the same sources as a query, and their values before or after `Using`; `Params<TParams>()` declares typed values. Set a timeout with `SetTimeout` on a `DbNonQuery`, or on the `DbQuery` before `Scalar<T>()`. Output and return parameters are not supported here: use a command for them (see [Return values and output parameters](#return-values-and-output-parameters)).
+
 ## Parameters
 
 Name a parameter in the way that fits what you have:

@@ -363,4 +363,68 @@ public static class DbQueryBindingTests
 		Assert.NotEmpty(boxedErrors);
 		Assert.All(boxedErrors, d => Assert.True(d.Id == "CS0453", Show(boxedErrors)));
 	}
+
+	// A scalar chain ends in ExecuteScalarAsync only, a write in
+	// ExecuteNonQueryAsync only, neither reads rows, and values without a
+	// source run nothing.
+	[Theory]
+	[InlineData("Q.Scalar<int>().Using(c).ExecuteScalarAsync()", true)]
+	[InlineData("W.Using(c).ExecuteNonQueryAsync()", true)]
+	[InlineData("Q.Scalar<int>().Using(c).ExecuteNonQueryAsync()", false)]
+	[InlineData("Q.Scalar<int>().Using(c).Map<int>()", false)]
+	[InlineData("Q.Scalar<int>().Using(c).ToListAsync()", false)]
+	[InlineData("W.Using(c).ExecuteScalarAsync()", false)]
+	[InlineData("W.Using(c).Map<int>()", false)]
+	[InlineData("W.Using(c).ToListAsync()", false)]
+	[InlineData("W.AddParam(\"a\", 1).ExecuteNonQueryAsync()", false)]
+	public static void AScalarOrAWrite_HasOnlyItsOwnTerminal(string expression, bool compiles)
+	{
+		(CSharpCompilation compilation, _) = Compile($$"""
+			static readonly DbNonQuery W = DbNonQuery.Text("x");
+			static void M(DbConnection c) { var call = {{expression}}; }
+			""");
+		Diagnostic[] errors = [.. Errors(compilation).Where(static d => d.Severity == DiagnosticSeverity.Error)];
+
+		if (compiles)
+		{
+			Assert.True(errors.Length == 0, Show(errors));
+			return;
+		}
+
+		// No such member, or only an extension that does not take this receiver or lacks an argument.
+		Assert.NotEmpty(errors);
+		Assert.All(errors, d => Assert.True(d.Id is "CS1061" or "CS1929" or "CS0411" or "CS7036", Show(errors)));
+	}
+
+	[Theory]
+	[InlineData(LanguageVersion.CSharp12)]
+	[InlineData(LanguageVersion.Preview)]
+	public static void AddParam_OnAScalarOrAWrite_BindsAsOnAQuery(LanguageVersion version)
+	{
+		(CSharpCompilation compilation, SyntaxTree tree) = Compile("""
+			static readonly DbNonQuery W = DbNonQuery.Text("x");
+			static void M(DbConnection c, string s, int n)
+			{
+				W.Using(c).AddParam("name", s);
+				W.Using(c).AddParam("n", n);
+				W.Using(c).AddParam(s);
+				W.AddParam("name", s);
+				W.AddParam("n", n);
+				W.AddParam(s);
+				Q.Scalar<int>().AddParam(n).Using(c).AddParam(s);
+			}
+			""",
+			version);
+
+		Assert.Empty(Errors(compilation));
+		IMethodSymbol[] bound = Bound(compilation, tree, "AddParam");
+		string all = string.Join(" | ", bound.Select(Shape));
+
+		// The first parameter tells the named forms from the derived one; a
+		// chain lists its last call first.
+		Assert.True(
+			bound.Select(static m => m.Parameters[0].Name)
+				.SequenceEqual(["name", "name", "value", "name", "name", "value", "value", "value"]),
+			all);
+	}
 }

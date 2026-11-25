@@ -536,7 +536,110 @@ static class DbQueryRunner
 #endif
 		return await transform(reader, state).ConfigureAwait(false);
 	}
-	// The members of IExecuteReader that need no state, made from the two above.
+
+	// ---- a scalar and a write: the same run, with no reader ----
+
+	/// <summary>
+	/// Asynchronously runs the query and converts its scalar, after the
+	/// connection is released.
+	/// </summary>
+	/// <typeparam name="T">The type of the value.</typeparam>
+	/// <inheritdoc cref="ExecuteAsync{TValue, TResult}" path="/param"/>
+	/// <returns>A task that represents the asynchronous operation; its result is the value.</returns>
+	// The rule of ExecuteScalarAsync<T> on a command.
+	public static ValueTask<T> ScalarAsync<T>(
+		DbQuery definition,
+		object source,
+		ParamList call,
+		CancellationToken cancellationToken)
+		=> ExecuteAsync(
+			definition,
+			source,
+			call,
+			static (command, token) => command.ExecuteScalarAsync(token),
+			static value => RowMap<T>.ConvertScalar(
+				value,
+				nameof(BoundCallExtensions.ExecuteScalarAsync)),
+			cancellationToken);
+
+	/// <summary>Asynchronously runs the write.</summary>
+	/// <inheritdoc cref="ExecuteAsync{TValue, TResult}" path="/param"/>
+	/// <returns>A task that represents the asynchronous operation; its result is the number of rows affected.</returns>
+	public static ValueTask<int> NonQueryAsync(
+		DbQuery definition,
+		object source,
+		ParamList call,
+		CancellationToken cancellationToken)
+		=> ExecuteAsync(
+			definition,
+			source,
+			call,
+			static (command, token) => command.ExecuteNonQueryAsync(token),
+			static count => count,
+			cancellationToken);
+
+	/// <summary>
+	/// Takes the connection, builds the command, runs it, releases the
+	/// connection and then converts what the command returned.
+	/// </summary>
+	/// <param name="definition">The query definition.</param>
+	/// <param name="source">The connection, transaction, pool or factory.</param>
+	/// <param name="call">The bound parameters, or <see langword="default"/> for none.</param>
+	/// <param name="execute">Runs the command.</param>
+	/// <param name="convert">Converts what the command returned; it runs with the connection released.</param>
+	/// <param name="cancellationToken">The token that governs the call.</param>
+	// One state machine for the whole call.
+	static async ValueTask<TResult> ExecuteAsync<TValue, TResult>(
+		DbQuery definition,
+		object source,
+		ParamList call,
+		Func<DbCommand, CancellationToken, Task<TValue>> execute,
+		Func<TValue, TResult> convert,
+		CancellationToken cancellationToken)
+	{
+		// Cancelled awaited tasks throw, so this does too.
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TValue value;
+		// The run is a block of its own, so everything is released at its end.
+		{
+			Lease lease = await Lease
+				.OpenAsync(source, cancellationToken)
+				.ConfigureAwait(false);
+			await using var leaseDisposal = lease.ConfigureAwait(false);
+			NameSet? names = call.NeedsNames
+				? await ResolveAsync(
+						definition,
+						source,
+						lease.Connection,
+						call,
+						cancellationToken)
+					.ConfigureAwait(false)
+				: null;
+#if NETSTANDARD2_0
+			using DbCommand command = Make(
+				lease.Connection,
+				lease.Transaction,
+				definition,
+				call,
+				names);
+#else
+			DbCommand command = Make(
+				lease.Connection,
+				lease.Transaction,
+				definition,
+				call,
+				names);
+			await using var commandDisposal = command.ConfigureAwait(false);
+#endif
+			value = await execute(command, cancellationToken)
+				.ConfigureAwait(false);
+		}
+
+		return convert(value);
+	}
+
+	// The members of IExecuteReader that need no state, made from Run and RunAsync.
 
 	public static void Run(
 		DbQuery definition,
