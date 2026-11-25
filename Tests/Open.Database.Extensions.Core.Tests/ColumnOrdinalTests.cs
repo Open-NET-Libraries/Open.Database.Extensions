@@ -26,7 +26,7 @@ public static class ColumnOrdinalTests
 
 	[Fact]
 	public static void Constructor_ANullName_ThrowsArgumentNull()
-		=> Assert.Equal("Name", Assert.Throws<ArgumentNullException>(() => new ColumnOrdinal(null!, 0)).ParamName);
+		=> Assert.Equal("name", Assert.Throws<ArgumentNullException>(() => new ColumnOrdinal(null!, 0)).ParamName);
 
 	[Fact]
 	public static void Equality_IsByOrdinalAndExactName()
