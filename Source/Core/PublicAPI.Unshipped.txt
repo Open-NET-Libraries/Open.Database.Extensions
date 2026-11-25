@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 *REMOVED*static Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> (string! Name, int Ordinal)[]!
 *REMOVED*static Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
 *REMOVED*static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
@@ -17,13 +17,7 @@ static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Da
 static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.ReadOnlySpan<Open.Database.Extensions.ColumnOrdinal> ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
 Open.Database.Extensions.ColumnOrdinal
 Open.Database.Extensions.ColumnOrdinal.ColumnOrdinal() -> void
-Open.Database.Extensions.ColumnOrdinal.ColumnOrdinal(string! name, int ordinal) -> void
-Open.Database.Extensions.ColumnOrdinal.Deconstruct(out string! name, out int ordinal) -> void
-Open.Database.Extensions.ColumnOrdinal.Equals(Open.Database.Extensions.ColumnOrdinal other) -> bool
+Open.Database.Extensions.ColumnOrdinal.ColumnOrdinal(string! Name, int Ordinal) -> void
 Open.Database.Extensions.ColumnOrdinal.Name.get -> string!
 Open.Database.Extensions.ColumnOrdinal.Ordinal.get -> int
-override Open.Database.Extensions.ColumnOrdinal.Equals(object? obj) -> bool
-override Open.Database.Extensions.ColumnOrdinal.GetHashCode() -> int
 override Open.Database.Extensions.ColumnOrdinal.ToString() -> string!
-static Open.Database.Extensions.ColumnOrdinal.operator !=(Open.Database.Extensions.ColumnOrdinal left, Open.Database.Extensions.ColumnOrdinal right) -> bool
-static Open.Database.Extensions.ColumnOrdinal.operator ==(Open.Database.Extensions.ColumnOrdinal left, Open.Database.Extensions.ColumnOrdinal right) -> bool
