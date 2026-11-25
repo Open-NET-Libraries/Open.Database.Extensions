@@ -38,7 +38,7 @@ public static class DataRecordExtensionsTests
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
 		Assert.Equal(
-			[("Id", 0), ("Name", 1), ("Value", 2)],
+			[new("Id", 0), new("Name", 1), new("Value", 2)],
 			record.OrdinalMapping());
 	}
 
@@ -48,9 +48,9 @@ public static class DataRecordExtensionsTests
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
 		// Requested with different casing; result reflects the reader's actual casing.
-		(string Name, int Ordinal)[] map = [.. record.OrdinalMapping(["name", "id"])];
+		ColumnOrdinal[] map = [.. record.OrdinalMapping(["name", "id"])];
 
-		Assert.Equal([("Name", 1), ("Id", 0)], map);
+		Assert.Equal([new("Name", 1), new("Id", 0)], map);
 	}
 
 	[Fact]
@@ -64,18 +64,29 @@ public static class DataRecordExtensionsTests
 	}
 
 	[Fact]
+	public static void GetOrdinalMapping_Mismatch_DoesNotListAColumnAskedInAnotherCasing()
+	{
+		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
+
+		var ex = Assert.Throws<IndexOutOfRangeException>(
+			() => record.GetOrdinalMapping(["id", "NAME", "Missing"]));
+
+		Assert.Equal("Invalid columns: Missing", ex.Message);
+	}
+
+	[Fact]
 	public static void MatchingOrdinals_IsCaseInsensitive_OrderDependsOnSort()
 	{
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
 		// sort:false -> requested order
 		Assert.Equal(
-			[("Name", 1), ("Id", 0)],
+			[new("Name", 1), new("Id", 0)],
 			record.MatchingOrdinals(["name", "ID"], sort: false).ToArray());
 
 		// sort:true -> record order
 		Assert.Equal(
-			[("Id", 0), ("Name", 1)],
+			[new("Id", 0), new("Name", 1)],
 			record.MatchingOrdinals(["name", "ID"], sort: true).ToArray());
 	}
 
@@ -85,7 +96,7 @@ public static class DataRecordExtensionsTests
 		IDataRecord record = PositionedRecord(Columns, [1, "n", "v"]);
 
 		Assert.Equal(
-			[("Id", 0)],
+			[new("Id", 0)],
 			record.MatchingOrdinals(["Id", "Nope"]).ToArray());
 	}
 
@@ -131,7 +142,7 @@ public static class DataRecordExtensionsTests
 	{
 		IDataRecord record = PositionedRecord(Columns, [1, DBNull.Value, "v"]);
 
-		var mapping = new List<(string Name, int Ordinal)> { ("Name", 1), ("Value", 2) };
+		var mapping = new List<ColumnOrdinal> { new("Name", 1), new("Value", 2) };
 		var dict = record.ToDictionary(mapping);
 
 		Assert.Null(dict["Name"]);
