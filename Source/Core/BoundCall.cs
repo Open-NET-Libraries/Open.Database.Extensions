@@ -98,17 +98,17 @@ public readonly struct BoundCall<TKind> : IEquatable<BoundCall<TKind>>
 /// </typeparam>
 public readonly struct PendingCall<TKind>
 {
-	readonly DbQuery? _definition;
 	readonly ParamList _list;
 
 	internal PendingCall(DbQuery definition, ParamList list = default)
 	{
-		_definition = definition;
+		Definition = definition;
 		_list = list;
 	}
 
+	// Null only in a default value.
 	DbQuery Definition
-		=> _definition ?? throw DbQueryRunner.Unbound();
+		=> field ?? throw DbQueryRunner.Unbound();
 
 	/// <inheritdoc cref="DbQueryUsing.AddParams{T}(T)"/>
 	public PendingCall<TKind> AddParams<TValues>(TValues values)
@@ -201,17 +201,17 @@ public readonly struct BoundParams<TKind, TParams>
 public readonly struct PendingParams<TKind, TParams>
 	where TParams : struct, IEquatable<TParams>
 {
-	readonly DbQuery<TParams>? _definition;
 	readonly TParams _values;
 
 	internal PendingParams(DbQuery<TParams> definition, TParams values)
 	{
-		_definition = definition;
+		Definition = definition;
 		_values = values;
 	}
 
+	// Null only in a default value.
 	DbQuery<TParams> Definition
-		=> _definition ?? throw DbQueryRunner.Unbound();
+		=> field ?? throw DbQueryRunner.Unbound();
 
 	/// <inheritdoc cref="DbQuery.Using(DbConnection)"/>
 	public BoundCall<TKind> Using(DbConnection connection)

@@ -134,6 +134,21 @@ public static class ScalarAndNonQueryRunTests
 		Released(tally, source, pool);
 	}
 
+	[Theory]
+	[MemberData(nameof(Sources))]
+	public static async Task ACommandThatCannotBeBuilt_ReleasesWhatItTook(LeakSource source)
+	{
+		var tally = new DbTally(new() { FailCreateParameter = true });
+		TrackedPool pool = tally.Pool;
+		BoundCall<NonQueryKind> write = Bind(tally, source, pool, Write).AddParam("id", 1);
+
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () => await write.ExecuteNonQueryAsync(Token));
+
+		LeakAssert.ConnectionsReleased(tally, source, pool, 1);
+		LeakAssert.CommandsAndReadersDisposed(tally);
+	}
+
 	// ---- what reaches the command ----
 
 	static string[] Sent(TrackedCommand command)
@@ -146,7 +161,7 @@ public static class ScalarAndNonQueryRunTests
 		TrackedConnection c = tally.NewOpenConnection();
 		DbQuery query = DbQuery.Text(Sql);
 		const int id = 7;
-		string name = "x";
+		const string name = "x";
 
 		// The mapped chain of the same definition, as the reference.
 		_ = await query.Map<int>().Using(c).AddParam(id).AddParam(name).ToListAsync(Token);
@@ -238,6 +253,10 @@ public static class ScalarAndNonQueryRunTests
 
 		public int Closes { get; private set; }
 
+		public int Disposes { get; private set; }
+
+		public bool FailOpen { get; init; }
+
 		[AllowNull]
 		public override string ConnectionString { get; set; } = "";
 		public override string Database => "gate";
@@ -245,7 +264,23 @@ public static class ScalarAndNonQueryRunTests
 		public override string ServerVersion => "1.0";
 		public override ConnectionState State => _state;
 		public override void ChangeDatabase(string databaseName) { }
-		public override void Open() => _state = ConnectionState.Open;
+		public override void Open()
+		{
+			if (FailOpen) throw new TimeoutException("The server did not answer.");
+
+			_state = ConnectionState.Open;
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			// As a provider does: disposing closes.
+			if (disposing)
+			{
+				Disposes++;
+				Close();
+			}
+			base.Dispose(disposing);
+		}
 
 		public override void Close()
 		{
@@ -321,15 +356,20 @@ public static class ScalarAndNonQueryRunTests
 	}
 
 	[Theory]
-	[InlineData(false)]
-	[InlineData(true)]
-	public static async Task ATokenCanceledMidRun_ReachesTheCommand_AndTheConnectionIsReleased(bool scalar)
+	[InlineData(false, false)]
+	[InlineData(true, false)]
+	[InlineData(false, true)]
+	[InlineData(true, true)]
+	public static async Task ATokenCanceledMidRun_ReachesTheCommand_AndTheConnectionIsReleased(bool scalar, bool fromFactory)
 	{
 		await using var gate = new Gate();
+		var factory = new DbConnectionFactory<Gate>(() => gate);
 		using var source = CancellationTokenSource.CreateLinkedTokenSource(Token);
+		BoundCall<ScalarKind<int>> read = fromFactory ? Read.Using(factory) : Read.Using(gate);
+		BoundCall<NonQueryKind> write = fromFactory ? Write.Using(factory) : Write.Using(gate);
 		Task task = scalar
-			? Read.Using(gate).ExecuteScalarAsync(source.Token).AsTask()
-			: Write.Using(gate).ExecuteNonQueryAsync(source.Token).AsTask();
+			? read.ExecuteScalarAsync(source.Token).AsTask()
+			: write.ExecuteNonQueryAsync(source.Token).AsTask();
 		await gate.Started.Task.WaitAsync(Bound5, Token);
 
 		await source.CancelAsync();
@@ -339,5 +379,24 @@ public static class ScalarAndNonQueryRunTests
 		Assert.Equal(source.Token, canceled.CancellationToken);
 		Assert.Equal(ConnectionState.Closed, gate.State);
 		Assert.Equal(1, gate.Closes);
+		// Only a factory's connection is disposed.
+		Assert.Equal(fromFactory ? 1 : 0, gate.Disposes);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public static async Task AConnectionThatDoesNotOpen_IsStillDisposed_WhenAFactoryMadeIt(bool scalar)
+	{
+		await using var gate = new Gate { FailOpen = true };
+		var factory = new DbConnectionFactory<Gate>(() => gate);
+
+		await Assert.ThrowsAsync<TimeoutException>(
+			async () => _ = scalar
+				? await Read.Using(factory).ExecuteScalarAsync(Token)
+				: await Write.Using(factory).ExecuteNonQueryAsync(Token));
+
+		Assert.Equal(1, gate.Disposes);
+		Assert.False(gate.Started.Task.IsCompleted);
 	}
 }

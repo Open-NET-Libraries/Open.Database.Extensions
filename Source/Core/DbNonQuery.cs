@@ -59,16 +59,19 @@ public sealed class DbNonQuery : IEquatable<DbNonQuery>
 		=> new(_definition.Params<TParams>());
 
 	/// <inheritdoc cref="DbQuery.Using(DbConnection)"/>
+	/// <returns>The write, bound.</returns>
 	public BoundCall<NonQueryKind> Using(DbConnection connection)
 		// DbQuery.Using throws ArgumentNullException for a null source.
 		=> new(_definition.Using(connection).ToCall());
 
 	/// <inheritdoc cref="DbQuery.Using(DbTransaction)"/>
+	/// <returns>The write, bound.</returns>
 	public BoundCall<NonQueryKind> Using(DbTransaction transaction)
 		// DbQuery.Using throws ArgumentNullException for a null source.
 		=> new(_definition.Using(transaction).ToCall());
 
 	/// <inheritdoc cref="DbQuery.Using{TConnection}(IDbConnectionPool{TConnection})"/>
+	/// <returns>The write, bound.</returns>
 	public BoundCall<NonQueryKind> Using<TConnection>(
 		IDbConnectionPool<TConnection> pool)
 		where TConnection : DbConnection
@@ -76,6 +79,7 @@ public sealed class DbNonQuery : IEquatable<DbNonQuery>
 		=> new(_definition.Using(pool).ToCall());
 
 	/// <inheritdoc cref="DbQuery.Using{TConnection}(IDbConnectionFactory{TConnection})"/>
+	/// <returns>The write, bound.</returns>
 	public BoundCall<NonQueryKind> Using<TConnection>(
 		IDbConnectionFactory<TConnection> factory)
 		where TConnection : DbConnection
@@ -140,16 +144,19 @@ public sealed class DbNonQuery<TParams>
 		=> new(_definition, values);
 
 	/// <inheritdoc cref="DbQuery.Using(DbConnection)"/>
+	/// <returns>The write, bound.</returns>
 	public BoundParams<NonQueryKind, TParams> Using(DbConnection connection)
 		// DbQuery.Using throws ArgumentNullException for a null source.
 		=> new(_definition.Using(connection));
 
 	/// <inheritdoc cref="DbQuery.Using(DbTransaction)"/>
+	/// <returns>The write, bound.</returns>
 	public BoundParams<NonQueryKind, TParams> Using(DbTransaction transaction)
 		// DbQuery.Using throws ArgumentNullException for a null source.
 		=> new(_definition.Using(transaction));
 
 	/// <inheritdoc cref="DbQuery.Using{TConnection}(IDbConnectionPool{TConnection})"/>
+	/// <returns>The write, bound.</returns>
 	public BoundParams<NonQueryKind, TParams> Using<TConnection>(
 		IDbConnectionPool<TConnection> pool)
 		where TConnection : DbConnection
@@ -157,6 +164,7 @@ public sealed class DbNonQuery<TParams>
 		=> new(_definition.Using(pool));
 
 	/// <inheritdoc cref="DbQuery.Using{TConnection}(IDbConnectionFactory{TConnection})"/>
+	/// <returns>The write, bound.</returns>
 	public BoundParams<NonQueryKind, TParams> Using<TConnection>(
 		IDbConnectionFactory<TConnection> factory)
 		where TConnection : DbConnection

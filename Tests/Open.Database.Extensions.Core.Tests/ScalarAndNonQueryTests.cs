@@ -127,7 +127,7 @@ public static class ScalarAndNonQueryTests
 		Assert.Equal("typed first", db.Title(id));
 
 		// A NULL string value is sent as a database null.
-		Assert.Equal(1, await SetTitle.Using(c).AddParam("title", (string?)null).AddParam(id).ExecuteNonQueryAsync(Token));
+		Assert.Equal(1, await SetTitle.Using(c).AddParam("title", null).AddParam(id).ExecuteNonQueryAsync(Token));
 		Assert.Null(db.Title(id));
 	}
 
@@ -312,8 +312,8 @@ public static class ScalarAndNonQueryTests
 		Assert.NotEqual(text, DbNonQuery.Procedure("delete from Posts"));
 		Assert.NotEqual(text, text.SetTimeout(5));
 		Assert.Equal(text.SetTimeout(5), text.SetTimeout(5));
-		Assert.False(text.Equals((object)DbQuery.Text("delete from Posts")));
-		Assert.False(text.Equals((DbNonQuery?)null));
+		Assert.False(text.Equals(DbQuery.Text("delete from Posts")));
+		Assert.False(text.Equals(null));
 	}
 
 	[Fact]
@@ -338,8 +338,8 @@ public static class ScalarAndNonQueryTests
 		// The kind is part of the type, and of the hash.
 		BoundCall<ScalarKind<long>> asLong = query.Scalar<long>().Using(connection).AddParam("id", 1);
 		BoundCall<NonQueryKind> write = DbNonQuery.Text(sql).Using(connection).AddParam("id", 1);
-		Assert.False(call.Equals((object)asLong));
-		Assert.False(call.Equals((object)write));
+		Assert.False(call.Equals(asLong));
+		Assert.False(call.Equals(write));
 		Assert.NotEqual(call.GetHashCode(), asLong.GetHashCode());
 		Assert.NotEqual(call.GetHashCode(), write.GetHashCode());
 	}
@@ -359,8 +359,8 @@ public static class ScalarAndNonQueryTests
 
 		Action[] uses =
 		[
-			() => _ = bound.ExecuteScalarAsync(Token),
-			() => _ = write.ExecuteNonQueryAsync(Token),
+			() => bound.ExecuteScalarAsync(Token).AsTask(),
+			() => write.ExecuteNonQueryAsync(Token).AsTask(),
 			() => _ = bound.Source,
 			() => bound.AddParam("id", id),
 			() => bound.AddParam("id", "x"),
