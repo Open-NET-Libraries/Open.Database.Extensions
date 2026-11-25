@@ -19,8 +19,8 @@ public static class CaseInsensitiveMappingTests
 		IDataReader reader = FakeReader.Create(["Id", "Name"], [1, "a"]);
 		Assert.True(reader.Read());
 
-		(string Name, int Ordinal)[] match = reader.MatchingOrdinals([requested]).ToArray();
+		ColumnOrdinal[] match = reader.MatchingOrdinals([requested]).ToArray();
 
-		Assert.Equal([("Id", 0)], match);
+		Assert.Equal([new("Id", 0)], match);
 	}
 }
