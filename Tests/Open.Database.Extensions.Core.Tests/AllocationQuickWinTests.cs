@@ -40,23 +40,23 @@ public static class AllocationQuickWinTests
 	// Each overload of ToDictionary that reads a known number of columns.
 	static readonly string[] Overloads =
 	[
-		"KeyValuePairs", "TuplesEnumerable", "TuplesList", "TuplesSpan", "NamesEnumerable", "NamesList", "NamesSpan",
+		"KeyValuePairs", "OrdinalsEnumerable", "OrdinalsList", "OrdinalsSpan", "NamesEnumerable", "NamesList", "NamesSpan",
 	];
 
 	// The overloads whose argument is an IEnumerable: they are read with an enumerator, which the hand-written ideal has to pay for too.
-	static bool Enumerates(string overload) => overload is "KeyValuePairs" or "TuplesEnumerable" or "NamesEnumerable";
+	static bool Enumerates(string overload) => overload is "KeyValuePairs" or "OrdinalsEnumerable" or "NamesEnumerable";
 
 	// Calls one overload with the columns `names` of the record, passing them in the shape that overload takes.
 	static Func<Dictionary<string, object?>> Prepare(string overload, DataTableReader record, string[] names)
 	{
 		KeyValuePair<int, string>[] pairs = [.. names.Select(n => new KeyValuePair<int, string>(record.GetOrdinal(n), n))];
-		(string Name, int Ordinal)[] tuples = [.. names.Select(n => (n, record.GetOrdinal(n)))];
+		ColumnOrdinal[] ordinals = [.. names.Select(n => new ColumnOrdinal(n, record.GetOrdinal(n)))];
 		return overload switch
 		{
 			"KeyValuePairs" => () => record.ToDictionary(pairs),
-			"TuplesEnumerable" => () => record.ToDictionary((IEnumerable<(string Name, int Ordinal)>)tuples),
-			"TuplesList" => () => record.ToDictionary((IReadOnlyList<(string Name, int Ordinal)>)tuples),
-			"TuplesSpan" => () => record.ToDictionary(new ReadOnlySpan<(string Name, int Ordinal)>(tuples)),
+			"OrdinalsEnumerable" => () => record.ToDictionary((IEnumerable<ColumnOrdinal>)ordinals),
+			"OrdinalsList" => () => record.ToDictionary((IReadOnlyList<ColumnOrdinal>)ordinals),
+			"OrdinalsSpan" => () => record.ToDictionary(new ReadOnlySpan<ColumnOrdinal>(ordinals)),
 			"NamesEnumerable" => () => record.ToDictionary((IEnumerable<string>)names),
 			"NamesList" => () => record.ToDictionary((IReadOnlyList<string>)names),
 			"NamesSpan" => () => record.ToDictionary(new ReadOnlySpan<string>(names)),
@@ -157,9 +157,9 @@ public static class AllocationQuickWinTests
 
 	[Theory]
 	[InlineData("KeyValuePairs")]
-	[InlineData("TuplesEnumerable")]
-	[InlineData("TuplesList")]
-	[InlineData("TuplesSpan")]
+	[InlineData("OrdinalsEnumerable")]
+	[InlineData("OrdinalsList")]
+	[InlineData("OrdinalsSpan")]
 	[InlineData("NamesEnumerable")]
 	[InlineData("NamesList")]
 	[InlineData("NamesSpan")]
@@ -177,9 +177,9 @@ public static class AllocationQuickWinTests
 
 	[Theory]
 	[InlineData("KeyValuePairs")]
-	[InlineData("TuplesEnumerable")]
-	[InlineData("TuplesList")]
-	[InlineData("TuplesSpan")]
+	[InlineData("OrdinalsEnumerable")]
+	[InlineData("OrdinalsList")]
+	[InlineData("OrdinalsSpan")]
 	[InlineData("NamesEnumerable")]
 	[InlineData("NamesList")]
 	[InlineData("NamesSpan")]
@@ -194,9 +194,9 @@ public static class AllocationQuickWinTests
 
 	[Theory]
 	[InlineData("KeyValuePairs")]
-	[InlineData("TuplesEnumerable")]
-	[InlineData("TuplesList")]
-	[InlineData("TuplesSpan")]
+	[InlineData("OrdinalsEnumerable")]
+	[InlineData("OrdinalsList")]
+	[InlineData("OrdinalsSpan")]
 	[InlineData("NamesEnumerable")]
 	[InlineData("NamesList")]
 	[InlineData("NamesSpan")]
@@ -223,20 +223,20 @@ public static class AllocationQuickWinTests
 		}
 
 		var byPairs = record.ToDictionary(Pairs());
-		IEnumerable<(string Name, int Ordinal)> Tuples()
+		IEnumerable<ColumnOrdinal> Ordinals()
 		{
-			yield return ("a", 1);
-			yield return ("b", 0);
+			yield return new("a", 1);
+			yield return new("b", 0);
 		}
 
-		var byTuples = record.ToDictionary(Tuples());
+		var byOrdinals = record.ToDictionary(Ordinals());
 
 		Assert.Equal(1, enumerations);
 		Assert.Equal(["Name", "Id"], byName.Keys);
 		Assert.Equal(["v", "i"], byPairs.Keys);
 		Assert.Equal("v", byPairs["v"]);
-		Assert.Equal(["a", "b"], byTuples.Keys);
-		Assert.Null(byTuples["a"]);
+		Assert.Equal(["a", "b"], byOrdinals.Keys);
+		Assert.Null(byOrdinals["a"]);
 	}
 
 	[Fact]
@@ -245,7 +245,7 @@ public static class AllocationQuickWinTests
 		DataTableReader record = PositionedSample();
 
 		Assert.Throws<ArgumentNullException>(() => record.ToDictionary((IEnumerable<KeyValuePair<int, string>>)null!));
-		Assert.Throws<ArgumentNullException>(() => record.ToDictionary((IEnumerable<(string Name, int Ordinal)>)null!));
+		Assert.Throws<ArgumentNullException>(() => record.ToDictionary((IEnumerable<ColumnOrdinal>)null!));
 	}
 
 	// ---- ParameterNames.MatchBare: the @ of the real names is removed once per call, not once per name, candidate and tier ----

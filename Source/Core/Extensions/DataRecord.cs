@@ -106,13 +106,13 @@ public static partial class DataRecordExtensions
 	}
 
 	/// <summary>
-	/// Lazily enumerates the (name, ordinal) pairs of every column in the current result set.
+	/// Lazily enumerates the name and ordinal of every column in the current result set.
 	/// </summary>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-names']/*" />
 	/// <returns>An enumerable of the mappings in ordinal order.</returns>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
-	public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record)
-		=> record.ColumnNames().Select((n, o) => (Name: n, Ordinal: o));
+	public static IEnumerable<ColumnOrdinal> OrdinalMapping(this IDataRecord record)
+		=> record.ColumnNames().Select((n, o) => new ColumnOrdinal(n, o));
 
 	/// <summary>
 	/// Lazily looks up the ordinal of each requested column.
@@ -124,7 +124,7 @@ public static partial class DataRecordExtensions
 	/// <exception cref="IndexOutOfRangeException">A requested column does not exist. It is thrown while the result is enumerated.</exception>
 	/// <seealso cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/>
 	/// <seealso cref="MatchingOrdinals(IDataRecord, IEnumerable{string}, bool)"/>
-	public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames)
+	public static IEnumerable<ColumnOrdinal> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
@@ -136,7 +136,7 @@ public static partial class DataRecordExtensions
 			// https://docs.microsoft.com/en-us/dotnet/api/system.data.idatarecord.getordinal
 			int ordinal = record.GetOrdinal(n);
 			string name = record.GetName(ordinal); // Get actual casing.
-			return (name, ordinal);
+			return new ColumnOrdinal(name, ordinal);
 		});
 	}
 
@@ -151,7 +151,7 @@ public static partial class DataRecordExtensions
 	/// <exception cref="IndexOutOfRangeException">A requested column does not exist. It is thrown while the result is enumerated.</exception>
 	/// <seealso cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/>
 	/// <seealso cref="MatchingOrdinals(IDataRecord, IEnumerable{string}, bool)"/>
-	public static IEnumerable<(string Name, int Ordinal)> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort)
+	public static IEnumerable<ColumnOrdinal> OrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort)
 		=> sort
 		? OrdinalMapping(record, columnNames).OrderBy(m => m.Ordinal)
 		: OrdinalMapping(record, columnNames);
@@ -165,7 +165,7 @@ public static partial class DataRecordExtensions
 	/// <returns>An array of mappings. It is empty if <paramref name="columnNames"/> is an empty collection.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
 	/// <exception cref="IndexOutOfRangeException">One or more requested columns do not exist. The message lists all the invalid names.</exception>
-	public static (string Name, int Ordinal)[] GetOrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
+	public static ColumnOrdinal[] GetOrdinalMapping(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
 		// An empty list returns before OrdinalMapping, which throws ArgumentNullException for a null record or null column names.
 		if (columnNames is ICollection<string> cn && cn.Count == 0)
@@ -179,7 +179,8 @@ public static partial class DataRecordExtensions
 		}
 		catch (IndexOutOfRangeException ex)
 		{
-			var mismatch = new HashSet<string>(columnNames);
+			// A column asked for in another casing is a valid one, as GetOrdinal finds it.
+			var mismatch = new HashSet<string>(columnNames, StringComparer.OrdinalIgnoreCase);
 			mismatch.ExceptWith(record.GetNames());
 
 			// Columns not mapped correctly.  Report all columns that are mismatched/missing.
@@ -278,13 +279,13 @@ public static partial class DataRecordExtensions
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-ordinals']/*" />
 	/// <param name="columnNames">The requested column names. Names that do not exist in the record are skipped rather than reported.</param>
 	/// <param name="sort"><see langword="true"/> to return the mappings in the record's column order; <see langword="false"/> to return them in the requested order.</param>
-	/// <returns>An enumerable of (name, ordinal) mappings, where each name is the column's actual name in the record.</returns>
+	/// <returns>An enumerable of mappings, where each name is the column's actual name in the record.</returns>
 	/// <remarks>
 	/// Use <see cref="OrdinalMapping(IDataRecord, IEnumerable{string})"/> or <see cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/> instead when a missing column should be an error.
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnNames"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">A requested name is <see langword="null"/>, empty, or white space. It can be thrown when the result is enumerated rather than when this method is called.</exception>
-	public static IEnumerable<(string Name, int Ordinal)> MatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
+	public static IEnumerable<ColumnOrdinal> MatchingOrdinals(this IDataRecord record, IEnumerable<string> columnNames, bool sort = false)
 	{
 		if (columnNames is null) throw new ArgumentNullException(nameof(columnNames));
 		Contract.EndContractBlock();
@@ -292,7 +293,7 @@ public static partial class DataRecordExtensions
 		// Compared with StringComparer.OrdinalIgnoreCase, so no upper-cased copy of a requested or an actual name is allocated.
 		IEnumerable<string> requestedNames = ValidateColumnNames(columnNames);
 		// OrdinalMapping throws ArgumentNullException for a null record.
-		IEnumerable<(string Name, int Ordinal)> actual = record.OrdinalMapping();
+		IEnumerable<ColumnOrdinal> actual = record.OrdinalMapping();
 
 		if (sort)
 		{
@@ -303,8 +304,8 @@ public static partial class DataRecordExtensions
 		else
 		{
 			// Map actual columns case-insensitively so the requested order can be preserved.
-			var actualColumns = new Dictionary<string, (string Name, int Ordinal)>(StringComparer.OrdinalIgnoreCase);
-			foreach ((string Name, int Ordinal) m in actual)
+			var actualColumns = new Dictionary<string, ColumnOrdinal>(StringComparer.OrdinalIgnoreCase);
+			foreach (ColumnOrdinal m in actual)
 				actualColumns[m.Name] = m;
 			return requestedNames
 				.Where(actualColumns.ContainsKey)
@@ -367,9 +368,10 @@ public static partial class DataRecordExtensions
 	/// <param name="columnMap">The ordinals to read, paired with the key to store each value under.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentException">Two entries have the same key.</exception>
-	/// <exception cref="ArgumentNullException"><paramref name="columnMap"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="columnMap"/> is <see langword="null"/>.</exception>
 	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<KeyValuePair<int, string>> columnMap)
 	{
+		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (columnMap is null) throw new ArgumentNullException(nameof(columnMap));
 		Contract.EndContractBlock();
 
@@ -383,18 +385,19 @@ public static partial class DataRecordExtensions
 	/// Reads the specified columns of the current row into a dictionary keyed by column name.
 	/// </summary>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
-	/// <param name="ordinalMapping">The (name, ordinal) pairs to read, as produced by <see cref="OrdinalMapping(IDataRecord)"/>.</param>
+	/// <param name="ordinalMapping">The columns to read, as produced by <see cref="OrdinalMapping(IDataRecord)"/>.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
-	/// <exception cref="ArgumentException">Two entries have the same name.</exception>
-	/// <exception cref="ArgumentNullException"><paramref name="ordinalMapping"/> is <see langword="null"/>.</exception>
-	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<(string Name, int Ordinal)> ordinalMapping)
+	/// <exception cref="ArgumentException">Two entries have the same name, or an entry is a <see langword="default"/> <see cref="ColumnOrdinal"/>.</exception>
+	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinalMapping"/> is <see langword="null"/>.</exception>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IEnumerable<ColumnOrdinal> ordinalMapping)
 	{
+		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
 		Contract.EndContractBlock();
 
-		var e = new Dictionary<string, object?>(ordinalMapping is ICollection<(string Name, int Ordinal)> collection ? collection.Count : 0);
-		foreach ((string name, int ordinal) in ordinalMapping)
-			e.Add(name, CoreExtensions.DBNullValueToNull(record.GetValue(ordinal)));
+		var e = new Dictionary<string, object?>(ordinalMapping is ICollection<ColumnOrdinal> collection ? collection.Count : 0);
+		foreach (ColumnOrdinal column in ordinalMapping)
+			e.Add(NameOf(column, nameof(ordinalMapping)), CoreExtensions.DBNullValueToNull(record.GetValue(column.Ordinal)));
 		return e;
 	}
 
@@ -402,11 +405,11 @@ public static partial class DataRecordExtensions
 	/// Reads the specified columns of the current row into a dictionary keyed by column name.
 	/// </summary>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
-	/// <param name="ordinalMapping">The (name, ordinal) pairs to read, as produced by <see cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/>.</param>
+	/// <param name="ordinalMapping">The columns to read, as produced by <see cref="GetOrdinalMapping(IDataRecord, IEnumerable{string}, bool)"/>.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="record"/> or <paramref name="ordinalMapping"/> is <see langword="null"/>.</exception>
-	/// <exception cref="ArgumentException">Two entries have the same name.</exception>
-	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IReadOnlyList<(string Name, int Ordinal)> ordinalMapping)
+	/// <exception cref="ArgumentException">Two entries have the same name, or an entry is a <see langword="default"/> <see cref="ColumnOrdinal"/>.</exception>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, IReadOnlyList<ColumnOrdinal> ordinalMapping)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		if (ordinalMapping is null) throw new ArgumentNullException(nameof(ordinalMapping));
@@ -416,8 +419,8 @@ public static partial class DataRecordExtensions
 		var e = new Dictionary<string, object?>(count);
 		for (int i = 0; i < count; i++)
 		{
-			(string name, int ordinal) = ordinalMapping[i];
-			e.Add(name, CoreExtensions.DBNullValueToNull(record[ordinal]));
+			ColumnOrdinal column = ordinalMapping[i];
+			e.Add(NameOf(column, nameof(ordinalMapping)), CoreExtensions.DBNullValueToNull(record[column.Ordinal]));
 		}
 
 		return e;
@@ -427,11 +430,11 @@ public static partial class DataRecordExtensions
 	/// Reads the specified columns of the current row into a dictionary keyed by column name.
 	/// </summary>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='record-values']/*" />
-	/// <param name="ordinalMapping">The (name, ordinal) pairs to read.</param>
+	/// <param name="ordinalMapping">The columns to read.</param>
 	/// <returns>A new dictionary of values. <see cref="DBNull"/> values are converted to <see langword="null"/>.</returns>
 	/// <include file="Readers.docs.xml" path="docs/members[@name='null-record']/*" />
-	/// <exception cref="ArgumentException">Two entries have the same name.</exception>
-	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, ReadOnlySpan<(string Name, int Ordinal)> ordinalMapping)
+	/// <exception cref="ArgumentException">Two entries have the same name, or an entry is a <see langword="default"/> <see cref="ColumnOrdinal"/>.</exception>
+	public static Dictionary<string, object?> ToDictionary(this IDataRecord record, ReadOnlySpan<ColumnOrdinal> ordinalMapping)
 	{
 		if (record is null) throw new ArgumentNullException(nameof(record));
 		Contract.EndContractBlock();
@@ -440,12 +443,17 @@ public static partial class DataRecordExtensions
 		var e = new Dictionary<string, object?>(count);
 		for (int i = 0; i < count; i++)
 		{
-			(string name, int ordinal) = ordinalMapping[i];
-			e.Add(name, CoreExtensions.DBNullValueToNull(record[ordinal]));
+			ColumnOrdinal column = ordinalMapping[i];
+			e.Add(NameOf(column, nameof(ordinalMapping)), CoreExtensions.DBNullValueToNull(record[column.Ordinal]));
 		}
 
 		return e;
 	}
+
+	// A default ColumnOrdinal has no name: it is refused here, before its ordinal is read.
+	static string NameOf(ColumnOrdinal column, string paramName)
+		=> column.Name
+		?? throw new ArgumentException("A default ColumnOrdinal names no column.", paramName);
 
 	/// <summary>
 	/// Reads the named columns of the current row into a dictionary keyed by column name.

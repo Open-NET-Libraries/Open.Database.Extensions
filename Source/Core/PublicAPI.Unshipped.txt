@@ -78,3 +78,26 @@ static Open.Database.Extensions.BoundCallExtensions.ExecuteNonQueryAsync(this Op
 static Open.Database.Extensions.BoundCallExtensions.ExecuteScalarAsync<T>(this Open.Database.Extensions.BoundCall<Open.Database.Extensions.ScalarKind<T>> call, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
 static Open.Database.Extensions.DbNonQuery.Procedure(string! name) -> Open.Database.Extensions.DbNonQuery!
 static Open.Database.Extensions.DbNonQuery.Text(string! sql) -> Open.Database.Extensions.DbNonQuery!
+*REMOVED*static Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> (string! Name, int Ordinal)[]!
+*REMOVED*static Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
+*REMOVED*static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
+*REMOVED*static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
+*REMOVED*static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort) -> System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>!
+*REMOVED*static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<(string! Name, int Ordinal)>! ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
+*REMOVED*static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IReadOnlyList<(string! Name, int Ordinal)>! ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
+*REMOVED*static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.ReadOnlySpan<(string! Name, int Ordinal)> ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
+static Open.Database.Extensions.DataRecordExtensions.GetOrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> Open.Database.Extensions.ColumnOrdinal[]!
+static Open.Database.Extensions.DataRecordExtensions.MatchingOrdinals(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort = false) -> System.Collections.Generic.IEnumerable<Open.Database.Extensions.ColumnOrdinal>!
+static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record) -> System.Collections.Generic.IEnumerable<Open.Database.Extensions.ColumnOrdinal>!
+static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames) -> System.Collections.Generic.IEnumerable<Open.Database.Extensions.ColumnOrdinal>!
+static Open.Database.Extensions.DataRecordExtensions.OrdinalMapping(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<string!>! columnNames, bool sort) -> System.Collections.Generic.IEnumerable<Open.Database.Extensions.ColumnOrdinal>!
+static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IEnumerable<Open.Database.Extensions.ColumnOrdinal>! ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
+static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.Collections.Generic.IReadOnlyList<Open.Database.Extensions.ColumnOrdinal>! ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
+static Open.Database.Extensions.DataRecordExtensions.ToDictionary(this System.Data.IDataRecord! record, System.ReadOnlySpan<Open.Database.Extensions.ColumnOrdinal> ordinalMapping) -> System.Collections.Generic.Dictionary<string!, object?>!
+Open.Database.Extensions.ColumnOrdinal
+Open.Database.Extensions.ColumnOrdinal.ColumnOrdinal() -> void
+Open.Database.Extensions.ColumnOrdinal.ColumnOrdinal(string! name, int ordinal) -> void
+Open.Database.Extensions.ColumnOrdinal.Deconstruct(out string! name, out int ordinal) -> void
+Open.Database.Extensions.ColumnOrdinal.Name.get -> string!
+Open.Database.Extensions.ColumnOrdinal.Ordinal.get -> int
+override Open.Database.Extensions.ColumnOrdinal.ToString() -> string!

@@ -148,6 +148,7 @@ Every mapped overload takes one `RowMap<T>? map` where 10.x took key/value pairs
 - `QueryResultCollection<T>`: a list holds the same rows.
 - `reader.AsAsyncEnumerable(n, others...)`: `reader.AsAsyncEnumerable([n, ..others])`.
 - `record.GetMatchingOrdinals(names, sort)`: `record.MatchingOrdinals(names, sort).ToArray()`.
+- The `(string Name, int Ordinal)` tuple of `OrdinalMapping`, `GetOrdinalMapping`, `MatchingOrdinals` and `ToDictionary(ordinalMapping)`: `ColumnOrdinal`. Deconstruction, `.Name` and `.Ordinal` work as before; a tuple does not convert to it, so write `new ColumnOrdinal(name, ordinal)`. It is not comparable as the tuple was: sort by `.Ordinal` or `.Name`.
 - A custom `IExecuteReader` must implement the state-passing `ExecuteReader` overloads and an `ExecuteReaderAsync` that takes the call's token; a custom `IMappedQuery<T>` implements `ToPooledBufferStream`, `Stream` and both `StreamBuffered` overloads.
 - A static property is not mapped.
 

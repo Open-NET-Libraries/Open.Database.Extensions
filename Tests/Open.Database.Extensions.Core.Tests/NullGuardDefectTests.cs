@@ -166,4 +166,27 @@ public static class NullGuardDefectTests
 		Assert.Equal("columnNames", Assert.Throws<ArgumentNullException>(
 			() => record.MatchingOrdinals(null!)).ParamName);
 	}
+
+	// With columns to read it was a NullReferenceException; with none, an empty dictionary.
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	public static void ToDictionary_ByOrdinals_ANullRecord_ThrowsArgumentNull(int count)
+	{
+		IEnumerable<ColumnOrdinal> columns = Enumerable.Repeat(new ColumnOrdinal("id", 0), count);
+
+		Assert.Equal("record", Assert.Throws<ArgumentNullException>(
+			() => ((IDataRecord)null!).ToDictionary(columns)).ParamName);
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(1)]
+	public static void ToDictionary_ByColumnMap_ANullRecord_ThrowsArgumentNull(int count)
+	{
+		IEnumerable<KeyValuePair<int, string>> columns = Enumerable.Repeat(new KeyValuePair<int, string>(0, "id"), count);
+
+		Assert.Equal("record", Assert.Throws<ArgumentNullException>(
+			() => ((IDataRecord)null!).ToDictionary(columns)).ParamName);
+	}
 }
