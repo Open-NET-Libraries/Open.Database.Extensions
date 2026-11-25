@@ -778,34 +778,48 @@ public static class PooledBufferJourneyTests
 
 	// ---- a provider that ignores the cancel token ---------------------------
 
-	// Serves rows, but its read number `deafAt` takes `delay` and
-	// ignores every token, as a provider that does not honour
-	// cancellation would.
-	sealed class DeafReader(int rows, int deafAt, TimeSpan delay)
+	// Serves rows and ignores every token, as a provider that does not
+	// honour cancellation would. Its read number `deafAt` waits for the
+	// test to release it, so a cancel or a dispose lands inside that read.
+	sealed class GatedDeafReader(int rows, int deafAt)
 		: TypedReader(Columns, Rows(rows))
 	{
+		readonly TaskCompletionSource _entered
+			= new(TaskCreationOptions.RunContinuationsAsynchronously);
+		readonly TaskCompletionSource _cancelSeen
+			= new(TaskCreationOptions.RunContinuationsAsynchronously);
+		readonly TaskCompletionSource _release
+			= new(TaskCreationOptions.RunContinuationsAsynchronously);
 		int _calls;
-		volatile bool _stalled;
-		volatile bool _stallEnded;
 
-		public bool Stalled => _stalled;
+		// Read `deafAt` is in progress.
+		public Task Entered => _entered.Task;
 
-		public bool StallEnded => _stallEnded;
+		// The token given to that read fired.
+		public Task CancelSeen => _cancelSeen.Task;
 
 		public int Calls => Volatile.Read(ref _calls);
+
+		public void Release() => _release.TrySetResult();
 
 		public override async Task<bool> ReadAsync(
 			CancellationToken cancellationToken)
 		{
 			if (Interlocked.Increment(ref _calls) == deafAt)
 			{
-				_stalled = true;
-				await Task.Delay(delay, CancellationToken.None);
-				_stallEnded = true;
+				using var registration = cancellationToken.Register(
+					() => _cancelSeen.TrySetResult());
+				_entered.TrySetResult();
+				await _release.Task;
 			}
 
 			return await base.ReadAsync(CancellationToken.None);
 		}
+
+		// Deaf here too: only the library can end the read.
+		public override Task<bool> NextResultAsync(
+			CancellationToken cancellationToken)
+			=> Task.FromResult(false);
 	}
 
 	[Theory]
@@ -814,8 +828,8 @@ public static class PooledBufferJourneyTests
 	public static async Task ADisposeWaitsForAProviderThatIgnoresCancellation(
 		string terminal)
 	{
-		using var j = new Journey(
-			() => new DeafReader(100, 20, TimeSpan.FromMilliseconds(2000)));
+		var reader = new GatedDeafReader(100, 20);
+		using var j = new Journey(() => reader);
 		Task dispose;
 		if (terminal == "stream")
 		{
@@ -823,35 +837,27 @@ public static class PooledBufferJourneyTests
 				.UsePool(j.Pool, clearOnReturn: false).ToPooledBufferStream(Ct)
 				.GetAsyncEnumerator(Ct);
 			Assert.True(await e.MoveNextAsync().AsTask().Within());
-			await Until(
-				() => j.Reader is DeafReader { Stalled: true },
-				"the stall");
+			await reader.Entered.Within();
 			dispose = e.DisposeAsync().AsTask();
 		}
 		else
 		{
 			var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToPooledBuffer(Ct);
-			await Until(
-				() => j.Reader is DeafReader { Stalled: true },
-				"the stall");
+			await reader.Entered.Within();
 			dispose = buffer.DisposeAsync().AsTask();
 		}
 
 		// The cancel was sent, the provider ignores it: the dispose
 		// is still waiting for the call in progress.
-		await Task.Delay(100, Ct);
-		var reader = (DeafReader)j.Reader!;
+		await reader.CancelSeen.Within();
 		Assert.False(dispose.IsCompleted);
-		Assert.False(reader.StallEnded);
 
+		reader.Release();
 		await dispose.Within();
 
-		// It completed only after that call returned, then the
-		// producer stopped at the next row: no hang beyond the read.
-		Assert.True(reader.StallEnded);
-		// (the token is checked once per chunk now: the read stops at
-		// the end of the chunk it was in, 48 rows in, not at the next row)
-		Assert.True(reader.Calls <= 50);
+		// The producer stopped at the end of the chunk it was in (the
+		// token is checked once per chunk): row 49 is the last one read.
+		Assert.Equal(49, reader.Calls);
 		await j.AssertClean();
 	}
 
@@ -860,14 +866,14 @@ public static class PooledBufferJourneyTests
 	{
 		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
-		using var j = new Journey(
-			() => new DeafReader(100, 20, TimeSpan.FromMilliseconds(300)));
+		var reader = new GatedDeafReader(100, 20);
+		using var j = new Journey(() => reader);
 		await using var buffer = j.View.UsePool(j.Pool, clearOnReturn: false).ToPooledBuffer(cts.Token);
-		await Until(
-			() => j.Reader is DeafReader { Stalled: true },
-			"the stall");
+		await reader.Entered.Within();
 
+		// The cancel lands while the read is in progress.
 		cts.Cancel();
+		reader.Release();
 
 		var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => buffer.Items.Within());
@@ -875,8 +881,8 @@ public static class PooledBufferJourneyTests
 
 		// The provider ignored the cancel; the producer ended the read
 		// at the end of the chunk it was in (48 rows), not at the end of
-		// the query.
-		Assert.True(((DeafReader)j.Reader!).Calls <= 50);
+		// the query: row 49 is the last one read.
+		Assert.Equal(49, reader.Calls);
 
 		await buffer.DisposeAsync().AsTask().Within();
 		await j.AssertClean();
@@ -887,8 +893,8 @@ public static class PooledBufferJourneyTests
 	{
 		using var cts = CancellationTokenSource
 			.CreateLinkedTokenSource(Ct);
-		using var j = new Journey(
-			() => new DeafReader(100, 20, TimeSpan.FromMilliseconds(300)));
+		var reader = new GatedDeafReader(100, 20);
+		using var j = new Journey(() => reader);
 		List<int> ids = [];
 
 		var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(
@@ -899,10 +905,9 @@ public static class PooledBufferJourneyTests
 					ids.AddRange(chunk.ToArray().Select(r => r.Id));
 					if (ids.Count != 16) continue;
 
-					await Until(
-						() => j.Reader is DeafReader { Stalled: true },
-						"the stall");
+					await reader.Entered.Within();
 					cts.Cancel();
+					reader.Release();
 				}
 			});
 
@@ -912,7 +917,7 @@ public static class PooledBufferJourneyTests
 		// the chunk it was in (rows 17 to 48), which was sealed and
 		// delivered before the cancel was thrown.
 		Assert.Equal(Ids(48), ids);
-		Assert.True(((DeafReader)j.Reader!).Calls <= 50);
+		Assert.Equal(49, reader.Calls);
 		await j.AssertClean();
 	}
 
